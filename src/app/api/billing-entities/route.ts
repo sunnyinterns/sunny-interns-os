@@ -1,19 +1,14 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
-
+import { createClient } from "@/lib/supabase/server"
+import { NextResponse } from "next/server"
 export async function GET() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  try {
-    const { data, error } = await supabase.from('billing_entities').select('*').order('is_default', { ascending: false })
-    if (error) throw error
-    return NextResponse.json(data ?? [])
-  } catch {
-    // Fallback entities if table doesn't exist
-    return NextResponse.json([
-      { id: '1', name: 'Bali Interns C.G. Company', is_default: true, is_active: true },
-      { id: '2', name: 'PT THE ABUNDANCE GUILD', is_default: false, is_active: false },
-    ])
-  }
+  const { data } = await supabase.from("billing_entities").select("*").order("is_default",{ascending:false})
+  return NextResponse.json(data||[])
+}
+export async function PATCH(req: Request) {
+  const supabase = await createClient()
+  const { id, ...body } = await req.json()
+  if (body.is_default) await supabase.from("billing_entities").update({is_default:false}).neq("id",id)
+  const { data } = await supabase.from("billing_entities").update(body).eq("id",id).select().single()
+  return NextResponse.json(data)
 }
