@@ -315,7 +315,7 @@ export default function CaseDetailPage() {
           }} />
         )}
         {activeTab === 'facturation' && (
-          <TabFacturation caseId={caseData.id} />
+          <TabFacturation caseId={caseData.id} caseData={{ id: caseData.id, interns: caseData.interns ? { first_name: caseData.interns.first_name ?? '', last_name: caseData.interns.last_name ?? '' } : null }} />
         )}
       </div>
 
