@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { AIRecommendations } from '@/components/jobs/AIRecommendations'
 
 interface OpenJob {
   id: string
@@ -43,11 +44,12 @@ interface ProposeModalProps {
   caseId: string
   onClose: () => void
   onSuccess: () => void
+  preselectedJobId?: string | null
 }
 
-function ProposeModal({ caseId, onClose, onSuccess }: ProposeModalProps) {
+function ProposeModal({ caseId, onClose, onSuccess, preselectedJobId }: ProposeModalProps) {
   const [jobs, setJobs] = useState<OpenJob[]>([])
-  const [selectedJobId, setSelectedJobId] = useState('')
+  const [selectedJobId, setSelectedJobId] = useState(preselectedJobId ?? '')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -138,6 +140,7 @@ export function TabJobs({ caseId, firstName, lastName }: TabJobsProps) {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [selectedJobIdFromAI, setSelectedJobIdFromAI] = useState<string | null>(null)
 
   const fetchSubmissions = useCallback(async () => {
     setLoading(true)
@@ -186,12 +189,20 @@ export function TabJobs({ caseId, firstName, lastName }: TabJobsProps) {
     }
   }
 
+  function handleSelectJobFromAI(jobId: string) {
+    setSelectedJobIdFromAI(jobId)
+    setShowModal(true)
+  }
+
   return (
     <div className="space-y-4">
+      {/* AI Recommendations */}
+      <AIRecommendations caseId={caseId} onSelectJob={handleSelectJobFromAI} />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[#1a1918]">Soumissions</h3>
-        <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
+        <Button variant="primary" size="sm" onClick={() => { setSelectedJobIdFromAI(null); setShowModal(true) }}>
           + Proposer un job
         </Button>
       </div>
@@ -257,11 +268,13 @@ export function TabJobs({ caseId, firstName, lastName }: TabJobsProps) {
       {showModal && (
         <ProposeModal
           caseId={caseId}
-          onClose={() => setShowModal(false)}
+          onClose={() => { setShowModal(false); setSelectedJobIdFromAI(null) }}
           onSuccess={() => {
             setShowModal(false)
+            setSelectedJobIdFromAI(null)
             void fetchSubmissions()
           }}
+          preselectedJobId={selectedJobIdFromAI}
         />
       )}
     </div>
