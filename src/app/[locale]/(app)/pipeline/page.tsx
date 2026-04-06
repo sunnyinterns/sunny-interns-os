@@ -6,6 +6,7 @@ import { KanbanBoard } from '@/components/cases/KanbanBoard'
 import { Button } from '@/components/ui/Button'
 import { NewCaseModal } from '@/components/cases/NewCaseModal'
 import { Toast } from '@/components/ui/Toast'
+import { CreateGroupModal } from '@/components/pipeline/CreateGroupModal'
 
 interface CaseData {
   id: string
@@ -35,6 +36,7 @@ export default function PipelinePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [showGroupModal, setShowGroupModal] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   // Filters
@@ -77,9 +79,14 @@ export default function PipelinePage() {
           <h1 className="text-xl font-semibold text-[#1a1918]">Pipeline</h1>
           <p className="text-sm text-zinc-500 mt-0.5">{cases.length} dossiers</p>
         </div>
-        <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
-          + Nouveau dossier
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={() => setShowGroupModal(true)}>
+            + Créer un groupe
+          </Button>
+          <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
+            + Nouveau dossier
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -125,6 +132,16 @@ export default function PipelinePage() {
         <NewCaseModal
           onClose={() => setShowModal(false)}
           onSuccess={handleCaseCreated}
+        />
+      )}
+
+      {showGroupModal && (
+        <CreateGroupModal
+          onClose={() => setShowGroupModal(false)}
+          onCreated={() => {
+            setShowGroupModal(false)
+            setToast({ message: 'Groupe créé avec succès', type: 'success' })
+          }}
         />
       )}
 
