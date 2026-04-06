@@ -1,0 +1,97 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { FeedZone } from '@/components/feed/FeedZone'
+import type { FeedData } from '@/lib/types'
+
+function FeedSkeleton() {
+  return (
+    <div className="space-y-8 animate-pulse">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i}>
+          <div className="h-4 w-32 bg-zinc-200 rounded mb-3" />
+          <div className="space-y-2">
+            {[1, 2].map((j) => (
+              <div key={j} className="h-16 bg-zinc-100 rounded-xl" />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export default function FeedPage() {
+  const [feed, setFeed] = useState<FeedData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/feed')
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.json() as Promise<FeedData>
+      })
+      .then((data) => {
+        setFeed(data)
+        setLoading(false)
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Erreur inconnue')
+        setLoading(false)
+      })
+  }, [])
+
+  return (
+    <div className="p-6 max-w-3xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold text-[#1a1918]">Activité</h1>
+        <p className="text-sm text-zinc-500 mt-0.5">
+          {new Date().toLocaleDateString('fr-FR', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          })}
+        </p>
+      </div>
+
+      {loading && <FeedSkeleton />}
+
+      {error && (
+        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-[#dc2626]">
+          Erreur lors du chargement : {error}
+        </div>
+      )}
+
+      {feed && (
+        <div className="space-y-8">
+          <FeedZone
+            title="Aujourd'hui"
+            count={feed.today.length}
+            items={feed.today}
+            type="today"
+          />
+          <FeedZone
+            title="À faire maintenant"
+            count={feed.todo.length}
+            items={feed.todo}
+            type="todo"
+          />
+          <FeedZone
+            title="En attente"
+            count={feed.waiting.length}
+            items={feed.waiting}
+            type="waiting"
+          />
+          <FeedZone
+            title="Complété aujourd'hui"
+            count={feed.completed.length}
+            items={feed.completed}
+            type="completed"
+          />
+        </div>
+      )}
+    </div>
+  )
+}

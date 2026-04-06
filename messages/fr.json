@@ -1,0 +1,25 @@
+{
+  "nav": {
+    "feed": "Activité",
+    "pipeline": "Pipeline",
+    "cases": "Dossiers",
+    "jobs": "Offres",
+    "settings": "Paramètres"
+  },
+  "auth": {
+    "login": "Connexion",
+    "loginWith": "Connexion avec {provider}",
+    "email": "Email",
+    "password": "Mot de passe",
+    "signIn": "Se connecter",
+    "orContinueWith": "ou continuer avec"
+  },
+  "feed": {
+    "title": "Activité",
+    "today": "Aujourd'hui",
+    "todo": "À faire maintenant",
+    "waiting": "En attente",
+    "completed": "Complété aujourd'hui",
+    "noItems": "Aucun élément"
+  }
+}
