@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { ProcessTimeline } from '@/components/cases/ProcessTimeline'
+import { Button } from '@/components/ui/Button'
 import type { CaseStatus } from '@/lib/types'
 
 interface ActivityEntry {
@@ -19,11 +20,43 @@ interface TabProcessProps {
 
 export function TabProcess({ caseId, status: initialStatus, activityFeed }: TabProcessProps) {
   const [status, setStatus] = useState<CaseStatus>(initialStatus)
+  const [pdfLoading, setPdfLoading] = useState(false)
+
+  async function handleDownloadEngagementLetter() {
+    setPdfLoading(true)
+    try {
+      const res = await fetch(`/api/cases/${caseId}/documents/engagement-letter`, {
+        method: 'POST',
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'lettre-engagement.pdf'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.error('PDF generation error:', e)
+    } finally {
+      setPdfLoading(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-zinc-700">Étapes du dossier</h3>
+        <Button
+          variant="secondary"
+          size="sm"
+          loading={pdfLoading}
+          onClick={() => { void handleDownloadEngagementLetter() }}
+        >
+          Lettre d&apos;engagement
+        </Button>
+      </div>
       <div>
-        <h3 className="text-sm font-semibold text-zinc-700 mb-3">Étapes du dossier</h3>
         <ProcessTimeline caseId={caseId} currentStatus={status} onStatusChange={setStatus} />
       </div>
 
