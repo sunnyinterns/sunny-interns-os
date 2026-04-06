@@ -1,7 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import { ActivityCard } from './ActivityCard'
-import type { ActivityItem } from '@/lib/types'
+import type { ActivityItem, CaseStatus } from '@/lib/types'
 
 interface FeedZoneProps {
   title: string
@@ -24,8 +25,17 @@ const zoneBadgeColors: Record<FeedZoneProps['type'], string> = {
   completed: 'bg-emerald-50 text-[#0d9e75]',
 }
 
-export function FeedZone({ title, count, items, type }: FeedZoneProps) {
+export function FeedZone({ title, count, items: initialItems, type }: FeedZoneProps) {
   const isCompleted = type === 'completed'
+  const [items, setItems] = useState<ActivityItem[]>(initialItems)
+
+  function handleStatusUpdate(itemId: string, newStatus: CaseStatus) {
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === itemId ? { ...item, status: newStatus } : item
+      )
+    )
+  }
 
   return (
     <section>
@@ -40,7 +50,7 @@ export function FeedZone({ title, count, items, type }: FeedZoneProps) {
             zoneBadgeColors[type],
           ].join(' ')}
         >
-          {count}
+          {items.length > 0 ? items.length : count}
         </span>
       </div>
 
@@ -52,7 +62,12 @@ export function FeedZone({ title, count, items, type }: FeedZoneProps) {
       ) : (
         <div className="space-y-2">
           {items.map((item) => (
-            <ActivityCard key={item.id} item={item} dimmed={isCompleted} />
+            <ActivityCard
+              key={item.id}
+              item={item}
+              dimmed={isCompleted}
+              onStatusUpdate={handleStatusUpdate}
+            />
           ))}
         </div>
       )}

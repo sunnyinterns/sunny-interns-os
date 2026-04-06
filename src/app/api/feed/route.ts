@@ -34,6 +34,7 @@ export async function GET() {
       for (const c of cases) {
         const item: ActivityItem = {
           id: c.id,
+          caseId: c.id,
           internId: c.id,
           internName: `${c.first_name} ${c.last_name}`,
           actionType: 'status_update',

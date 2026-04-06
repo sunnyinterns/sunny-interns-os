@@ -22,6 +22,7 @@ export type CaseStatus =
 
 export interface ActivityItem {
   id: string
+  caseId: string
   internId: string
   internName: string
   internAvatar?: string
