@@ -130,6 +130,42 @@ export async function GET() {
     feed.waiting.length === 0 &&
     feed.completed.length === 0
 
+  if (isEmpty) {
+    const demoItems: ActivityItem[] = [
+      {
+        id: 'demo-welcome',
+        caseId: 'demo',
+        internId: 'demo',
+        internName: 'Sunny Interns',
+        actionType: 'status_update',
+        description: 'Bienvenue sur Sunny Interns OS',
+        priority: 'normal',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        metadata: { isDemo: true },
+      },
+      {
+        id: 'demo-db',
+        caseId: 'demo',
+        internId: 'demo',
+        internName: 'Sunny Interns',
+        actionType: 'status_update',
+        description: 'Base de données configurée',
+        priority: 'normal',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        metadata: { isDemo: true },
+      },
+    ]
+    return NextResponse.json({
+      ...feed,
+      waiting: demoItems,
+      isEmpty: true,
+      isDemo: true,
+      stats: { critical: 0, attention: 0, pending: 0, active: 0 },
+    })
+  }
+
   return NextResponse.json({
     ...feed,
     isEmpty,
