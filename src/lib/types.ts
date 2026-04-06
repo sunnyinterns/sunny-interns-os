@@ -7,6 +7,8 @@ export type CaseStatus =
   | 'convention_signed'
   | 'payment_pending'
   | 'payment_received'
+  | 'visa_docs_sent'
+  | 'visa_submitted'
   | 'visa_in_progress'
   | 'visa_received'
   | 'arrival_prep'
@@ -19,6 +21,8 @@ export type CaseStatus =
   | 'visa_refused'
   | 'archived'
   | 'completed'
+  | 'no_job_found'
+  | 'lost'
 
 export interface ActivityItem {
   id: string

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { sendJobSubmittedEmployer } from '@/lib/email/resend'
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -16,13 +17,44 @@ export async function POST(request: Request) {
       .single()
     if (error) throw error
 
-    // Log activity
     await supabase.from('activity_feed').insert({
       case_id: body.case_id,
       action_type: 'job_submitted',
       description: `Job soumis: ${body.job_id}`,
       created_by: user.id,
     })
+
+    // Email employeur
+    void (async () => {
+      try {
+        const { data: jobRow } = await supabase
+          .from('jobs')
+          .select('title, companies(name, email)')
+          .eq('id', body.job_id)
+          .single()
+        const { data: caseRow } = await supabase
+          .from('cases')
+          .select('first_name, last_name, interns(cv_url)')
+          .eq('id', body.case_id)
+          .single()
+
+        if (jobRow && caseRow) {
+          const company = (jobRow as Record<string, unknown>).companies as Record<string, unknown> | null
+          const intern = (caseRow as Record<string, unknown>).interns as { cv_url?: string } | null
+          if (company?.email) {
+            await sendJobSubmittedEmployer({
+              employerEmail: company.email as string,
+              employerName: company.name as string | undefined,
+              internFirstName: (caseRow as Record<string, unknown>).first_name as string ?? '',
+              internLastName: (caseRow as Record<string, unknown>).last_name as string ?? '',
+              jobTitle: (jobRow as Record<string, unknown>).title as string ?? 'Stage',
+              cvUrl: intern?.cv_url ?? null,
+              caseId: body.case_id,
+            })
+          }
+        }
+      } catch { /* non-blocking */ }
+    })()
 
     return NextResponse.json(data, { status: 201 })
   } catch (e) {

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import type { CaseStatus } from '@/lib/types'
 import { getDaysUntil } from '@/lib/retroplanning'
+import { sendNewLeadInternal } from '@/lib/email/resend'
 
 // ─── Kanban types ────────────────────────────────────────────────────────────
 
@@ -245,7 +246,18 @@ export async function POST(request: Request) {
       // Non-blocking
     }
 
-    return NextResponse.json(newCase, { status: 201 })
+    // 5. Email interne Charly
+    void sendNewLeadInternal({
+      firstName: first_name,
+      lastName: last_name,
+      email,
+      startDate: start_date ? new Date(start_date).toLocaleDateString('fr-FR') : null,
+      passportExpiry: passport_expiry ?? null,
+      startDateValue: start_date ?? null,
+      caseId: newCase.id,
+    })
+
+    return NextResponse.json({ ...newCase, intern_id: intern.id }, { status: 201 })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erreur inconnue'
     return NextResponse.json({ error: message }, { status: 500 })

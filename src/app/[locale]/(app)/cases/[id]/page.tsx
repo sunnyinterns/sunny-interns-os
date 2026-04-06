@@ -30,14 +30,25 @@ interface CaseDetail {
   intern_bali_phone?: string | null
   internship_type?: string | null
   visa_submitted_at?: string | null
+  visa_submitted_to_agent_at?: string | null
   visa_received_at?: string | null
   payment_amount?: number | null
   payment_date?: string | null
   invoice_sent_at?: string | null
   iban?: string | null
   legal_entity?: string | null
+  fillout_bill_form_url?: string | null
   notes?: string | null
   metadata?: Record<string, unknown>
+  // Checklist booleans
+  billet_avion?: boolean | null
+  papiers_visas?: boolean | null
+  visa_recu?: boolean | null
+  logement_scooter_formulaire?: boolean | null
+  logement_reserve?: boolean | null
+  scooter_reserve_check?: boolean | null
+  convention_signee_check?: boolean | null
+  chauffeur_reserve?: boolean | null
   interns?: {
     id?: string
     first_name?: string
@@ -49,6 +60,23 @@ interface CaseDetail {
     passport_number?: string
     passport_expiry?: string
     avatar_url?: string
+    intern_level?: string
+    diploma_track?: string
+    school?: string
+    school_contact_name?: string
+    school_contact_email?: string
+    emergency_contact_name?: string
+    emergency_contact_phone?: string
+    main_desired_job?: string
+    spoken_languages?: string[]
+    linkedin_url?: string
+    qualification_debrief?: string
+    intern_address?: string
+    intern_signing_city?: string
+    housing_budget?: string
+    wants_scooter?: boolean
+    touchpoint?: string
+    private_comment_for_employer?: string
   } | null
   activity_feed?: Array<{
     id: string
@@ -241,12 +269,26 @@ export default function CaseDetailPage() {
             status={caseData.status}
             activityFeed={caseData.activity_feed ?? []}
             isVisaOnly={isVisaOnly}
+            checklist={{
+              billet_avion: caseData.billet_avion,
+              papiers_visas: caseData.papiers_visas,
+              visa_recu: caseData.visa_recu,
+              logement_scooter_formulaire: caseData.logement_scooter_formulaire,
+              logement_reserve: caseData.logement_reserve,
+              scooter_reserve_check: caseData.scooter_reserve_check,
+              convention_signee_check: caseData.convention_signee_check,
+              chauffeur_reserve: caseData.chauffeur_reserve,
+            }}
+            internEmail={caseData.interns?.email}
+            paymentAmount={caseData.payment_amount}
+            filloutBillFormUrl={caseData.fillout_bill_form_url}
           />
         )}
         {activeTab === 'profil' && (
           <TabProfil
             intern={caseData.interns ?? null}
             arrivalDate={caseData.arrival_date}
+            internId={caseData.interns?.id}
           />
         )}
         {activeTab === 'jobs' && (

@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const router = useRouter()
+  const params = useParams()
+  const locale = typeof params?.locale === 'string' ? params.locale : 'fr'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -83,6 +85,16 @@ export default function LoginPage() {
         </div>
 
         {/* Email/Password Form */}
+        {/* Candidature link */}
+        <div className="text-center mb-4">
+          <p className="text-sm text-zinc-500">
+            Pas encore candidat ?{' '}
+            <a href={`/${locale}/candidater`} className="text-[#c8a96e] font-medium hover:underline">
+              Déposer ma candidature →
+            </a>
+          </p>
+        </div>
+
         <form onSubmit={handleEmailLogin} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-[#1a1918] mb-1.5">
