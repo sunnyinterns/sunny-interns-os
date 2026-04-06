@@ -1,17 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get('code')
-
-  if (code) {
-    const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
-      return NextResponse.redirect(`${origin}/fr/feed`)
-    }
-  }
-
-  return NextResponse.redirect(`${origin}/fr/login`)
+export async function GET(request: NextRequest) {
+  const code = request.nextUrl.searchParams.get('code')
+  const origin = request.nextUrl.origin
+  if (!code) return NextResponse.redirect(`${origin}/fr/login?error=no_code`)
+  const supabase = await createClient()
+  const { error } = await supabase.auth.exchangeCodeForSession(code)
+  if (error) return NextResponse.redirect(`${origin}/fr/login?error=${error.message}`)
+  return NextResponse.redirect(`${origin}/fr/feed`)
 }
