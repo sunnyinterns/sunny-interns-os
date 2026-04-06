@@ -1,7 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { FeedZone } from '@/components/feed/FeedZone'
+import { Button } from '@/components/ui/Button'
+import { NewCaseModal } from '@/components/cases/NewCaseModal'
+import { Toast } from '@/components/ui/Toast'
 import type { FeedData } from '@/lib/types'
 
 function FeedSkeleton() {
@@ -25,8 +28,11 @@ export default function FeedPage() {
   const [feed, setFeed] = useState<FeedData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showModal, setShowModal] = useState(false)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
-  useEffect(() => {
+  const fetchFeed = useCallback(() => {
+    setLoading(true)
     fetch('/api/feed')
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -42,18 +48,33 @@ export default function FeedPage() {
       })
   }, [])
 
+  useEffect(() => {
+    fetchFeed()
+  }, [fetchFeed])
+
+  function handleCaseCreated() {
+    setShowModal(false)
+    setToast({ message: 'Dossier créé avec succès', type: 'success' })
+    fetchFeed()
+  }
+
   return (
     <div className="p-6 max-w-3xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-[#1a1918]">Activité</h1>
-        <p className="text-sm text-zinc-500 mt-0.5">
-          {new Date().toLocaleDateString('fr-FR', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-          })}
-        </p>
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="text-xl font-semibold text-[#1a1918]">Activité</h1>
+          <p className="text-sm text-zinc-500 mt-0.5">
+            {new Date().toLocaleDateString('fr-FR', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })}
+          </p>
+        </div>
+        <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
+          + Nouveau dossier
+        </Button>
       </div>
 
       {loading && <FeedSkeleton />}
@@ -91,6 +112,17 @@ export default function FeedPage() {
             type="completed"
           />
         </div>
+      )}
+
+      {showModal && (
+        <NewCaseModal
+          onClose={() => setShowModal(false)}
+          onSuccess={handleCaseCreated}
+        />
+      )}
+
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
       )}
     </div>
   )
