@@ -16,6 +16,7 @@ interface CaseData {
   arrival_date?: string | null
   return_date?: string | null
   assigned_to?: string | null
+  internship_type?: string | null
 }
 
 function PipelineSkeleton() {

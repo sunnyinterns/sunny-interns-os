@@ -16,6 +16,7 @@ export interface KanbanCase {
   isCritical: boolean
   assignedTo: string | null
   destination: string | null
+  internshipType: string | null
 }
 
 const FUNNEL_STATUSES: { status: CaseStatus; label: string }[] = [
@@ -88,7 +89,7 @@ export async function GET(request: Request) {
   try {
     let query = supabase
       .from('cases')
-      .select('id, first_name, last_name, status, arrival_date, return_date, destination, assigned_to, created_at')
+      .select('id, first_name, last_name, status, arrival_date, return_date, destination, assigned_to, created_at, internship_type')
       .order('arrival_date', { ascending: true })
 
     if (assignedTo) query = query.eq('assigned_to', assignedTo)
@@ -126,6 +127,7 @@ export async function GET(request: Request) {
         isCritical: daysUntil !== null && daysUntil <= 7,
         assignedTo: c.assigned_to ?? null,
         destination: c.destination ?? null,
+        internshipType: (c as Record<string, unknown>).internship_type as string | null ?? null,
       })
     }
 

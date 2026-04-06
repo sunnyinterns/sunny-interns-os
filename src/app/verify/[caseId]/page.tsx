@@ -3,6 +3,14 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 
+interface Partner {
+  id: string
+  name: string
+  logo_url: string | null
+  offer_short: string | null
+  category: string | null
+}
+
 interface VerifyData {
   found: boolean
   isActive?: boolean
@@ -17,13 +25,23 @@ export default function VerifyPage() {
   const params = useParams()
   const caseId = typeof params?.caseId === 'string' ? params.caseId : ''
   const [data, setData] = useState<VerifyData | null>(null)
+  const [partners, setPartners] = useState<Partner[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!caseId) return
     fetch(`/api/verify/${caseId}`)
       .then((r) => r.json())
-      .then((d: unknown) => setData(d as VerifyData))
+      .then((d: unknown) => {
+        const verifyData = d as VerifyData
+        setData(verifyData)
+        if (verifyData.found && verifyData.destination) {
+          const dest = verifyData.destination.toLowerCase()
+          return fetch(`/api/partners?type=on_site&destination=${encodeURIComponent(dest)}`)
+            .then((r) => r.ok ? r.json() as Promise<Partner[]> : Promise.resolve([]))
+            .then((pts) => setPartners(pts))
+        }
+      })
       .catch(() => setData({ found: false }))
       .finally(() => setLoading(false))
   }, [caseId])
@@ -108,6 +126,34 @@ export default function VerifyPage() {
                   </div>
                 )}
               </div>
+
+              {/* On-site partners */}
+              {partners.length > 0 && (
+                <div className="pt-3 border-t border-zinc-100">
+                  <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-2">
+                    Partenaires sur place
+                  </p>
+                  <div className="space-y-2">
+                    {partners.map((p) => (
+                      <div key={p.id} className="flex items-center gap-2">
+                        {p.logo_url ? (
+                          <img src={p.logo_url} alt={p.name} className="w-6 h-6 rounded object-contain flex-shrink-0" />
+                        ) : (
+                          <div className="w-6 h-6 rounded bg-zinc-100 flex items-center justify-center text-xs font-bold text-zinc-400 flex-shrink-0">
+                            {p.name[0]?.toUpperCase()}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-[#1a1918] truncate">{p.name}</p>
+                          {p.offer_short && (
+                            <p className="text-xs text-zinc-400 truncate">{p.offer_short}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Footer */}
               <div className="pt-3 border-t border-zinc-100 text-center">

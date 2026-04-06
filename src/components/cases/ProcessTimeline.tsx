@@ -19,15 +19,24 @@ const PIPELINE_STEPS: { status: CaseStatus; label: string }[] = [
   { status: 'alumni', label: 'Alumni' },
 ]
 
+const VISA_ONLY_STEPS: { status: CaseStatus; label: string }[] = [
+  { status: 'convention_signed', label: 'Documents' },
+  { status: 'visa_in_progress', label: 'Soumission' },
+  { status: 'visa_received', label: 'Visa reçu' },
+  { status: 'archived', label: 'Archivé' },
+]
+
 interface ProcessTimelineProps {
   caseId: string
   currentStatus: CaseStatus
   onStatusChange?: (newStatus: CaseStatus) => void
+  isVisaOnly?: boolean
 }
 
-export function ProcessTimeline({ caseId, currentStatus, onStatusChange }: ProcessTimelineProps) {
+export function ProcessTimeline({ caseId, currentStatus, onStatusChange, isVisaOnly }: ProcessTimelineProps) {
   const [updating, setUpdating] = useState(false)
-  const currentIndex = PIPELINE_STEPS.findIndex((s) => s.status === currentStatus)
+  const steps = isVisaOnly ? VISA_ONLY_STEPS : PIPELINE_STEPS
+  const currentIndex = steps.findIndex((s) => s.status === currentStatus)
 
   async function handleStepClick(status: CaseStatus, index: number) {
     if (index === currentIndex || updating) return
@@ -51,7 +60,7 @@ export function ProcessTimeline({ caseId, currentStatus, onStatusChange }: Proce
   return (
     <div className="overflow-x-auto pb-2">
       <div className="flex items-center gap-0 min-w-max">
-        {PIPELINE_STEPS.map((step, index) => {
+        {steps.map((step, index) => {
           const isPast = index < currentIndex
           const isCurrent = index === currentIndex
           const isFuture = index > currentIndex
@@ -98,7 +107,7 @@ export function ProcessTimeline({ caseId, currentStatus, onStatusChange }: Proce
               </button>
 
               {/* Connector */}
-              {index < PIPELINE_STEPS.length - 1 && (
+              {index < steps.length - 1 && (
                 <div
                   className={[
                     'h-0.5 w-4 flex-shrink-0 -mt-4',

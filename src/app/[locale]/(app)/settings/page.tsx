@@ -53,6 +53,10 @@ const SECTIONS = [
 
 const SECTION_LINKS = [
   { href: 'finances', label: 'Finances' },
+  { href: 'partners', label: 'Partenaires' },
+  { href: 'ugc', label: 'Touchpoints & UGC' },
+  { href: 'email-templates', label: 'Templates email' },
+  { href: 'housing', label: 'Hébergements' },
 ]
 
 function roleBadge(role: string) {

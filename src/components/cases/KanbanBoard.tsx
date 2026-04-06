@@ -48,6 +48,7 @@ interface CaseData {
   arrival_date?: string | null
   return_date?: string | null
   group_id?: string | null
+  internship_type?: string | null
 }
 
 interface KanbanBoardProps {
@@ -150,7 +151,7 @@ export function KanbanBoard({ cases, locale = 'fr' }: KanbanBoardProps) {
                     const group = getGroupForCase(c.group_id)
                     return (
                       <div key={c.id} className="space-y-1">
-                        <InternCard data={c} locale={locale} />
+                        <InternCard data={c} locale={locale} isVisaOnly={c.internship_type === 'visa_only'} />
                         {group && (
                           <div className="px-1">
                             <GroupBadge

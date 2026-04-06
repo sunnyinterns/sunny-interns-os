@@ -140,7 +140,7 @@ export default function CaseDetailPage() {
     )
   }
 
-  const isVisaOnly = caseData.metadata?.visa_only === true
+  const isVisaOnly = caseData.internship_type === 'visa_only'
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'process', label: 'Process' },
     { key: 'profil', label: 'Profil' },
@@ -240,6 +240,7 @@ export default function CaseDetailPage() {
             caseId={caseData.id}
             status={caseData.status}
             activityFeed={caseData.activity_feed ?? []}
+            isVisaOnly={isVisaOnly}
           />
         )}
         {activeTab === 'profil' && (

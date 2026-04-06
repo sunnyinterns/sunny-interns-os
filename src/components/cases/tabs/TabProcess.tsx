@@ -16,9 +16,10 @@ interface TabProcessProps {
   caseId: string
   status: CaseStatus
   activityFeed: ActivityEntry[]
+  isVisaOnly?: boolean
 }
 
-export function TabProcess({ caseId, status: initialStatus, activityFeed }: TabProcessProps) {
+export function TabProcess({ caseId, status: initialStatus, activityFeed, isVisaOnly }: TabProcessProps) {
   const [status, setStatus] = useState<CaseStatus>(initialStatus)
   const [pdfLoading, setPdfLoading] = useState(false)
 
@@ -57,7 +58,7 @@ export function TabProcess({ caseId, status: initialStatus, activityFeed }: TabP
         </Button>
       </div>
       <div>
-        <ProcessTimeline caseId={caseId} currentStatus={status} onStatusChange={setStatus} />
+        <ProcessTimeline caseId={caseId} currentStatus={status} onStatusChange={setStatus} isVisaOnly={isVisaOnly} />
       </div>
 
       <div>

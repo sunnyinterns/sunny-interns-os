@@ -14,6 +14,7 @@ interface CaseCardData {
 interface InternCardProps {
   data: CaseCardData
   locale?: string
+  isVisaOnly?: boolean
 }
 
 function getDaysUntilTag(
@@ -36,7 +37,7 @@ function getInitials(firstName: string, lastName: string): string {
   return `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase()
 }
 
-export function InternCard({ data, locale = 'fr' }: InternCardProps) {
+export function InternCard({ data, locale = 'fr', isVisaOnly }: InternCardProps) {
   const router = useRouter()
   const tag = data.arrival_date ? getDaysUntilTag(data.arrival_date) : null
 
@@ -58,6 +59,11 @@ export function InternCard({ data, locale = 'fr' }: InternCardProps) {
       </div>
 
       <div className="flex items-center gap-1.5 flex-wrap">
+        {isVisaOnly && (
+          <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
+            VISA
+          </span>
+        )}
         {tag && (
           <span className={['text-xs font-bold px-1.5 py-0.5 rounded', tag.color].join(' ')}>
             {tag.label}
