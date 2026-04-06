@@ -131,30 +131,43 @@ export async function GET() {
     feed.completed.length === 0
 
   if (isEmpty) {
+    const now = new Date().toISOString()
     const demoItems: ActivityItem[] = [
       {
-        id: 'demo-welcome',
+        id: 'demo-1',
         caseId: 'demo',
         internId: 'demo',
         internName: 'Sunny Interns',
-        actionType: 'status_update',
-        description: 'Bienvenue sur Sunny Interns OS',
+        actionType: 'info_new_lead',
+        description: 'Créez votre premier dossier stagiaire pour commencer',
         priority: 'normal',
         status: 'active',
-        createdAt: new Date().toISOString(),
-        metadata: { isDemo: true },
+        createdAt: now,
+        metadata: { isDemo: true, title: 'Bienvenue sur Sunny Interns OS 🌴' },
       },
       {
-        id: 'demo-db',
+        id: 'demo-2',
         caseId: 'demo',
         internId: 'demo',
         internName: 'Sunny Interns',
-        actionType: 'status_update',
-        description: 'Base de données configurée',
+        actionType: 'info_status_changed',
+        description: '22 écoles · 30 companies · 22 guesthouses · 28 templates email',
         priority: 'normal',
         status: 'active',
-        createdAt: new Date().toISOString(),
-        metadata: { isDemo: true },
+        createdAt: now,
+        metadata: { isDemo: true, title: 'Base de données configurée ✅' },
+      },
+      {
+        id: 'demo-3',
+        caseId: 'demo',
+        internId: 'demo',
+        internName: 'Sunny Interns',
+        actionType: 'info_new_lead',
+        description: 'Allez sur Pipeline → Nouveau dossier pour démarrer',
+        priority: 'attention',
+        status: 'active',
+        createdAt: now,
+        metadata: { isDemo: true, title: 'Créer votre premier dossier' },
       },
     ]
     return NextResponse.json({
@@ -162,7 +175,7 @@ export async function GET() {
       waiting: demoItems,
       isEmpty: true,
       isDemo: true,
-      stats: { critical: 0, attention: 0, pending: 0, active: 0 },
+      stats: { critical: 0, attention: 1, pending: 2, active: 0 },
     })
   }
 
