@@ -49,13 +49,6 @@ interface CaseDetail {
     passport_expiry?: string
     avatar_url?: string
   } | null
-  jobs?: Array<{
-    id: string
-    title?: string
-    company_id?: string
-    status?: string
-    companies?: { id: string; name: string } | null
-  }>
   activity_feed?: Array<{
     id: string
     action_type: string
@@ -245,13 +238,18 @@ export default function CaseDetailPage() {
           />
         )}
         {activeTab === 'jobs' && (
-          <TabJobs jobs={caseData.jobs ?? []} />
+          <TabJobs
+            caseId={caseData.id}
+            firstName={caseData.first_name}
+            lastName={caseData.last_name}
+          />
         )}
         {activeTab === 'visa' && (
           <TabVisa caseData={caseData} />
         )}
         {activeTab === 'arrivee' && (
           <TabArrivee caseData={{
+            id: caseData.id,
             flight_number: caseData.flight_number,
             flight_arrival_datetime: caseData.flight_arrival_datetime,
             dropoff_address: caseData.dropoff_address,

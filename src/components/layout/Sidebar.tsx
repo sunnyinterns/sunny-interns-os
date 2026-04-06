@@ -58,6 +58,15 @@ const navItems: NavItem[] = [
       </svg>
     ),
   },
+  {
+    href: '/fr/settings/email-templates',
+    label: 'Templates email',
+    icon: (
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+    ),
+  },
 ]
 
 export function Sidebar() {
@@ -65,6 +74,7 @@ export function Sidebar() {
   const router = useRouter()
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userInitials, setUserInitials] = useState('?')
+  const [openJobsCount, setOpenJobsCount] = useState<number | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -81,6 +91,13 @@ export function Sidebar() {
         )
       }
     })
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/jobs?status=open')
+      .then((res) => res.ok ? res.json() as Promise<unknown[]> : Promise.resolve([]))
+      .then((data) => setOpenJobsCount(Array.isArray(data) ? data.length : 0))
+      .catch(() => setOpenJobsCount(null))
   }, [])
 
   async function handleLogout() {
@@ -108,6 +125,7 @@ export function Sidebar() {
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href)
+          const showBadge = item.href.includes('/jobs') && openJobsCount !== null && openJobsCount > 0
           return (
             <Link
               key={item.href}
@@ -116,6 +134,11 @@ export function Sidebar() {
             >
               {item.icon}
               {item.label}
+              {showBadge && (
+                <span className="ml-auto flex-shrink-0 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-[#c8a96e] text-white text-[10px] font-semibold">
+                  {openJobsCount}
+                </span>
+              )}
             </Link>
           )
         })}

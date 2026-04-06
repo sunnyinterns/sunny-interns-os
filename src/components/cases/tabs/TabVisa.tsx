@@ -1,40 +1,40 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+import { VisaChecklist } from '@/components/visa/VisaChecklist'
+import type { VisaDocument } from '@/components/visa/VisaChecklist'
+
 interface TabVisaProps {
   caseData: {
+    id: string
     visa_submitted_at?: string | null
     visa_received_at?: string | null
     visa_type?: string | null
     metadata?: Record<string, unknown>
   }
+  onStatusChange?: () => void
 }
 
-interface ChecklistItem {
-  label: string
-  done: boolean
-}
+export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
+  const [documents, setDocuments] = useState<VisaDocument[]>([])
+  const [loadingDocs, setLoadingDocs] = useState(true)
 
-export function TabVisa({ caseData }: TabVisaProps) {
-  const meta = caseData.metadata ?? {}
+  useEffect(() => {
+    fetch(`/api/visa-tracking/${caseData.id}`)
+      .then((res) => res.ok ? res.json() as Promise<VisaDocument[]> : Promise.resolve([]))
+      .then((data) => { setDocuments(data); setLoadingDocs(false) })
+      .catch(() => { setDocuments([]); setLoadingDocs(false) })
+  }, [caseData.id])
 
-  const checklist: ChecklistItem[] = [
-    { label: 'Photos passeport', done: !!(meta.passport_photos) },
-    { label: 'Passeport scanné', done: !!(meta.passport_scan) },
-    { label: 'Lettre convention signée', done: !!(meta.convention_letter) },
-    { label: 'Formulaire visa rempli', done: !!(meta.visa_form) },
-    { label: 'Visa soumis à l\'agent', done: !!(caseData.visa_submitted_at) },
-    { label: 'Visa reçu', done: !!(caseData.visa_received_at) },
-  ]
-
-  const done = checklist.filter((c) => c.done).length
-  const total = checklist.length
+  const done = documents.filter((d) => d.status === 'validated').length
+  const total = 4 // always 4 docs
 
   return (
     <div className="space-y-4">
-      {/* Progress */}
+      {/* Progress bar */}
       <div className="px-4 py-3 bg-white rounded-xl border border-zinc-100">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-[#1a1918]">Progression</span>
+          <span className="text-sm font-medium text-[#1a1918]">Documents validés</span>
           <span className="text-sm text-zinc-500">{done}/{total}</span>
         </div>
         <div className="w-full h-2 bg-zinc-100 rounded-full overflow-hidden">
@@ -46,31 +46,19 @@ export function TabVisa({ caseData }: TabVisaProps) {
       </div>
 
       {/* Checklist */}
-      <div className="bg-white rounded-xl border border-zinc-100 divide-y divide-zinc-50">
-        {checklist.map((item) => (
-          <div key={item.label} className="flex items-center gap-3 px-4 py-3">
-            <div
-              className={[
-                'w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0',
-                item.done
-                  ? 'bg-[#0d9e75] border-[#0d9e75] text-white'
-                  : 'bg-white border-zinc-200',
-              ].join(' ')}
-            >
-              {item.done && (
-                <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-                  <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-            </div>
-            <span className={['text-sm', item.done ? 'text-[#1a1918]' : 'text-zinc-400'].join(' ')}>
-              {item.label}
-            </span>
-          </div>
-        ))}
-      </div>
+      {loadingDocs ? (
+        <div className="space-y-2 animate-pulse">
+          {[1, 2, 3, 4].map((i) => <div key={i} className="h-14 bg-zinc-100 rounded-xl" />)}
+        </div>
+      ) : (
+        <VisaChecklist
+          caseId={caseData.id}
+          documents={documents}
+          onReadyForVisa={onStatusChange}
+        />
+      )}
 
-      {/* Dates */}
+      {/* Visa dates */}
       {(caseData.visa_submitted_at || caseData.visa_received_at) && (
         <div className="bg-white rounded-xl border border-zinc-100 divide-y divide-zinc-50">
           {caseData.visa_submitted_at && (
