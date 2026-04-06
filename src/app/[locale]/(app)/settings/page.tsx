@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
+import Link from 'next/link'
+import { useParams } from 'next/navigation'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -49,6 +51,10 @@ const SECTIONS = [
   { id: 'notifications', label: 'Notifications' },
 ]
 
+const SECTION_LINKS = [
+  { href: 'finances', label: 'Finances' },
+]
+
 function roleBadge(role: string) {
   if (role === 'admin') return { label: 'Admin', bg: 'bg-amber-100', text: 'text-amber-800' }
   if (role === 'manager') return { label: 'Manager', bg: 'bg-blue-100', text: 'text-blue-700' }
@@ -58,6 +64,8 @@ function roleBadge(role: string) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
+  const params = useParams()
+  const locale = typeof params?.locale === 'string' ? params.locale : 'fr'
   const [activeSection, setActiveSection] = useState('generales')
 
   // scroll spy
@@ -103,6 +111,19 @@ export default function SettingsPage() {
               >
                 {label}
               </button>
+            </li>
+          ))}
+          <li className="pt-2 border-t border-zinc-100 mt-2">
+            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400 mb-2 px-3">Modules</p>
+          </li>
+          {SECTION_LINKS.map(({ href, label }) => (
+            <li key={href}>
+              <Link
+                href={`/${locale}/settings/${href}`}
+                className="block w-full text-left text-sm px-3 py-2 rounded-lg transition-colors text-[#1a1918] hover:bg-zinc-100"
+              >
+                {label}
+              </Link>
             </li>
           ))}
         </ul>
