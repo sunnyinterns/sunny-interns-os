@@ -11,6 +11,7 @@ import { TabJobs } from '@/components/cases/tabs/TabJobs'
 import { TabVisa } from '@/components/cases/tabs/TabVisa'
 import { TabArrivee } from '@/components/cases/tabs/TabArrivee'
 import { TabFacturation } from '@/components/cases/tabs/TabFacturation'
+import { InternCardDigital } from '@/components/cases/InternCardDigital'
 import type { CaseStatus } from '@/lib/types'
 
 // Minimal case shape from API
@@ -103,6 +104,7 @@ export default function CaseDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<TabKey>('process')
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showInternCard, setShowInternCard] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -193,6 +195,15 @@ export default function CaseDetailPage() {
 
           {/* Actions */}
           <div className="flex items-center gap-2 flex-shrink-0">
+            {caseData.status === 'active' && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowInternCard(true)}
+              >
+                Carte stagiaire
+              </Button>
+            )}
             <Button
               variant="secondary"
               size="sm"
@@ -270,6 +281,34 @@ export default function CaseDetailPage() {
           onClose={() => setShowEditModal(false)}
           onSuccess={() => { setShowEditModal(false); window.location.reload() }}
         />
+      )}
+
+      {showInternCard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowInternCard(false)}>
+          <div onClick={(e) => e.stopPropagation()}>
+            <InternCardDigital
+              caseData={{
+                id: caseData.id,
+                status: caseData.status,
+                arrival_date: caseData.arrival_date,
+                return_date: caseData.return_date,
+                destination: null,
+                interns: caseData.interns ? {
+                  first_name: caseData.interns.first_name,
+                  last_name: caseData.interns.last_name,
+                  email: caseData.interns.email,
+                  avatar_url: caseData.interns.avatar_url,
+                } : null,
+              }}
+            />
+            <button
+              onClick={() => setShowInternCard(false)}
+              className="mt-4 w-full text-center text-sm text-white/70 hover:text-white"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )
