@@ -261,7 +261,7 @@ export default function CaseDetailPage() {
           }} />
         )}
         {activeTab === 'facturation' && (
-          <TabFacturation caseData={caseData} />
+          <TabFacturation caseId={caseData.id} />
         )}
       </div>
 
