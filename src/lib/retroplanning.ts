@@ -42,3 +42,67 @@ export function getStayDurationAlert(durationDays: number): 'critical' | 'attent
   if (durationDays >= 165) return 'attention'
   return null
 }
+
+export interface RetroPlanningAlert {
+  caseId: string
+  label: string
+  type: 'critical' | 'attention'
+  daysUntilArrival: number
+  action: string
+}
+
+/**
+ * Returns alerts for a case based on retro-planning rules.
+ * TEST: calculateStayDuration(new Date('2026-04-03'), new Date('2026-09-16')) === 166
+ */
+export function getRetroPlanningAlerts(opts: {
+  caseId: string
+  arrivalDate: Date
+  hasTicket: boolean
+  hasPayment: boolean
+  hasFlight: boolean
+  stayDurationDays: number
+}): RetroPlanningAlert[] {
+  const alerts: RetroPlanningAlert[] = []
+  const daysUntil = getDaysUntil(opts.arrivalDate)
+
+  if (opts.stayDurationDays > 175) {
+    alerts.push({
+      caseId: opts.caseId,
+      label: 'Séjour > 175j — VISA INVALIDE',
+      type: 'critical',
+      daysUntilArrival: daysUntil,
+      action: 'Ajuster la date de retour',
+    })
+  } else if (opts.stayDurationDays >= 165) {
+    alerts.push({
+      caseId: opts.caseId,
+      label: `Séjour ${opts.stayDurationDays}j — proche limite 175j`,
+      type: 'attention',
+      daysUntilArrival: daysUntil,
+      action: 'Vérifier les dates',
+    })
+  }
+
+  if (daysUntil <= 40 && !opts.hasTicket) {
+    alerts.push({
+      caseId: opts.caseId,
+      label: 'J-40 sans billet confirmé',
+      type: 'attention',
+      daysUntilArrival: daysUntil,
+      action: 'Confirmer le billet',
+    })
+  }
+
+  if (daysUntil <= 30 && !opts.hasPayment) {
+    alerts.push({
+      caseId: opts.caseId,
+      label: 'J-30 sans paiement reçu',
+      type: 'critical',
+      daysUntilArrival: daysUntil,
+      action: 'Relancer le paiement',
+    })
+  }
+
+  return alerts
+}
