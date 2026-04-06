@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { FeedZone } from '@/components/feed/FeedZone'
+import { EmptyFeed } from '@/components/feed/EmptyFeed'
 import { Button } from '@/components/ui/Button'
 import { NewCaseModal } from '@/components/cases/NewCaseModal'
 import { Toast } from '@/components/ui/Toast'
@@ -85,7 +86,11 @@ export default function FeedPage() {
         </div>
       )}
 
-      {feed && (
+      {feed && feed.isEmpty && (
+        <EmptyFeed onCreateCase={() => setShowModal(true)} />
+      )}
+
+      {feed && !feed.isEmpty && (
         <div className="space-y-8">
           <FeedZone
             title="Aujourd'hui"

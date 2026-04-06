@@ -142,7 +142,15 @@ export function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
-          const isActive = pathname.startsWith(item.href)
+          const isActive =
+            pathname === item.href ||
+            (pathname.startsWith(item.href + '/') &&
+              !navItems.some(
+                (other) =>
+                  other.href !== item.href &&
+                  other.href.length > item.href.length &&
+                  (pathname === other.href || pathname.startsWith(other.href + '/'))
+              ))
           const showBadge = item.href.includes('/jobs') && openJobsCount !== null && openJobsCount > 0
           return (
             <Link

@@ -124,5 +124,15 @@ export async function GET() {
     // Cases table not yet created — return empty feed gracefully
   }
 
-  return NextResponse.json(feed)
+  const isEmpty =
+    feed.today.length === 0 &&
+    feed.todo.length === 0 &&
+    feed.waiting.length === 0 &&
+    feed.completed.length === 0
+
+  return NextResponse.json({
+    ...feed,
+    isEmpty,
+    stats: { critical: 0, attention: 0, pending: 0, active: 0 },
+  })
 }

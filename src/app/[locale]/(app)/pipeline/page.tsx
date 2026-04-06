@@ -124,7 +124,26 @@ export default function PipelinePage() {
             Erreur : {error}
           </div>
         )}
-        {!loading && !error && (
+        {!loading && !error && cases.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <div className="w-14 h-14 rounded-2xl bg-[#c8a96e]/10 flex items-center justify-center mb-5">
+              <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#c8a96e" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+              </svg>
+            </div>
+            <h2 className="text-base font-semibold text-[#1a1918] mb-2">Pipeline vide</h2>
+            <p className="text-sm text-zinc-400 max-w-xs mb-6">
+              Aucun dossier dans le pipeline. Commencez par créer votre premier stagiaire.
+            </p>
+            <button
+              onClick={() => setShowModal(true)}
+              className="px-4 py-2 bg-[#c8a96e] hover:bg-[#b8994e] text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              + Créer un premier dossier
+            </button>
+          </div>
+        )}
+        {!loading && !error && cases.length > 0 && (
           <KanbanBoard cases={cases} locale={locale} />
         )}
       </div>

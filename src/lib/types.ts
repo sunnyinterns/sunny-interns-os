@@ -40,4 +40,11 @@ export interface FeedData {
   todo: ActivityItem[]
   waiting: ActivityItem[]
   completed: ActivityItem[]
+  isEmpty?: boolean
+  stats?: {
+    critical: number
+    attention: number
+    pending: number
+    active: number
+  }
 }

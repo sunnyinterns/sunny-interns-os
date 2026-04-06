@@ -40,6 +40,6 @@ body {
 }
 
 .sidebar-nav-item.active {
-  color: white;
-  background-color: rgba(255, 255, 255, 0.1);
+  color: #c8a96e;
+  background-color: rgba(200, 169, 110, 0.15);
 }
