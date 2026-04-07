@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 
 interface Contact {
   id: string
@@ -29,16 +28,29 @@ const TYPE_COLORS: Record<string, string> = {
   school_contact: 'bg-green-100 text-green-700',
 }
 
-const inputCls = 'px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white text-[#1a1918] focus:outline-none focus:ring-2 focus:ring-[#c8a96e]'
+const JOB_STATUS_LABELS: Record<string, string> = {
+  open: 'Cherche',
+  staffed: 'Pourvu',
+  cancelled: 'Annulé',
+  closed: 'Fermé',
+}
+
+const inputCls = 'px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white text-[#1a1918] focus:outline-none focus:ring-2 focus:ring-[#c8a96e] w-full'
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [filterType, setFilterType] = useState<string>('all')
+  const [filterCompany, setFilterCompany] = useState('')
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
+  const [editingField, setEditingField] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState('')
+  const [creatingJob, setCreatingJob] = useState(false)
+  const [jobForm, setJobForm] = useState({ title: '', wished_start_date: '', wished_duration_months: '4' })
   const [form, setForm] = useState({
     first_name: '', last_name: '', job_title: '', email: '', whatsapp: '',
     company_id: '', contact_type: 'employer',
@@ -57,6 +69,14 @@ export default function ContactsPage() {
 
   useEffect(() => { void load() }, [])
 
+  // Refresh selected contact when contacts list updates
+  useEffect(() => {
+    if (selectedContact) {
+      const updated = contacts.find(c => c.id === selectedContact.id)
+      if (updated) setSelectedContact(updated)
+    }
+  }, [contacts]) // eslint-disable-line react-hooks/exhaustive-deps
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
@@ -73,14 +93,51 @@ export default function ContactsPage() {
     setSaving(false)
   }
 
+  async function patchContact(id: string, patch: Record<string, unknown>) {
+    const res = await fetch(`/api/contacts/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    })
+    if (res.ok) void load()
+  }
+
+  async function saveEditField() {
+    if (!selectedContact || !editingField) return
+    await patchContact(selectedContact.id, { [editingField]: editValue })
+    setEditingField(null)
+  }
+
+  async function createJobForContact() {
+    if (!selectedContact || !jobForm.title) return
+    setCreatingJob(true)
+    const body = {
+      title: jobForm.title,
+      contact_id: selectedContact.id,
+      company_id: selectedContact.companies?.id ?? null,
+      wished_start_date: jobForm.wished_start_date || null,
+      wished_duration_months: Number(jobForm.wished_duration_months),
+      status: 'open',
+    }
+    await fetch('/api/jobs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    setJobForm({ title: '', wished_start_date: '', wished_duration_months: '4' })
+    setCreatingJob(false)
+    void load()
+  }
+
   const filtered = contacts.filter((c) => {
     const matchType = filterType === 'all' || c.contact_type === filterType
+    const matchCompany = !filterCompany || c.companies?.id === filterCompany
     const q = search.toLowerCase()
     const matchSearch = !q ||
       `${c.first_name} ${c.last_name ?? ''}`.toLowerCase().includes(q) ||
       (c.email ?? '').toLowerCase().includes(q) ||
       (c.companies?.name ?? '').toLowerCase().includes(q)
-    return matchType && matchSearch
+    return matchType && matchCompany && matchSearch
   })
 
   function initials(c: Contact) {
@@ -88,88 +145,221 @@ export default function ContactsPage() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-bold text-[#1a1918]">Contacts</h1>
-          <p className="text-sm text-zinc-500 mt-0.5">{contacts.length} contact{contacts.length !== 1 ? 's' : ''}</p>
+    <div className="flex h-full">
+      {/* Main list */}
+      <div className={['flex-1 min-w-0 p-6 overflow-auto', selectedContact ? 'max-w-[calc(100%-380px)]' : ''].join(' ')}>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-xl font-bold text-[#1a1918]">Contacts</h1>
+            <p className="text-sm text-zinc-500 mt-0.5">{contacts.length} contact{contacts.length !== 1 ? 's' : ''}</p>
+          </div>
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-4 py-2 bg-[#c8a96e] text-white text-sm font-medium rounded-lg hover:bg-[#b8945a] transition-colors"
+          >
+            + Nouveau contact
+          </button>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-[#c8a96e] text-white text-sm font-medium rounded-lg hover:bg-[#b8945a] transition-colors"
-        >
-          + Nouveau contact
-        </button>
+
+        {/* Filtres */}
+        <div className="flex gap-3 mb-5 flex-wrap">
+          <input
+            type="text"
+            placeholder="Rechercher…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e] w-48"
+          />
+          <select
+            value={filterCompany}
+            onChange={e => setFilterCompany(e.target.value)}
+            className="px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+          >
+            <option value="">Toutes les entreprises</option>
+            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <div className="flex gap-1 bg-zinc-100 rounded-xl p-1">
+            {(['all', 'employer', 'promo_partner', 'visa_agent', 'school_contact'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setFilterType(t)}
+                className={['px-3 py-1.5 text-xs rounded-lg transition-colors', filterType === t ? 'bg-white shadow-sm font-medium text-[#1a1918]' : 'text-zinc-500 hover:text-zinc-700'].join(' ')}
+              >
+                {t === 'all' ? 'Tous' : TYPE_LABELS[t]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Liste */}
+        {loading ? (
+          <div className="space-y-2">
+            {[1,2,3,4].map(i => <div key={i} className="h-16 bg-zinc-100 rounded-xl animate-pulse" />)}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-16 text-zinc-400">
+            <p className="text-lg font-medium text-[#1a1918] mb-1">Aucun contact</p>
+            <p className="text-sm">Créez votre premier contact employeur</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {filtered.map((c) => {
+              const activeJobs = (c.jobs ?? []).filter(j => j.status === 'open').length
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedContact(c)}
+                  className={[
+                    'w-full text-left bg-white border rounded-xl px-4 py-3 flex items-center gap-4 hover:border-zinc-300 transition-colors',
+                    selectedContact?.id === c.id ? 'border-[#c8a96e] shadow-sm' : 'border-zinc-100',
+                  ].join(' ')}
+                >
+                  <div className="w-9 h-9 rounded-full bg-[#c8a96e]/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-[#c8a96e] text-sm font-semibold">{initials(c)}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-[#1a1918]">{c.first_name} {c.last_name ?? ''}</p>
+                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${TYPE_COLORS[c.contact_type] ?? 'bg-zinc-100 text-zinc-600'}`}>
+                        {TYPE_LABELS[c.contact_type] ?? c.contact_type}
+                      </span>
+                      {!c.is_active && (
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-medium">Inactif</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-zinc-500 mt-0.5">
+                      {[c.job_title, c.companies?.name].filter(Boolean).join(' · ')}
+                    </p>
+                  </div>
+                  <div className="text-right text-xs text-zinc-500 space-y-0.5 flex-shrink-0">
+                    {c.email && <p>{c.email}</p>}
+                    {c.whatsapp && <p>{c.whatsapp}</p>}
+                    {activeJobs > 0 && (
+                      <p className="text-[#c8a96e] font-medium">{activeJobs} offre{activeJobs > 1 ? 's' : ''} active{activeJobs > 1 ? 's' : ''}</p>
+                    )}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-3 mb-5 flex-wrap">
-        <input
-          type="text"
-          placeholder="Rechercher…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e] w-56"
-        />
-        <div className="flex gap-1 bg-zinc-100 rounded-xl p-1">
-          {(['all', 'employer', 'promo_partner', 'visa_agent', 'school_contact'] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setFilterType(t)}
-              className={['px-3 py-1.5 text-sm rounded-lg transition-colors', filterType === t ? 'bg-white shadow-sm font-medium text-[#1a1918]' : 'text-zinc-500 hover:text-zinc-700'].join(' ')}
-            >
-              {t === 'all' ? 'Tous' : TYPE_LABELS[t]}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Drawer latéral */}
+      {selectedContact && (
+        <div className="w-[380px] flex-shrink-0 border-l border-zinc-100 bg-white overflow-auto flex flex-col">
+          {/* Header drawer */}
+          <div className="px-5 py-4 border-b border-zinc-100 flex items-start justify-between gap-3">
+            <div>
+              <div className="w-10 h-10 rounded-full bg-[#c8a96e]/20 flex items-center justify-center mb-2">
+                <span className="text-[#c8a96e] text-sm font-semibold">{initials(selectedContact)}</span>
+              </div>
+              <h2 className="text-base font-semibold text-[#1a1918]">{selectedContact.first_name} {selectedContact.last_name ?? ''}</h2>
+              <p className="text-xs text-zinc-500">{selectedContact.job_title ?? ''}</p>
+            </div>
+            <button onClick={() => setSelectedContact(null)} className="text-zinc-400 hover:text-zinc-600 text-xl mt-1">×</button>
+          </div>
 
-      {/* List */}
-      {loading ? (
-        <div className="space-y-2">
-          {[1,2,3,4].map(i => <div key={i} className="h-16 bg-zinc-100 rounded-xl animate-pulse" />)}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-zinc-400">
-          <p className="text-lg font-medium text-[#1a1918] mb-1">Aucun contact</p>
-          <p className="text-sm">Créez votre premier contact employeur</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {filtered.map((c) => (
-            <div key={c.id} className="bg-white border border-zinc-100 rounded-xl px-4 py-3 flex items-center gap-4 hover:border-zinc-200 transition-colors">
-              <div className="w-9 h-9 rounded-full bg-[#c8a96e]/20 flex items-center justify-center flex-shrink-0">
-                <span className="text-[#c8a96e] text-sm font-semibold">{initials(c)}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-[#1a1918]">{c.first_name} {c.last_name ?? ''}</p>
-                  <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${TYPE_COLORS[c.contact_type] ?? 'bg-zinc-100 text-zinc-600'}`}>
-                    {TYPE_LABELS[c.contact_type] ?? c.contact_type}
-                  </span>
-                  {!c.is_active && (
-                    <span className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-medium">Inactif</span>
-                  )}
-                </div>
-                <p className="text-xs text-zinc-500 mt-0.5">
-                  {[c.job_title, c.companies?.name].filter(Boolean).join(' · ')}
-                </p>
-              </div>
-              <div className="text-right text-xs text-zinc-500 space-y-0.5 flex-shrink-0">
-                {c.email && <p>{c.email}</p>}
-                {c.whatsapp && <p>{c.whatsapp}</p>}
-                {c.jobs && c.jobs.length > 0 && (
-                  <p className="text-[#c8a96e]">{c.jobs.length} offre{c.jobs.length > 1 ? 's' : ''}</p>
+          {/* Infos éditables */}
+          <div className="px-5 py-4 space-y-3 border-b border-zinc-100">
+            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-1">Informations</p>
+            {[
+              { field: 'email', label: 'Email', value: selectedContact.email ?? '' },
+              { field: 'whatsapp', label: 'WhatsApp', value: selectedContact.whatsapp ?? '' },
+              { field: 'job_title', label: 'Titre / Poste', value: selectedContact.job_title ?? '' },
+            ].map(({ field, label, value }) => (
+              <div key={field}>
+                <p className="text-xs text-zinc-400 mb-0.5">{label}</p>
+                {editingField === field ? (
+                  <div className="flex gap-1">
+                    <input
+                      autoFocus
+                      className="flex-1 px-2 py-1 text-sm border border-[#c8a96e] rounded-lg focus:outline-none"
+                      value={editValue}
+                      onChange={e => setEditValue(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') void saveEditField(); if (e.key === 'Escape') setEditingField(null) }}
+                    />
+                    <button onClick={() => void saveEditField()} className="text-xs px-2 py-1 bg-[#c8a96e] text-white rounded-lg">✓</button>
+                    <button onClick={() => setEditingField(null)} className="text-xs px-2 py-1 bg-zinc-100 rounded-lg">×</button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setEditingField(field); setEditValue(value) }}
+                    className="text-sm text-[#1a1918] hover:text-[#c8a96e] transition-colors text-left w-full"
+                  >
+                    {value || <span className="text-zinc-300 italic">Cliquer pour modifier</span>}
+                  </button>
                 )}
               </div>
-              {c.companies && (
-                <Link href={`/fr/companies/${c.companies.id}`} className="text-xs text-zinc-400 hover:text-[#c8a96e] transition-colors flex-shrink-0">
-                  →
-                </Link>
-              )}
+            ))}
+            {selectedContact.companies && (
+              <div>
+                <p className="text-xs text-zinc-400 mb-0.5">Entreprise</p>
+                <p className="text-sm text-[#1a1918] font-medium">{selectedContact.companies.name}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Jobs */}
+          <div className="px-5 py-4 flex-1">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Offres de stage</p>
+              <span className="text-xs text-zinc-500">{(selectedContact.jobs ?? []).length}</span>
             </div>
-          ))}
+            {(selectedContact.jobs ?? []).length === 0 ? (
+              <p className="text-xs text-zinc-400 italic mb-3">Aucune offre pour ce contact</p>
+            ) : (
+              <div className="space-y-2 mb-4">
+                {(selectedContact.jobs ?? []).map(job => (
+                  <div key={job.id} className="flex items-center justify-between gap-2 py-2 border-b border-zinc-50">
+                    <p className="text-sm text-[#1a1918] truncate">{job.title}</p>
+                    <span className={[
+                      'text-xs px-1.5 py-0.5 rounded flex-shrink-0',
+                      job.status === 'open' ? 'bg-green-100 text-[#0d9e75]' :
+                      job.status === 'staffed' ? 'bg-blue-100 text-blue-700' :
+                      'bg-zinc-100 text-zinc-500'
+                    ].join(' ')}>
+                      {JOB_STATUS_LABELS[job.status] ?? job.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Créer un job pour ce contact */}
+            <div className="bg-zinc-50 rounded-xl p-3 space-y-2">
+              <p className="text-xs font-medium text-zinc-600">Créer un job pour ce contact</p>
+              <input
+                placeholder="Titre du poste *"
+                value={jobForm.title}
+                onChange={e => setJobForm(p => ({...p, title: e.target.value}))}
+                className="w-full px-2 py-1.5 text-sm border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#c8a96e]"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="date"
+                  value={jobForm.wished_start_date}
+                  onChange={e => setJobForm(p => ({...p, wished_start_date: e.target.value}))}
+                  className="px-2 py-1.5 text-xs border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#c8a96e]"
+                />
+                <input
+                  type="number"
+                  placeholder="Durée (mois)"
+                  value={jobForm.wished_duration_months}
+                  onChange={e => setJobForm(p => ({...p, wished_duration_months: e.target.value}))}
+                  className="px-2 py-1.5 text-xs border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#c8a96e]"
+                />
+              </div>
+              <button
+                onClick={() => void createJobForContact()}
+                disabled={creatingJob || !jobForm.title}
+                className="w-full py-2 text-xs font-medium bg-[#c8a96e] text-white rounded-lg hover:bg-[#b8945a] disabled:opacity-50 transition-colors"
+              >
+                {creatingJob ? 'Création…' : 'Créer l\'offre'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -215,7 +405,7 @@ export default function ContactsPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-zinc-600 mb-1">Entreprise</label>
-                <select className={inputCls + ' w-full'} value={form.company_id} onChange={e => setForm(p => ({...p, company_id: e.target.value}))}>
+                <select className={inputCls} value={form.company_id} onChange={e => setForm(p => ({...p, company_id: e.target.value}))}>
                   <option value="">— Aucune —</option>
                   {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>

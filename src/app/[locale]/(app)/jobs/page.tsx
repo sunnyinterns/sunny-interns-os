@@ -2,17 +2,17 @@
 
 import { useEffect, useState } from 'react'
 
-interface Department { id: string; name: string; slug: string; categories: string[] | null }
+interface Department { id: string; name: string; slug: string }
 interface Contact { id: string; first_name: string; last_name: string | null; job_title: string | null; companies: { id: string; name: string } | null }
 interface Job {
   id: string
   title: string
   status: string
-  department?: string
-  department_name?: string
-  company_name?: string
-  contact_name?: string
-  wished_start_date?: string
+  wished_start_date?: string | null
+  wished_duration_months?: number | null
+  is_remote?: boolean
+  description?: string | null
+  submissions_count?: number
   contacts?: { id: string; first_name: string; last_name: string | null } | null
   companies?: { id: string; name: string } | null
   job_departments?: { id: string; name: string } | null
@@ -33,11 +33,12 @@ export default function JobsPage() {
   const [loading, setLoading] = useState(true)
   const [filterDept, setFilterDept] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
+  const [filterCompany, setFilterCompany] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
     title: '', contact_id: '', company_id: '', department_id: '',
-    wished_start_date: '', wished_duration_months: '4', description: '', status: 'open',
+    wished_start_date: '', wished_duration_months: '4', description: '', status: 'open', is_remote: false,
   })
 
   // Auto-fill company from selected contact
@@ -74,13 +75,14 @@ export default function JobsPage() {
       contact_id: form.contact_id || null,
       company_id: form.company_id || null,
       department_id: form.department_id || null,
+      wished_start_date: form.wished_start_date || null,
     }
     const res = await fetch('/api/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     if (res.ok) {
       const j = await res.json() as Job
       setJobs(p => [j, ...p])
       setShowModal(false)
-      setForm({ title: '', contact_id: '', company_id: '', department_id: '', wished_start_date: '', wished_duration_months: '4', description: '', status: 'open' })
+      setForm({ title: '', contact_id: '', company_id: '', department_id: '', wished_start_date: '', wished_duration_months: '4', description: '', status: 'open', is_remote: false })
     }
     setSaving(false)
   }
@@ -88,13 +90,14 @@ export default function JobsPage() {
   const filtered = jobs.filter(j => {
     const matchDept = !filterDept || j.job_departments?.id === filterDept
     const matchStatus = filterStatus === 'all' || j.status === filterStatus
-    return matchDept && matchStatus
+    const matchCompany = !filterCompany || j.companies?.id === filterCompany
+    return matchDept && matchStatus && matchCompany
   })
 
   const stats = {
     looking: jobs.filter(j => j.status === 'open').length,
     staffed: jobs.filter(j => j.status === 'staffed').length,
-    cancelled: jobs.filter(j => j.status === 'cancelled').length,
+    cancelled: jobs.filter(j => ['cancelled', 'closed'].includes(j.status)).length,
   }
 
   const inputCls = 'w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm bg-white text-[#1a1918] focus:outline-none focus:ring-2 focus:ring-[#c8a96e]'
@@ -112,7 +115,7 @@ export default function JobsPage() {
         </button>
       </div>
 
-      {/* Filters */}
+      {/* Filtres */}
       <div className="flex gap-3 mb-5 flex-wrap items-center">
         <select
           value={filterDept}
@@ -121,6 +124,14 @@ export default function JobsPage() {
         >
           <option value="">Tous les départements</option>
           {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+        </select>
+        <select
+          value={filterCompany}
+          onChange={e => setFilterCompany(e.target.value)}
+          className="px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+        >
+          <option value="">Toutes les entreprises</option>
+          {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         <div className="flex gap-1 bg-zinc-100 rounded-xl p-1">
           {[['all', 'Tous'], ['open', 'Cherche'], ['staffed', 'Pourvus'], ['cancelled', 'Annulés']].map(([v, l]) => (
@@ -135,7 +146,7 @@ export default function JobsPage() {
         </div>
       </div>
 
-      {/* List */}
+      {/* Liste */}
       {loading ? (
         <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-16 bg-zinc-100 rounded-xl animate-pulse" />)}</div>
       ) : filtered.length === 0 ? (
@@ -148,18 +159,32 @@ export default function JobsPage() {
         <div className="space-y-2">
           {filtered.map(j => {
             const badge = STATUS_BADGE[j.status] ?? STATUS_BADGE.closed
-            const contactLine = j.contact_name ?? j.contacts ? `${(j.contacts as { first_name: string; last_name: string | null } | null)?.first_name ?? ''} ${(j.contacts as { first_name: string; last_name: string | null } | null)?.last_name ?? ''}`.trim() : null
+            const contactName = j.contacts ? `${j.contacts.first_name} ${j.contacts.last_name ?? ''}`.trim() : null
             return (
-              <div key={j.id} className="bg-white border border-zinc-100 rounded-xl px-4 py-3 flex items-center gap-3">
+              <div key={j.id} className="bg-white border border-zinc-100 rounded-xl px-4 py-3 flex items-center gap-3 hover:border-zinc-200 transition-colors">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[#1a1918]">{j.title}</p>
-                  <p className="text-xs text-zinc-500 mt-0.5">
-                    {[j.department_name ?? j.department, contactLine ?? j.contact_name, j.company_name].filter(Boolean).join(' · ')}
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <p className="text-sm font-medium text-[#1a1918]">{j.title}</p>
+                    {j.is_remote && (
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-violet-100 text-violet-700 font-medium">Remote</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-zinc-500">
+                    {[j.job_departments?.name, contactName, j.companies?.name].filter(Boolean).join(' · ')}
+                    {j.wished_start_date && ` · ${new Date(j.wished_start_date).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}`}
+                    {j.wished_duration_months && ` · ${j.wished_duration_months} mois`}
                   </p>
                 </div>
-                <span className="text-xs px-2 py-0.5 rounded font-medium flex-shrink-0" style={{ background: badge.bg, color: badge.color }}>
-                  {badge.label}
-                </span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {(j.submissions_count ?? 0) > 0 && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-[#c8a96e]/10 text-[#c8a96e] font-medium">
+                      {j.submissions_count} candidat{(j.submissions_count ?? 0) > 1 ? 's' : ''}
+                    </span>
+                  )}
+                  <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: badge.bg, color: badge.color }}>
+                    {badge.label}
+                  </span>
+                </div>
               </div>
             )
           })}
@@ -180,7 +205,6 @@ export default function JobsPage() {
                 <input required className={inputCls} placeholder="Ex: Community Manager" value={form.title} onChange={e => setForm(p => ({...p, title: e.target.value}))} />
               </div>
 
-              {/* Contact en premier — company s'auto-remplit */}
               <div>
                 <label className="block text-xs font-medium text-zinc-600 mb-1">Contact employeur</label>
                 <select className={inputCls} value={form.contact_id} onChange={e => setForm(p => ({...p, contact_id: e.target.value}))}>
@@ -216,7 +240,7 @@ export default function JobsPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-zinc-600 mb-1">Durée (mois)</label>
-                  <input type="number" className={inputCls} value={form.wished_duration_months} onChange={e => setForm(p => ({...p, wished_duration_months: e.target.value}))} />
+                  <input type="number" className={inputCls} min={1} max={24} value={form.wished_duration_months} onChange={e => setForm(p => ({...p, wished_duration_months: e.target.value}))} />
                 </div>
               </div>
 
@@ -228,6 +252,20 @@ export default function JobsPage() {
                   <option value="cancelled">Annulé</option>
                 </select>
               </div>
+
+              {/* Remote toggle */}
+              <label className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-zinc-50 transition-colors">
+                <div
+                  className={['w-10 h-6 rounded-full transition-colors relative', form.is_remote ? 'bg-violet-500' : 'bg-zinc-200'].join(' ')}
+                  onClick={() => setForm(p => ({...p, is_remote: !p.is_remote}))}
+                >
+                  <div className={['absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform', form.is_remote ? 'translate-x-5' : 'translate-x-1'].join(' ')} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-[#1a1918]">Remote</p>
+                  <p className="text-xs text-zinc-400">Stage en télétravail</p>
+                </div>
+              </label>
 
               <div>
                 <label className="block text-xs font-medium text-zinc-600 mb-1">Description</label>
