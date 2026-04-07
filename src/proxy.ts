@@ -8,8 +8,13 @@ const intlMiddleware = createIntlMiddleware(routing)
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
-  // Skip static files
-  if (pathname.startsWith('/_next') || pathname.startsWith('/api/auth')) {
+  // Skip static files and public routes (no auth, no locale redirect)
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/book') ||
+    pathname.startsWith('/portal')
+  ) {
     return
   }
 

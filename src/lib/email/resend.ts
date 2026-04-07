@@ -2,13 +2,14 @@ import { Resend } from 'resend'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
-const FROM = 'Sunny Interns <noreply@sunnyinterns.com>'
+const FROM = 'Charly de Bali Interns <team@bali-interns.com>'
 const CHARLY = 'charly@bali-interns.com'
 
 // ─── Send helper (graceful no-op if not configured) ──────────────────────────
 
 async function send(opts: {
   to: string | string[]
+  cc?: string | string[]
   subject: string
   html: string
 }): Promise<void> {
@@ -20,6 +21,7 @@ async function send(opts: {
     await resend.emails.send({
       from: FROM,
       to: Array.isArray(opts.to) ? opts.to : [opts.to],
+      ...(opts.cc ? { cc: Array.isArray(opts.cc) ? opts.cc : [opts.cc] } : {}),
       subject: opts.subject,
       html: opts.html,
     })
@@ -151,4 +153,44 @@ export async function sendPaymentRequest(params: {
       </div>
     `,
   })
+}
+
+export async function sendJobRetenu(p: { internEmail: string; prenom: string; companyName: string; portalToken: string }) {
+  const base = (process.env.NEXT_PUBLIC_APP_URL ?? '') + '/portal/' + p.portalToken
+  await Promise.all([
+    send({ to: p.internEmail, cc: CHARLY, subject: `Bali Interns - 🍾 Tu es pris chez ${p.companyName} !`, html: `<p>Félicitations <strong>${p.prenom}</strong> ! Tu es retenu pour ton stage chez <strong>${p.companyName}</strong> !</p><p>Achète tes billets d'avion : <a href="${base}/billet">Formulaire Billets d'Avion</a></p><p>Une fois les billets achetés, nous lancerons la procédure visa.</p><p>Charly</p>` }),
+    send({ to: p.internEmail, cc: CHARLY, subject: `Bali Interns - Procédure: Signer la lettre d'engagement ${p.companyName} !`, html: `<p>Hey <strong>${p.prenom}</strong>, merci de signer notre Lettre d'Engagement : <a href="${base}/engagement">Formulaire Lettre d'Engagement</a></p>` }),
+    send({ to: p.internEmail, cc: CHARLY, subject: `Bali Interns - Lettre d'engagement à signer`, html: `<p>Hey <strong>${p.prenom}</strong>, signe ta lettre d'engagement : <a href="${base}/engagement">Formulaire</a></p><p>team@bali-interns.com</p>` }),
+  ])
+}
+
+export async function sendDossierPretAgent(p: { prenom: string; nom: string; caseUrl: string }) {
+  await send({ to: CHARLY, subject: `La Machine - Le dossier de ${p.prenom} ${p.nom} est prêt à être envoyé à l'agent`, html: `<p>Dans Hired Interns, clique le bouton drapeau pour envoyer le dossier à l'agent</p><p><a href="${p.caseUrl}">Voir dossier</a></p>` })
+}
+
+export async function sendNewCustomerFazza(p: { prenom: string; nom: string; jobTitle: string; companyName: string; nbJours: number; startDate: string; endDate: string; visaType: string; packageType: string; noteAgent?: string; email: string; whatsapp: string; passportNumber: string; nationality: string; motherFirst: string; motherLast: string; visaCostIdr: number; photoUrl?: string; bankUrl?: string; passportUrl?: string }) {
+  const CC = ['mcfazzanajmi@gmail.com', 'bestie@bibiconsultant.com', 'bintangberuntungindonesia@gmail.com']
+  const docs = [p.photoUrl && `<li>Photo fond blanc: <a href="${p.photoUrl}">Télécharger</a></li>`, p.bankUrl && `<li>Relevé bancaire: <a href="${p.bankUrl}">Télécharger</a></li>`, p.passportUrl && `<li>Passeport page 4: <a href="${p.passportUrl}">Télécharger</a></li>`].filter(Boolean).join('')
+  await send({ to: CHARLY, cc: CC, subject: `New Customer from Bali Interns`, html: `<p>Hello Fazza,</p><p>New client: <strong>${p.prenom} ${p.nom}</strong>, internship at <strong>${p.companyName}</strong> as ${p.jobTitle}, ${p.nbJours} days, ${p.startDate} → ${p.endDate}.</p><p>Visa: <strong>${p.visaType}</strong> (${p.packageType})</p>${p.noteAgent ? `<p>Note: ${p.noteAgent}</p>` : ''}<p>Email: ${p.email} | WA: ${p.whatsapp}</p><p>Passport: ${p.passportNumber} | Nationality: ${p.nationality}</p><p>Mother: ${p.motherFirst} ${p.motherLast}</p><ul>${docs}</ul><p>Confirm? Bank transfer IDR ${p.visaCostIdr.toLocaleString()} upon confirmation.</p><p>Charly</p>` })
+}
+
+export async function sendWelcomeKit(p: { internEmail: string; prenom: string; portalToken: string }) {
+  const portalUrl = (process.env.NEXT_PUBLIC_APP_URL ?? '') + '/portal/' + p.portalToken
+  await Promise.all([
+    send({ to: p.internEmail, cc: CHARLY, subject: `Welcome Kit Bali Interns`, html: `<p>Hey <strong>${p.prenom}</strong>, ton départ approche ! <a href="${portalUrl}">Accès au Welcome Kit</a>. Charly</p>` }),
+    send({ to: p.internEmail, cc: CHARLY, subject: `👉 Tes infos pratiques avant de décoller pour Bali`, html: `<p>Hey, ton départ approche ! Bali ce n'est pas Paris 😉</p><p><strong>🛵 Se déplacer:</strong> Scooter, <a href="https://apps.apple.com/fr/app/gojek/id944875099">Gojek</a>, <a href="https://apps.apple.com/fr/app/grab-taxi-ride-food-delivery/id647268330">Grab</a></p><p><strong>💳 Argent:</strong> Cash + <a href="https://revolut.com">Revolut</a>. Retraits: BCA, Mandiri, Permata.</p><p><strong>📱 Téléphone:</strong> eSIM <a href="https://mobimatter.app/">Mobimatter</a> code <strong>MMBALI</strong> -50%.</p><p><strong>🏥 Santé:</strong> BIMC Hospital Kuta, Siloam Kuta, Prima Medika Ubud.</p><p><strong>🚨 Urgence:</strong> FAZZA <a href="https://wa.me/628888999900">+62 888-8999-900</a>. Police: 110. Ambulance: 118.</p><p>Charly</p>` }),
+  ])
+}
+
+export async function sendAppAllIndonesia(p: { internEmail: string; prenom: string }) {
+  await send({ to: p.internEmail, cc: CHARLY, subject: `👉 Tes infos pratiques avant de décoller pour Bali`, html: `<p>Hey ${p.prenom}, ton départ est dans moins de 3 jours !</p><p>Télécharge <strong>All Indonesia</strong> pour passer l'immigration : <a href="https://apps.apple.com/us/app/all-indonesia/id6749558272">Apple Store</a> / <a href="https://play.google.com/store/apps/details?id=id.go.imigrasi.allindonesia">Google Store</a></p><p>Bon voyage, ton chauffeur t'attendera à l'arrivée. Charly</p>` })
+}
+
+export async function sendAlerteArrivee(p: { prenom: string; nom: string; jours: 7 | 4 | 0; startDate: string; billetUrl?: string; caseUrl: string }) {
+  const subjects: Record<number, string> = { 7: `La Machine: ${p.prenom} ${p.nom} arrive dans 7 jours !`, 4: `La Machine: ${p.prenom} ${p.nom} arrive dans les 4 jours !`, 0: `La Machine: ${p.prenom} ${p.nom} arrive aujourd'hui !` }
+  await send({ to: CHARLY, subject: subjects[p.jours] ?? `La Machine: ${p.prenom} ${p.nom} arrive bientôt !`, html: `<p>Il est temps de s'assurer que le driver sera disponible et que tout est en ordre pour son logement.</p><p>Date d'arrivée: <strong>${p.startDate}</strong></p>${p.billetUrl ? `<p>Billet: <a href="${p.billetUrl}">Voir</a></p>` : ''}<p><a href="${p.caseUrl}">Voir le dossier</a></p>` })
+}
+
+export async function sendWelcomeKitShort(p: { internEmail: string; prenom: string }) {
+  await send({ to: p.internEmail, cc: CHARLY, subject: `Welcome Kit Bali Interns`, html: `<p>Hey <strong>${p.prenom}</strong>, ton départ approche ! Nous t'envoyons toutes les infos pratiques très vite. Charly</p>` })
 }

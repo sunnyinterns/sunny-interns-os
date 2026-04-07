@@ -94,6 +94,14 @@ export default function LoginPage() {
             </a>
           </p>
         </div>
+        {/* Booking link */}
+        <div className="text-center mb-4">
+          <p className="text-sm text-zinc-500">
+            <a href="/book" className="text-[#c8a96e] font-medium hover:underline">
+              Pas encore candidat ? Prendre un RDV de qualification →
+            </a>
+          </p>
+        </div>
 
         <form onSubmit={handleEmailLogin} className="space-y-4">
           <div>

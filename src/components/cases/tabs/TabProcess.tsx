@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ProcessTimeline } from '@/components/cases/ProcessTimeline'
 import { Button } from '@/components/ui/Button'
+import StatusActionPanel from '@/components/cases/StatusActionPanel'
 import type { CaseStatus } from '@/lib/types'
 
 interface ActivityEntry {
@@ -32,6 +33,8 @@ interface TabProcessProps {
   internEmail?: string | null
   paymentAmount?: number | null
   filloutBillFormUrl?: string | null
+  caseData?: Record<string, unknown>
+  onRefresh?: () => void
 }
 
 const ALL_STATUSES: { value: CaseStatus; label: string }[] = [
@@ -77,6 +80,8 @@ export function TabProcess({
   internEmail,
   paymentAmount,
   filloutBillFormUrl,
+  caseData,
+  onRefresh,
 }: TabProcessProps) {
   const [status, setStatus] = useState<CaseStatus>(initialStatus)
   const [checklist, setChecklist] = useState<ChecklistData>(initialChecklist ?? {})
@@ -186,6 +191,14 @@ export function TabProcess({
 
   return (
     <div className="space-y-6">
+      {/* Status Action Panel */}
+      {caseData && (
+        <StatusActionPanel
+          caseData={{ id: caseId, status, ...caseData } as Parameters<typeof StatusActionPanel>[0]['caseData']}
+          onRefresh={onRefresh}
+        />
+      )}
+
       {/* Toast */}
       {toastMsg && (
         <div className={[

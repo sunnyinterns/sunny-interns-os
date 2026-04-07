@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { NewCaseModal } from '@/components/cases/NewCaseModal'
@@ -124,6 +124,7 @@ type TabKey = 'process' | 'profil' | 'jobs' | 'visa' | 'arrivee' | 'facturation'
 
 export default function CaseDetailPage() {
   const params = useParams()
+  const router = useRouter()
   const id = typeof params?.id === 'string' ? params.id : ''
   const locale = typeof params?.locale === 'string' ? params.locale : 'fr'
 
@@ -282,6 +283,8 @@ export default function CaseDetailPage() {
             internEmail={caseData.interns?.email}
             paymentAmount={caseData.payment_amount}
             filloutBillFormUrl={caseData.fillout_bill_form_url}
+            caseData={caseData as unknown as Record<string, unknown>}
+            onRefresh={() => router.refresh()}
           />
         )}
         {activeTab === 'profil' && (
