@@ -1,15 +1,18 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const { data, error } = await supabase
+  const { searchParams } = new URL(request.url)
+  const all = searchParams.get('all') === 'true'
+  let query = supabase
     .from('packages')
     .select('*, visa_types(id, code, name, validity_label, max_stay_days), visa_agents(id, name)')
-    .eq('is_active', true)
     .order('price_eur')
+  if (!all) query = query.eq('is_active', true)
+  const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data ?? [])
 }
