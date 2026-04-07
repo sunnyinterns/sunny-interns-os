@@ -4,13 +4,13 @@ import { sendNewCustomerFazza } from '@/lib/email/resend'
 
 export async function POST(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const id = params.id
+  const { id } = await params
 
   // Fetch case with all related data
   const { data: c } = await supabase
