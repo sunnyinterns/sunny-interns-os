@@ -19,7 +19,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // App routes that need auth
-  const isAppRoute = /^\/(fr|en)\/(feed|pipeline|cases|jobs|settings)/.test(pathname)
+  const isAppRoute = /^\/(fr|en)\/(feed|pipeline|cases|jobs|settings|companies|contacts|leads|schools|agenda)/.test(pathname)
 
   if (isAppRoute) {
     return updateSession(request)
