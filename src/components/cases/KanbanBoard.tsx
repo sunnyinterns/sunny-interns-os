@@ -70,10 +70,12 @@ interface CaseData {
   last_name: string
   status: string
   arrival_date?: string | null
+  desired_start_date?: string | null
   return_date?: string | null
   group_id?: string | null
   internship_type?: string | null
   school?: string | null
+  passport_expiry?: string | null
 }
 
 interface KanbanBoardProps {
@@ -249,6 +251,17 @@ export function KanbanBoard({ cases, locale = 'fr' }: KanbanBoardProps) {
 
 // ─── CaseCard — mini checklist 8 pastilles ───────────────────────────────────
 
+const CHECKLIST_LABELS = [
+  'Billet avion',
+  'Papiers visa',
+  'Visa reçu',
+  'Formulaire logement',
+  'Logement réservé',
+  'Scooter réservé',
+  'Convention signée',
+  'Chauffeur réservé',
+]
+
 interface CaseCardExtended extends CaseData {
   billet_avion?: boolean
   papiers_visas?: boolean
@@ -262,7 +275,17 @@ interface CaseCardExtended extends CaseData {
 
 function CaseCard({ data, locale }: { data: CaseCardExtended; locale: string }) {
   const router = useRouter()
-  const tag = data.arrival_date ? getDaysUntilTag(data.arrival_date) : null
+  // J-X basé sur desired_start_date en priorité, sinon arrival_date
+  const dateRef = data.desired_start_date ?? data.arrival_date
+  const tag = dateRef ? getDaysUntilTag(dateRef) : null
+
+  // Badge PASSEPORT: passport_expiry < desired_start_date + 6 mois
+  const showPassportWarning = (() => {
+    if (!data.passport_expiry || !data.desired_start_date) return false
+    const startPlus6 = new Date(data.desired_start_date)
+    startPlus6.setMonth(startPlus6.getMonth() + 6)
+    return new Date(data.passport_expiry) < startPlus6
+  })()
 
   const checklist = [
     data.billet_avion,
@@ -297,7 +320,7 @@ function CaseCard({ data, locale }: { data: CaseCardExtended; locale: string }) 
         <p className="text-[10px] text-zinc-400 truncate mb-1.5">{data.school}</p>
       )}
 
-      {/* J-X + VISA tag */}
+      {/* Badges: J-X + VISA + PASSEPORT */}
       <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
         {data.internship_type === 'visa_only' && (
           <span className="text-[10px] font-bold px-1 py-0.5 rounded bg-blue-100 text-blue-700">VISA</span>
@@ -307,14 +330,18 @@ function CaseCard({ data, locale }: { data: CaseCardExtended; locale: string }) 
             {tag.label}
           </span>
         )}
+        {showPassportWarning && (
+          <span className="text-[10px] font-bold px-1 py-0.5 rounded bg-red-100 text-[#dc2626]">PASSEPORT</span>
+        )}
       </div>
 
-      {/* Mini checklist — 8 pastilles */}
+      {/* Mini checklist — 8 pastilles avec tooltip au hover */}
       <div className="flex gap-1 flex-wrap">
         {checklist.map((v, i) => (
           <div
             key={i}
-            className={['w-2.5 h-2.5 rounded-full', v ? 'bg-[#0d9e75]' : 'bg-zinc-200'].join(' ')}
+            title={CHECKLIST_LABELS[i]}
+            className={['w-2.5 h-2.5 rounded-full cursor-default', v ? 'bg-[#0d9e75]' : 'bg-zinc-200'].join(' ')}
           />
         ))}
       </div>
@@ -322,15 +349,15 @@ function CaseCard({ data, locale }: { data: CaseCardExtended; locale: string }) 
   )
 }
 
-function getDaysUntilTag(arrivalDate: string): { label: string; color: string } | null {
+function getDaysUntilTag(dateRef: string): { label: string; color: string } | null {
   const now = new Date()
   now.setHours(0, 0, 0, 0)
-  const arrival = new Date(arrivalDate)
-  arrival.setHours(0, 0, 0, 0)
-  const days = Math.floor((arrival.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+  const target = new Date(dateRef)
+  target.setHours(0, 0, 0, 0)
+  const days = Math.floor((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
   if (days < 0) return { label: `J${days}`, color: 'bg-red-100 text-[#dc2626]' }
   if (days < 3) return { label: `J-${days}`, color: 'bg-red-100 text-[#dc2626]' }
   if (days < 7) return { label: `J-${days}`, color: 'bg-amber-100 text-[#d97706]' }
-  if (days < 30) return { label: `J-${days}`, color: 'bg-yellow-100 text-yellow-700' }
+  if (days < 30) return { label: `J-${days}`, color: 'bg-amber-100 text-[#d97706]' }
   return { label: `J-${days}`, color: 'bg-emerald-50 text-[#0d9e75]' }
 }

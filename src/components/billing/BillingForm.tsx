@@ -7,6 +7,7 @@ interface BillingEntity {
   id: string
   name: string
   iban?: string | null
+  bank_name?: string | null
   is_active: boolean
   is_default: boolean
 }
@@ -16,6 +17,7 @@ interface Package {
   name: string
   price_eur: number
   visa_cost_idr: number | null
+  package_type?: string | null
   gross_margin_eur: number | null
   max_stay_days: number | null
   validity_label: string | null
@@ -61,10 +63,14 @@ function generateInvoiceNumber(caseData?: CaseData): string {
   const mm = String(now.getMonth() + 1).padStart(2, '0')
   const dd = String(now.getDate()).padStart(2, '0')
   const name = caseData?.interns
-    ? `${caseData.interns.first_name} ${caseData.interns.last_name}`
+    ? `${caseData.interns.first_name}${caseData.interns.last_name}`
     : 'Stagiaire'
   return `${yy}-${mm}-${dd}_${name}`
 }
+
+// UK entity IBAN hardcodé (Revolut)
+const UK_IBAN = 'GB76REVO00996903517949'
+const UK_BANK = 'REVOLUT LTD'
 
 export function BillingForm({ caseId, caseData }: BillingFormProps) {
   const [entities, setEntities] = useState<BillingEntity[]>([])
@@ -75,6 +81,7 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   // Form fields
   const [entityId, setEntityId] = useState('')
@@ -83,23 +90,27 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
   const [discount, setDiscount] = useState<number>(0)
   const [discountReason, setDiscountReason] = useState('')
   const [paymentType, setPaymentType] = useState('bank_transfer')
+  const [invoiceNumber, setInvoiceNumber] = useState('')
+  const [isPaidCheck, setIsPaidCheck] = useState(false)
 
   const selectedEntity = entities.find(e => e.id === entityId)
   const selectedPackage = packages.find(p => p.id === packageId)
 
-  // Logique de calcul exacte Airtable:
-  // prix_remise = tarif * (1 - remise%)
-  // montant_TVA = prix_remise * 0.20
-  // montant_final (ce que le client paie, HT) = prix_remise - montant_TVA
-  // Le client paie HT. TVA est pour Sunny Interns.
-  const prixRemise = tarifPackage * (1 - discount / 100)
-  const montantTVA = prixRemise * 0.20
-  const montantFinal = prixRemise - montantTVA
+  // Calculs temps réel
+  const remiseMontant = tarifPackage * (discount / 100)
+  const prixRemise = tarifPackage - remiseMontant
+  const tva = prixRemise * 0.20
+  const montantFinal = prixRemise - tva
   const margebrute = selectedPackage?.visa_cost_idr
-    ? montantFinal - (selectedPackage.visa_cost_idr / 15000) // approx IDR→EUR
+    ? montantFinal - (selectedPackage.visa_cost_idr / 16500)
     : null
 
   const isPaid = !!(billing?.paid_at)
+
+  // IBAN effectif: UK entity → hardcodé Revolut, sinon celui de l'entité
+  const isUKEntity = selectedEntity?.name?.toLowerCase().includes('uk') || selectedEntity?.name?.toLowerCase().includes('united kingdom')
+  const displayIBAN = isUKEntity ? UK_IBAN : (selectedEntity?.iban ?? null)
+  const displayBank = isUKEntity ? UK_BANK : (selectedEntity?.bank_name ?? null)
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -124,16 +135,19 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
         setDiscount(billingData.discount_percent ?? 0)
         setDiscountReason(billingData.discount_reason ?? '')
         setPaymentType(billingData.payment_type ?? 'bank_transfer')
+        setInvoiceNumber(billingData.invoice_number ?? '')
+        setIsPaidCheck(!!(billingData.paid_at))
       } else {
         const defaultEntity = entitiesData.find(e => e.is_default)
         if (defaultEntity) setEntityId(defaultEntity.id)
+        setInvoiceNumber(generateInvoiceNumber(caseData))
       }
     } catch {
       setError('Erreur lors du chargement.')
     } finally {
       setLoading(false)
     }
-  }, [caseId])
+  }, [caseId, caseData])
 
   useEffect(() => { void loadData() }, [loadData])
 
@@ -144,12 +158,40 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
     }
   }, [packageId, selectedPackage])
 
+  // Quand facture vide et pas encore payé → auto-generate
+  useEffect(() => {
+    if (!invoiceNumber && caseData) {
+      setInvoiceNumber(generateInvoiceNumber(caseData))
+    }
+  }, [caseData, invoiceNumber])
+
+  async function copyIBAN() {
+    if (!displayIBAN) return
+    await navigator.clipboard.writeText(displayIBAN)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   async function handleSave() {
     setSaving(true)
     setError(null)
     setSuccess(null)
     try {
-      const res = await fetch(`/api/billing/${caseId}`, {
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          payment_amount: montantFinal,
+          discount_percentage: discount,
+          package_id: packageId || null,
+          billing_entity_id: entityId,
+          payment_type: paymentType,
+          invoice_number: invoiceNumber || null,
+        }),
+      })
+      if (!res.ok) throw new Error('Erreur serveur')
+      // Also update billing record
+      await fetch(`/api/billing/${caseId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -161,11 +203,9 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
           vat_rate: 20,
           amount_ttc: montantFinal,
           payment_type: paymentType,
+          invoice_number: invoiceNumber || null,
         }),
       })
-      if (!res.ok) throw new Error('Erreur serveur')
-      const updated = await res.json() as BillingRecord
-      setBilling(updated)
       setSuccess('Facturation sauvegardée.')
     } catch {
       setError('Impossible de sauvegarder.')
@@ -174,44 +214,59 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
     }
   }
 
-  async function handleConfirmPayment() {
-    if (discount > 0 && !discountReason.trim()) {
-      setError('Raison de remise requise.')
-      return
-    }
-    setConfirming(true)
-    setError(null)
-    setSuccess(null)
-    try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      const invoiceNumber = billing?.invoice_number ?? generateInvoiceNumber(caseData)
+  async function handlePaymentToggle(checked: boolean) {
+    if (isPaid) return // verrouillé si déjà payé
+    setIsPaidCheck(checked)
+    if (checked) {
+      if (discount > 0 && !discountReason.trim()) {
+        setError('Raison de remise requise.')
+        setIsPaidCheck(false)
+        return
+      }
+      setConfirming(true)
+      setError(null)
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        const inv = invoiceNumber || generateInvoiceNumber(caseData)
+        setInvoiceNumber(inv)
 
-      const res = await fetch(`/api/billing/${caseId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          billing_entity_id: entityId,
-          package_id: packageId || null,
-          amount_ht: tarifPackage,
-          discount_percent: discount,
-          discount_reason: discountReason,
-          vat_rate: 20,
-          amount_ttc: montantFinal,
-          payment_type: paymentType,
-          invoice_number: invoiceNumber,
-          paid_at: new Date().toISOString(),
-          confirmed_by: user?.id ?? null,
-        }),
-      })
-      if (!res.ok) throw new Error('Erreur serveur')
-      const updated = await res.json() as BillingRecord
-      setBilling(updated)
-      setSuccess(`Paiement confirmé. Facture N° ${invoiceNumber}`)
-    } catch {
-      setError('Impossible de confirmer le paiement.')
-    } finally {
-      setConfirming(false)
+        await fetch(`/api/cases/${caseId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: 'payment_received',
+            payment_date: new Date().toISOString().split('T')[0],
+          }),
+        })
+
+        const res = await fetch(`/api/billing/${caseId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            billing_entity_id: entityId,
+            package_id: packageId || null,
+            amount_ht: tarifPackage,
+            discount_percent: discount,
+            discount_reason: discountReason,
+            vat_rate: 20,
+            amount_ttc: montantFinal,
+            payment_type: paymentType,
+            invoice_number: inv,
+            paid_at: new Date().toISOString(),
+            confirmed_by: user?.id ?? null,
+          }),
+        })
+        if (!res.ok) throw new Error('Erreur serveur')
+        const updated = await res.json() as BillingRecord
+        setBilling(updated)
+        setSuccess(`Paiement confirmé. Facture N° ${inv}`)
+      } catch {
+        setError('Impossible de confirmer le paiement.')
+        setIsPaidCheck(false)
+      } finally {
+        setConfirming(false)
+      }
     }
   }
 
@@ -235,21 +290,6 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
       {error && <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-900">{error}</div>}
       {success && <div className="px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-900">{success}</div>}
 
-      {/* Statut paiement */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <span className="text-sm text-zinc-500">Statut paiement :</span>
-        {isPaid ? (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-[#0d9e75]">
-            ✓ Payé le {new Date(billing!.paid_at!).toLocaleDateString('fr-FR')}
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-[#d97706]">⏳ En attente</span>
-        )}
-        {billing?.invoice_number && (
-          <span className="text-xs text-zinc-500 font-mono">{billing.invoice_number}</span>
-        )}
-      </div>
-
       <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-4">
         {/* Package */}
         <div>
@@ -263,7 +303,7 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
             <option value="">— Sélectionner un package —</option>
             {packages.map(pkg => (
               <option key={pkg.id} value={pkg.id}>
-                {pkg.name} — {formatEUR(pkg.price_eur)}
+                {pkg.name} — {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(pkg.price_eur)}
                 {pkg.visa_types ? ` · ${pkg.visa_types.code}` : ''}
                 {pkg.max_stay_days ? ` · ${pkg.max_stay_days}j max` : ''}
               </option>
@@ -274,7 +314,6 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
               {selectedPackage.visa_types && <span>Visa: <strong className="text-[#1a1918]">{selectedPackage.visa_types.name}</strong></span>}
               {selectedPackage.visa_agents && <span>Agent: <strong className="text-[#1a1918]">{selectedPackage.visa_agents.name}</strong></span>}
               {selectedPackage.validity_label && <span>Validité: <strong className="text-[#1a1918]">{selectedPackage.validity_label}</strong></span>}
-              {selectedPackage.gross_margin_eur && <span>Marge brute: <strong className="text-[#0d9e75]">{formatEUR(selectedPackage.gross_margin_eur)}</strong></span>}
             </div>
           )}
         </div>
@@ -294,13 +333,13 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
 
         {/* Remise */}
         <div>
-          <label className="block text-sm font-medium text-[#1a1918] mb-1.5">Remise (%)</label>
+          <label className="block text-sm font-medium text-[#1a1918] mb-1.5">Remise (0-30%)</label>
           <input
             type="number"
             value={discount}
-            onChange={e => setDiscount(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+            onChange={e => setDiscount(Math.min(30, Math.max(0, parseFloat(e.target.value) || 0)))}
             disabled={isPaid}
-            min={0} max={100}
+            min={0} max={30}
             className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c8a96e] disabled:opacity-50"
           />
         </div>
@@ -319,35 +358,38 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
           </div>
         )}
 
-        {/* Tableau récapitulatif */}
+        {/* Tableau récapitulatif — format lignes */}
         <div className="border border-zinc-100 rounded-xl overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50">
-              <tr>
-                <th className="text-left px-4 py-2 text-xs font-medium text-zinc-500">Tarif</th>
-                <th className="text-right px-4 py-2 text-xs font-medium text-zinc-500">Remise</th>
-                <th className="text-right px-4 py-2 text-xs font-medium text-zinc-500">Prix remisé</th>
-                <th className="text-right px-4 py-2 text-xs font-medium text-zinc-500">TVA 20%</th>
-                <th className="text-right px-4 py-2 text-xs font-medium text-[#1a1918] font-semibold">Montant final (HT)</th>
+            <tbody className="divide-y divide-zinc-50">
+              <tr className="bg-zinc-50/50">
+                <td className="px-4 py-2.5 text-xs text-zinc-500">Tarif</td>
+                <td className="px-4 py-2.5 text-right text-sm text-[#1a1918]">{formatEUR(tarifPackage)}</td>
               </tr>
-            </thead>
-            <tbody>
               <tr>
-                <td className="px-4 py-3 text-[#1a1918]">{formatEUR(tarifPackage)}</td>
-                <td className="px-4 py-3 text-right text-zinc-500">{discount > 0 ? `-${discount}%` : '—'}</td>
-                <td className="px-4 py-3 text-right text-zinc-500">{formatEUR(prixRemise)}</td>
-                <td className="px-4 py-3 text-right text-zinc-500">{formatEUR(montantTVA)}</td>
-                <td className="px-4 py-3 text-right font-bold text-[#1a1918]">{formatEUR(montantFinal)}</td>
+                <td className="px-4 py-2.5 text-xs text-zinc-500">Remise {discount > 0 ? `${discount}%` : ''}</td>
+                <td className="px-4 py-2.5 text-right text-sm text-red-500">{discount > 0 ? `-${formatEUR(remiseMontant)}` : '—'}</td>
               </tr>
+              <tr className="bg-zinc-50/50">
+                <td className="px-4 py-2.5 text-xs text-zinc-500">Prix remisé</td>
+                <td className="px-4 py-2.5 text-right text-sm text-[#1a1918]">{formatEUR(prixRemise)}</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-2.5 text-xs text-zinc-500">TVA 20%</td>
+                <td className="px-4 py-2.5 text-right text-sm text-red-500">-{formatEUR(tva)}</td>
+              </tr>
+              <tr className="bg-[#c8a96e]/5">
+                <td className="px-4 py-3 text-sm font-semibold text-[#1a1918]">Montant à régler (HT)</td>
+                <td className="px-4 py-3 text-right text-base font-bold text-[#1a1918]">{formatEUR(montantFinal)}</td>
+              </tr>
+              {margebrute !== null && (
+                <tr className="bg-green-50/50">
+                  <td className="px-4 py-2.5 text-xs text-zinc-500">Marge brute estimée</td>
+                  <td className="px-4 py-2.5 text-right text-sm font-medium text-[#0d9e75]">{formatEUR(margebrute)}</td>
+                </tr>
+              )}
             </tbody>
           </table>
-        </div>
-
-        <div className="flex items-center justify-between pt-1">
-          <span className="text-xs text-zinc-500">Le client paie HT. La TVA est récupérée par Sunny Interns.</span>
-          {margebrute !== null && (
-            <span className="text-xs text-[#0d9e75] font-medium">Marge estimée: {formatEUR(margebrute)}</span>
-          )}
         </div>
 
         {/* Entité légale */}
@@ -366,8 +408,22 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
               </option>
             ))}
           </select>
-          {selectedEntity?.iban && (
-            <p className="mt-1.5 text-xs text-zinc-500 font-mono">IBAN: {selectedEntity.iban}</p>
+
+          {/* Bloc IBAN */}
+          {displayIBAN && (
+            <div className="mt-2 p-3 bg-zinc-50 rounded-lg border border-zinc-100">
+              {displayBank && <p className="text-xs text-zinc-500 mb-1">Banque: <strong className="text-[#1a1918]">{displayBank}</strong></p>}
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-mono text-[#1a1918] select-all">{displayIBAN}</p>
+                <button
+                  type="button"
+                  onClick={copyIBAN}
+                  className="text-xs px-2 py-1 rounded bg-zinc-200 hover:bg-zinc-300 text-zinc-700 transition-colors flex-shrink-0"
+                >
+                  {copied ? '✓ Copié' : 'Copier'}
+                </button>
+              </div>
+            </div>
           )}
         </div>
 
@@ -384,27 +440,64 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
             <option value="other">Autre</option>
           </select>
         </div>
+
+        {/* Numéro facture */}
+        <div>
+          <label className="block text-sm font-medium text-[#1a1918] mb-1.5">Numéro de facture</label>
+          <input
+            type="text"
+            value={invoiceNumber}
+            onChange={e => setInvoiceNumber(e.target.value)}
+            disabled={isPaid}
+            placeholder={generateInvoiceNumber(caseData)}
+            className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#c8a96e] disabled:opacity-50"
+          />
+          <p className="mt-1 text-xs text-zinc-400">Format auto: {generateInvoiceNumber(caseData)}</p>
+        </div>
+
+        {/* Toggle paiement reçu */}
+        <div className={['flex items-center gap-3 p-3 rounded-xl border', isPaid ? 'bg-green-50 border-green-200' : 'bg-white border-zinc-200'].join(' ')}>
+          <label className="flex items-center gap-3 cursor-pointer flex-1">
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={isPaidCheck || isPaid}
+                onChange={e => void handlePaymentToggle(e.target.checked)}
+                disabled={isPaid || confirming}
+                className="sr-only"
+              />
+              <div
+                className={[
+                  'w-10 h-6 rounded-full transition-colors',
+                  (isPaidCheck || isPaid) ? 'bg-[#0d9e75]' : 'bg-zinc-200',
+                  (isPaid || confirming) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                ].join(' ')}
+                onClick={() => !isPaid && !confirming && void handlePaymentToggle(!isPaidCheck)}
+              >
+                <div className={['absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform', (isPaidCheck || isPaid) ? 'translate-x-5' : 'translate-x-1'].join(' ')} />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-[#1a1918]">Paiement reçu</p>
+              {isPaid && billing?.paid_at && (
+                <p className="text-xs text-[#0d9e75]">Confirmé le {new Date(billing.paid_at).toLocaleDateString('fr-FR')}</p>
+              )}
+              {confirming && <p className="text-xs text-zinc-400">Confirmation en cours…</p>}
+            </div>
+          </label>
+        </div>
       </div>
 
       {/* Actions */}
       <div className="flex gap-3 flex-wrap">
         {!isPaid && (
-          <>
-            <button
-              onClick={handleSave}
-              disabled={saving || confirming}
-              className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-[#1a1918] text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
-            >
-              {saving ? 'Sauvegarde…' : 'Sauvegarder'}
-            </button>
-            <button
-              onClick={handleConfirmPayment}
-              disabled={confirming || saving || !entityId || tarifPackage <= 0}
-              className="px-4 py-2 bg-[#0d9e75] hover:bg-[#0b8a65] text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {confirming ? 'Confirmation…' : 'Confirmer le paiement'}
-            </button>
-          </>
+          <button
+            onClick={handleSave}
+            disabled={saving || confirming}
+            className="px-4 py-2 bg-[#c8a96e] hover:bg-[#b8945a] text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+          >
+            {saving ? 'Sauvegarde…' : 'Enregistrer'}
+          </button>
         )}
         {isPaid && (
           <p className="text-sm text-zinc-500 italic">Paiement confirmé — facturation verrouillée.</p>
