@@ -32,6 +32,9 @@ interface CaseDetail {
   visa_submitted_at?: string | null
   visa_submitted_to_agent_at?: string | null
   visa_received_at?: string | null
+  portal_token?: string | null
+  package_id?: string | null
+  note_for_agent?: string | null
   payment_amount?: number | null
   payment_date?: string | null
   invoice_sent_at?: string | null
@@ -45,10 +48,16 @@ interface CaseDetail {
   papiers_visas?: boolean | null
   visa_recu?: boolean | null
   logement_scooter_formulaire?: boolean | null
+  actual_start_date?: string | null
+  actual_end_date?: string | null
   logement_reserve?: boolean | null
+  housing_reserved?: boolean | null
+  scooter_reserved?: boolean | null
   scooter_reserve_check?: boolean | null
   convention_signee_check?: boolean | null
   chauffeur_reserve?: boolean | null
+  guesthouse_id?: string | null
+  welcome_kit_sent_at?: string | null
   interns?: {
     id?: string
     first_name?: string
@@ -77,6 +86,10 @@ interface CaseDetail {
     wants_scooter?: boolean
     touchpoint?: string
     private_comment_for_employer?: string
+    passport_page4_url?: string | null
+    photo_id_url?: string | null
+    bank_statement_url?: string | null
+    return_plane_ticket_url?: string | null
   } | null
   activity_feed?: Array<{
     id: string
@@ -302,7 +315,17 @@ export default function CaseDetailPage() {
           />
         )}
         {activeTab === 'visa' && (
-          <TabVisa caseData={caseData} />
+          <TabVisa caseData={{
+            id: caseData.id,
+            status: caseData.status,
+            portal_token: caseData.portal_token,
+            package_id: caseData.package_id,
+            note_for_agent: caseData.note_for_agent,
+            visa_submitted_to_agent_at: caseData.visa_submitted_to_agent_at,
+            visa_submitted_at: caseData.visa_submitted_at,
+            visa_received_at: caseData.visa_received_at,
+            interns: caseData.interns,
+          }} />
         )}
         {activeTab === 'arrivee' && (
           <TabArrivee caseData={{
@@ -314,6 +337,13 @@ export default function CaseDetailPage() {
             intern_bali_phone: caseData.intern_bali_phone,
             first_name: caseData.first_name,
             last_name: caseData.last_name,
+            arrival_date: caseData.arrival_date,
+            actual_start_date: caseData.actual_start_date,
+            actual_end_date: caseData.actual_end_date,
+            housing_reserved: caseData.housing_reserved ?? caseData.logement_reserve,
+            scooter_reserved: caseData.scooter_reserved,
+            guesthouse_id: caseData.guesthouse_id,
+            welcome_kit_sent_at: caseData.welcome_kit_sent_at,
             interns: caseData.interns,
           }} />
         )}

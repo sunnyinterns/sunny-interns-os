@@ -90,7 +90,7 @@ export async function GET(request: Request) {
   try {
     let query = supabase
       .from('cases')
-      .select('id, first_name, last_name, status, arrival_date, return_date, destination, assigned_to, created_at, internship_type')
+      .select('id, first_name, last_name, status, arrival_date, return_date, destination, assigned_to, created_at, internship_type, billet_avion, papiers_visas, visa_recu, logement_scooter_formulaire, logement_reserve, scooter_reserve_check, convention_signee_check, chauffeur_reserve, interns(first_name, last_name, passport_expiry, school)')
       .order('arrival_date', { ascending: true })
 
     if (assignedTo) query = query.eq('assigned_to', assignedTo)

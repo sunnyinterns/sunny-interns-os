@@ -16,15 +16,23 @@ export default function CandidatureEnvoyeePage() {
           </svg>
         </div>
         <h1 className="text-2xl font-semibold text-[#1a1918] mb-3">Candidature envoyée !</h1>
-        <p className="text-zinc-500 mb-8 leading-relaxed">
-          Ton dossier a bien été reçu. Notre équipe va l'examiner et te contactera dans les prochains jours.
+        <p className="text-zinc-500 mb-6 leading-relaxed">
+          Votre candidature a été envoyée ! Notre équipe vous contactera sous 48h pour planifier votre entretien de qualification.
         </p>
-        <Link
-          href={`/${locale}/login`}
-          className="inline-block px-6 py-2.5 bg-[#c8a96e] hover:bg-[#b8994e] text-white text-sm font-medium rounded-lg transition-colors"
-        >
-          Retour à l&apos;accueil
-        </Link>
+        <div className="flex flex-col gap-3">
+          <Link
+            href={`/${locale}/book`}
+            className="inline-block px-6 py-2.5 bg-[#c8a96e] hover:bg-[#b8994e] text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            Prendre un RDV directement
+          </Link>
+          <Link
+            href={`/${locale}/login`}
+            className="inline-block px-6 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 text-sm font-medium rounded-lg transition-colors"
+          >
+            Retour à l&apos;accueil
+          </Link>
+        </div>
       </div>
     </div>
   )

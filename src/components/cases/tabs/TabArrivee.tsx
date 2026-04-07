@@ -3,6 +3,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/Button'
 
+interface Guesthouse {
+  id: string
+  name: string
+  city?: string | null
+  price_month?: number | null
+}
+
 interface TabArriveeProps {
   caseData: {
     id: string
@@ -13,6 +20,13 @@ interface TabArriveeProps {
     intern_bali_phone?: string | null
     first_name?: string | null
     last_name?: string | null
+    arrival_date?: string | null
+    actual_start_date?: string | null
+    actual_end_date?: string | null
+    housing_reserved?: boolean | null
+    scooter_reserved?: boolean | null
+    guesthouse_id?: string | null
+    welcome_kit_sent_at?: string | null
     driver_notified_j2?: boolean | null
     driver_notified_j0?: boolean | null
     interns?: { phone?: string | null } | null
@@ -27,6 +41,11 @@ interface ArrivalFields {
   intern_bali_phone: string
   driver_notified_j2: boolean
   driver_notified_j0: boolean
+  actual_start_date: string
+  actual_end_date: string
+  housing_reserved: boolean
+  scooter_reserved: boolean
+  guesthouse_id: string
 }
 
 function buildWhatsAppMessage(fields: ArrivalFields, firstName: string, lastName: string): string {
@@ -57,10 +76,60 @@ export function TabArrivee({ caseData }: TabArriveeProps) {
     intern_bali_phone: caseData.intern_bali_phone ?? caseData.interns?.phone ?? '',
     driver_notified_j2: caseData.driver_notified_j2 ?? false,
     driver_notified_j0: caseData.driver_notified_j0 ?? false,
+    actual_start_date: caseData.actual_start_date ?? '',
+    actual_end_date: caseData.actual_end_date ?? '',
+    housing_reserved: caseData.housing_reserved ?? false,
+    scooter_reserved: caseData.scooter_reserved ?? false,
+    guesthouse_id: caseData.guesthouse_id ?? '',
   })
 
   const [saving, setSaving] = useState(false)
   const [savedAt, setSavedAt] = useState<string | null>(null)
+  const [guesthouses, setGuesthouses] = useState<Guesthouse[]>([])
+  const [welcomeKitSentAt, setWelcomeKitSentAt] = useState<string | null>(caseData.welcome_kit_sent_at ?? null)
+  const [markingWelcome, setMarkingWelcome] = useState(false)
+
+  // Load guesthouses
+  useEffect(() => {
+    fetch('/api/guesthouses')
+      .then((r) => r.ok ? r.json() as Promise<Guesthouse[]> : Promise.resolve([]))
+      .then(setGuesthouses)
+      .catch(() => setGuesthouses([]))
+  }, [])
+
+  // PATCH cases for non-flight fields
+  async function patchCase(patch: Record<string, unknown>) {
+    await fetch(`/api/cases/${caseData.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    })
+  }
+
+  async function handleCaseToggle(key: 'housing_reserved' | 'scooter_reserved', value: boolean) {
+    setFields((f) => ({ ...f, [key]: value }))
+    await patchCase({ [key]: value })
+  }
+
+  async function handleGuesthouseChange(id: string) {
+    setFields((f) => ({ ...f, guesthouse_id: id }))
+    await patchCase({ guesthouse_id: id || null })
+  }
+
+  async function handleActualDateBlur(key: 'actual_start_date' | 'actual_end_date', value: string) {
+    await patchCase({ [key]: value || null })
+  }
+
+  async function handleMarkWelcomeKit() {
+    setMarkingWelcome(true)
+    try {
+      const now = new Date().toISOString()
+      await patchCase({ welcome_kit_sent_at: now })
+      setWelcomeKitSentAt(now)
+    } finally {
+      setMarkingWelcome(false)
+    }
+  }
 
   const automationsBlocked = !fields.flight_number || !fields.flight_arrival_datetime
 
@@ -178,6 +247,108 @@ export function TabArrivee({ caseData }: TabArriveeProps) {
         </div>
         {saving && <p className="text-xs text-zinc-400">Sauvegarde…</p>}
         {!saving && savedAt && <p className="text-xs text-zinc-400">Sauvegardé à {savedAt}</p>}
+      </div>
+
+      {/* Dates réelles de stage */}
+      <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-4">
+        <h3 className="text-sm font-semibold text-[#1a1918]">Dates réelles de stage</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-zinc-500 mb-1">Début réel</label>
+            <input
+              type="date"
+              value={fields.actual_start_date}
+              onChange={(e) => setField('actual_start_date', e.target.value)}
+              onBlur={(e) => { void handleActualDateBlur('actual_start_date', e.target.value) }}
+              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-500 mb-1">Fin réelle</label>
+            <input
+              type="date"
+              value={fields.actual_end_date}
+              onChange={(e) => setField('actual_end_date', e.target.value)}
+              onBlur={(e) => { void handleActualDateBlur('actual_end_date', e.target.value) }}
+              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+            />
+          </div>
+        </div>
+        {fields.actual_start_date && (
+          <p className="text-xs text-zinc-400">
+            {(() => {
+              const now = new Date(); now.setHours(0,0,0,0)
+              const start = new Date(fields.actual_start_date)
+              const days = Math.floor((start.getTime() - now.getTime()) / (1000*60*60*24))
+              if (days > 0) return `J-${days} avant arrivée`
+              if (days < 0) return `J+${Math.abs(days)} depuis arrivée`
+              return "Arrivée aujourd'hui"
+            })()}
+          </p>
+        )}
+      </div>
+
+      {/* Logement */}
+      <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-3">
+        <h3 className="text-sm font-semibold text-[#1a1918]">Logement</h3>
+        <div>
+          <label className="block text-xs font-medium text-zinc-500 mb-1">Guesthouse</label>
+          <select
+            value={fields.guesthouse_id}
+            onChange={(e) => { void handleGuesthouseChange(e.target.value) }}
+            className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+          >
+            <option value="">— Sélectionner —</option>
+            {guesthouses.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}{g.city ? ` (${g.city})` : ''}{g.price_month ? ` — ${g.price_month}€/mois` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={fields.housing_reserved}
+            onChange={(e) => { void handleCaseToggle('housing_reserved', e.target.checked) }}
+            className="w-4 h-4 rounded accent-[#c8a96e]"
+          />
+          <span className="text-sm font-medium text-[#1a1918]">Logement réservé</span>
+        </label>
+      </div>
+
+      {/* Scooter */}
+      <div className="bg-white rounded-xl border border-zinc-100 p-4">
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={fields.scooter_reserved}
+            onChange={(e) => { void handleCaseToggle('scooter_reserved', e.target.checked) }}
+            className="w-4 h-4 rounded accent-[#c8a96e]"
+          />
+          <div>
+            <p className="text-sm font-medium text-[#1a1918]">Scooter réservé</p>
+            <p className="text-xs text-zinc-400">Location confirmée</p>
+          </div>
+        </label>
+      </div>
+
+      {/* Welcome kit */}
+      <div className="bg-white rounded-xl border border-zinc-100 p-5">
+        <h3 className="text-sm font-semibold text-[#1a1918] mb-3">Welcome kit</h3>
+        {welcomeKitSentAt ? (
+          <p className="text-sm text-[#0d9e75] font-medium">
+            ✓ Envoyé le {new Date(welcomeKitSentAt).toLocaleDateString('fr-FR')}
+          </p>
+        ) : (
+          <button
+            onClick={() => { void handleMarkWelcomeKit() }}
+            disabled={markingWelcome}
+            className="px-4 py-2 text-sm font-medium bg-zinc-100 hover:bg-zinc-200 text-[#1a1918] rounded-lg transition-colors disabled:opacity-50"
+          >
+            {markingWelcome ? 'Enregistrement…' : 'Marquer comme envoyé'}
+          </button>
+        )}
       </div>
 
       {/* WhatsApp preview */}

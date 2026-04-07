@@ -17,6 +17,16 @@ interface CaseData {
   return_date?: string | null
   assigned_to?: string | null
   internship_type?: string | null
+  school?: string | null
+  billet_avion?: boolean | null
+  papiers_visas?: boolean | null
+  visa_recu?: boolean | null
+  logement_scooter_formulaire?: boolean | null
+  logement_reserve?: boolean | null
+  scooter_reserve_check?: boolean | null
+  convention_signee_check?: boolean | null
+  chauffeur_reserve?: boolean | null
+  interns?: { first_name?: string; last_name?: string; passport_expiry?: string; school?: string } | null
 }
 
 function PipelineSkeleton() {
@@ -53,7 +63,12 @@ export default function PipelinePage() {
       if (month) qs.set('month', month)
       const res = await fetch(`/api/cases?${qs.toString()}`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = await res.json() as CaseData[]
+      const raw = await res.json() as CaseData[]
+      // Flatten interns.school into case.school for KanbanBoard
+      const data = raw.map((c) => ({
+        ...c,
+        school: c.school ?? c.interns?.school ?? null,
+      }))
       setCases(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue')
