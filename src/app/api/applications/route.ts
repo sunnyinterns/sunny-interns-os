@@ -95,12 +95,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: internError.message }, { status: 500 })
     }
 
-    // Get default destination
+    // Get default destination (Bali)
     const { data: dest } = await supabase
       .from('destinations')
       .select('id')
+      .eq('is_active', true)
       .limit(1)
-      .single()
+      .maybeSingle()
 
     // Generate portal token
     const portalToken = crypto.randomUUID()
@@ -110,7 +111,7 @@ export async function POST(request: Request) {
       .from('cases')
       .insert({
         intern_id: intern.id,
-        destination_id: dest?.id ?? null,
+        destination_id: dest?.id ?? 'fc9ece85-e5d5-41d2-9142-79054244bbce',
         status: 'lead',
         desired_start_date: d.start_date ?? null,
         desired_duration_months: durationMonths,
