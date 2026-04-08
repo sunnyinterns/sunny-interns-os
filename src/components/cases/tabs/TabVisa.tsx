@@ -11,6 +11,7 @@ interface Package {
   visa_agents?: { id: string; name: string } | null
   max_stay_days?: number | null
   validity_label?: string | null
+  processing_days?: number | null
 }
 
 interface DocItem {
@@ -39,13 +40,20 @@ interface TabVisaProps {
     visa_received_at?: string | null
     billet_avion?: boolean | null
     papiers_visas?: boolean | null
+    fazza_transfer_sent?: boolean | null
+    fazza_transfer_amount_idr?: number | null
+    fazza_transfer_date?: string | null
     interns?: {
       passport_page4_url?: string | null
       photo_id_url?: string | null
       bank_statement_url?: string | null
       return_plane_ticket_url?: string | null
+      mother_first_name?: string | null
+      mother_last_name?: string | null
       [key: string]: unknown
     } | null
+    visa_agents?: { id: string; company_name: string; email?: string | null; whatsapp?: string | null } | null
+    packages?: { id: string; name: string; price_eur: number; visa_cost_idr?: number | null; package_type?: string | null; processing_days?: number | null; validity_label?: string | null } | null
   }
   onStatusChange?: () => void
 }
@@ -76,6 +84,15 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
   const [sentToAgent, setSentToAgent] = useState(!!caseData.visa_submitted_to_agent_at)
   const [copied, setCopied] = useState(false)
   const [loadingPkgs, setLoadingPkgs] = useState(true)
+
+  // Mother fields
+  const [motherFirst, setMotherFirst] = useState(caseData.interns?.mother_first_name as string ?? '')
+  const [motherLast, setMotherLast] = useState(caseData.interns?.mother_last_name as string ?? '')
+
+  // FAZZA transfer
+  const [fazzaSent, setFazzaSent] = useState(!!caseData.fazza_transfer_sent)
+  const [fazzaAmount, setFazzaAmount] = useState(caseData.fazza_transfer_amount_idr ?? 0)
+  const [fazzaDate, setFazzaDate] = useState(caseData.fazza_transfer_date ?? '')
 
   useEffect(() => {
     fetch('/api/packages')
@@ -117,6 +134,24 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
       setSavingNote(false)
     }
   }, [caseData.id, noteForAgent])
+
+  async function handleMotherSave(field: string, value: string) {
+    const internId = caseData.interns?.id as string | undefined
+    if (!internId) return
+    await fetch(`/api/interns/${internId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [field]: value || null }),
+    }).catch(() => null)
+  }
+
+  async function handleFazzaPatch(patch: Record<string, unknown>) {
+    await fetch(`/api/cases/${caseData.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    }).catch(() => null)
+  }
 
   const portalLink = caseData.portal_token
     ? `${typeof window !== 'undefined' ? window.location.origin : ''}/portal/${caseData.portal_token}/visa`
@@ -165,7 +200,7 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
         )}
       </div>
 
-      {/* Package */}
+      {/* Section 1: Package */}
       <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-3">
         <h4 className="text-sm font-semibold text-[#1a1918]">Package visa</h4>
         {loadingPkgs ? (
@@ -189,32 +224,33 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
         )}
         {selectedPkg && (
           <div className="flex flex-wrap gap-3 text-xs text-zinc-500">
-            {selectedPkg.visa_types && (
-              <span>Visa : <strong className="text-[#1a1918]">{selectedPkg.visa_types.name}</strong></span>
+            <span>Prix : <strong className="text-[#1a1918]">{selectedPkg.price_eur}€</strong></span>
+            {selectedPkg.visa_cost_idr && (
+              <span>Coût visa IDR : <strong className="text-[#1a1918]">{selectedPkg.visa_cost_idr.toLocaleString()} IDR</strong></span>
             )}
-            {selectedPkg.visa_agents && (
-              <span>Agent : <strong className="text-[#1a1918]">{selectedPkg.visa_agents.name}</strong></span>
+            {selectedPkg.processing_days && (
+              <span>Délai : <strong className="text-[#1a1918]">{selectedPkg.processing_days}j</strong></span>
             )}
             {selectedPkg.validity_label && (
               <span>Validité : <strong className="text-[#1a1918]">{selectedPkg.validity_label}</strong></span>
             )}
-            {selectedPkg.visa_cost_idr && (
-              <span>Coût IDR : <strong className="text-[#1a1918]">{selectedPkg.visa_cost_idr.toLocaleString()} IDR</strong></span>
-            )}
           </div>
         )}
-        {!selectedPkg && (
-          <p className="text-xs text-zinc-400">Agent par défaut : <strong className="text-[#1a1918]">FAZZA</strong></p>
+        {/* Show package from case join if no selection */}
+        {!selectedPkg && caseData.packages && (
+          <div className="flex flex-wrap gap-3 text-xs text-zinc-500">
+            <span>Package actuel : <strong className="text-[#1a1918]">{caseData.packages.name} — {caseData.packages.price_eur}€</strong></span>
+            {caseData.packages.validity_label && <span>Validité : <strong className="text-[#1a1918]">{caseData.packages.validity_label}</strong></span>}
+          </div>
         )}
       </div>
 
-      {/* Document checklist */}
+      {/* Section 2: Document checklist */}
       <div className="bg-white rounded-xl border border-zinc-100 overflow-hidden">
         <div className="px-4 py-3 border-b border-zinc-50 flex items-center justify-between">
           <h4 className="text-sm font-semibold text-[#1a1918]">Documents requis</h4>
           <span className="text-xs text-zinc-400">{docsReady}/{docsTotal} reçus</span>
         </div>
-        {/* Progress */}
         <div className="h-1 bg-zinc-100">
           <div
             className="h-full bg-[#0d9e75] transition-all"
@@ -229,27 +265,46 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
               <div key={doc.key} className="flex items-center gap-3 px-4 py-3">
                 <div className={[
                   'w-2.5 h-2.5 rounded-full flex-shrink-0',
-                  received ? 'bg-[#0d9e75]' : 'bg-zinc-200',
+                  received ? 'bg-[#0d9e75]' : 'bg-[#dc2626]',
                 ].join(' ')} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-[#1a1918]">{doc.label}</p>
                   <p className="text-xs text-zinc-400">{doc.hint}</p>
                 </div>
                 {received ? (
-                  <a
-                    href={url!}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-[#c8a96e] hover:underline flex-shrink-0"
-                  >
-                    Voir
-                  </a>
+                  <a href={url!} target="_blank" rel="noopener noreferrer" className="text-xs text-[#c8a96e] hover:underline flex-shrink-0">Voir</a>
                 ) : (
                   <span className="text-xs text-zinc-300 flex-shrink-0">En attente</span>
                 )}
               </div>
             )
           })}
+        </div>
+        {/* Mother fields for visa */}
+        <div className="px-4 py-3 border-t border-zinc-50 space-y-3">
+          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">Infos mère (requis visa)</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-zinc-400 mb-1">Prénom mère</label>
+              <input
+                type="text"
+                value={motherFirst}
+                onChange={(e) => setMotherFirst(e.target.value)}
+                onBlur={() => { void handleMotherSave('mother_first_name', motherFirst) }}
+                className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-400 mb-1">Nom mère</label>
+              <input
+                type="text"
+                value={motherLast}
+                onChange={(e) => setMotherLast(e.target.value)}
+                onBlur={() => { void handleMotherSave('mother_last_name', motherLast) }}
+                className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -272,7 +327,25 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
         </div>
       )}
 
-      {/* Note pour agent */}
+      {/* Section 3: Agent visa */}
+      <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-2">
+        <h4 className="text-sm font-semibold text-[#1a1918]">Agent visa</h4>
+        {caseData.visa_agents ? (
+          <div className="space-y-1 text-sm">
+            <p className="text-[#1a1918] font-medium">{caseData.visa_agents.company_name}</p>
+            {caseData.visa_agents.email && (
+              <p className="text-zinc-500">Email : <a href={`mailto:${caseData.visa_agents.email}`} className="text-[#c8a96e] hover:underline">{caseData.visa_agents.email}</a></p>
+            )}
+            {caseData.visa_agents.whatsapp && (
+              <p className="text-zinc-500">WhatsApp : <a href={`https://wa.me/${caseData.visa_agents.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-[#c8a96e] hover:underline">{caseData.visa_agents.whatsapp}</a></p>
+            )}
+          </div>
+        ) : (
+          <p className="text-xs text-zinc-400">Agent par défaut : <strong className="text-[#1a1918]">FAZZA</strong></p>
+        )}
+      </div>
+
+      {/* Section 4: Note pour agent */}
       <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-3">
         <h4 className="text-sm font-semibold text-[#1a1918]">Note pour l&apos;agent</h4>
         <textarea
@@ -286,7 +359,46 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
         {savingNote && <p className="text-xs text-zinc-400">Sauvegarde…</p>}
       </div>
 
-      {/* Envoyer à FAZZA */}
+      {/* Section 5: Virement FAZZA */}
+      <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-3">
+        <h4 className="text-sm font-semibold text-[#1a1918]">Virement FAZZA</h4>
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={fazzaSent}
+            onChange={(e) => {
+              setFazzaSent(e.target.checked)
+              void handleFazzaPatch({ fazza_transfer_sent: e.target.checked })
+            }}
+            className="w-4 h-4 rounded accent-[#c8a96e]"
+          />
+          <span className="text-sm text-[#1a1918]">Virement envoyé</span>
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs text-zinc-400 mb-1">Montant (IDR)</label>
+            <input
+              type="number"
+              value={fazzaAmount || ''}
+              onChange={(e) => setFazzaAmount(parseFloat(e.target.value) || 0)}
+              onBlur={() => { void handleFazzaPatch({ fazza_transfer_amount_idr: fazzaAmount || null }) }}
+              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-zinc-400 mb-1">Date virement</label>
+            <input
+              type="date"
+              value={fazzaDate}
+              onChange={(e) => setFazzaDate(e.target.value)}
+              onBlur={() => { void handleFazzaPatch({ fazza_transfer_date: fazzaDate || null }) }}
+              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Section 6: Envoyer à FAZZA */}
       <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-3">
         <h4 className="text-sm font-semibold text-[#1a1918]">Transmission à FAZZA</h4>
         {!canSendToAgent && (

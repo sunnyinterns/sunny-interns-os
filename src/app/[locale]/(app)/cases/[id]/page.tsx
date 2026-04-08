@@ -22,9 +22,13 @@ interface CaseDetail {
   status: CaseStatus
   arrival_date?: string | null
   return_date?: string | null
+  desired_start_date?: string | null
+  desired_end_date?: string | null
+  desired_duration_months?: number | null
   assigned_to?: string | null
   flight_number?: string | null
   flight_arrival_datetime?: string | null
+  flight_departure_city?: string | null
   dropoff_address?: string | null
   last_stopover_city?: string | null
   intern_bali_phone?: string | null
@@ -38,11 +42,18 @@ interface CaseDetail {
   payment_amount?: number | null
   payment_date?: string | null
   invoice_sent_at?: string | null
+  discount_percentage?: number | null
   iban?: string | null
   legal_entity?: string | null
+  billing_entity_id?: string | null
   fillout_bill_form_url?: string | null
   notes?: string | null
   metadata?: Record<string, unknown>
+  fazza_transfer_sent?: boolean | null
+  fazza_transfer_amount_idr?: number | null
+  fazza_transfer_date?: string | null
+  whatsapp_ambassador_bali_msg?: string | null
+  whatsapp_ambassador_done_msg?: string | null
   // Checklist booleans
   billet_avion?: boolean | null
   papiers_visas?: boolean | null
@@ -56,41 +67,79 @@ interface CaseDetail {
   scooter_reserve_check?: boolean | null
   convention_signee_check?: boolean | null
   chauffeur_reserve?: boolean | null
+  driver_booked?: boolean | null
   guesthouse_id?: string | null
+  guesthouse_preselection?: string | null
   welcome_kit_sent_at?: string | null
   interns?: {
     id?: string
     first_name?: string
     last_name?: string
     email?: string
+    whatsapp?: string
     phone?: string
     nationality?: string
+    gender?: string
     birth_date?: string
     passport_number?: string
     passport_expiry?: string
+    passport_issue_city?: string
+    passport_issue_date?: string
     avatar_url?: string
     intern_level?: string
     diploma_track?: string
-    school?: string
     school_contact_name?: string
     school_contact_email?: string
     emergency_contact_name?: string
     emergency_contact_phone?: string
+    insurance_company?: string
     main_desired_job?: string
+    desired_sectors?: string[]
+    stage_ideal?: string
     spoken_languages?: string[]
     linkedin_url?: string
+    cv_url?: string
     qualification_debrief?: string
     intern_address?: string
     intern_signing_city?: string
     housing_budget?: string
+    housing_city?: string
     wants_scooter?: boolean
     touchpoint?: string
     private_comment_for_employer?: string
+    referred_by_code?: string
+    preferred_language?: string
+    mother_first_name?: string
+    mother_last_name?: string
+    intern_bank_name?: string
+    intern_bank_iban?: string
     passport_page4_url?: string | null
     photo_id_url?: string | null
     bank_statement_url?: string | null
     return_plane_ticket_url?: string | null
   } | null
+  schools?: { id: string; name: string; city?: string | null } | null
+  destinations?: { name: string } | null
+  packages?: { id: string; name: string; price_eur: number; visa_cost_idr?: number | null; package_type?: string | null; processing_days?: number | null; validity_label?: string | null } | null
+  visa_types?: { id: string; code: string; name: string } | null
+  visa_agents?: { id: string; company_name: string; email?: string | null; whatsapp?: string | null } | null
+  billing_entities?: { id: string; name: string; iban?: string | null; bank_name?: string | null; is_default?: boolean } | null
+  job_submissions?: Array<{
+    id: string
+    status?: string
+    intern_interested?: boolean | null
+    cv_revision_requested?: boolean | null
+    notes_charly?: string | null
+    jobs?: {
+      id: string
+      title?: string
+      public_title?: string
+      wished_start_date?: string | null
+      wished_duration_months?: number | null
+      companies?: { id: string; name: string } | null
+      contacts?: { id: string; first_name?: string; last_name?: string; email?: string; whatsapp?: string } | null
+    } | null
+  }> | null
   activity_feed?: Array<{
     id: string
     action_type: string
@@ -217,10 +266,16 @@ export default function CaseDetailPage() {
 
   if (error || !caseData) {
     return (
-      <div className="p-6">
+      <div className="p-6 space-y-4">
         <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-[#dc2626]">
           {error ?? 'Dossier introuvable'}
         </div>
+        <button
+          onClick={() => router.push(`/${locale}/pipeline`)}
+          className="px-4 py-2 text-sm font-medium bg-zinc-100 hover:bg-zinc-200 text-[#1a1918] rounded-lg transition-colors"
+        >
+          ← Retour au pipeline
+        </button>
       </div>
     )
   }
@@ -378,8 +433,12 @@ export default function CaseDetailPage() {
         {activeTab === 'profil' && (
           <TabProfil
             intern={caseData.interns ?? null}
-            arrivalDate={caseData.arrival_date}
-            internId={caseData.interns?.id}
+            arrivalDate={caseData.actual_start_date ?? caseData.desired_start_date ?? null}
+            internId={(caseData.interns as any)?.id ?? null}
+            schoolName={(caseData.schools as any)?.name ?? null}
+            desiredStartDate={caseData.desired_start_date ?? null}
+            desiredEndDate={caseData.actual_end_date ?? caseData.desired_end_date ?? null}
+            desiredDurationMonths={caseData.desired_duration_months ?? null}
           />
         )}
         {activeTab === 'jobs' && (
@@ -401,7 +460,12 @@ export default function CaseDetailPage() {
             visa_received_at: caseData.visa_received_at,
             billet_avion: caseData.billet_avion,
             papiers_visas: caseData.papiers_visas,
-            interns: caseData.interns,
+            fazza_transfer_sent: caseData.fazza_transfer_sent,
+            fazza_transfer_amount_idr: caseData.fazza_transfer_amount_idr,
+            fazza_transfer_date: caseData.fazza_transfer_date,
+            interns: caseData.interns as Parameters<typeof TabVisa>[0]['caseData']['interns'],
+            visa_agents: caseData.visa_agents ?? null,
+            packages: caseData.packages ?? null,
           }} />
         )}
         {activeTab === 'arrivee' && (
@@ -421,7 +485,7 @@ export default function CaseDetailPage() {
             scooter_reserved: caseData.scooter_reserved,
             guesthouse_id: caseData.guesthouse_id,
             welcome_kit_sent_at: caseData.welcome_kit_sent_at,
-            interns: caseData.interns,
+            interns: caseData.interns ? { phone: caseData.interns.phone } : null,
           }} />
         )}
         {activeTab === 'facturation' && (
