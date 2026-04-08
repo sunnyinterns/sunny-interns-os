@@ -38,6 +38,7 @@ export async function GET() {
     const { data: cases } = await supabase
       .from('cases')
       .select('id, status, actual_start_date, actual_end_date, desired_start_date, flight_number, created_at, google_meet_link, portal_token, interns(first_name, last_name, email)')
+      .not('status', 'in', '(alumni,not_interested,no_job_found,lost)')
       .order('created_at', { ascending: false })
       .limit(50)
 

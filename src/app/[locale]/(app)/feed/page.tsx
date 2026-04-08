@@ -15,6 +15,9 @@ interface AgendaCase {
   status: string
   actual_start_date?: string | null
   actual_end_date?: string | null
+  interns?: { first_name?: string; last_name?: string } | null
+  schools?: { name?: string } | null
+  desired_start_date?: string | null
 }
 
 interface KPIs {
@@ -86,6 +89,7 @@ export default function FeedPage() {
   const [kpis, setKpis] = useState<KPIs | null>(null)
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [agendaCases, setAgendaCases] = useState<AgendaCase[]>([])
+  const [alumniCases, setAlumniCases] = useState<AgendaCase[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -99,12 +103,14 @@ export default function FeedPage() {
       fetch('/api/dashboard/kpis').then(r => r.ok ? r.json() as Promise<KPIs> : null).catch(() => null),
       fetch('/api/dashboard/alerts').then(r => r.ok ? r.json() as Promise<Alert[]> : []).catch(() => [] as Alert[]),
       fetch('/api/cases').then(r => r.ok ? r.json() as Promise<AgendaCase[]> : []).catch(() => [] as AgendaCase[]),
+      fetch('/api/cases?status=alumni&view=all').then(r => r.ok ? r.json() as Promise<AgendaCase[]> : []).catch(() => [] as AgendaCase[]),
     ])
-      .then(([feedData, kpiData, alertData, casesData]) => {
+      .then(([feedData, kpiData, alertData, casesData, alumniData]) => {
         setFeed(feedData)
         setKpis(kpiData)
         setAlerts(alertData as Alert[])
         setAgendaCases(casesData as AgendaCase[])
+        setAlumniCases(alumniData as AgendaCase[])
         setLoading(false)
       })
       .catch((err: unknown) => {
@@ -334,6 +340,58 @@ export default function FeedPage() {
             items={feed.completed}
             type="completed"
           />
+        </div>
+      )}
+
+      {/* SECTION 5 — Anciens stagiaires */}
+      {alumniCases.length > 0 && (
+        <div className="mt-8 border-t border-zinc-100 pt-6">
+          <h2 className="text-sm font-semibold text-[#92400e] mb-3 flex items-center gap-2">
+            🎓 Anciens stagiaires
+            <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-amber-100 text-[#92400e] text-xs font-bold">
+              {alumniCases.length}
+            </span>
+          </h2>
+          <div className="space-y-1.5">
+            {alumniCases.map((c) => {
+              const firstName = (c as any).interns?.first_name ?? c.first_name ?? ''
+              const lastName = (c as any).interns?.last_name ?? c.last_name ?? ''
+              const schoolName = (c as any).schools?.name ?? null
+              const endDate = c.actual_end_date
+              const daysSinceEnd = endDate
+                ? Math.floor((Date.now() - new Date(endDate).getTime()) / (1000 * 60 * 60 * 24))
+                : null
+              return (
+                <a
+                  key={c.id}
+                  href={`/fr/cases/${c.id}`}
+                  className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-amber-50/50 transition-colors border border-transparent hover:border-amber-100"
+                >
+                  <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-[10px] font-bold text-[#92400e]">
+                      {(firstName[0] ?? '').toUpperCase()}{(lastName[0] ?? '').toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="text-sm font-medium text-[#1a1918] flex-1 truncate">
+                    {firstName} {lastName}
+                  </span>
+                  {endDate && (
+                    <span className="text-xs text-zinc-400">
+                      {new Date(endDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                  )}
+                  {schoolName && (
+                    <span className="text-xs text-zinc-400 truncate max-w-[120px]">{schoolName}</span>
+                  )}
+                  {daysSinceEnd !== null && daysSinceEnd >= 0 && (
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-[#92400e]">
+                      J+{daysSinceEnd}
+                    </span>
+                  )}
+                </a>
+              )
+            })}
+          </div>
         </div>
       )}
 

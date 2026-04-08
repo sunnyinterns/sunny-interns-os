@@ -80,6 +80,7 @@ export async function GET(request: Request) {
   const assignedTo = searchParams.get('assigned_to')
   const month = searchParams.get('month') // YYYY-MM
   const email = searchParams.get('email')
+  const statusFilter = searchParams.get('status')
 
   // Email duplicate check
   if (email) {
@@ -110,6 +111,13 @@ export async function GET(request: Request) {
         packages(name, price_eur)
       `)
       .order('created_at', { ascending: false })
+
+    // Filter by specific status or exclude terminated statuses by default
+    if (statusFilter) {
+      query = query.eq('status', statusFilter)
+    } else if (view !== 'all') {
+      query = query.not('status', 'in', '(alumni,not_interested,no_job_found,lost)')
+    }
 
     if (assignedTo) query = query.eq('assigned_manager_name', assignedTo)
     if (month) {

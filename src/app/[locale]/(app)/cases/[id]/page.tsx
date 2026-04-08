@@ -157,7 +157,7 @@ export default function CaseDetailPage() {
   const intern = caseData.interns ?? {}
   const firstName = intern.first_name ?? ''
   const lastName = intern.last_name ?? ''
-  const isVisaOnly = caseData.internship_type === 'visa_only'
+  const isVisaOnly = caseData.case_type === 'visa_only'
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'process', label: 'Process' },
     { key: 'profil', label: 'Profil' },
@@ -194,18 +194,18 @@ export default function CaseDetailPage() {
               )}
             </div>
             <div className="flex items-center gap-4 mt-1 flex-wrap">
-              {caseData.arrival_date && (
+              {(caseData.actual_start_date || caseData.desired_start_date) && (
                 <span className="text-sm text-zinc-500">
-                  Arrivée : {new Date(caseData.arrival_date).toLocaleDateString('fr-FR')}
+                  Arrivée : {new Date(caseData.actual_start_date ?? caseData.desired_start_date).toLocaleDateString('fr-FR')}
                 </span>
               )}
-              {caseData.return_date && (
+              {caseData.actual_end_date && (
                 <span className="text-sm text-zinc-500">
-                  Retour : {new Date(caseData.return_date).toLocaleDateString('fr-FR')}
+                  Retour : {new Date(caseData.actual_end_date).toLocaleDateString('fr-FR')}
                 </span>
               )}
-              {caseData.internship_type && (
-                <span className="text-sm text-zinc-400">{caseData.internship_type}</span>
+              {caseData.case_type && (
+                <span className="text-sm text-zinc-400">{caseData.case_type}</span>
               )}
             </div>
           </div>
@@ -287,35 +287,34 @@ export default function CaseDetailPage() {
         {activeTab === 'process' && (
           <TabProcess
             caseId={caseData.id}
-            status={caseData.status}
-            activityFeed={caseData.activity_feed ?? []}
+            status={caseData.status as CaseStatus}
+            activityFeed={(caseData as any).activity_feed ?? []}
             isVisaOnly={isVisaOnly}
             checklist={{
-              billet_avion: caseData.billet_avion,
-              papiers_visas: caseData.papiers_visas,
-              visa_recu: caseData.visa_recu,
-              logement_scooter_formulaire: caseData.logement_scooter_formulaire,
-              logement_reserve: caseData.logement_reserve,
-              scooter_reserve_check: caseData.scooter_reserve_check,
-              convention_signee_check: caseData.convention_signee_check,
-              chauffeur_reserve: caseData.chauffeur_reserve,
+              billet_avion: (caseData as any).billet_avion ?? null,
+              papiers_visas: (caseData as any).papiers_visas ?? null,
+              visa_recu: (caseData as any).visa_recu ?? null,
+              logement_scooter_formulaire: (caseData as any).logement_scooter_formulaire ?? null,
+              logement_reserve: (caseData as any).logement_reserve ?? null,
+              scooter_reserve_check: (caseData as any).scooter_reserve_check ?? null,
+              convention_signee_check: (caseData as any).convention_signee_check ?? null,
+              chauffeur_reserve: (caseData as any).chauffeur_reserve ?? null,
             }}
-            internEmail={caseData.interns?.email}
-            paymentAmount={caseData.payment_amount}
-            filloutBillFormUrl={caseData.fillout_bill_form_url}
-            caseData={caseData as unknown as Record<string, unknown>}
-            onRefresh={() => fetchCase()}
+            internEmail={(caseData as any).interns?.email ?? null}
+            paymentAmount={(caseData as any).payment_amount ?? null}
+            caseData={caseData as Record<string, unknown>}
+            onRefresh={fetchCase}
           />
         )}
         {activeTab === 'profil' && (
           <TabProfil
-            intern={caseData.interns ?? null}
-            arrivalDate={caseData.actual_start_date ?? caseData.desired_start_date ?? null}
-            internId={caseData.interns?.id ?? null}
-            schoolName={caseData.schools?.name ?? null}
-            desiredStartDate={caseData.desired_start_date ?? null}
-            desiredEndDate={caseData.actual_end_date ?? caseData.desired_end_date ?? null}
-            desiredDurationMonths={caseData.desired_duration_months ?? null}
+            intern={(caseData as any).interns ?? null}
+            internId={(caseData as any).interns?.id ?? null}
+            schoolName={(caseData as any).schools?.name ?? null}
+            desiredStartDate={(caseData as any).desired_start_date ?? null}
+            desiredEndDate={(caseData as any).actual_end_date ?? (caseData as any).interns?.desired_end_date ?? null}
+            desiredDurationMonths={(caseData as any).desired_duration_months ?? null}
+            arrivalDate={(caseData as any).actual_start_date ?? (caseData as any).desired_start_date ?? null}
           />
         )}
         {activeTab === 'jobs' && (

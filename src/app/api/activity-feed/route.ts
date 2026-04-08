@@ -21,7 +21,8 @@ export async function GET(request: Request) {
 
   let query = supabase
     .from('activity_feed')
-    .select('*, cases(id, intern_id, assigned_manager_name, interns(first_name, last_name))')
+    .select('*, cases!inner(id, status, intern_id, assigned_manager_name, interns(first_name, last_name))')
+    .not('cases.status', 'in', '(alumni,not_interested,no_job_found,lost)')
     .order('created_at', { ascending: false })
     .limit(limit)
 
@@ -45,7 +46,7 @@ export async function GET(request: Request) {
 
   // Format items
   const items = (data ?? []).map(item => {
-    const caseData = item.cases as { id: string; assigned_manager_name: string; interns: { first_name: string; last_name: string } | null } | null
+    const caseData = item.cases as { id: string; status: string; assigned_manager_name: string; interns: { first_name: string; last_name: string } | null } | null
     return {
       id: item.id,
       type: item.type,

@@ -519,13 +519,13 @@ export default function StatusActionPanel({ caseData, onRefresh }: StatusActionP
 
       {/* ── ALUMNI ── */}
       {s === 'alumni' && (
-        <>
-          {btn('💬 WhatsApp Stage terminé', '#25d366', () => {
-            const wa = 'https://wa.me/' + (caseData.interns?.whatsapp?.replace(/\D/g, '') ?? '') + '?text=' + encodeURIComponent(caseData.whatsapp_ambassador_done_msg ?? 'Hello, ton stage à Bali est terminé !')
-            window.open(wa)
-          })}
-          {btn('🔗 Formulaire Ambassadeur', '#6b7280', () => window.open('/portal/' + (caseData.portal_token ?? '') + '/ambassadeur'))}
-        </>
+        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '16px', textAlign: 'center' }}>
+          <p style={{ fontSize: '20px', marginBottom: '8px' }}>🎓</p>
+          <p style={{ fontSize: '15px', fontWeight: 600, color: '#065f46', margin: '0 0 4px' }}>Ce stagiaire a terminé son stage</p>
+          <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
+            Stage terminé le {caseData.actual_end_date ? new Date(caseData.actual_end_date).toLocaleDateString('fr-FR') : '—'}. Aucune action requise.
+          </p>
+        </div>
       )}
 
       {/* ── CLOSED ── */}

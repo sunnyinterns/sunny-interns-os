@@ -19,7 +19,6 @@ const COLUMN_ORDER = [
   'visa_received',
   'arrival_prep',
   'active',
-  'alumni',
 ] as const
 
 // Legacy status mapped to closest new column for display
@@ -41,7 +40,6 @@ const COLUMN_LABELS: Record<string, string> = {
   visa_received: 'Visa reçu',
   arrival_prep: 'Préparation départ',
   active: 'En stage',
-  alumni: 'Alumni',
 }
 
 // Statuts "perdus" — section collapsible
@@ -112,9 +110,12 @@ export function KanbanBoard({ cases, locale = 'fr' }: KanbanBoardProps) {
   )
 
   const lostCases: CaseData[] = []
+  const alumniCases: CaseData[] = []
 
   for (const c of normalizedCases) {
-    if (c.status in grouped) {
+    if (c.status === 'alumni') {
+      alumniCases.push(c)
+    } else if (c.status in grouped) {
       grouped[c.status].push(c)
     } else if (LOST_STATUSES.includes(c.status)) {
       lostCases.push(c)
@@ -207,6 +208,31 @@ export function KanbanBoard({ cases, locale = 'fr' }: KanbanBoardProps) {
           )
         })}
       </div>
+
+      {/* Section Alumni — séparée visuellement */}
+      {alumniCases.length > 0 && (
+        <div className="flex-shrink-0 border-t border-zinc-100 pt-3">
+          <div className="flex items-center gap-2 text-xs font-medium text-[#92400e] mb-3">
+            <span className="text-base">🎓</span>
+            Anciens stagiaires ({alumniCases.length})
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-4">
+            <div className="flex-shrink-0 w-[280px] flex flex-col bg-amber-50/50 rounded-xl border border-amber-100">
+              <div className="px-3 py-2.5 border-b border-amber-100 flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-[#92400e] truncate">Alumni</span>
+                <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-amber-100 text-[#92400e] text-xs font-bold flex-shrink-0">
+                  {alumniCases.length}
+                </span>
+              </div>
+              <div className="flex-1 p-2 space-y-2 overflow-y-auto max-h-48">
+                {alumniCases.map((c) => (
+                  <CaseCard key={c.id} data={c} locale={locale} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Section Perdus — collapsible */}
       {lostCases.length > 0 && (
