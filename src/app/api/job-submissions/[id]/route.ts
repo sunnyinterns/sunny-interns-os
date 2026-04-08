@@ -1,17 +1,32 @@
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
   const { id } = await params
+
+  // Portal (intern) access: allow via x-portal-token header (no auth required)
+  const portalToken = request.headers.get('x-portal-token')
+  let supabase
+  let isPortal = false
+
+  if (portalToken) {
+    supabase = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+    isPortal = true
+  } else {
+    supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
-    const body = await request.json() as { status: string }
+    const body = await request.json() as { status?: string; intern_interested?: boolean }
 
     const { data: sub, error: fetchError } = await supabase
       .from('job_submissions')
@@ -20,13 +35,25 @@ export async function PATCH(
       .single()
     if (fetchError) throw fetchError
 
+    // Build update payload
+    const updatePayload: Record<string, unknown> = { updated_at: new Date().toISOString() }
+
+    if (body.intern_interested !== undefined) {
+      updatePayload.intern_interested = body.intern_interested
+      updatePayload.intern_responded_at = new Date().toISOString()
+    }
+
+    if (body.status && !isPortal) {
+      updatePayload.status = body.status
+    }
+
     const { error } = await supabase
       .from('job_submissions')
-      .update({ status: body.status, updated_at: new Date().toISOString() })
+      .update(updatePayload)
       .eq('id', id)
     if (error) throw error
 
-    if (body.status === 'retained') {
+    if (body.status === 'retained' && !isPortal) {
       // Cancel all other submissions for this case
       await supabase
         .from('job_submissions')
@@ -40,8 +67,12 @@ export async function PATCH(
         .update({ status: 'job_retained', updated_at: new Date().toISOString() })
         .eq('id', sub.case_id)
 
-      // Email log
       console.log('[EMAIL] is the intern your next intern?', { submissionId: id, jobId: sub.job_id })
+    }
+
+    // If intern expressed interest, notify admin
+    if (body.intern_interested === true) {
+      console.log('[NOTIF] Intern interested in job submission', { submissionId: id, caseId: sub.case_id, jobId: sub.job_id })
     }
 
     return NextResponse.json({ success: true })

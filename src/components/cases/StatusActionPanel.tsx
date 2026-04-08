@@ -11,6 +11,8 @@ export interface StatusActionPanelProps {
     google_meet_link?: string | null
     google_meet_cancel_link?: string | null
     qualification_notes?: string | null
+    intern_level?: string | null
+    diploma_track?: string | null
     note_for_agent?: string | null
     billet_avion?: boolean | null
     papiers_visas?: boolean | null
@@ -33,7 +35,13 @@ export interface StatusActionPanelProps {
       bank_statement_url?: string | null
       return_plane_ticket_url?: string | null
     } | null
-    job_submissions?: Array<{ id: string; job_title?: string; company_name?: string; status?: string }> | null
+    job_submissions?: Array<{
+      id: string
+      job_title?: string
+      company_name?: string
+      status?: string
+      intern_interested?: boolean | null
+    }> | null
   }
   onRefresh?: () => void
 }
@@ -173,9 +181,60 @@ export default function StatusActionPanel({ caseData, onRefresh }: StatusActionP
       {/* ── QUALIFICATION_DONE ── */}
       {s === 'qualification_done' && (
         <>
-          {caseData.qualification_notes && (
-            <p style={{ fontStyle: 'italic', color: '#888', fontSize: '13px', marginBottom: '10px' }}>{caseData.qualification_notes}</p>
-          )}
+          {/* Notes de qualification */}
+          <div style={{ marginBottom: '12px' }}>
+            <p style={{ fontSize: '11px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Notes de qualification</p>
+            <textarea
+              defaultValue={caseData.qualification_notes ?? ''}
+              placeholder="Notes sur la qualification du candidat…"
+              onBlur={(e) => {
+                fetch('/api/cases/' + caseData.id, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ qualification_notes: e.target.value }),
+                }).catch(() => null)
+              }}
+              rows={3}
+              style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '13px', resize: 'vertical', boxSizing: 'border-box', background: 'white', color: '#374151' }}
+            />
+          </div>
+          {/* Niveau stagiaire */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
+            <div>
+              <p style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Niveau</p>
+              <select
+                defaultValue={caseData.intern_level ?? ''}
+                onChange={(e) => {
+                  fetch('/api/cases/' + caseData.id, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ intern_level: e.target.value || null }),
+                  }).catch(() => null)
+                }}
+                style={{ width: '100%', padding: '6px 8px', borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '13px', background: 'white', color: '#374151' }}
+              >
+                <option value="">— Niveau —</option>
+                {['Bac+2', 'Bac+3', 'Licence', 'Master 1', 'Master 2'].map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </div>
+            <div>
+              <p style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Track diplôme</p>
+              <select
+                defaultValue={caseData.diploma_track ?? ''}
+                onChange={(e) => {
+                  fetch('/api/cases/' + caseData.id, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ diploma_track: e.target.value || null }),
+                  }).catch(() => null)
+                }}
+                style={{ width: '100%', padding: '6px 8px', borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '13px', background: 'white', color: '#374151' }}
+              >
+                <option value="">— Track —</option>
+                {['Conventionné école', 'Contrat pro', 'Alternance', 'Autre'].map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </div>
+          </div>
           {btn('➕ Proposer un job', '#c8a96e', () => { void openJobModal() })}
           {btn('❌ Incapable de trouver', '#ef4444', () => handleStatusChange('no_job_found'))}
           {showJobModal && (
@@ -207,15 +266,35 @@ export default function StatusActionPanel({ caseData, onRefresh }: StatusActionP
       {/* ── JOB_SUBMITTED ── */}
       {s === 'job_submitted' && (
         <>
-          {(caseData.job_submissions ?? []).map((sub) => (
-            <div key={sub.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <span style={{ fontSize: '13px', color: '#374151' }}>{sub.job_title ?? 'Offre'} — {sub.company_name ?? ''}</span>
-              <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '6px', background: sub.status === 'hired' ? '#d1fae5' : '#f3f4f6', color: sub.status === 'hired' ? '#065f46' : '#6b7280', fontWeight: 600 }}>
-                {sub.status ?? 'en attente'}
-              </span>
-              {sub.status === 'hired' && btn('🍾 Confirmer Retenu', '#10b981', () => handleStatusChange('job_retained', { company_name: sub.company_name }))}
-            </div>
-          ))}
+          <div style={{ marginBottom: '12px' }}>
+            {(caseData.job_submissions ?? []).map((sub) => (
+              <div key={sub.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', padding: '10px 12px', background: 'white', borderRadius: '10px', border: '1px solid #e5e7eb', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '13px', fontWeight: 500, color: '#374151', flex: 1, minWidth: '120px' }}>{sub.job_title ?? 'Offre'}</span>
+                {/* Réponse candidat */}
+                {sub.intern_interested === true && (
+                  <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '6px', background: '#d1fae5', color: '#065f46', fontWeight: 700 }}>
+                    ✓ Candidat intéressé !
+                  </span>
+                )}
+                {sub.intern_interested === false && (
+                  <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '6px', background: '#f3f4f6', color: '#6b7280', fontWeight: 600 }}>
+                    Pas intéressé
+                  </span>
+                )}
+                {sub.intern_interested == null && (
+                  <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '6px', background: '#fef3c7', color: '#92400e', fontWeight: 600 }}>
+                    En attente réponse
+                  </span>
+                )}
+                <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '6px', background: sub.status === 'retained' ? '#d1fae5' : sub.status === 'rejected' ? '#fee2e2' : '#f3f4f6', color: sub.status === 'retained' ? '#065f46' : sub.status === 'rejected' ? '#991b1b' : '#6b7280', fontWeight: 600 }}>
+                  {sub.status ?? 'soumis'}
+                </span>
+                {(sub.status === 'submitted' || sub.status === 'hired') && sub.intern_interested === true && (
+                  btn('🍾 Retenu', '#10b981', () => handleStatusChange('job_retained', { company_name: sub.company_name }))
+                )}
+              </div>
+            ))}
+          </div>
           {btn('➕ Proposer autre job', '#6b7280', () => { void openJobModal() })}
         </>
       )}
@@ -291,15 +370,27 @@ export default function StatusActionPanel({ caseData, onRefresh }: StatusActionP
       {/* ── VISA_DOCS_SENT ── */}
       {s === 'visa_docs_sent' && (
         <>
-          {[
-            { label: 'Billet avion', key: 'billet_avion' as const },
-            { label: 'Papiers visa', key: 'papiers_visas' as const },
-          ].map((item) => (
-            <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-              <span style={{ fontSize: '14px' }}>{caseData[item.key] ? '✅' : '❌'}</span>
-              <span style={{ fontSize: '13px', color: '#374151' }}>{item.label}</span>
-            </div>
-          ))}
+          {/* Checklist réelle des documents */}
+          <div style={{ marginBottom: '12px' }}>
+            <p style={{ fontSize: '11px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>Documents candidat</p>
+            {[
+              { label: 'Passeport page 4', key: 'passport_page4_url' as const },
+              { label: 'Photo fond blanc', key: 'photo_id_url' as const },
+              { label: 'Relevé bancaire', key: 'bank_statement_url' as const },
+              { label: 'Billet retour', key: 'return_plane_ticket_url' as const },
+            ].map((item) => {
+              const ok = !!(caseData.interns?.[item.key])
+              return (
+                <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '14px' }}>{ok ? '✅' : '❌'}</span>
+                  <span style={{ fontSize: '13px', color: ok ? '#065f46' : '#dc2626', fontWeight: ok ? 500 : 400 }}>{item.label}</span>
+                  {ok && caseData.interns?.[item.key] && (
+                    <a href={caseData.interns[item.key] ?? '#'} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: '#c8a96e', textDecoration: 'underline' }}>Voir</a>
+                  )}
+                </div>
+              )
+            })}
+          </div>
           <textarea
             placeholder="Note pour l'agent visa..."
             defaultValue={caseData.note_for_agent ?? ''}
@@ -314,7 +405,8 @@ export default function StatusActionPanel({ caseData, onRefresh }: StatusActionP
             rows={3}
           />
           {(() => {
-            const canSend = !!(caseData.billet_avion && caseData.papiers_visas)
+            const allInternDocs = !!(caseData.interns?.passport_page4_url && caseData.interns?.photo_id_url && caseData.interns?.bank_statement_url && caseData.interns?.return_plane_ticket_url)
+            const canSend = allInternDocs
             return btn(
               canSend ? '🚩 Envoyer dossier à FAZZA' : '🚩 Envoyer à FAZZA (docs incomplets)',
               canSend ? '#c8a96e' : '#9ca3af',

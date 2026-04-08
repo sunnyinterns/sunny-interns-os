@@ -11,6 +11,8 @@ interface ActivityEntry {
   action_type: string
   description: string
   created_at: string
+  created_by?: string | null
+  author_name?: string | null
 }
 
 interface ChecklistData {
@@ -35,6 +37,33 @@ interface TabProcessProps {
   filloutBillFormUrl?: string | null
   caseData?: Record<string, unknown>
   onRefresh?: () => void
+}
+
+const ACTIVITY_ICONS: Record<string, string> = {
+  status_changed: '🔄',
+  status_change: '🔄',
+  job_submitted: '📋',
+  job_proposed: '📋',
+  job_retained: '🎉',
+  cv_revision: '📝',
+  cv_uploaded: '📎',
+  visa_docs_ready: '📁',
+  doc_uploaded: '📄',
+  payment_received: '💳',
+  visa_received: '🛂',
+  note: '💬',
+  default: '•',
+}
+
+function relativeDate(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 60) return `il y a ${mins}min`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `il y a ${hrs}h`
+  const days = Math.floor(hrs / 24)
+  if (days < 30) return `il y a ${days}j`
+  return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
 }
 
 const ALL_STATUSES: { value: CaseStatus; label: string }[] = [
@@ -89,6 +118,9 @@ export function TabProcess({
   const [statusChanging, setStatusChanging] = useState(false)
   const [emailSending, setEmailSending] = useState<string | null>(null)
   const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
+  const [feed, setFeed] = useState<ActivityEntry[]>(activityFeed)
+  const [noteText, setNoteText] = useState('')
+  const [savingNote, setSavingNote] = useState(false)
 
   function showToast(text: string, type: 'success' | 'error' = 'success') {
     setToastMsg({ text, type })
@@ -148,6 +180,27 @@ export function TabProcess({
       showToast('Erreur envoi email paiement', 'error')
     } finally {
       setEmailSending(null)
+    }
+  }
+
+  async function handleSaveNote() {
+    if (!noteText.trim()) return
+    setSavingNote(true)
+    try {
+      const res = await fetch(`/api/cases/${caseId}/activity`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action_type: 'note', description: noteText.trim(), author_name: 'Charly' }),
+      })
+      if (!res.ok) throw new Error()
+      const newEntry = await res.json() as ActivityEntry
+      setFeed(f => [newEntry, ...f])
+      setNoteText('')
+      showToast('Note ajoutée')
+    } catch {
+      showToast('Erreur lors de l\'ajout de la note', 'error')
+    } finally {
+      setSavingNote(false)
     }
   }
 
@@ -308,25 +361,62 @@ export function TabProcess({
 
       {/* Activity feed */}
       <div>
-        <h3 className="text-sm font-semibold text-zinc-700 mb-3">Activité récente</h3>
-        {activityFeed.length === 0 ? (
+        <h3 className="text-sm font-semibold text-zinc-700 mb-3">Activité & notes</h3>
+
+        {/* Note interne */}
+        <div className="bg-zinc-50 border border-zinc-100 rounded-xl p-3 mb-4">
+          <p className="text-xs font-medium text-zinc-500 mb-2">Ajouter une note interne</p>
+          <textarea
+            value={noteText}
+            onChange={e => setNoteText(e.target.value)}
+            placeholder="Note interne sur le dossier…"
+            rows={2}
+            className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white text-[#1a1918] focus:outline-none focus:ring-2 focus:ring-[#c8a96e] resize-none"
+          />
+          <div className="flex justify-end mt-2">
+            <button
+              onClick={() => { void handleSaveNote() }}
+              disabled={savingNote || !noteText.trim()}
+              className="px-3 py-1.5 text-xs font-medium bg-[#c8a96e] text-white rounded-lg hover:bg-[#b8945a] disabled:opacity-50 transition-colors"
+            >
+              {savingNote ? 'Ajout…' : 'Ajouter la note'}
+            </button>
+          </div>
+        </div>
+
+        {feed.length === 0 ? (
           <p className="text-sm text-zinc-400">Aucune activité enregistrée</p>
         ) : (
-          <div className="space-y-2">
-            {activityFeed.map((entry) => (
-              <div key={entry.id} className="flex items-start gap-3 py-2 border-b border-zinc-50 last:border-0">
-                <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 mt-2 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#1a1918]">{entry.description}</p>
-                  <p className="text-xs text-zinc-400 mt-0.5">
-                    {new Date(entry.created_at).toLocaleString('fr-FR', {
-                      day: '2-digit', month: '2-digit', year: 'numeric',
-                      hour: '2-digit', minute: '2-digit',
-                    })}
-                  </p>
+          <div className="space-y-1">
+            {feed.map((entry) => {
+              const icon = ACTIVITY_ICONS[entry.action_type] ?? ACTIVITY_ICONS.default
+              const isNote = entry.action_type === 'note'
+              return (
+                <div
+                  key={entry.id}
+                  className={[
+                    'flex items-start gap-3 px-3 py-2.5 rounded-lg',
+                    isNote ? 'bg-amber-50 border border-amber-100' : 'hover:bg-zinc-50',
+                  ].join(' ')}
+                >
+                  <span className="text-base flex-shrink-0 mt-0.5">{icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className={['text-sm', isNote ? 'text-amber-900 font-medium' : 'text-[#1a1918]'].join(' ')}>
+                      {entry.description}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {(entry.author_name ?? entry.created_by) && (
+                        <span className="text-xs text-zinc-400">
+                          {entry.author_name ?? 'Système'}
+                        </span>
+                      )}
+                      <span className="text-xs text-zinc-300">·</span>
+                      <span className="text-xs text-zinc-400">{relativeDate(entry.created_at)}</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

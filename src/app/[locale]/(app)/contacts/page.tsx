@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 
 interface Contact {
   id: string
@@ -38,6 +39,9 @@ const JOB_STATUS_LABELS: Record<string, string> = {
 const inputCls = 'px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white text-[#1a1918] focus:outline-none focus:ring-2 focus:ring-[#c8a96e] w-full'
 
 export default function ContactsPage() {
+  const params = useParams()
+  const router = useRouter()
+  const locale = typeof params?.locale === 'string' ? params.locale : 'fr'
   const [contacts, setContacts] = useState<Contact[]>([])
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>([])
   const [loading, setLoading] = useState(true)
@@ -257,6 +261,12 @@ export default function ContactsPage() {
               </div>
               <h2 className="text-base font-semibold text-[#1a1918]">{selectedContact.first_name} {selectedContact.last_name ?? ''}</h2>
               <p className="text-xs text-zinc-500">{selectedContact.job_title ?? ''}</p>
+              <button
+                onClick={() => router.push(`/${locale}/contacts/${selectedContact.id}`)}
+                className="mt-2 text-xs px-2 py-1 bg-[#c8a96e]/10 text-[#c8a96e] rounded-lg hover:bg-[#c8a96e]/20 transition-colors font-medium"
+              >
+                Voir fiche complète →
+              </button>
             </div>
             <button onClick={() => setSelectedContact(null)} className="text-zinc-400 hover:text-zinc-600 text-xl mt-1">×</button>
           </div>

@@ -11,13 +11,20 @@ export async function GET(
 
   const { id } = await params
   try {
-    const { data, error } = await supabase
-      .from('jobs')
-      .select('*, companies(id, name), job_contacts(id, name, email), cases(id, first_name, last_name, status)')
-      .eq('id', id)
-      .single()
+    const [{ data, error }, { data: submissions }] = await Promise.all([
+      supabase
+        .from('jobs')
+        .select('*, companies(id, name), contacts(id, first_name, last_name, job_title, email, whatsapp), job_departments(id, name), cases(id, status)')
+        .eq('id', id)
+        .single(),
+      supabase
+        .from('job_submissions')
+        .select('id, status, cv_sent, intern_interested, cases(id, interns(first_name, last_name))')
+        .eq('job_id', id)
+        .order('created_at', { ascending: false }),
+    ])
     if (error) throw error
-    return NextResponse.json(data)
+    return NextResponse.json({ ...data, job_submissions: submissions ?? [] })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 404 })
   }
