@@ -104,7 +104,9 @@ export async function GET(request: Request) {
         billet_avion, papiers_visas, visa_recu, logement_scooter_formulaire,
         logement_reserve, scooter_reserve_check, convention_signee_check, chauffeur_reserve,
         portal_token, intern_first_meeting_date,
-        interns(first_name, last_name, passport_expiry)
+        interns(first_name, last_name, passport_expiry),
+        schools(name),
+        packages(name, price_eur)
       `)
       .order('created_at', { ascending: false })
 
