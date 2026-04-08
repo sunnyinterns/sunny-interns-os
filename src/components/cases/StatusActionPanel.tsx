@@ -130,9 +130,9 @@ export default function StatusActionPanel({ caseData, onRefresh }: StatusActionP
   const s = caseData.status
 
   return (
-    <div style={{ background: '#fafaf7', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-      <p style={{ fontSize: '11px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px' }}>
-        Actions — {s}
+    <div style={{ background: '#f5f0e6', border: '2px solid #c8a96e', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+      <p style={{ fontSize: '12px', fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px' }}>
+        Actions rapides — {s}
       </p>
 
       {/* ── LEAD ── */}

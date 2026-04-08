@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { NewCaseModal } from '@/components/cases/NewCaseModal'
@@ -122,6 +122,47 @@ const STATUS_LABELS: Partial<Record<CaseStatus, string>> = {
   completed: 'Terminé',
 }
 
+const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> = {
+  lead: { label: 'Demande', bg: '#e5e7eb', text: '#374151' },
+  rdv_booked: { label: 'RDV Booké', bg: '#dbeafe', text: '#1d4ed8' },
+  qualification_done: { label: 'Qualif OK', bg: '#ede9fe', text: '#7c3aed' },
+  job_submitted: { label: 'Jobs proposés', bg: '#ffedd5', text: '#c2410c' },
+  job_retained: { label: 'Job retenu', bg: '#d1fae5', text: '#065f46' },
+  convention_signed: { label: 'Convention', bg: '#d1fae5', text: '#065f46' },
+  payment_pending: { label: 'Paiement \u23f3', bg: '#fee2e2', text: '#dc2626' },
+  payment_received: { label: 'Payé \u2713', bg: '#d1fae5', text: '#065f46' },
+  visa_docs_sent: { label: 'Docs visa', bg: '#ffedd5', text: '#c2410c' },
+  visa_submitted: { label: 'Visa soumis', bg: '#dbeafe', text: '#1d4ed8' },
+  visa_in_progress: { label: 'Visa en cours', bg: '#dbeafe', text: '#1d4ed8' },
+  visa_received: { label: 'Visa reçu \u2713', bg: '#d1fae5', text: '#065f46' },
+  arrival_prep: { label: 'Départ imminent', bg: '#fee2e2', text: '#dc2626' },
+  active: { label: 'En stage \ud83c\udf34', bg: '#d1fae5', text: '#065f46' },
+  alumni: { label: 'Alumni', bg: '#fef3c7', text: '#92400e' },
+}
+
+const PROCESS_STEPS = [
+  'lead', 'rdv_booked', 'qualification_done', 'job_submitted', 'job_retained',
+  'convention_signed', 'payment_pending', 'payment_received', 'visa_docs_sent',
+  'visa_submitted', 'visa_received', 'arrival_prep', 'active', 'alumni',
+] as const
+
+const NEXT_ACTIONS: Record<string, string> = {
+  lead: 'Booker un RDV de qualification avec le candidat',
+  rdv_booked: 'Faire l\u2019entretien et qualifier le candidat',
+  qualification_done: 'Proposer des offres de stage au candidat',
+  job_submitted: 'Attendre la réponse du candidat et de l\u2019employeur',
+  job_retained: 'Envoyer la lettre d\u2019engagement et la convention',
+  convention_signed: 'Demander le paiement au candidat',
+  payment_pending: 'Confirmer la réception du paiement',
+  payment_received: 'Préparer et envoyer les documents visa',
+  visa_docs_sent: 'Envoyer le dossier à l\u2019agent visa FAZZA',
+  visa_submitted: 'Attendre la réception du visa',
+  visa_received: 'Préparer l\u2019arrivée : logement, scooter, chauffeur',
+  arrival_prep: 'Confirmer le chauffeur et l\u2019hébergement',
+  active: 'Suivre le stage et préparer le départ',
+  alumni: 'Envoyer le formulaire ambassadeur',
+}
+
 function statusToBadgeVariant(status: CaseStatus): 'default' | 'success' | 'attention' | 'critical' | 'info' {
   if (['active', 'alumni', 'completed', 'payment_received', 'visa_received'].includes(status)) return 'success'
   if (['payment_pending', 'visa_in_progress', 'arrival_prep'].includes(status)) return 'attention'
@@ -138,13 +179,15 @@ type TabKey = 'process' | 'profil' | 'jobs' | 'visa' | 'arrivee' | 'facturation'
 export default function CaseDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const id = typeof params?.id === 'string' ? params.id : ''
   const locale = typeof params?.locale === 'string' ? params.locale : 'fr'
+  const tabFromUrl = searchParams?.get('tab') as TabKey | null
 
   const [caseData, setCaseData] = useState<CaseDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<TabKey>('process')
+  const [activeTab, setActiveTab] = useState<TabKey>(tabFromUrl ?? 'process')
   const [showEditModal, setShowEditModal] = useState(false)
   const [showInternCard, setShowInternCard] = useState(false)
 
@@ -256,6 +299,38 @@ export default function CaseDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Étape actuelle — toujours visible */}
+      {(() => {
+        const badge = STATUS_BADGE[caseData.status]
+        const stepIdx = PROCESS_STEPS.indexOf(caseData.status as typeof PROCESS_STEPS[number])
+        const step = stepIdx >= 0 ? stepIdx + 1 : null
+        const nextAction = NEXT_ACTIONS[caseData.status]
+        return (
+          <div className="mx-6 mt-4 mb-2 px-4 py-3 rounded-xl border" style={{ backgroundColor: badge?.bg ? `${badge.bg}33` : '#f9fafb', borderColor: badge?.bg ?? '#e5e7eb' }}>
+            <div className="flex items-center gap-3 flex-wrap">
+              {badge && (
+                <span
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold"
+                  style={{ backgroundColor: badge.bg, color: badge.text }}
+                >
+                  {badge.label}
+                </span>
+              )}
+              {step && (
+                <span className="text-xs text-zinc-500">
+                  Étape {step} sur 14 du processus
+                </span>
+              )}
+            </div>
+            {nextAction && (
+              <p className="text-xs text-zinc-600 mt-1.5">
+                <span className="font-semibold">Prochaine action :</span> {nextAction}
+              </p>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Tab nav */}
       <div className="flex border-b border-zinc-100 bg-white px-6 overflow-x-auto flex-shrink-0">
