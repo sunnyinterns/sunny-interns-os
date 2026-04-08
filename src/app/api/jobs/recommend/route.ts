@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     // Fetch open jobs
     const { data: jobs } = await supabase
       .from('jobs')
-      .select('id, title, description, department, missions, start_date, end_date, companies(name)')
+      .select('id, title, public_title, description, department, missions, wished_start_date, wished_end_date, wished_duration_months, companies(name)')
       .eq('status', 'open')
       .limit(20)
 
