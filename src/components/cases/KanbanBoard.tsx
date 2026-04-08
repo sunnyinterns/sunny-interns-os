@@ -70,11 +70,13 @@ interface CaseData {
   arrival_date?: string | null
   desired_start_date?: string | null
   actual_start_date?: string | null
+  actual_end_date?: string | null
   return_date?: string | null
   group_id?: string | null
   internship_type?: string | null
   school?: string | null
   passport_expiry?: string | null
+  assigned_manager_name?: string | null
 }
 
 interface KanbanBoardProps {
@@ -326,8 +328,35 @@ const NO_DAYS_TAG_STATUSES = ['not_interested', 'no_job_found', 'lost', 'alumni'
 
 function CaseCard({ data, locale }: { data: CaseCardExtended; locale: string }) {
   const router = useRouter()
-  const dateRef = data.desired_start_date ?? data.arrival_date
-  const tag = dateRef && !NO_DAYS_TAG_STATUSES.includes(data.status) ? getDaysUntilTag(dateRef) : null
+
+  // Logique badge date selon statut
+  const tag = (() => {
+    if (NO_DAYS_TAG_STATUSES.includes(data.status)) return null
+
+    // En stage actif : afficher "encore X j" jusqu'à la fin (discret, pas urgent)
+    if (data.status === 'active') {
+      const endDate = data.actual_end_date
+      if (!endDate) return null
+      const days = Math.ceil((new Date(endDate).getTime() - Date.now()) / 86400000)
+      if (days <= 0) return null // stage terminé
+      if (days <= 7) return { label: `Fin dans ${days}j`, color: 'bg-orange-50 text-orange-600' }
+      return { label: `Encore ${days}j`, color: 'bg-zinc-100 text-zinc-500' }
+    }
+
+    // Arrivée imminente : J-X avant actual_start_date (urgent)
+    if (data.status === 'arrival_prep') {
+      const startDate = data.actual_start_date ?? data.desired_start_date
+      if (!startDate) return null
+      return getDaysUntilTag(startDate)
+    }
+
+    // Avant arrivée : J-X avant desired_start_date si < 60 jours
+    const dateRef = data.desired_start_date
+    if (!dateRef) return null
+    const days = Math.ceil((new Date(dateRef).getTime() - Date.now()) / 86400000)
+    if (days > 60 || days < 0) return null // trop loin ou passé = pas pertinent
+    return getDaysUntilTag(dateRef)
+  })()
 
   const showPassportWarning = (() => {
     if (!data.passport_expiry || !data.desired_start_date) return false

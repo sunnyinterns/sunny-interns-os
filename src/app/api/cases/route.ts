@@ -13,11 +13,16 @@ export interface KanbanCase {
   lastName: string
   status: CaseStatus
   arrivalDate: string | null
+  desired_start_date?: string | null
+  actual_start_date?: string | null
+  actual_end_date?: string | null
   daysUntil: number | null
   isCritical: boolean
   assignedTo: string | null
+  assigned_manager_name?: string | null
   internshipType: string | null
   passportExpiry?: string | null
+  passport_expiry?: string | null
   billet_avion?: boolean | null
   papiers_visas?: boolean | null
   visa_recu?: boolean | null
@@ -151,11 +156,16 @@ export async function GET(request: Request) {
         lastName: intern?.last_name ?? '',
         status: c.status as CaseStatus,
         arrivalDate: startDate ?? null,
+        desired_start_date: c.desired_start_date ?? null,
+        actual_start_date: c.actual_start_date ?? null,
+        actual_end_date: c.actual_end_date ?? null,
         daysUntil,
         isCritical: daysUntil !== null && daysUntil <= 7,
         assignedTo: c.assigned_manager_name ?? null,
+        assigned_manager_name: c.assigned_manager_name ?? null,
         internshipType: null,
         passportExpiry: intern?.passport_expiry ?? null,
+        passport_expiry: intern?.passport_expiry ?? null,
         billet_avion: c.billet_avion,
         papiers_visas: c.papiers_visas,
         visa_recu: c.visa_recu,
