@@ -12,7 +12,7 @@ export async function GET(request: Request) {
 
   let query = supabase
     .from('jobs')
-    .select('*, companies(id, name), contacts(id, first_name, last_name, job_title), job_departments(id, name, slug)')
+    .select('*, companies(id, name), contacts(id, first_name, last_name, job_title)')
     .order('created_at', { ascending: false })
 
   if (status && status !== 'all') query = query.eq('status', status)
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
   const { data, error } = await supabase
     .from('jobs')
     .insert(body)
-    .select('*, companies(id, name), contacts(id, first_name, last_name), job_departments(id, name)')
+    .select('*, companies(id, name), contacts(id, first_name, last_name)')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
