@@ -306,9 +306,6 @@ const CHECKLIST_LABELS = [
   'Billet avion',
   'Papiers visa',
   'Visa reçu',
-  'Formulaire logement',
-  'Logement réservé',
-  'Scooter réservé',
   'Convention signée',
   'Chauffeur réservé',
 ]
@@ -317,9 +314,6 @@ interface CaseCardExtended extends CaseData {
   billet_avion?: boolean
   papiers_visas?: boolean
   visa_recu?: boolean
-  logement_scooter_formulaire?: boolean
-  logement_reserve?: boolean
-  scooter_reserve_check?: boolean
   convention_signee_check?: boolean
   chauffeur_reserve?: boolean
 }
@@ -369,9 +363,6 @@ function CaseCard({ data, locale }: { data: CaseCardExtended; locale: string }) 
     data.billet_avion,
     data.papiers_visas,
     data.visa_recu,
-    data.logement_scooter_formulaire,
-    data.logement_reserve,
-    data.scooter_reserve_check,
     data.convention_signee_check,
     data.chauffeur_reserve,
   ]

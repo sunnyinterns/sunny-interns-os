@@ -459,9 +459,6 @@ export default function StatusActionPanel({ caseData, onRefresh }: StatusActionP
       {/* ── VISA_RECEIVED ── */}
       {s === 'visa_received' && (
         <>
-          {btn('🏠 Copier lien logement/scooter', '#6b7280', () => {
-            void navigator.clipboard.writeText(window.location.origin + '/portal/' + (caseData.portal_token ?? '') + '/logement').then(() => alert('Lien copié !'))
-          })}
           {btn('🌴 Welcome Kit (J-14)', '#c8a96e', () => {
             fetch('/api/cases/' + caseData.id + '/retroplanning', { method: 'POST' }).catch(() => null)
             handleStatusChange('arrival_prep')
@@ -477,26 +474,20 @@ export default function StatusActionPanel({ caseData, onRefresh }: StatusActionP
               J-{Math.max(0, Math.floor((new Date(caseData.actual_start_date).getTime() - Date.now()) / 86400000))} avant arrivée
             </span>
           )}
-          {[
-            { label: 'Chauffeur confirmé', key: 'driver_booked' as const },
-            { label: 'Logement réservé', key: 'housing_reserved' as const },
-            { label: 'Scooter réservé', key: 'scooter_reserved' as const },
-          ].map((item) => (
-            <label key={item.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={!!caseData[item.key]}
-                onChange={(e) => {
-                  fetch('/api/cases/' + caseData.id, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ [item.key]: e.target.checked }),
-                  }).then(() => onRefresh?.()).catch(() => null)
-                }}
-              />
-              <span style={{ fontSize: '13px', color: '#374151' }}>{item.label}</span>
-            </label>
-          ))}
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={!!caseData.driver_booked}
+              onChange={(e) => {
+                fetch('/api/cases/' + caseData.id, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ driver_booked: e.target.checked }),
+                }).then(() => onRefresh?.()).catch(() => null)
+              }}
+            />
+            <span style={{ fontSize: '13px', color: '#374151' }}>Chauffeur confirmé</span>
+          </label>
           {!caseData.app_all_indonesia_sent_at && btn('📱 App All Indonesia J-2', '#6b7280', () => sendEmail('app_all_indonesia'))}
         </>
       )}

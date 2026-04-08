@@ -19,9 +19,6 @@ interface ChecklistData {
   billet_avion?: boolean | null
   papiers_visas?: boolean | null
   visa_recu?: boolean | null
-  logement_scooter_formulaire?: boolean | null
-  logement_reserve?: boolean | null
-  scooter_reserve_check?: boolean | null
   convention_signee_check?: boolean | null
   chauffeur_reserve?: boolean | null
 }
@@ -93,9 +90,6 @@ const CHECKLIST_ITEMS: { key: keyof ChecklistData; label: string; sub?: string }
   { key: 'billet_avion', label: 'Billet avion confirmé', sub: 'Vol aller-retour' },
   { key: 'papiers_visas', label: 'Papiers visa envoyés', sub: 'Dossier complet à agent' },
   { key: 'visa_recu', label: 'Visa reçu', sub: 'B211A validé' },
-  { key: 'logement_scooter_formulaire', label: 'Formulaire logement/scooter', sub: 'FillOut rempli' },
-  { key: 'logement_reserve', label: 'Logement réservé', sub: 'Guesthouse confirmée' },
-  { key: 'scooter_reserve_check', label: 'Scooter réservé', sub: 'Si souhaité' },
   { key: 'convention_signee_check', label: 'Convention signée', sub: 'Par les 3 parties' },
   { key: 'chauffeur_reserve', label: 'Chauffeur réservé', sub: 'Transfert aéroport' },
 ]
@@ -313,13 +307,13 @@ export function TabProcess({
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-zinc-700">Checklist dossier</h3>
-          <span className="text-xs text-zinc-400">{doneCount}/8 complétés</span>
+          <span className="text-xs text-zinc-400">{doneCount}/{CHECKLIST_ITEMS.length} complétés</span>
         </div>
         {/* Progress bar */}
         <div className="w-full h-1.5 bg-zinc-100 rounded-full overflow-hidden mb-4">
           <div
             className="h-full bg-[#c8a96e] rounded-full transition-all"
-            style={{ width: `${(doneCount / 8) * 100}%` }}
+            style={{ width: `${(doneCount / CHECKLIST_ITEMS.length) * 100}%` }}
           />
         </div>
         <div className="bg-white rounded-xl border border-zinc-100 divide-y divide-zinc-50">

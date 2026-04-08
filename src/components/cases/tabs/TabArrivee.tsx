@@ -2,13 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
-interface Guesthouse {
-  id: string
-  name: string
-  city?: string | null
-  price_month?: number | null
-}
-
 interface TabArriveeProps {
   caseData: {
     id: string
@@ -23,10 +16,7 @@ interface TabArriveeProps {
     arrival_date?: string | null
     actual_start_date?: string | null
     actual_end_date?: string | null
-    housing_reserved?: boolean | null
-    scooter_reserved?: boolean | null
     driver_booked?: boolean | null
-    guesthouse_id?: string | null
     welcome_kit_sent_at?: string | null
     whatsapp_ambassador_bali_msg?: string | null
     whatsapp_ambassador_done_msg?: string | null
@@ -46,10 +36,7 @@ interface ArrivalFields {
   intern_bali_phone: string
   actual_start_date: string
   actual_end_date: string
-  housing_reserved: boolean
-  scooter_reserved: boolean
   driver_booked: boolean
-  guesthouse_id: string
   whatsapp_ambassador_bali_msg: string
   whatsapp_ambassador_done_msg: string
 }
@@ -83,26 +70,15 @@ export function TabArrivee({ caseData }: TabArriveeProps) {
     intern_bali_phone: caseData.intern_bali_phone ?? caseData.interns?.phone ?? '',
     actual_start_date: caseData.actual_start_date ?? '',
     actual_end_date: caseData.actual_end_date ?? '',
-    housing_reserved: caseData.housing_reserved ?? false,
-    scooter_reserved: caseData.scooter_reserved ?? false,
     driver_booked: caseData.driver_booked ?? false,
-    guesthouse_id: caseData.guesthouse_id ?? '',
     whatsapp_ambassador_bali_msg: caseData.whatsapp_ambassador_bali_msg ?? '',
     whatsapp_ambassador_done_msg: caseData.whatsapp_ambassador_done_msg ?? '',
   })
 
   const [saving, setSaving] = useState(false)
   const [savedAt, setSavedAt] = useState<string | null>(null)
-  const [guesthouses, setGuesthouses] = useState<Guesthouse[]>([])
   const [welcomeKitSentAt, setWelcomeKitSentAt] = useState<string | null>(caseData.welcome_kit_sent_at ?? null)
   const [markingWelcome, setMarkingWelcome] = useState(false)
-
-  useEffect(() => {
-    fetch('/api/guesthouses')
-      .then((r) => r.ok ? r.json() as Promise<Guesthouse[]> : Promise.resolve([]))
-      .then(setGuesthouses)
-      .catch(() => setGuesthouses([]))
-  }, [])
 
   async function patchCase(patch: Record<string, unknown>) {
     await fetch(`/api/cases/${caseData.id}`, {
@@ -112,14 +88,9 @@ export function TabArrivee({ caseData }: TabArriveeProps) {
     })
   }
 
-  async function handleCaseToggle(key: 'housing_reserved' | 'scooter_reserved' | 'driver_booked', value: boolean) {
+  async function handleCaseToggle(key: 'driver_booked', value: boolean) {
     setFields((f) => ({ ...f, [key]: value }))
     await patchCase({ [key]: value })
-  }
-
-  async function handleGuesthouseChange(id: string) {
-    setFields((f) => ({ ...f, guesthouse_id: id }))
-    await patchCase({ guesthouse_id: id || null, guesthouse_preselection: id || null })
   }
 
   async function handleActualDateBlur(key: 'actual_start_date' | 'actual_end_date', value: string) {
@@ -314,52 +285,7 @@ export function TabArrivee({ caseData }: TabArriveeProps) {
         {!saving && savedAt && <p className="text-xs text-zinc-400">Sauvegardé à {savedAt}</p>}
       </div>
 
-      {/* Section 3: Logement */}
-      <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-[#1a1918]">Logement</h3>
-        <div>
-          <label className="block text-xs font-medium text-zinc-500 mb-1">Guesthouse</label>
-          <select
-            value={fields.guesthouse_id}
-            onChange={(e) => { void handleGuesthouseChange(e.target.value) }}
-            className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-          >
-            <option value="">— Sélectionner —</option>
-            {guesthouses.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name}{g.city ? ` (${g.city})` : ''}{g.price_month ? ` — ${g.price_month}€/mois` : ''}
-              </option>
-            ))}
-          </select>
-        </div>
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={fields.housing_reserved}
-            onChange={(e) => { void handleCaseToggle('housing_reserved', e.target.checked) }}
-            className="w-4 h-4 rounded accent-[#c8a96e]"
-          />
-          <span className="text-sm font-medium text-[#1a1918]">Logement réservé</span>
-        </label>
-      </div>
-
-      {/* Section 4: Scooter */}
-      <div className="bg-white rounded-xl border border-zinc-100 p-4">
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={fields.scooter_reserved}
-            onChange={(e) => { void handleCaseToggle('scooter_reserved', e.target.checked) }}
-            className="w-4 h-4 rounded accent-[#c8a96e]"
-          />
-          <div>
-            <p className="text-sm font-medium text-[#1a1918]">Scooter réservé</p>
-            <p className="text-xs text-zinc-400">Location confirmée</p>
-          </div>
-        </label>
-      </div>
-
-      {/* Section 5: Chauffeur */}
+      {/* Section 3: Chauffeur */}
       <div className="bg-white rounded-xl border border-zinc-100 p-4">
         <label className="flex items-center gap-3 cursor-pointer">
           <input

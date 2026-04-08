@@ -26,8 +26,6 @@ export interface KanbanCase {
   billet_avion?: boolean | null
   papiers_visas?: boolean | null
   visa_recu?: boolean | null
-  logement_reserve?: boolean | null
-  scooter_reserve_check?: boolean | null
   convention_signee_check?: boolean | null
   chauffeur_reserve?: boolean | null
 }
@@ -107,8 +105,8 @@ export async function GET(request: Request) {
       .select(`
         id, status, desired_start_date, actual_start_date, actual_end_date,
         created_at, assigned_manager_name, desired_duration_months,
-        billet_avion, papiers_visas, visa_recu, logement_reserve,
-        scooter_reserve_check, convention_signee_check, chauffeur_reserve,
+        billet_avion, papiers_visas, visa_recu,
+        convention_signee_check, chauffeur_reserve,
         portal_token, intern_first_meeting_date, google_meet_link,
         package_id, payment_amount, payment_date,
         interns(first_name, last_name, passport_expiry),
@@ -169,8 +167,6 @@ export async function GET(request: Request) {
         billet_avion: c.billet_avion,
         papiers_visas: c.papiers_visas,
         visa_recu: c.visa_recu,
-        logement_reserve: c.logement_reserve,
-        scooter_reserve_check: c.scooter_reserve_check,
         convention_signee_check: c.convention_signee_check,
         chauffeur_reserve: c.chauffeur_reserve,
       })
