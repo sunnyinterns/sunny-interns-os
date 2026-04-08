@@ -71,6 +71,7 @@ export interface FeedItem {
   google_meet_link: string | null
   portal_token: string | null
   school_name: string | null
+  suggest_action?: string | null
 }
 
 export interface FeedResponse {

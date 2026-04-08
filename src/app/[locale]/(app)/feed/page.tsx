@@ -87,27 +87,31 @@ function KpiCard({
   value,
   label,
   highlight,
+  highlightBlue,
   onClick,
 }: {
   icon: string
   value: string | number
   label: string
   highlight?: boolean
+  highlightBlue?: boolean
   onClick?: () => void
 }) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors text-left ${
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors text-left cursor-pointer ${
         highlight
           ? 'bg-red-50 border-red-200 hover:bg-red-100'
-          : 'bg-white border-zinc-200 hover:bg-zinc-50'
+          : highlightBlue
+            ? 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+            : 'bg-white border-zinc-200 hover:bg-zinc-50'
       }`}
     >
       <span className="text-lg">{icon}</span>
       <div>
-        <p className={`text-lg font-bold ${highlight ? 'text-[#dc2626]' : 'text-[#1a1918]'}`}>{value}</p>
-        <p className="text-[11px] text-zinc-500 leading-tight">{label}</p>
+        <p className={`text-2xl font-bold ${highlight ? 'text-[#dc2626]' : highlightBlue ? 'text-blue-700' : 'text-[#1a1918]'}`}>{value}</p>
+        <p className="text-xs text-zinc-400 leading-tight">{label}</p>
       </div>
     </button>
   )
@@ -145,16 +149,21 @@ function TodoCard({ item, onNavigate }: { item: FeedItem; onNavigate: (id: strin
               {badge.label}
             </span>
           )}
+          {item.days_since_status > 0 && (
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap ${
+              item.days_since_status > 5
+                ? 'bg-red-50 text-[#dc2626]'
+                : item.days_since_status >= 3
+                  ? 'bg-amber-50 text-[#d97706]'
+                  : 'bg-zinc-100 text-zinc-500'
+            }`}>
+              {item.days_since_status <= 2 ? 'Depuis hier' : `Depuis ${item.days_since_status}j`}{item.days_since_status > 5 ? ' 🔴' : item.days_since_status >= 3 ? ' ⚠️' : ''}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1.5 mt-0.5">
           {item.school_name && (
             <span className="text-[11px] text-zinc-400 truncate max-w-[120px]">{item.school_name}</span>
-          )}
-          {item.school_name && item.days_info && <span className="text-zinc-300 text-[10px]">·</span>}
-          {item.days_info && (
-            <span className={`text-[11px] font-medium ${item.urgency === 'critical' ? 'text-[#dc2626]' : item.urgency === 'high' ? 'text-[#d97706]' : 'text-zinc-400'}`}>
-              {item.days_info}
-            </span>
           )}
         </div>
         {item.action_label && (
@@ -197,7 +206,14 @@ function WaitingRow({ item, onNavigate }: { item: FeedItem; onNavigate: (id: str
           {badge.label}
         </span>
       )}
-      <span className="text-[11px] text-zinc-500 font-medium truncate flex-1">{item.wait_label}</span>
+      <div className="flex-1 min-w-0">
+        <span className="text-[11px] text-zinc-500 font-medium truncate block">{item.wait_label}</span>
+        {item.suggest_action && (
+          <div className="text-[11px] text-amber-700 font-medium mt-0.5 bg-amber-50 px-1.5 py-0.5 rounded inline-block">
+            💡 {item.suggest_action}
+          </div>
+        )}
+      </div>
       {item.days_info && (
         <span className="text-[11px] text-zinc-400 whitespace-nowrap">{item.days_info}</span>
       )}
@@ -340,6 +356,7 @@ export default function FeedPage() {
               icon="🛫"
               value={data.kpis.arriving_soon}
               label="Arrivent bientôt"
+              highlightBlue={data.kpis.arriving_soon > 0}
               onClick={() => scrollTo('section-waiting')}
             />
             <KpiCard

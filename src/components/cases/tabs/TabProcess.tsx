@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ProcessTimeline } from '@/components/cases/ProcessTimeline'
 import StatusActionPanel from '@/components/cases/StatusActionPanel'
 import type { CaseStatus } from '@/lib/types'
@@ -16,6 +16,18 @@ interface ActivityEntry {
   author_name?: string | null
   assigned_to?: string | null
   source?: string | null
+}
+
+interface CaseLogEntry {
+  id: string
+  author_name: string
+  action: string
+  field_label?: string | null
+  old_value?: string | null
+  new_value?: string | null
+  description: string
+  created_at: string
+  metadata?: Record<string, unknown> | null
 }
 
 interface ChecklistData {
@@ -42,17 +54,28 @@ interface TabProcessProps {
 const ACTIVITY_ICONS: Record<string, string> = {
   status_changed: '🔄',
   status_change: '🔄',
+  field_edited: '✏️',
+  email_sent: '📧',
+  note_added: '💬',
+  doc_uploaded: '📎',
   job_submitted: '📋',
   job_proposed: '📋',
   job_retained: '🎉',
   cv_revision: '📝',
   cv_uploaded: '📎',
   visa_docs_ready: '📁',
-  doc_uploaded: '📄',
   payment_received: '💳',
   visa_received: '🛂',
   note: '💬',
   default: '•',
+}
+
+const LOG_ICONS: Record<string, string> = {
+  status_changed: '🔄',
+  field_edited: '✏️',
+  email_sent: '📧',
+  note_added: '💬',
+  doc_uploaded: '📎',
 }
 
 function relativeDate(iso: string) {
@@ -111,8 +134,17 @@ export function TabProcess({
   const [statusChanging, setStatusChanging] = useState(false)
   const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
   const [feed, setFeed] = useState<ActivityEntry[]>(activityFeed)
+  const [caseLogs, setCaseLogs] = useState<CaseLogEntry[]>([])
+  const [logsLoading, setLogsLoading] = useState(true)
   const [noteText, setNoteText] = useState('')
   const [savingNote, setSavingNote] = useState(false)
+
+  useEffect(() => {
+    fetch(`/api/cases/${caseId}/logs`)
+      .then(r => r.ok ? r.json() as Promise<CaseLogEntry[]> : [])
+      .then(data => { setCaseLogs(data); setLogsLoading(false) })
+      .catch(() => setLogsLoading(false))
+  }, [caseId])
 
   function showToast(text: string, type: 'success' | 'error' = 'success') {
     setToastMsg({ text, type })
@@ -285,47 +317,53 @@ export function TabProcess({
         <ProcessTimeline caseId={caseId} currentStatus={status} onStatusChange={setStatus} isVisaOnly={isVisaOnly} />
       </div>
 
-      {/* 6. Activité historique */}
+      {/* 6. Activité historique (from case_logs) */}
       <div>
         <h3 className="text-sm font-semibold text-zinc-700 mb-3">Activité</h3>
-        {feed.length === 0 ? (
-          <p className="text-sm text-zinc-400">Aucune activité enregistrée</p>
+        {logsLoading ? (
+          <div className="space-y-2 animate-pulse">
+            {[1, 2, 3].map(i => <div key={i} className="h-10 bg-zinc-100 rounded-lg" />)}
+          </div>
+        ) : caseLogs.length === 0 ? (
+          <p className="text-sm text-zinc-400">Aucune activité enregistrée — les actions apparaîtront ici automatiquement</p>
         ) : (
-          <div className="space-y-1">
-            {feed.map((entry) => {
-              const actType = entry.type ?? entry.action_type ?? 'default'
-              const icon = ACTIVITY_ICONS[actType] ?? ACTIVITY_ICONS.default
-              const isNote = actType === 'note'
-              return (
-                <div
-                  key={entry.id}
-                  className={[
-                    'flex items-start gap-3 px-3 py-2.5 rounded-lg',
-                    isNote ? 'bg-amber-50 border border-amber-100' : 'hover:bg-zinc-50',
-                  ].join(' ')}
-                >
-                  <span className="text-base flex-shrink-0 mt-0.5">{icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className={['text-sm', isNote ? 'text-amber-900 font-medium' : 'text-[#1a1918]'].join(' ')}>
-                      {entry.title ?? entry.description}
-                    </p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      {entry.assigned_to && (
-                        <span className="text-xs text-zinc-400">{entry.assigned_to}</span>
+          <div className="relative">
+            <div className="absolute left-3.5 top-0 bottom-0 w-px bg-zinc-100" />
+            <div className="space-y-3">
+              {caseLogs.map((log) => {
+                const icon = LOG_ICONS[log.action] ?? '•'
+                return (
+                  <div key={log.id} className="flex items-start gap-3 pl-1">
+                    <div className={[
+                      'w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5',
+                      log.action === 'status_changed' ? 'bg-blue-50 text-blue-600' :
+                      log.action === 'field_edited' ? 'bg-amber-50 text-amber-600' :
+                      log.action === 'email_sent' ? 'bg-green-50 text-green-600' :
+                      log.action === 'note_added' ? 'bg-purple-50 text-purple-600' :
+                      log.action === 'doc_uploaded' ? 'bg-zinc-100 text-zinc-500' :
+                      'bg-zinc-50 text-zinc-400'
+                    ].join(' ')}>
+                      <span className="text-xs">{icon}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[#1a1918]">{log.description}</p>
+                      {log.field_label && log.old_value && log.new_value && log.action !== 'status_changed' && (
+                        <p className="text-xs text-zinc-400 mt-0.5">
+                          <span className="line-through">{log.old_value}</span>
+                          {' → '}
+                          <span className="text-zinc-600">{String(log.new_value).substring(0, 50)}{String(log.new_value).length > 50 ? '…' : ''}</span>
+                        </p>
                       )}
-                      {entry.source && (
-                        <>
-                          <span className="text-xs text-zinc-300">·</span>
-                          <span className="text-xs text-zinc-400">{entry.source}</span>
-                        </>
-                      )}
-                      <span className="text-xs text-zinc-300">·</span>
-                      <span className="text-xs text-zinc-400">{relativeDate(entry.created_at)}</span>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs font-medium text-zinc-400">{log.author_name}</span>
+                        <span className="text-zinc-200">·</span>
+                        <span className="text-xs text-zinc-400">{relativeDate(log.created_at)}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
         )}
       </div>

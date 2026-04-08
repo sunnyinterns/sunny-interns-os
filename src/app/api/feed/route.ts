@@ -163,6 +163,7 @@ export async function GET() {
       google_meet_link: c.google_meet_link ?? null,
       portal_token: c.portal_token ?? null,
       school_name: school?.name ?? null,
+      suggest_action: null,
     }
 
     if (TODO_STATUSES.includes(c.status)) {
@@ -171,6 +172,16 @@ export async function GET() {
       todo.push(item)
     } else if (WAITING_STATUSES.includes(c.status)) {
       item.days_info = computeDaysInfo('waiting', c.status, daysSince, daysUntilArrival)
+      // suggest_action for stale waiting items
+      if (c.status === 'job_retained' && daysSince > 3) {
+        item.suggest_action = 'Envoyer la convention maintenant'
+      } else if (c.status === 'convention_signed' && daysSince > 7) {
+        item.suggest_action = 'Relancer le candidat par WhatsApp'
+      } else if (c.status === 'payment_received' && daysSince > 5) {
+        item.suggest_action = 'Contacter le candidat — docs manquants'
+      } else if (c.status === 'visa_submitted' && daysSince > 21) {
+        item.suggest_action = 'Relancer l\'agent FAZZA'
+      }
       if (c.status === 'arrival_prep' && daysUntilArrival !== null && daysUntilArrival <= 7) {
         arrivingSoon++
       }
