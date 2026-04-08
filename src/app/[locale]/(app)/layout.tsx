@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AppShell } from '@/components/layout/AppShell'
+import { PushNotifications } from '@/components/layout/PushNotifications'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -12,5 +13,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     redirect('/fr/login')
   }
 
-  return <AppShell>{children}</AppShell>
+  return (
+    <AppShell>
+      <PushNotifications />
+      {children}
+    </AppShell>
+  )
 }

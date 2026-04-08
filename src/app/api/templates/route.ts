@@ -7,9 +7,9 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data, error } = await supabase
-    .from('app_users')
+    .from('contract_templates')
     .select('*')
-    .order('created_at', { ascending: true })
+    .order('type')
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data ?? [])
@@ -20,37 +20,15 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // Check admin role
-  const { data: appUser } = await supabase
-    .from('app_users')
-    .select('role')
-    .eq('email', user.email!)
-    .single()
-  if (appUser?.role !== 'admin') {
-    return NextResponse.json({ error: 'Admin only' }, { status: 403 })
-  }
-
-  const body = await request.json() as { email: string; full_name: string; role: string }
-  if (!body.email || !body.full_name) {
-    return NextResponse.json({ error: 'email et full_name requis' }, { status: 400 })
-  }
-
-  // Check email unique
-  const { data: existing } = await supabase
-    .from('app_users')
-    .select('id')
-    .eq('email', body.email)
-    .single()
-  if (existing) {
-    return NextResponse.json({ error: 'Email déjà utilisé' }, { status: 409 })
-  }
-
+  const body = await request.json() as Record<string, unknown>
   const { data, error } = await supabase
-    .from('app_users')
+    .from('contract_templates')
     .insert({
-      email: body.email,
-      full_name: body.full_name,
-      role: body.role || 'account_manager',
+      name: body.name as string,
+      type: body.type as string,
+      language: (body.language as string) || 'fr',
+      html_content: body.html_content as string,
+      variables_detected: body.variables_detected as string[] ?? [],
     })
     .select()
     .single()

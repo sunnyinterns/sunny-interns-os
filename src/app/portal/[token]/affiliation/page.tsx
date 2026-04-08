@@ -88,6 +88,28 @@ export default function PortalAffiliationPage() {
             >
               {copied ? '✓ Lien copié !' : 'Copier le lien de parrainage'}
             </button>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(`Hey ! Je fais un stage à Bali avec Sunny Interns et c'est incroyable 🌴 Utilise mon code ${data.code} pour candidater : ${shareUrl}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'block', width: '100%', padding: '12px', textAlign: 'center',
+                background: '#25D366', color: 'white', border: 'none', borderRadius: '10px',
+                fontSize: '14px', fontWeight: 600, textDecoration: 'none', marginTop: '8px',
+              }}
+            >
+              Partager sur WhatsApp
+            </a>
+          </div>
+
+          {/* IBAN section */}
+          <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', padding: '20px', marginBottom: '16px' }}>
+            <p style={{ fontSize: '12px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6b7280', marginBottom: '8px' }}>
+              Compte bancaire pour virement
+            </p>
+            <p style={{ fontSize: '13px', color: '#9ca3af' }}>
+              Nous effectuons les virements manuellement dès que ton ami a payé.
+            </p>
           </div>
 
           {/* Stats */}
