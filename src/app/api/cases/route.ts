@@ -101,9 +101,10 @@ export async function GET(request: Request) {
       .select(`
         id, status, desired_start_date, actual_start_date, actual_end_date,
         created_at, assigned_manager_name, desired_duration_months,
-        billet_avion, papiers_visas, visa_recu, logement_scooter_formulaire,
-        logement_reserve, scooter_reserve_check, convention_signee_check, chauffeur_reserve,
-        portal_token, intern_first_meeting_date,
+        billet_avion, papiers_visas, visa_recu, logement_reserve,
+        scooter_reserve_check, convention_signee_check, chauffeur_reserve,
+        portal_token, intern_first_meeting_date, google_meet_link,
+        package_id, payment_amount, payment_date,
         interns(first_name, last_name, passport_expiry),
         schools(name),
         packages(name, price_eur)

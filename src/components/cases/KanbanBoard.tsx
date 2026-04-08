@@ -71,6 +71,7 @@ interface CaseData {
   status: string
   arrival_date?: string | null
   desired_start_date?: string | null
+  actual_start_date?: string | null
   return_date?: string | null
   group_id?: string | null
   internship_type?: string | null

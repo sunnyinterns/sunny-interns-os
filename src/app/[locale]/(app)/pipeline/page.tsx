@@ -14,19 +14,22 @@ interface CaseData {
   last_name: string
   status: string
   arrival_date?: string | null
+  desired_start_date?: string | null
+  actual_start_date?: string | null
   return_date?: string | null
   assigned_to?: string | null
   internship_type?: string | null
   school?: string | null
+  passport_expiry?: string | null
   billet_avion?: boolean | null
   papiers_visas?: boolean | null
   visa_recu?: boolean | null
-  logement_scooter_formulaire?: boolean | null
   logement_reserve?: boolean | null
   scooter_reserve_check?: boolean | null
   convention_signee_check?: boolean | null
   chauffeur_reserve?: boolean | null
   interns?: { first_name?: string; last_name?: string; passport_expiry?: string; school?: string } | null
+  [key: string]: unknown
 }
 
 function PipelineSkeleton() {
@@ -64,10 +67,14 @@ export default function PipelinePage() {
       const res = await fetch(`/api/cases?${qs.toString()}`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const raw = await res.json() as CaseData[]
-      // Flatten interns.school into case.school for KanbanBoard
+      // Flatten intern fields for KanbanBoard
       const data = raw.map((c) => ({
         ...c,
-        school: c.school ?? c.interns?.school ?? null,
+        first_name: c.first_name ?? c.interns?.first_name ?? '',
+        last_name: c.last_name ?? c.interns?.last_name ?? '',
+        school: c.school ?? (c as any).schools?.name ?? c.interns?.school ?? null,
+        passport_expiry: c.interns?.passport_expiry ?? null,
+        desired_start_date: c.desired_start_date ?? (c as any).actual_start_date ?? null,
       }))
       setCases(data)
     } catch (err) {
