@@ -1,10 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { GroupBadge } from './GroupBadge'
 
-// 14 active columns — vrai process Bali Interns
+// 13 active columns — vrai process Bali Interns
 const COLUMN_ORDER = [
   'lead',
   'rdv_booked',
@@ -21,40 +20,27 @@ const COLUMN_ORDER = [
   'active',
 ] as const
 
-// Legacy status mapped to closest new column for display
 const STATUS_ALIAS: Record<string, string> = {
   visa_in_progress: 'visa_docs_sent',
 }
 
 const COLUMN_LABELS: Record<string, string> = {
-  lead: 'Demandes entrantes',
-  rdv_booked: 'RDV booké',
-  qualification_done: 'Qualif faite',
+  lead: 'Lead',
+  rdv_booked: 'RDV',
+  qualification_done: 'Qualifié',
   job_submitted: 'Jobs proposés',
   job_retained: 'Job retenu',
-  convention_signed: 'Convention signée',
-  payment_pending: 'Paiement attente',
-  payment_received: 'Paiement reçu',
+  convention_signed: 'Convention',
+  payment_pending: 'Paiement ⏳',
+  payment_received: 'Payé ✓',
   visa_docs_sent: 'Docs visa',
-  visa_submitted: 'Visa soumis',
-  visa_received: 'Visa reçu',
-  arrival_prep: 'Préparation départ',
-  active: 'En stage',
+  visa_submitted: 'Visa agent',
+  visa_received: 'Visa ✓',
+  arrival_prep: 'Départ 🛫',
+  active: 'En stage 🌴',
 }
 
-// Statuts "perdus" — section collapsible
 const LOST_STATUSES = ['not_interested', 'not_qualified', 'on_hold', 'suspended', 'visa_refused', 'archived', 'completed', 'no_job_found', 'lost']
-const LOST_LABELS: Record<string, string> = {
-  not_interested: 'Pas intéressé',
-  not_qualified: 'Non qualifié',
-  on_hold: 'En attente',
-  suspended: 'Suspendu',
-  visa_refused: 'Visa refusé',
-  archived: 'Archivé',
-  completed: 'Terminé',
-  no_job_found: 'Pas de job trouvé',
-  lost: 'Perdu',
-}
 
 interface InternGroup {
   id: string
@@ -62,7 +48,7 @@ interface InternGroup {
   color?: string | null
 }
 
-interface CaseData {
+export interface CaseData {
   id: string
   first_name: string
   last_name: string
@@ -77,16 +63,293 @@ interface CaseData {
   school?: string | null
   passport_expiry?: string | null
   assigned_manager_name?: string | null
+  billet_avion?: boolean | null
+  papiers_visas?: boolean | null
+  visa_recu?: boolean | null
+  convention_signee_check?: boolean | null
+  chauffeur_reserve?: boolean | null
 }
+
+export type ViewMode = 'kanban' | 'list'
 
 interface KanbanBoardProps {
   cases: CaseData[]
   locale?: string
+  search?: string
+  viewMode?: ViewMode
 }
 
-export function KanbanBoard({ cases, locale = 'fr' }: KanbanBoardProps) {
+// ─── Urgency logic ────────────────────────────────────────────────
+
+function getBorderColor(data: CaseData): string {
+  const status = data.status
+  if (status === 'active') return '#059669'
+
+  if (status === 'arrival_prep') {
+    const ref = data.actual_start_date ?? data.desired_start_date
+    if (ref) {
+      const days = Math.ceil((new Date(ref).getTime() - Date.now()) / 86400000)
+      if (days < 7) return '#dc2626'
+    }
+    return '#d97706'
+  }
+
+  if (status === 'payment_pending') {
+    const ref = data.desired_start_date
+    if (ref) {
+      const days = Math.ceil((new Date(ref).getTime() - Date.now()) / 86400000)
+      if (days < 30) return '#d97706'
+    }
+    return '#d97706'
+  }
+
+  if (status === 'visa_submitted') {
+    return '#d97706'
+  }
+
+  if (['lead', 'rdv_booked', 'qualification_done'].includes(status)) return '#c8a96e'
+
+  return '#d4d4d8'
+}
+
+function getUrgencyPulse(data: CaseData): boolean {
+  if (data.status === 'arrival_prep') {
+    const ref = data.actual_start_date ?? data.desired_start_date
+    if (ref) {
+      const days = Math.ceil((new Date(ref).getTime() - Date.now()) / 86400000)
+      return days < 7
+    }
+  }
+  return false
+}
+
+// ─── Date display ────────────────────────────────────────────────
+
+function getDateLabel(data: CaseData): { text: string; urgent: boolean } | null {
+  const status = data.status
+
+  if (['lead', 'rdv_booked'].includes(status)) {
+    if (data.desired_start_date) {
+      const d = new Date(data.desired_start_date)
+      return { text: `Départ: ${d.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}`, urgent: false }
+    }
+    return null
+  }
+
+  if (status === 'active') {
+    if (data.actual_end_date) {
+      const d = new Date(data.actual_end_date)
+      return { text: `Fin: ${d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`, urgent: false }
+    }
+    return null
+  }
+
+  if (status === 'arrival_prep') {
+    const ref = data.actual_start_date ?? data.desired_start_date
+    if (ref) {
+      const d = new Date(ref)
+      const days = Math.ceil((d.getTime() - Date.now()) / 86400000)
+      return { text: `Arrive: ${d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`, urgent: days < 7 }
+    }
+    return null
+  }
+
+  return null
+}
+
+// ─── J-X tag ────────────────────────────────────────────────
+
+const NO_DAYS_TAG_STATUSES = ['not_interested', 'no_job_found', 'lost', 'alumni', 'not_qualified', 'on_hold', 'suspended', 'visa_refused', 'archived', 'completed']
+
+function getJTag(data: CaseData): { label: string; bg: string; text: string } | null {
+  if (NO_DAYS_TAG_STATUSES.includes(data.status)) return null
+
+  if (data.status === 'active') {
+    if (!data.actual_end_date) return null
+    const days = Math.ceil((new Date(data.actual_end_date).getTime() - Date.now()) / 86400000)
+    if (days <= 0 || days > 14) return null
+    if (days <= 7) return { label: `${days}j`, bg: '#fef2f2', text: '#dc2626' }
+    return { label: `${days}j`, bg: '#fffbeb', text: '#d97706' }
+  }
+
+  if (data.status === 'arrival_prep') {
+    const ref = data.actual_start_date ?? data.desired_start_date
+    if (!ref) return null
+    const days = Math.ceil((new Date(ref).getTime() - Date.now()) / 86400000)
+    if (days > 14) return null
+    if (days < 0) return { label: `J${days}`, bg: '#fef2f2', text: '#dc2626' }
+    if (days < 7) return { label: `J-${days}`, bg: '#fef2f2', text: '#dc2626' }
+    return { label: `J-${days}`, bg: '#fffbeb', text: '#d97706' }
+  }
+
+  const dateRef = data.desired_start_date
+  if (!dateRef) return null
+  const days = Math.ceil((new Date(dateRef).getTime() - Date.now()) / 86400000)
+  if (days < 0 || days > 14) return null
+  if (days < 7) return { label: `J-${days}`, bg: '#fef2f2', text: '#dc2626' }
+  return { label: `J-${days}`, bg: '#fffbeb', text: '#d97706' }
+}
+
+// ─── CaseCard compact ────────────────────────────────────────────
+
+function CaseCard({ data, locale }: { data: CaseData; locale: string }) {
+  const router = useRouter()
+  const borderColor = getBorderColor(data)
+  const pulse = getUrgencyPulse(data)
+  const dateLabel = getDateLabel(data)
+  const jTag = getJTag(data)
+
+  const checklist = [
+    data.billet_avion,
+    data.papiers_visas,
+    data.visa_recu,
+    data.convention_signee_check,
+    data.chauffeur_reserve,
+  ]
+
+  const step = COLUMN_ORDER.indexOf(data.status as typeof COLUMN_ORDER[number])
+  const progressPct = step >= 0 ? Math.round(((step + 1) / COLUMN_ORDER.length) * 100) : 0
+
+  const initials = `${(data.first_name?.[0] ?? '').toUpperCase()}${(data.last_name?.[0] ?? '').toUpperCase()}`
+
+  return (
+    <button
+      onClick={() => router.push(`/${locale}/cases/${data.id}?tab=process`)}
+      className="w-full text-left bg-white rounded-lg border border-[#e4e4e7] hover:border-[#a1a1aa] hover:shadow-sm transition-all cursor-pointer"
+      style={{ borderLeftWidth: 3, borderLeftColor: borderColor }}
+    >
+      <div className="p-2.5">
+        {/* Row 1: Avatar + Name + J-X */}
+        <div className="flex items-center gap-2 mb-1">
+          <div className="relative flex-shrink-0">
+            <div className="w-7 h-7 rounded-full bg-[#c8a96e] flex items-center justify-center">
+              <span className="text-white text-[10px] font-bold leading-none">{initials}</span>
+            </div>
+            {pulse && (
+              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#dc2626] animate-pulse" />
+            )}
+          </div>
+          <span className="text-[13px] font-semibold text-[#1a1918] truncate flex-1 leading-tight">
+            {data.first_name} {data.last_name}
+          </span>
+          {jTag && (
+            <span
+              className="text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0 leading-none"
+              style={{ backgroundColor: jTag.bg, color: jTag.text }}
+            >
+              {jTag.label}
+            </span>
+          )}
+        </div>
+
+        {/* Row 2: School/info + checklist dots */}
+        <div className="flex items-center justify-between gap-1">
+          <span className="text-[11px] text-[#71717a] truncate flex-1 leading-tight">
+            {data.school ?? data.internship_type ?? ''}
+          </span>
+          <div className="flex gap-0.5 flex-shrink-0">
+            {checklist.map((v, i) => (
+              <div
+                key={i}
+                className={`w-1.5 h-1.5 rounded-full ${v ? 'bg-[#c8a96e]' : 'bg-[#d4d4d8]'}`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Row 3: Date */}
+        {dateLabel && (
+          <p className={`text-[11px] mt-1 leading-tight ${dateLabel.urgent ? 'text-[#dc2626] font-semibold' : 'text-[#a1a1aa]'}`}>
+            {dateLabel.text}
+          </p>
+        )}
+
+        {/* Thin progress bar */}
+        <div className="mt-1.5 w-full h-[2px] bg-[#f4f4f5] rounded-full overflow-hidden opacity-40">
+          <div
+            className="h-full rounded-full"
+            style={{ width: `${progressPct}%`, backgroundColor: '#c8a96e' }}
+          />
+        </div>
+      </div>
+    </button>
+  )
+}
+
+// ─── List view ────────────────────────────────────────────────
+
+function ListView({ cases, locale }: { cases: CaseData[]; locale: string }) {
+  const router = useRouter()
+
+  const sorted = useMemo(() => {
+    return [...cases].sort((a, b) => {
+      const ia = COLUMN_ORDER.indexOf(a.status as typeof COLUMN_ORDER[number])
+      const ib = COLUMN_ORDER.indexOf(b.status as typeof COLUMN_ORDER[number])
+      const sa = ia >= 0 ? ia : 99
+      const sb = ib >= 0 ? ib : 99
+      if (sa !== sb) return sa - sb
+      const da = a.desired_start_date ?? ''
+      const db = b.desired_start_date ?? ''
+      return da.localeCompare(db)
+    })
+  }, [cases])
+
+  return (
+    <div className="overflow-x-auto rounded-xl border border-[#e4e4e7]">
+      <table className="w-full text-left text-sm">
+        <thead>
+          <tr className="bg-white border-b border-[#e4e4e7]">
+            <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[#71717a]">Nom</th>
+            <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[#71717a]">Statut</th>
+            <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[#71717a]">École</th>
+            <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[#71717a]">Date début</th>
+            <th className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-[#71717a]">Manager</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sorted.map((c, i) => {
+            const borderColor = getBorderColor(c)
+            return (
+              <tr
+                key={c.id}
+                onClick={() => router.push(`/${locale}/cases/${c.id}?tab=process`)}
+                className={`cursor-pointer hover:bg-[#f4f4f5] transition-colors ${i % 2 === 1 ? 'bg-[#fafaf9]' : 'bg-white'}`}
+              >
+                <td className="px-3 py-2 flex items-center gap-2">
+                  <div
+                    className="w-1 h-6 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: borderColor }}
+                  />
+                  <div className="w-6 h-6 rounded-full bg-[#c8a96e] flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-[9px] font-bold">
+                      {(c.first_name?.[0] ?? '').toUpperCase()}{(c.last_name?.[0] ?? '').toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="text-[13px] font-semibold text-[#1a1918] truncate">{c.first_name} {c.last_name}</span>
+                </td>
+                <td className="px-3 py-2">
+                  <span className="text-[11px] font-medium text-[#71717a]">{COLUMN_LABELS[c.status] ?? c.status}</span>
+                </td>
+                <td className="px-3 py-2 text-[11px] text-[#71717a] truncate max-w-[140px]">{c.school ?? '—'}</td>
+                <td className="px-3 py-2 text-[11px] text-[#71717a]">
+                  {c.desired_start_date ? new Date(c.desired_start_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                </td>
+                <td className="px-3 py-2 text-[11px] text-[#71717a] truncate max-w-[120px]">{c.assigned_manager_name ?? '—'}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+// ─── KanbanBoard ────────────────────────────────────────────────
+
+export function KanbanBoard({ cases, locale = 'fr', search = '', viewMode = 'kanban' }: KanbanBoardProps) {
   const [groups, setGroups] = useState<InternGroup[]>([])
   const [selectedGroup, setSelectedGroup] = useState<string>('all')
+  const [alumniOpen, setAlumniOpen] = useState(false)
   const [lostOpen, setLostOpen] = useState(false)
 
   useEffect(() => {
@@ -96,53 +359,56 @@ export function KanbanBoard({ cases, locale = 'fr' }: KanbanBoardProps) {
       .catch(() => setGroups([]))
   }, [])
 
-  const filteredCases = selectedGroup === 'all'
-    ? cases
-    : cases.filter((c) => c.group_id === selectedGroup)
-
-  // Normalize alias statuses
-  const normalizedCases = filteredCases.map((c) => ({
-    ...c,
-    status: STATUS_ALIAS[c.status] ?? c.status,
-  }))
-
-  const grouped = COLUMN_ORDER.reduce<Record<string, CaseData[]>>(
-    (acc, status) => ({ ...acc, [status]: [] }),
-    {}
-  )
-
-  const lostCases: CaseData[] = []
-  const alumniCases: CaseData[] = []
-
-  for (const c of normalizedCases) {
-    if (c.status === 'alumni') {
-      alumniCases.push(c)
-    } else if (c.status in grouped) {
-      grouped[c.status].push(c)
-    } else if (LOST_STATUSES.includes(c.status)) {
-      lostCases.push(c)
+  const filteredCases = useMemo(() => {
+    let result = selectedGroup === 'all' ? cases : cases.filter((c) => c.group_id === selectedGroup)
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      result = result.filter((c) =>
+        `${c.first_name} ${c.last_name}`.toLowerCase().includes(q)
+      )
     }
-  }
+    return result.map((c) => ({
+      ...c,
+      status: STATUS_ALIAS[c.status] ?? c.status,
+    }))
+  }, [cases, selectedGroup, search])
 
-  const getGroupForCase = (groupId: string | null | undefined): InternGroup | undefined => {
-    if (!groupId) return undefined
-    return groups.find((g) => g.id === groupId)
-  }
+  const { grouped, alumniCases, lostCases } = useMemo(() => {
+    const g = COLUMN_ORDER.reduce<Record<string, CaseData[]>>(
+      (acc, status) => ({ ...acc, [status]: [] }),
+      {}
+    )
+    const alumni: CaseData[] = []
+    const lost: CaseData[] = []
+
+    for (const c of filteredCases) {
+      if (c.status === 'alumni') {
+        alumni.push(c)
+      } else if (c.status in g) {
+        g[c.status].push(c)
+      } else if (LOST_STATUSES.includes(c.status)) {
+        lost.push(c)
+      }
+    }
+    return { grouped: g, alumniCases: alumni, lostCases: lost }
+  }, [filteredCases])
+
+  // Count active (non-alumni, non-lost) cases
+  const activeCount = filteredCases.filter((c) => c.status !== 'alumni' && !LOST_STATUSES.includes(c.status)).length
 
   return (
     <div className="flex flex-col gap-3 h-full">
       {/* Group filter */}
       {groups.length > 0 && (
         <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
-          <span className="text-xs text-zinc-500 font-medium">Groupe :</span>
+          <span className="text-[11px] text-[#71717a] font-medium">Groupe :</span>
           <button
             onClick={() => setSelectedGroup('all')}
-            className={[
-              'px-3 py-1 rounded-full text-xs font-medium transition-colors',
+            className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
               selectedGroup === 'all'
-                ? 'bg-zinc-800 text-white'
-                : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200',
-            ].join(' ')}
+                ? 'bg-[#1a1918] text-white'
+                : 'bg-[#f4f4f5] text-[#71717a] hover:bg-[#e4e4e7]'
+            }`}
           >
             Tous
           </button>
@@ -150,119 +416,117 @@ export function KanbanBoard({ cases, locale = 'fr' }: KanbanBoardProps) {
             <button
               key={g.id}
               onClick={() => setSelectedGroup(g.id)}
-              className={[
-                'px-3 py-1 rounded-full text-xs font-medium transition-colors',
-                selectedGroup === g.id ? 'text-white' : 'text-zinc-600 hover:opacity-80',
-              ].join(' ')}
+              className="px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors"
               style={
                 selectedGroup === g.id
-                  ? { backgroundColor: g.color ?? '#c8a96e' }
-                  : { backgroundColor: `${g.color ?? '#c8a96e'}22`, color: g.color ?? '#c8a96e' }
+                  ? { backgroundColor: g.color ?? '#c8a96e', color: '#fff' }
+                  : { backgroundColor: `${g.color ?? '#c8a96e'}18`, color: g.color ?? '#c8a96e' }
               }
             >
               {g.name}
             </button>
           ))}
+          <span className="text-[11px] text-[#a1a1aa] ml-2">{activeCount} candidats actifs</span>
         </div>
       )}
 
-      {/* 14-column board */}
-      <div className="flex gap-3 overflow-x-auto pb-4 min-h-0 flex-1">
-        {COLUMN_ORDER.map((status) => {
-          const items = grouped[status]
-          return (
-            <div
-              key={status}
-              className="flex-shrink-0 w-[280px] flex flex-col bg-zinc-50 rounded-xl border border-zinc-100"
-            >
-              <div className="px-3 py-2.5 border-b border-zinc-100 flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-zinc-600 truncate">
-                  {COLUMN_LABELS[status]}
-                </span>
-                <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-zinc-200 text-zinc-600 text-xs font-bold flex-shrink-0">
-                  {items.length}
-                </span>
+      {/* Main board or list */}
+      {viewMode === 'list' ? (
+        <ListView cases={filteredCases.filter((c) => c.status !== 'alumni' && !LOST_STATUSES.includes(c.status))} locale={locale} />
+      ) : (
+        <div className="flex gap-2 overflow-x-auto pb-4 min-h-0 flex-1">
+          {COLUMN_ORDER.map((status) => {
+            const items = grouped[status]
+            return (
+              <div
+                key={status}
+                className="flex-shrink-0 w-[220px] flex flex-col bg-white rounded-xl border border-[#e4e4e7]"
+              >
+                {/* Column header */}
+                <div className="px-2.5 py-2 border-b border-[#e4e4e7] flex items-center justify-between gap-1.5">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-[#71717a] truncate">
+                    {COLUMN_LABELS[status]}
+                  </span>
+                  <span className="inline-flex items-center justify-center min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-[#f4f4f5] text-[#71717a] text-[10px] font-bold flex-shrink-0">
+                    {items.length}
+                  </span>
+                </div>
+                {/* Column body */}
+                <div className="flex-1 p-2 flex flex-col gap-1.5 overflow-y-auto max-h-[calc(100vh-280px)]">
+                  {items.length === 0 ? (
+                    <div className="py-6 text-center text-[11px] text-[#d4d4d8]">—</div>
+                  ) : (
+                    items.map((c) => (
+                      <CaseCard key={c.id} data={c} locale={locale} />
+                    ))
+                  )}
+                </div>
               </div>
-              <div className="flex-1 p-2 space-y-2 overflow-y-auto max-h-[calc(100vh-280px)]">
-                {items.length === 0 ? (
-                  <div className="py-4 text-center text-xs text-zinc-300">—</div>
-                ) : (
-                  items.map((c) => {
-                    const group = getGroupForCase(c.group_id)
-                    return (
-                      <div key={c.id} className="space-y-1">
-                        <CaseCard data={c} locale={locale} />
-                        {group && (
-                          <div className="px-1">
-                            <GroupBadge
-                              groupId={c.group_id ?? undefined}
-                              groupName={group.name}
-                              color={group.color ?? undefined}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })
-                )}
-              </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      )}
 
-      {/* Section Alumni — séparée visuellement */}
+      {/* Section Alumni */}
       {alumniCases.length > 0 && (
-        <div className="flex-shrink-0 border-t border-zinc-100 pt-3">
-          <div className="flex items-center gap-2 text-xs font-medium text-[#92400e] mb-3">
-            <span className="text-base">🎓</span>
-            Anciens stagiaires ({alumniCases.length})
-          </div>
-          <div className="flex gap-3 overflow-x-auto pb-4">
-            <div className="flex-shrink-0 w-[280px] flex flex-col bg-amber-50/50 rounded-xl border border-amber-100">
-              <div className="px-3 py-2.5 border-b border-amber-100 flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-[#92400e] truncate">Alumni</span>
-                <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-amber-100 text-[#92400e] text-xs font-bold flex-shrink-0">
-                  {alumniCases.length}
-                </span>
-              </div>
-              <div className="flex-1 p-2 space-y-2 overflow-y-auto max-h-48">
-                {alumniCases.map((c) => (
-                  <CaseCard key={c.id} data={c} locale={locale} />
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Section Perdus — collapsible */}
-      {lostCases.length > 0 && (
-        <div className="flex-shrink-0 border-t border-zinc-100 pt-3">
+        <div className="flex-shrink-0 border-t border-[#e4e4e7] pt-3">
           <button
-            onClick={() => setLostOpen((o) => !o)}
-            className="flex items-center gap-2 text-xs font-medium text-zinc-400 hover:text-zinc-600 transition-colors mb-3"
+            onClick={() => setAlumniOpen((o) => !o)}
+            className="flex items-center gap-2 text-[11px] font-semibold text-[#92400e] hover:text-[#78350f] transition-colors mb-2"
           >
             <svg
-              width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-              className={['transition-transform', lostOpen ? 'rotate-90' : ''].join(' ')}
+              width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
+              className={`transition-transform ${alumniOpen ? 'rotate-90' : ''}`}
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
-            Perdus / Inactifs ({lostCases.length})
+            🎓 Anciens stagiaires ({alumniCases.length})
+          </button>
+          {alumniOpen && (
+            <div className="flex gap-2 overflow-x-auto pb-3">
+              <div className="flex-shrink-0 w-[220px] flex flex-col rounded-xl border border-[#c8a96e]/30 bg-[#c8a96e]/5 opacity-80">
+                <div className="px-2.5 py-2 border-b border-[#c8a96e]/20 flex items-center justify-between">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-[#92400e]">Alumni</span>
+                  <span className="text-[10px] font-bold text-[#92400e] bg-[#c8a96e]/15 px-1.5 rounded-full">{alumniCases.length}</span>
+                </div>
+                <div className="flex-1 p-2 flex flex-col gap-1.5 overflow-y-auto max-h-48">
+                  {alumniCases.map((c) => (
+                    <CaseCard key={c.id} data={c} locale={locale} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Section Perdus */}
+      {lostCases.length > 0 && (
+        <div className="flex-shrink-0 border-t border-[#e4e4e7] pt-3">
+          <button
+            onClick={() => setLostOpen((o) => !o)}
+            className="flex items-center gap-2 text-[11px] font-medium text-[#a1a1aa] hover:text-[#71717a] transition-colors mb-2"
+          >
+            <svg
+              width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
+              className={`transition-transform ${lostOpen ? 'rotate-90' : ''}`}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+            Dossiers fermés ({lostCases.length})
           </button>
           {lostOpen && (
-            <div className="flex gap-3 overflow-x-auto pb-4">
+            <div className="flex gap-2 overflow-x-auto pb-3">
               {LOST_STATUSES.map((status) => {
                 const items = lostCases.filter((c) => c.status === status)
                 if (items.length === 0) return null
                 return (
-                  <div key={status} className="flex-shrink-0 w-[280px] flex flex-col bg-zinc-50/50 rounded-xl border border-zinc-100 opacity-70">
-                    <div className="px-3 py-2 border-b border-zinc-100 flex items-center justify-between gap-2">
-                      <span className="text-xs font-medium text-zinc-400 truncate">{LOST_LABELS[status]}</span>
-                      <span className="text-xs text-zinc-400 font-bold">{items.length}</span>
+                  <div key={status} className="flex-shrink-0 w-[220px] flex flex-col bg-[#f4f4f5] rounded-xl border border-[#e4e4e7] opacity-60">
+                    <div className="px-2.5 py-2 border-b border-[#e4e4e7] flex items-center justify-between">
+                      <span className="text-[10px] font-medium text-[#a1a1aa] truncate">{status}</span>
+                      <span className="text-[10px] text-[#a1a1aa] font-bold">{items.length}</span>
                     </div>
-                    <div className="flex-1 p-2 space-y-2 max-h-48 overflow-y-auto">
+                    <div className="flex-1 p-2 flex flex-col gap-1.5 max-h-48 overflow-y-auto">
                       {items.map((c) => (
                         <CaseCard key={c.id} data={c} locale={locale} />
                       ))}
@@ -276,187 +540,4 @@ export function KanbanBoard({ cases, locale = 'fr' }: KanbanBoardProps) {
       )}
     </div>
   )
-}
-
-// ─── CaseCard — status badge + progress + checklist ─────────────────────────
-
-const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> = {
-  lead: { label: 'Demande', bg: '#f4f4f5', text: '#71717a' },
-  rdv_booked: { label: 'RDV Booké', bg: '#dbeafe', text: '#1d4ed8' },
-  qualification_done: { label: 'Qualif OK', bg: '#ede9fe', text: '#6d28d9' },
-  job_submitted: { label: 'Jobs proposés', bg: '#fef3c7', text: '#d97706' },
-  job_retained: { label: 'Job retenu', bg: '#d1fae5', text: '#059669' },
-  convention_signed: { label: 'Convention', bg: '#dcfce7', text: '#16a34a' },
-  payment_pending: { label: 'Paiement ⏳', bg: '#fee2e2', text: '#dc2626' },
-  payment_received: { label: 'Payé ✓', bg: '#d1fae5', text: '#059669' },
-  visa_docs_sent: { label: 'Docs visa', bg: '#fef3c7', text: '#d97706' },
-  visa_submitted: { label: 'Visa soumis', bg: '#dbeafe', text: '#1d4ed8' },
-  visa_received: { label: 'Visa ✓', bg: '#d1fae5', text: '#059669' },
-  arrival_prep: { label: '🛫 Départ imminent', bg: '#fee2e2', text: '#dc2626' },
-  active: { label: '🌴 En stage', bg: '#d1fae5', text: '#059669' },
-  alumni: { label: 'Alumni', bg: '#fef3c7', text: '#92400e' },
-}
-
-function getStepIndex(status: string): number {
-  const idx = COLUMN_ORDER.indexOf(status as typeof COLUMN_ORDER[number])
-  return idx >= 0 ? idx + 1 : 1
-}
-
-const CHECKLIST_LABELS = [
-  'Billet avion',
-  'Papiers visa',
-  'Visa reçu',
-  'Convention signée',
-  'Chauffeur réservé',
-]
-
-interface CaseCardExtended extends CaseData {
-  billet_avion?: boolean
-  papiers_visas?: boolean
-  visa_recu?: boolean
-  convention_signee_check?: boolean
-  chauffeur_reserve?: boolean
-}
-
-const NO_DAYS_TAG_STATUSES = ['not_interested', 'no_job_found', 'lost', 'alumni', 'not_qualified', 'on_hold', 'suspended', 'visa_refused', 'archived', 'completed']
-
-function CaseCard({ data, locale }: { data: CaseCardExtended; locale: string }) {
-  const router = useRouter()
-
-  // Logique badge date selon statut
-  const tag = (() => {
-    if (NO_DAYS_TAG_STATUSES.includes(data.status)) return null
-
-    // En stage actif : afficher "encore X j" jusqu'à la fin (discret, pas urgent)
-    if (data.status === 'active') {
-      const endDate = data.actual_end_date
-      if (!endDate) return null
-      const days = Math.ceil((new Date(endDate).getTime() - Date.now()) / 86400000)
-      if (days <= 0) return null // stage terminé
-      if (days <= 7) return { label: `Fin dans ${days}j`, color: 'bg-orange-50 text-orange-600' }
-      return { label: `Encore ${days}j`, color: 'bg-zinc-100 text-zinc-500' }
-    }
-
-    // Arrivée imminente : J-X avant actual_start_date (urgent)
-    if (data.status === 'arrival_prep') {
-      const startDate = data.actual_start_date ?? data.desired_start_date
-      if (!startDate) return null
-      return getDaysUntilTag(startDate)
-    }
-
-    // Avant arrivée : J-X avant desired_start_date si < 60 jours
-    const dateRef = data.desired_start_date
-    if (!dateRef) return null
-    const days = Math.ceil((new Date(dateRef).getTime() - Date.now()) / 86400000)
-    if (days > 60 || days < 0) return null // trop loin ou passé = pas pertinent
-    return getDaysUntilTag(dateRef)
-  })()
-
-  const showPassportWarning = (() => {
-    if (!data.passport_expiry || !data.desired_start_date) return false
-    const startPlus6 = new Date(data.desired_start_date)
-    startPlus6.setMonth(startPlus6.getMonth() + 6)
-    return new Date(data.passport_expiry) < startPlus6
-  })()
-
-  const checklist = [
-    data.billet_avion,
-    data.papiers_visas,
-    data.visa_recu,
-    data.convention_signee_check,
-    data.chauffeur_reserve,
-  ]
-
-  const badge = STATUS_BADGE[data.status]
-  const step = getStepIndex(data.status)
-  const progressPct = Math.round((step / 14) * 100)
-
-  return (
-    <button
-      onClick={() => router.push(`/${locale}/cases/${data.id}?tab=process`)}
-      className="w-full text-left p-3 bg-white rounded-lg border border-zinc-100 hover:shadow-sm hover:border-zinc-200 transition-all"
-    >
-      {/* Status badge - prominent at top */}
-      {badge && (
-        <div className="mb-2">
-          <span
-            className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold"
-            style={{ backgroundColor: badge.bg, color: badge.text }}
-          >
-            {badge.label}
-          </span>
-        </div>
-      )}
-
-      {/* Progress bar */}
-      <div className="mb-2">
-        <div className="flex items-center justify-between mb-0.5">
-          <span className="text-[10px] text-zinc-400">Étape {step}/14</span>
-          <span className="text-[10px] text-zinc-400">{progressPct}%</span>
-        </div>
-        <div className="w-full h-1 bg-zinc-100 rounded-full overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all"
-            style={{ width: `${progressPct}%`, backgroundColor: '#c8a96e' }}
-          />
-        </div>
-      </div>
-
-      {/* Avatar + name */}
-      <div className="flex items-center gap-2 mb-1.5">
-        <div className="w-6 h-6 rounded-full bg-[#c8a96e] flex items-center justify-center flex-shrink-0">
-          <span className="text-white text-[10px] font-bold">
-            {(data.first_name?.[0] ?? '').toUpperCase()}{(data.last_name?.[0] ?? '').toUpperCase()}
-          </span>
-        </div>
-        <span className="text-xs font-semibold text-[#1a1918] truncate flex-1">
-          {data.first_name} {data.last_name}
-        </span>
-      </div>
-
-      {/* School */}
-      {data.school && (
-        <p className="text-[10px] text-zinc-400 truncate mb-1.5">{data.school}</p>
-      )}
-
-      {/* Badges: J-X + VISA + PASSEPORT */}
-      <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-        {data.internship_type === 'visa_only' && (
-          <span className="text-[10px] font-bold px-1 py-0.5 rounded bg-blue-100 text-blue-700">VISA</span>
-        )}
-        {tag && (
-          <span className={['text-[10px] font-bold px-1 py-0.5 rounded', tag.color].join(' ')}>
-            {tag.label}
-          </span>
-        )}
-        {showPassportWarning && (
-          <span className="text-[10px] font-bold px-1 py-0.5 rounded bg-red-100 text-[#dc2626]">PASSEPORT</span>
-        )}
-      </div>
-
-      {/* Mini checklist — 8 pastilles avec tooltip au hover */}
-      <div className="flex gap-1 flex-wrap">
-        {checklist.map((v, i) => (
-          <div
-            key={i}
-            title={CHECKLIST_LABELS[i]}
-            className={['w-2.5 h-2.5 rounded-full cursor-default', v ? 'bg-[#0d9e75]' : 'bg-zinc-200'].join(' ')}
-          />
-        ))}
-      </div>
-    </button>
-  )
-}
-
-function getDaysUntilTag(dateRef: string): { label: string; color: string } | null {
-  const now = new Date()
-  now.setHours(0, 0, 0, 0)
-  const target = new Date(dateRef)
-  target.setHours(0, 0, 0, 0)
-  const days = Math.floor((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-  if (days < 0) return { label: `J${days}`, color: 'bg-red-100 text-[#dc2626]' }
-  if (days < 3) return { label: `J-${days}`, color: 'bg-red-100 text-[#dc2626]' }
-  if (days < 7) return { label: `J-${days}`, color: 'bg-amber-100 text-[#d97706]' }
-  if (days < 30) return { label: `J-${days}`, color: 'bg-amber-100 text-[#d97706]' }
-  return { label: `J-${days}`, color: 'bg-emerald-50 text-[#0d9e75]' }
 }
