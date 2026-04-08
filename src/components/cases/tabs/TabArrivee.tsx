@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Button } from '@/components/ui/Button'
 
 interface Guesthouse {
   id: string
@@ -15,6 +14,7 @@ interface TabArriveeProps {
     id: string
     flight_number?: string | null
     flight_arrival_datetime?: string | null
+    flight_departure_city?: string | null
     dropoff_address?: string | null
     last_stopover_city?: string | null
     intern_bali_phone?: string | null
@@ -25,27 +25,33 @@ interface TabArriveeProps {
     actual_end_date?: string | null
     housing_reserved?: boolean | null
     scooter_reserved?: boolean | null
+    driver_booked?: boolean | null
     guesthouse_id?: string | null
     welcome_kit_sent_at?: string | null
-    driver_notified_j2?: boolean | null
-    driver_notified_j0?: boolean | null
-    interns?: { phone?: string | null } | null
+    whatsapp_ambassador_bali_msg?: string | null
+    whatsapp_ambassador_done_msg?: string | null
+    interns?: {
+      phone?: string | null
+      return_plane_ticket_url?: string | null
+    } | null
   }
 }
 
 interface ArrivalFields {
   flight_number: string
+  flight_departure_city: string
   last_stopover_city: string
   flight_arrival_datetime: string
   dropoff_address: string
   intern_bali_phone: string
-  driver_notified_j2: boolean
-  driver_notified_j0: boolean
   actual_start_date: string
   actual_end_date: string
   housing_reserved: boolean
   scooter_reserved: boolean
+  driver_booked: boolean
   guesthouse_id: string
+  whatsapp_ambassador_bali_msg: string
+  whatsapp_ambassador_done_msg: string
 }
 
 function buildWhatsAppMessage(fields: ArrivalFields, firstName: string, lastName: string): string {
@@ -68,19 +74,21 @@ export function TabArrivee({ caseData }: TabArriveeProps) {
 
   const [fields, setFields] = useState<ArrivalFields>({
     flight_number: caseData.flight_number ?? '',
+    flight_departure_city: caseData.flight_departure_city ?? '',
     last_stopover_city: caseData.last_stopover_city ?? '',
     flight_arrival_datetime: caseData.flight_arrival_datetime
       ? caseData.flight_arrival_datetime.slice(0, 16)
       : '',
     dropoff_address: caseData.dropoff_address ?? '',
     intern_bali_phone: caseData.intern_bali_phone ?? caseData.interns?.phone ?? '',
-    driver_notified_j2: caseData.driver_notified_j2 ?? false,
-    driver_notified_j0: caseData.driver_notified_j0 ?? false,
     actual_start_date: caseData.actual_start_date ?? '',
     actual_end_date: caseData.actual_end_date ?? '',
     housing_reserved: caseData.housing_reserved ?? false,
     scooter_reserved: caseData.scooter_reserved ?? false,
+    driver_booked: caseData.driver_booked ?? false,
     guesthouse_id: caseData.guesthouse_id ?? '',
+    whatsapp_ambassador_bali_msg: caseData.whatsapp_ambassador_bali_msg ?? '',
+    whatsapp_ambassador_done_msg: caseData.whatsapp_ambassador_done_msg ?? '',
   })
 
   const [saving, setSaving] = useState(false)
@@ -89,7 +97,6 @@ export function TabArrivee({ caseData }: TabArriveeProps) {
   const [welcomeKitSentAt, setWelcomeKitSentAt] = useState<string | null>(caseData.welcome_kit_sent_at ?? null)
   const [markingWelcome, setMarkingWelcome] = useState(false)
 
-  // Load guesthouses
   useEffect(() => {
     fetch('/api/guesthouses')
       .then((r) => r.ok ? r.json() as Promise<Guesthouse[]> : Promise.resolve([]))
@@ -97,7 +104,6 @@ export function TabArrivee({ caseData }: TabArriveeProps) {
       .catch(() => setGuesthouses([]))
   }, [])
 
-  // PATCH cases for non-flight fields
   async function patchCase(patch: Record<string, unknown>) {
     await fetch(`/api/cases/${caseData.id}`, {
       method: 'PATCH',
@@ -106,14 +112,14 @@ export function TabArrivee({ caseData }: TabArriveeProps) {
     })
   }
 
-  async function handleCaseToggle(key: 'housing_reserved' | 'scooter_reserved', value: boolean) {
+  async function handleCaseToggle(key: 'housing_reserved' | 'scooter_reserved' | 'driver_booked', value: boolean) {
     setFields((f) => ({ ...f, [key]: value }))
     await patchCase({ [key]: value })
   }
 
   async function handleGuesthouseChange(id: string) {
     setFields((f) => ({ ...f, guesthouse_id: id }))
-    await patchCase({ guesthouse_id: id || null })
+    await patchCase({ guesthouse_id: id || null, guesthouse_preselection: id || null })
   }
 
   async function handleActualDateBlur(key: 'actual_start_date' | 'actual_end_date', value: string) {
@@ -155,6 +161,7 @@ export function TabArrivee({ caseData }: TabArriveeProps) {
     const timer = setTimeout(() => {
       void save({
         flight_number: fields.flight_number || null as unknown as string,
+        flight_departure_city: fields.flight_departure_city || null as unknown as string,
         last_stopover_city: fields.last_stopover_city || null as unknown as string,
         flight_arrival_datetime: fields.flight_arrival_datetime || null as unknown as string,
         dropoff_address: fields.dropoff_address || null as unknown as string,
@@ -165,16 +172,12 @@ export function TabArrivee({ caseData }: TabArriveeProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     fields.flight_number,
+    fields.flight_departure_city,
     fields.last_stopover_city,
     fields.flight_arrival_datetime,
     fields.dropoff_address,
     fields.intern_bali_phone,
   ])
-
-  function handleCheckbox(key: 'driver_notified_j2' | 'driver_notified_j0', value: boolean) {
-    setFields((f) => ({ ...f, [key]: value }))
-    void save({ [key]: value })
-  }
 
   function setField<K extends keyof ArrivalFields>(key: K, value: ArrivalFields[K]) {
     setFields((f) => ({ ...f, [key]: value }))
@@ -192,64 +195,7 @@ export function TabArrivee({ caseData }: TabArriveeProps) {
         </div>
       )}
 
-      {/* Form */}
-      <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-zinc-500 mb-1">Numéro de vol</label>
-            <input
-              type="text"
-              value={fields.flight_number}
-              onChange={(e) => setField('flight_number', e.target.value)}
-              placeholder="Ex: QR957"
-              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-zinc-500 mb-1">Dernière escale</label>
-            <input
-              type="text"
-              value={fields.last_stopover_city}
-              onChange={(e) => setField('last_stopover_city', e.target.value)}
-              placeholder="Ex: Singapour, Kuala Lumpur…"
-              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-zinc-500 mb-1">Date / heure d'arrivée</label>
-            <input
-              type="datetime-local"
-              value={fields.flight_arrival_datetime}
-              onChange={(e) => setField('flight_arrival_datetime', e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-zinc-500 mb-1">Tél Bali du stagiaire</label>
-            <input
-              type="text"
-              value={fields.intern_bali_phone}
-              onChange={(e) => setField('intern_bali_phone', e.target.value)}
-              placeholder="+62 8xx xxx xxxx"
-              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-            />
-          </div>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-zinc-500 mb-1">Adresse de dépôt</label>
-          <input
-            type="text"
-            value={fields.dropoff_address}
-            onChange={(e) => setField('dropoff_address', e.target.value)}
-            placeholder="Ex: Villa Sunset, Jl. Raya Seminyak No. 12"
-            className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-          />
-        </div>
-        {saving && <p className="text-xs text-zinc-400">Sauvegarde…</p>}
-        {!saving && savedAt && <p className="text-xs text-zinc-400">Sauvegardé à {savedAt}</p>}
-      </div>
-
-      {/* Dates réelles de stage */}
+      {/* Section 1: Dates */}
       <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-4">
         <h3 className="text-sm font-semibold text-[#1a1918]">Dates réelles de stage</h3>
         <div className="grid grid-cols-2 gap-4">
@@ -288,7 +234,87 @@ export function TabArrivee({ caseData }: TabArriveeProps) {
         )}
       </div>
 
-      {/* Logement */}
+      {/* Section 2: Vol */}
+      <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-4">
+        <h3 className="text-sm font-semibold text-[#1a1918]">Vol</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-zinc-500 mb-1">Numéro de vol</label>
+            <input
+              type="text"
+              value={fields.flight_number}
+              onChange={(e) => setField('flight_number', e.target.value)}
+              placeholder="Ex: QR957"
+              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-500 mb-1">Ville de départ</label>
+            <input
+              type="text"
+              value={fields.flight_departure_city}
+              onChange={(e) => setField('flight_departure_city', e.target.value)}
+              placeholder="Ex: Paris CDG"
+              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-500 mb-1">Dernière escale</label>
+            <input
+              type="text"
+              value={fields.last_stopover_city}
+              onChange={(e) => setField('last_stopover_city', e.target.value)}
+              placeholder="Ex: Singapour, Kuala Lumpur…"
+              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-500 mb-1">Date / heure d'arrivée locale</label>
+            <input
+              type="datetime-local"
+              value={fields.flight_arrival_datetime}
+              onChange={(e) => setField('flight_arrival_datetime', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-500 mb-1">Tél Bali du stagiaire</label>
+            <input
+              type="text"
+              value={fields.intern_bali_phone}
+              onChange={(e) => setField('intern_bali_phone', e.target.value)}
+              placeholder="+62 8xx xxx xxxx"
+              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-500 mb-1">Billet retour (URL)</label>
+            <div className="flex items-center gap-2">
+              {caseData.interns?.return_plane_ticket_url ? (
+                <a href={caseData.interns.return_plane_ticket_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#c8a96e] hover:underline">
+                  Voir le billet
+                </a>
+              ) : (
+                <span className="text-xs text-zinc-400">Non uploadé</span>
+              )}
+            </div>
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-zinc-500 mb-1">Adresse de dépôt</label>
+          <input
+            type="text"
+            value={fields.dropoff_address}
+            onChange={(e) => setField('dropoff_address', e.target.value)}
+            placeholder="Ex: Villa Sunset, Jl. Raya Seminyak No. 12"
+            className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+          />
+        </div>
+        {saving && <p className="text-xs text-zinc-400">Sauvegarde…</p>}
+        {!saving && savedAt && <p className="text-xs text-zinc-400">Sauvegardé à {savedAt}</p>}
+      </div>
+
+      {/* Section 3: Logement */}
       <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-3">
         <h3 className="text-sm font-semibold text-[#1a1918]">Logement</h3>
         <div>
@@ -317,7 +343,7 @@ export function TabArrivee({ caseData }: TabArriveeProps) {
         </label>
       </div>
 
-      {/* Scooter */}
+      {/* Section 4: Scooter */}
       <div className="bg-white rounded-xl border border-zinc-100 p-4">
         <label className="flex items-center gap-3 cursor-pointer">
           <input
@@ -333,12 +359,28 @@ export function TabArrivee({ caseData }: TabArriveeProps) {
         </label>
       </div>
 
-      {/* Welcome kit */}
+      {/* Section 5: Chauffeur */}
+      <div className="bg-white rounded-xl border border-zinc-100 p-4">
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={fields.driver_booked}
+            onChange={(e) => { void handleCaseToggle('driver_booked', e.target.checked) }}
+            className="w-4 h-4 rounded accent-[#c8a96e]"
+          />
+          <div>
+            <p className="text-sm font-medium text-[#1a1918]">Chauffeur réservé</p>
+            <p className="text-xs text-zinc-400">Transfert aéroport confirmé</p>
+          </div>
+        </label>
+      </div>
+
+      {/* Section 6: Welcome kit */}
       <div className="bg-white rounded-xl border border-zinc-100 p-5">
         <h3 className="text-sm font-semibold text-[#1a1918] mb-3">Welcome kit</h3>
         {welcomeKitSentAt ? (
           <p className="text-sm text-[#0d9e75] font-medium">
-            ✓ Envoyé le {new Date(welcomeKitSentAt).toLocaleDateString('fr-FR')}
+            Envoyé le {new Date(welcomeKitSentAt).toLocaleDateString('fr-FR')}
           </p>
         ) : (
           <button
@@ -346,12 +388,39 @@ export function TabArrivee({ caseData }: TabArriveeProps) {
             disabled={markingWelcome}
             className="px-4 py-2 text-sm font-medium bg-zinc-100 hover:bg-zinc-200 text-[#1a1918] rounded-lg transition-colors disabled:opacity-50"
           >
-            {markingWelcome ? 'Enregistrement…' : 'Marquer comme envoyé'}
+            {markingWelcome ? 'Enregistrement…' : 'Marquer Welcome Kit envoyé'}
           </button>
         )}
       </div>
 
-      {/* WhatsApp preview */}
+      {/* Section 7: WhatsApp templates */}
+      <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-4">
+        <h3 className="text-sm font-semibold text-[#1a1918]">Messages WhatsApp</h3>
+        <div>
+          <label className="block text-xs font-medium text-zinc-500 mb-1">Message ambassadeur Bali</label>
+          <textarea
+            value={fields.whatsapp_ambassador_bali_msg}
+            onChange={(e) => setField('whatsapp_ambassador_bali_msg', e.target.value)}
+            onBlur={() => { void patchCase({ whatsapp_ambassador_bali_msg: fields.whatsapp_ambassador_bali_msg || null }) }}
+            rows={3}
+            placeholder="Hello, ton stage à Bali est en cours !"
+            className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-zinc-500 mb-1">Message ambassadeur terminé</label>
+          <textarea
+            value={fields.whatsapp_ambassador_done_msg}
+            onChange={(e) => setField('whatsapp_ambassador_done_msg', e.target.value)}
+            onBlur={() => { void patchCase({ whatsapp_ambassador_done_msg: fields.whatsapp_ambassador_done_msg || null }) }}
+            rows={3}
+            placeholder="Hello, ton stage à Bali est terminé !"
+            className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+          />
+        </div>
+      </div>
+
+      {/* WhatsApp chauffeur preview */}
       <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-3">
         <h3 className="text-sm font-semibold text-[#1a1918]">Message chauffeur (aperçu)</h3>
         <pre className="text-xs text-zinc-600 whitespace-pre-wrap font-mono bg-zinc-50 rounded-lg p-3 leading-relaxed">
@@ -366,34 +435,6 @@ export function TabArrivee({ caseData }: TabArriveeProps) {
           </svg>
           Ouvrir WhatsApp
         </button>
-      </div>
-
-      {/* Driver checkboxes */}
-      <div className="bg-white rounded-xl border border-zinc-100 divide-y divide-zinc-50">
-        <label className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-zinc-50">
-          <input
-            type="checkbox"
-            checked={fields.driver_notified_j2}
-            onChange={(e) => handleCheckbox('driver_notified_j2', e.target.checked)}
-            className="w-4 h-4 rounded accent-[#c8a96e]"
-          />
-          <div>
-            <p className="text-sm font-medium text-[#1a1918]">Chauffeur notifié (J-2)</p>
-            <p className="text-xs text-zinc-400">Envoi du message 2 jours avant l'arrivée</p>
-          </div>
-        </label>
-        <label className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-zinc-50">
-          <input
-            type="checkbox"
-            checked={fields.driver_notified_j0}
-            onChange={(e) => handleCheckbox('driver_notified_j0', e.target.checked)}
-            className="w-4 h-4 rounded accent-[#c8a96e]"
-          />
-          <div>
-            <p className="text-sm font-medium text-[#1a1918]">Chauffeur rappelé (J-0)</p>
-            <p className="text-xs text-zinc-400">Rappel le jour de l'arrivée</p>
-          </div>
-        </label>
       </div>
     </div>
   )

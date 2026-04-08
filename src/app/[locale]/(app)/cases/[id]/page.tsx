@@ -473,6 +473,7 @@ export default function CaseDetailPage() {
             id: caseData.id,
             flight_number: caseData.flight_number,
             flight_arrival_datetime: caseData.flight_arrival_datetime,
+            flight_departure_city: caseData.flight_departure_city,
             dropoff_address: caseData.dropoff_address,
             last_stopover_city: caseData.last_stopover_city,
             intern_bali_phone: caseData.intern_bali_phone,
@@ -483,9 +484,15 @@ export default function CaseDetailPage() {
             actual_end_date: caseData.actual_end_date,
             housing_reserved: caseData.housing_reserved ?? caseData.logement_reserve,
             scooter_reserved: caseData.scooter_reserved,
-            guesthouse_id: caseData.guesthouse_id,
+            driver_booked: caseData.driver_booked,
+            guesthouse_id: caseData.guesthouse_id ?? caseData.guesthouse_preselection,
             welcome_kit_sent_at: caseData.welcome_kit_sent_at,
-            interns: caseData.interns ? { phone: caseData.interns.phone } : null,
+            whatsapp_ambassador_bali_msg: caseData.whatsapp_ambassador_bali_msg,
+            whatsapp_ambassador_done_msg: caseData.whatsapp_ambassador_done_msg,
+            interns: caseData.interns ? {
+              phone: caseData.interns.phone,
+              return_plane_ticket_url: caseData.interns.return_plane_ticket_url,
+            } : null,
           }} />
         )}
         {activeTab === 'facturation' && (
