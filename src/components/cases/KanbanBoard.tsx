@@ -249,7 +249,29 @@ export function KanbanBoard({ cases, locale = 'fr' }: KanbanBoardProps) {
   )
 }
 
-// ─── CaseCard — mini checklist 8 pastilles ───────────────────────────────────
+// ─── CaseCard — status badge + progress + checklist ─────────────────────────
+
+const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> = {
+  lead: { label: 'Demande', bg: '#e5e7eb', text: '#374151' },
+  rdv_booked: { label: 'RDV Booké', bg: '#dbeafe', text: '#1d4ed8' },
+  qualification_done: { label: 'Qualif OK', bg: '#ede9fe', text: '#7c3aed' },
+  job_submitted: { label: 'Jobs proposés', bg: '#ffedd5', text: '#c2410c' },
+  job_retained: { label: 'Job retenu', bg: '#d1fae5', text: '#065f46' },
+  convention_signed: { label: 'Convention', bg: '#d1fae5', text: '#065f46' },
+  payment_pending: { label: 'Paiement \u23f3', bg: '#fee2e2', text: '#dc2626' },
+  payment_received: { label: 'Payé \u2713', bg: '#d1fae5', text: '#065f46' },
+  visa_docs_sent: { label: 'Docs visa', bg: '#ffedd5', text: '#c2410c' },
+  visa_submitted: { label: 'Visa soumis', bg: '#dbeafe', text: '#1d4ed8' },
+  visa_received: { label: 'Visa reçu \u2713', bg: '#d1fae5', text: '#065f46' },
+  arrival_prep: { label: 'Départ imminent', bg: '#fee2e2', text: '#dc2626' },
+  active: { label: 'En stage \ud83c\udf34', bg: '#d1fae5', text: '#065f46' },
+  alumni: { label: 'Alumni', bg: '#fef3c7', text: '#92400e' },
+}
+
+function getStepIndex(status: string): number {
+  const idx = COLUMN_ORDER.indexOf(status as typeof COLUMN_ORDER[number])
+  return idx >= 0 ? idx + 1 : 1
+}
 
 const CHECKLIST_LABELS = [
   'Billet avion',
@@ -275,11 +297,9 @@ interface CaseCardExtended extends CaseData {
 
 function CaseCard({ data, locale }: { data: CaseCardExtended; locale: string }) {
   const router = useRouter()
-  // J-X basé sur desired_start_date en priorité, sinon arrival_date
   const dateRef = data.desired_start_date ?? data.arrival_date
   const tag = dateRef ? getDaysUntilTag(dateRef) : null
 
-  // Badge PASSEPORT: passport_expiry < desired_start_date + 6 mois
   const showPassportWarning = (() => {
     if (!data.passport_expiry || !data.desired_start_date) return false
     const startPlus6 = new Date(data.desired_start_date)
@@ -298,11 +318,41 @@ function CaseCard({ data, locale }: { data: CaseCardExtended; locale: string }) 
     data.chauffeur_reserve,
   ]
 
+  const badge = STATUS_BADGE[data.status]
+  const step = getStepIndex(data.status)
+  const progressPct = Math.round((step / 14) * 100)
+
   return (
     <button
-      onClick={() => router.push(`/${locale}/cases/${data.id}`)}
+      onClick={() => router.push(`/${locale}/cases/${data.id}?tab=process`)}
       className="w-full text-left p-3 bg-white rounded-lg border border-zinc-100 hover:shadow-sm hover:border-zinc-200 transition-all"
     >
+      {/* Status badge - prominent at top */}
+      {badge && (
+        <div className="mb-2">
+          <span
+            className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold"
+            style={{ backgroundColor: badge.bg, color: badge.text }}
+          >
+            {badge.label}
+          </span>
+        </div>
+      )}
+
+      {/* Progress bar */}
+      <div className="mb-2">
+        <div className="flex items-center justify-between mb-0.5">
+          <span className="text-[10px] text-zinc-400">Étape {step}/14</span>
+          <span className="text-[10px] text-zinc-400">{progressPct}%</span>
+        </div>
+        <div className="w-full h-1 bg-zinc-100 rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all"
+            style={{ width: `${progressPct}%`, backgroundColor: '#c8a96e' }}
+          />
+        </div>
+      </div>
+
       {/* Avatar + name */}
       <div className="flex items-center gap-2 mb-1.5">
         <div className="w-6 h-6 rounded-full bg-[#c8a96e] flex items-center justify-center flex-shrink-0">
