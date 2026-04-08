@@ -253,19 +253,19 @@ export function KanbanBoard({ cases, locale = 'fr' }: KanbanBoardProps) {
 // ─── CaseCard — status badge + progress + checklist ─────────────────────────
 
 const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> = {
-  lead: { label: 'Demande', bg: '#e5e7eb', text: '#374151' },
+  lead: { label: 'Demande', bg: '#f4f4f5', text: '#71717a' },
   rdv_booked: { label: 'RDV Booké', bg: '#dbeafe', text: '#1d4ed8' },
-  qualification_done: { label: 'Qualif OK', bg: '#ede9fe', text: '#7c3aed' },
-  job_submitted: { label: 'Jobs proposés', bg: '#ffedd5', text: '#c2410c' },
-  job_retained: { label: 'Job retenu', bg: '#d1fae5', text: '#065f46' },
-  convention_signed: { label: 'Convention', bg: '#d1fae5', text: '#065f46' },
-  payment_pending: { label: 'Paiement \u23f3', bg: '#fee2e2', text: '#dc2626' },
-  payment_received: { label: 'Payé \u2713', bg: '#d1fae5', text: '#065f46' },
-  visa_docs_sent: { label: 'Docs visa', bg: '#ffedd5', text: '#c2410c' },
+  qualification_done: { label: 'Qualif OK', bg: '#ede9fe', text: '#6d28d9' },
+  job_submitted: { label: 'Jobs proposés', bg: '#fef3c7', text: '#d97706' },
+  job_retained: { label: 'Job retenu', bg: '#d1fae5', text: '#059669' },
+  convention_signed: { label: 'Convention', bg: '#dcfce7', text: '#16a34a' },
+  payment_pending: { label: 'Paiement ⏳', bg: '#fee2e2', text: '#dc2626' },
+  payment_received: { label: 'Payé ✓', bg: '#d1fae5', text: '#059669' },
+  visa_docs_sent: { label: 'Docs visa', bg: '#fef3c7', text: '#d97706' },
   visa_submitted: { label: 'Visa soumis', bg: '#dbeafe', text: '#1d4ed8' },
-  visa_received: { label: 'Visa reçu \u2713', bg: '#d1fae5', text: '#065f46' },
-  arrival_prep: { label: 'Départ imminent', bg: '#fee2e2', text: '#dc2626' },
-  active: { label: 'En stage \ud83c\udf34', bg: '#d1fae5', text: '#065f46' },
+  visa_received: { label: 'Visa ✓', bg: '#d1fae5', text: '#059669' },
+  arrival_prep: { label: '🛫 Départ imminent', bg: '#fee2e2', text: '#dc2626' },
+  active: { label: '🌴 En stage', bg: '#d1fae5', text: '#059669' },
   alumni: { label: 'Alumni', bg: '#fef3c7', text: '#92400e' },
 }
 
@@ -296,10 +296,12 @@ interface CaseCardExtended extends CaseData {
   chauffeur_reserve?: boolean
 }
 
+const NO_DAYS_TAG_STATUSES = ['not_interested', 'no_job_found', 'lost', 'alumni', 'not_qualified', 'on_hold', 'suspended', 'visa_refused', 'archived', 'completed']
+
 function CaseCard({ data, locale }: { data: CaseCardExtended; locale: string }) {
   const router = useRouter()
   const dateRef = data.desired_start_date ?? data.arrival_date
-  const tag = dateRef ? getDaysUntilTag(dateRef) : null
+  const tag = dateRef && !NO_DAYS_TAG_STATUSES.includes(data.status) ? getDaysUntilTag(dateRef) : null
 
   const showPassportWarning = (() => {
     if (!data.passport_expiry || !data.desired_start_date) return false
