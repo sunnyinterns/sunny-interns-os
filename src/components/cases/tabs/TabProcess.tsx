@@ -2,17 +2,20 @@
 
 import { useState } from 'react'
 import { ProcessTimeline } from '@/components/cases/ProcessTimeline'
-import { Button } from '@/components/ui/Button'
 import StatusActionPanel from '@/components/cases/StatusActionPanel'
 import type { CaseStatus } from '@/lib/types'
 
 interface ActivityEntry {
   id: string
-  action_type: string
+  type?: string
+  action_type?: string
   description: string
+  title?: string | null
   created_at: string
   created_by?: string | null
   author_name?: string | null
+  assigned_to?: string | null
+  source?: string | null
 }
 
 interface ChecklistData {
@@ -86,11 +89,11 @@ const ALL_STATUSES: { value: CaseStatus; label: string }[] = [
   { value: 'archived', label: 'Archivé' },
 ]
 
-const CHECKLIST_ITEMS: { key: keyof ChecklistData; label: string; sub?: string }[] = [
-  { key: 'billet_avion', label: 'Billet avion confirmé', sub: 'Vol aller-retour' },
-  { key: 'papiers_visas', label: 'Papiers visa envoyés', sub: 'Dossier complet à agent' },
-  { key: 'visa_recu', label: 'Visa reçu', sub: 'B211A validé' },
-  { key: 'convention_signee_check', label: 'Convention signée', sub: 'Par les 3 parties' },
+const CHECKLIST_ITEMS: { key: keyof ChecklistData; label: string; sub: string }[] = [
+  { key: 'billet_avion', label: 'Billet avion aller-retour', sub: 'Vol confirmé' },
+  { key: 'papiers_visas', label: 'Documents visa complets', sub: 'Dossier complet à agent' },
+  { key: 'visa_recu', label: 'Visa reçu de l\'agent', sub: 'B211A validé' },
+  { key: 'convention_signee_check', label: 'Convention de stage signée', sub: 'Par les 3 parties' },
   { key: 'chauffeur_reserve', label: 'Chauffeur réservé', sub: 'Transfert aéroport' },
 ]
 
@@ -100,17 +103,12 @@ export function TabProcess({
   activityFeed,
   isVisaOnly,
   checklist: initialChecklist,
-  internEmail,
-  paymentAmount,
-  filloutBillFormUrl,
   caseData,
   onRefresh,
 }: TabProcessProps) {
   const [status, setStatus] = useState<CaseStatus>(initialStatus)
   const [checklist, setChecklist] = useState<ChecklistData>(initialChecklist ?? {})
-  const [pdfLoading, setPdfLoading] = useState(false)
   const [statusChanging, setStatusChanging] = useState(false)
-  const [emailSending, setEmailSending] = useState<string | null>(null)
   const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
   const [feed, setFeed] = useState<ActivityEntry[]>(activityFeed)
   const [noteText, setNoteText] = useState('')
@@ -130,7 +128,6 @@ export function TabProcess({
         body: JSON.stringify({ [key]: value }),
       })
     } catch {
-      // revert on error
       setChecklist((c) => ({ ...c, [key]: !value }))
     }
   }
@@ -153,30 +150,6 @@ export function TabProcess({
     }
   }
 
-  async function handleSendPaymentEmail() {
-    if (!internEmail) { showToast('Email stagiaire manquant', 'error'); return }
-    setEmailSending('payment')
-    try {
-      const res = await fetch('/api/emails/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'payment_request',
-          caseId,
-          internEmail,
-          paymentAmount: paymentAmount ?? 0,
-          filloutBillFormUrl,
-        }),
-      })
-      if (!res.ok) throw new Error()
-      showToast('Email paiement envoyé')
-    } catch {
-      showToast('Erreur envoi email paiement', 'error')
-    } finally {
-      setEmailSending(null)
-    }
-  }
-
   async function handleSaveNote() {
     if (!noteText.trim()) return
     setSavingNote(true)
@@ -184,7 +157,7 @@ export function TabProcess({
       const res = await fetch(`/api/cases/${caseId}/activity`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action_type: 'note', description: noteText.trim(), author_name: 'Charly' }),
+        body: JSON.stringify({ type: 'note', description: noteText.trim(), author_name: 'Charly' }),
       })
       if (!res.ok) throw new Error()
       const newEntry = await res.json() as ActivityEntry
@@ -198,54 +171,10 @@ export function TabProcess({
     }
   }
 
-  async function handleSendEmployerEmail() {
-    setEmailSending('employer')
-    try {
-      const res = await fetch('/api/emails/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'employer_docs_reminder', caseId }),
-      })
-      if (!res.ok) throw new Error()
-      showToast('Email employeur envoyé')
-    } catch {
-      showToast('Erreur envoi email employeur', 'error')
-    } finally {
-      setEmailSending(null)
-    }
-  }
-
-  async function handleDownloadEngagementLetter() {
-    setPdfLoading(true)
-    try {
-      const res = await fetch(`/api/cases/${caseId}/documents/engagement-letter`, { method: 'POST' })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'lettre-engagement.pdf'
-      a.click()
-      URL.revokeObjectURL(url)
-    } catch {
-      showToast('Erreur génération PDF', 'error')
-    } finally {
-      setPdfLoading(false)
-    }
-  }
-
   const doneCount = CHECKLIST_ITEMS.filter((item) => !!checklist[item.key]).length
 
   return (
     <div className="space-y-6">
-      {/* Status Action Panel */}
-      {caseData && (
-        <StatusActionPanel
-          caseData={{ id: caseId, status, ...caseData } as Parameters<typeof StatusActionPanel>[0]['caseData']}
-          onRefresh={onRefresh}
-        />
-      )}
-
       {/* Toast */}
       {toastMsg && (
         <div className={[
@@ -256,60 +185,20 @@ export function TabProcess({
         </div>
       )}
 
-      {/* Action bar */}
-      <div className="flex items-center gap-3 flex-wrap">
-        {/* Status dropdown */}
-        <div className="relative">
-          <select
-            value={status}
-            onChange={(e) => { void handleStatusChange(e.target.value as CaseStatus) }}
-            disabled={statusChanging}
-            className="pl-3 pr-8 py-2 text-sm font-medium border border-zinc-200 rounded-lg bg-white text-[#1a1918] appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#c8a96e] disabled:opacity-60"
-          >
-            {ALL_STATUSES.map((s) => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
-          </select>
-          <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
+      {/* 1. Status Action Panel — boutons compacts */}
+      {caseData && (
+        <StatusActionPanel
+          caseData={{ id: caseId, status, ...caseData } as Parameters<typeof StatusActionPanel>[0]['caseData']}
+          onRefresh={onRefresh}
+        />
+      )}
 
-        <Button
-          variant="secondary"
-          size="sm"
-          loading={emailSending === 'payment'}
-          onClick={() => { void handleSendPaymentEmail() }}
-        >
-          Envoyer email paiement
-        </Button>
-
-        <Button
-          variant="secondary"
-          size="sm"
-          loading={emailSending === 'employer'}
-          onClick={() => { void handleSendEmployerEmail() }}
-        >
-          Envoyer email employeur
-        </Button>
-
-        <Button
-          variant="secondary"
-          size="sm"
-          loading={pdfLoading}
-          onClick={() => { void handleDownloadEngagementLetter() }}
-        >
-          Lettre d&apos;engagement
-        </Button>
-      </div>
-
-      {/* Checklist 8 items */}
+      {/* 2. Checklist dossier — 5 items essentiels */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-zinc-700">Checklist dossier</h3>
           <span className="text-xs text-zinc-400">{doneCount}/{CHECKLIST_ITEMS.length} complétés</span>
         </div>
-        {/* Progress bar */}
         <div className="w-full h-1.5 bg-zinc-100 rounded-full overflow-hidden mb-4">
           <div
             className="h-full bg-[#c8a96e] rounded-full transition-all"
@@ -334,7 +223,7 @@ export function TabProcess({
                   <p className={['text-sm font-medium', checked ? 'line-through text-zinc-400' : 'text-[#1a1918]'].join(' ')}>
                     {item.label}
                   </p>
-                  {item.sub && <p className="text-xs text-zinc-400">{item.sub}</p>}
+                  <p className="text-xs text-zinc-400">{item.sub}</p>
                 </div>
                 {checked && (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0d9e75" strokeWidth={2.5}>
@@ -347,19 +236,30 @@ export function TabProcess({
         </div>
       </div>
 
-      {/* Timeline */}
+      {/* 3. Changer de statut — dropdown discret */}
       <div>
-        <h3 className="text-sm font-semibold text-zinc-700 mb-3">Chronologie</h3>
-        <ProcessTimeline caseId={caseId} currentStatus={status} onStatusChange={setStatus} isVisaOnly={isVisaOnly} />
+        <h3 className="text-sm font-semibold text-zinc-700 mb-3">Changer de statut</h3>
+        <div className="relative inline-block">
+          <select
+            value={status}
+            onChange={(e) => { void handleStatusChange(e.target.value as CaseStatus) }}
+            disabled={statusChanging}
+            className="pl-3 pr-8 py-2 text-sm font-medium border border-zinc-200 rounded-lg bg-white text-[#1a1918] appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#c8a96e] disabled:opacity-60"
+          >
+            {ALL_STATUSES.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+          <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
       </div>
 
-      {/* Activity feed */}
+      {/* 4. Notes internes */}
       <div>
-        <h3 className="text-sm font-semibold text-zinc-700 mb-3">Activité & notes</h3>
-
-        {/* Note interne */}
-        <div className="bg-zinc-50 border border-zinc-100 rounded-xl p-3 mb-4">
-          <p className="text-xs font-medium text-zinc-500 mb-2">Ajouter une note interne</p>
+        <h3 className="text-sm font-semibold text-zinc-700 mb-3">Notes internes</h3>
+        <div className="bg-zinc-50 border border-zinc-100 rounded-xl p-3">
           <textarea
             value={noteText}
             onChange={e => setNoteText(e.target.value)}
@@ -377,14 +277,25 @@ export function TabProcess({
             </button>
           </div>
         </div>
+      </div>
 
+      {/* 5. Chronologie */}
+      <div>
+        <h3 className="text-sm font-semibold text-zinc-700 mb-3">Chronologie</h3>
+        <ProcessTimeline caseId={caseId} currentStatus={status} onStatusChange={setStatus} isVisaOnly={isVisaOnly} />
+      </div>
+
+      {/* 6. Activité historique */}
+      <div>
+        <h3 className="text-sm font-semibold text-zinc-700 mb-3">Activité</h3>
         {feed.length === 0 ? (
           <p className="text-sm text-zinc-400">Aucune activité enregistrée</p>
         ) : (
           <div className="space-y-1">
             {feed.map((entry) => {
-              const icon = ACTIVITY_ICONS[entry.action_type] ?? ACTIVITY_ICONS.default
-              const isNote = entry.action_type === 'note'
+              const actType = entry.type ?? entry.action_type ?? 'default'
+              const icon = ACTIVITY_ICONS[actType] ?? ACTIVITY_ICONS.default
+              const isNote = actType === 'note'
               return (
                 <div
                   key={entry.id}
@@ -396,13 +307,17 @@ export function TabProcess({
                   <span className="text-base flex-shrink-0 mt-0.5">{icon}</span>
                   <div className="flex-1 min-w-0">
                     <p className={['text-sm', isNote ? 'text-amber-900 font-medium' : 'text-[#1a1918]'].join(' ')}>
-                      {entry.description}
+                      {entry.title ?? entry.description}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      {(entry.author_name ?? entry.created_by) && (
-                        <span className="text-xs text-zinc-400">
-                          {entry.author_name ?? 'Système'}
-                        </span>
+                      {entry.assigned_to && (
+                        <span className="text-xs text-zinc-400">{entry.assigned_to}</span>
+                      )}
+                      {entry.source && (
+                        <>
+                          <span className="text-xs text-zinc-300">·</span>
+                          <span className="text-xs text-zinc-400">{entry.source}</span>
+                        </>
                       )}
                       <span className="text-xs text-zinc-300">·</span>
                       <span className="text-xs text-zinc-400">{relativeDate(entry.created_at)}</span>
