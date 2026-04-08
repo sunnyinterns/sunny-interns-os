@@ -37,7 +37,7 @@ export async function GET() {
   try {
     const { data: cases } = await supabase
       .from('cases')
-      .select('id, first_name, last_name, status, arrival_date, return_date, flight_number, created_at')
+      .select('id, status, actual_start_date, actual_end_date, desired_start_date, flight_number, created_at, interns(first_name, last_name)')
       .order('created_at', { ascending: false })
       .limit(50)
 
@@ -46,17 +46,17 @@ export async function GET() {
       now.setHours(0, 0, 0, 0)
 
       for (const c of cases) {
-        const returnDate = c.return_date ? new Date(c.return_date) : null
+        const returnDate = c.actual_end_date ? new Date(c.actual_end_date) : null
         const stayDurationDays =
-          c.arrival_date && returnDate
-            ? calculateStayDuration(new Date(c.arrival_date), returnDate)
+          (c.actual_start_date || c.desired_start_date) && returnDate
+            ? calculateStayDuration(new Date((c.actual_start_date || c.desired_start_date)), returnDate)
             : 0
 
         // Build retroplanning alerts as extra feed items
-        if (c.arrival_date) {
+        if ((c.actual_start_date || c.desired_start_date)) {
           const alerts = getRetroPlanningAlerts({
             caseId: c.id,
-            arrivalDate: new Date(c.arrival_date),
+            arrivalDate: new Date((c.actual_start_date || c.desired_start_date)),
             hasTicket: !!c.flight_number,
             hasPayment: PAYMENT_DONE_STATUSES.includes(c.status),
             hasFlight: !!c.flight_number,
@@ -68,7 +68,7 @@ export async function GET() {
               id: `${c.id}-alert-${alert.label}`,
               caseId: c.id,
               internId: c.id,
-              internName: `${c.first_name} ${c.last_name}`,
+              internName: `${(c.interns as any)?.first_name ?? ""} ${(c.interns as any)?.last_name ?? ""}`,
               actionType: 'retro_alert',
               description: alert.label,
               daysUntil: alert.daysUntilArrival,
@@ -85,7 +85,7 @@ export async function GET() {
           id: c.id,
           caseId: c.id,
           internId: c.id,
-          internName: `${c.first_name} ${c.last_name}`,
+          internName: `${(c.interns as any)?.first_name ?? ""} ${(c.interns as any)?.last_name ?? ""}`,
           actionType: 'status_update',
           description: `Statut: ${c.status}`,
           priority: 'normal',
@@ -96,8 +96,8 @@ export async function GET() {
           },
         }
 
-        if (c.arrival_date) {
-          const arrival = new Date(c.arrival_date)
+        if ((c.actual_start_date || c.desired_start_date)) {
+          const arrival = new Date((c.actual_start_date || c.desired_start_date))
           const daysUntil = Math.floor(
             (arrival.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
           )

@@ -24,7 +24,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ token:
     return NextResponse.json({ error: 'Token invalide' }, { status: 404 })
   }
 
-  await supabase.from('cases').update({ billet_avion: true, ...(dateArrivee ? { arrival_date: dateArrivee } : {}), ...(escale ? { last_stopover_city: escale } : {}) }).eq('id', caseData.id)
+  await supabase.from('cases').update({ billet_avion: true, ...(dateArrivee ? { actual_start_date: dateArrivee } : {}), ...(escale ? { last_stopover_city: escale } : {}) }).eq('id', caseData.id)
   if (billetUrl && caseData.intern_id) {
     await supabase.from('interns').update({ return_plane_ticket_url: billetUrl }).eq('id', caseData.intern_id)
   }

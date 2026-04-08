@@ -43,16 +43,16 @@ export async function PATCH(
     try {
       const { data: caseRow } = await supabase
         .from('cases')
-        .select('first_name, last_name, payment_amount, fillout_bill_form_url, interns(email)')
+        .select('payment_amount, fillout_bill_form_url, interns(first_name, email)')
         .eq('id', id)
         .single()
 
       if (caseRow) {
-        const intern = (caseRow as Record<string, unknown>).interns as { email?: string } | null
+        const intern = (caseRow as Record<string, unknown>).interns as { first_name?: string; email?: string } | null
         if (intern?.email) {
           void sendPaymentRequest({
             internEmail: intern.email,
-            internFirstName: (caseRow as Record<string, unknown>).first_name as string ?? 'Stagiaire',
+            internFirstName: intern.first_name ?? 'Stagiaire',
             amount: (caseRow as Record<string, unknown>).payment_amount as number ?? 0,
             invoiceUrl: (caseRow as Record<string, unknown>).fillout_bill_form_url as string | null ?? null,
           })

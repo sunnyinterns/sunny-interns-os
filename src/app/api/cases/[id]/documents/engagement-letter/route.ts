@@ -37,12 +37,14 @@ export async function POST(
       sigBlock: { width: '45%' },
     })
 
-    const arrivalDate = caseData?.arrival_date
-      ? new Date(caseData.arrival_date).toLocaleDateString('fr-FR')
+    const startDateValue = (caseData as Record<string, unknown>)?.actual_start_date ?? (caseData as Record<string, unknown>)?.desired_start_date
+    const arrivalDate = startDateValue
+      ? new Date(startDateValue as string).toLocaleDateString('fr-FR')
       : 'À définir'
 
-    const returnDate = caseData?.return_date
-      ? new Date(caseData.return_date).toLocaleDateString('fr-FR')
+    const endDateValue = (caseData as Record<string, unknown>)?.actual_end_date
+    const returnDate = endDateValue
+      ? new Date(endDateValue as string).toLocaleDateString('fr-FR')
       : 'À définir'
 
     const today = new Date().toLocaleDateString('fr-FR')

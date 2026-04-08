@@ -130,10 +130,8 @@ export async function POST(request: Request) {
       .from('cases')
       .insert({
         intern_id: intern.id,
-        first_name: d.first_name,
-        last_name: d.last_name,
         status: d.rdv_slot_start ? 'rdv_booked' : 'lead',
-        arrival_date: d.desired_start_date || null,
+        desired_start_date: d.desired_start_date || null,
         internship_type: 'stage',
         notes: d.comment || null,
         commitment_price_accepted: d.commitment_price_accepted ?? false,

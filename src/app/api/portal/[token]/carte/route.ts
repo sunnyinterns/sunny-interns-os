@@ -19,9 +19,8 @@ export async function GET(
     .from('cases')
     .select(`
       id,
-      arrival_date,
-      actual_start_date,
-      actual_end_date,
+      actual_start_date, actual_end_date,
+      desired_start_date,
       intern_card_generated_at,
       interns (
         id,
@@ -60,7 +59,7 @@ export async function GET(
     },
     actual_start_date: (caseData as Record<string, unknown>).actual_start_date as string | null ?? null,
     actual_end_date: (caseData as Record<string, unknown>).actual_end_date as string | null ?? null,
-    arrival_date: caseData.arrival_date ?? null,
+    arrival_date: (caseData.actual_start_date || (caseData as Record<string, unknown>).desired_start_date) ?? null,
     partners: partners ?? [],
   })
 }

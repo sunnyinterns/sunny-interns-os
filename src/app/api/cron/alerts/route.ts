@@ -43,7 +43,7 @@ export async function GET(request: Request) {
   // Fetch active cases with dates
   const { data: cases } = await supabase
     .from('cases')
-    .select('id, first_name, last_name, status, arrival_date, alert_sent_flags, interns(email, first_name, last_name)')
+    .select('id, status, actual_start_date, actual_end_date, desired_start_date, alert_sent_flags, interns(email, first_name, last_name)')
     .in('status', ['convention_signed', 'payment_pending', 'payment_received', 'visa_in_progress', 'visa_received', 'arrival_prep', 'active'])
 
   if (!cases || cases.length === 0) {
@@ -75,7 +75,8 @@ export async function GET(request: Request) {
 
       // Alert is due today
       const recipients: string[] = Array.isArray(config.email_recipients) ? config.email_recipients : ['charly@bali-interns.com']
-      const internName = `${c.first_name ?? ''} ${c.last_name ?? ''}`.trim()
+      const intern = c.interns as { first_name?: string; last_name?: string } | null
+      const internName = `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim()
 
       if (resend && recipients.length > 0) {
         try {

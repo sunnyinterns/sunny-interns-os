@@ -26,7 +26,7 @@ export async function POST(
   // Fetch case data needed for retroplanning
   const { data: c, error: fetchError } = await supabase
     .from('cases')
-    .select('id, first_name, last_name, status, arrival_date, return_date, flight_number')
+    .select('id, status, actual_start_date, actual_end_date, desired_start_date, flight_number, interns(first_name, last_name)')
     .eq('id', id)
     .single()
 
@@ -34,12 +34,13 @@ export async function POST(
     return NextResponse.json({ error: 'Case not found' }, { status: 404 })
   }
 
-  if (!c.arrival_date) {
-    return NextResponse.json({ error: 'arrival_date required' }, { status: 422 })
+  const startDate = c.actual_start_date || c.desired_start_date
+  if (!startDate) {
+    return NextResponse.json({ error: 'actual_start_date or desired_start_date required' }, { status: 422 })
   }
 
-  const arrivalDate = new Date(c.arrival_date)
-  const returnDate = c.return_date ? new Date(c.return_date) : null
+  const arrivalDate = new Date(startDate)
+  const returnDate = c.actual_end_date ? new Date(c.actual_end_date) : null
 
   const stayDurationDays = returnDate
     ? calculateStayDuration(arrivalDate, returnDate)

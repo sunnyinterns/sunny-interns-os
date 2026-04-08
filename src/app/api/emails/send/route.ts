@@ -28,12 +28,12 @@ export async function POST(request: Request) {
       if (body.caseId && !internEmail) {
         const { data: c } = await supabase
           .from('cases')
-          .select('first_name, last_name, interns(email)')
+          .select('id, interns(first_name, last_name, email)')
           .eq('id', body.caseId)
           .single()
         if (c) {
-          internFirstName = (c as Record<string, unknown>).first_name as string ?? 'Stagiaire'
-          const intern = (c as Record<string, unknown>).interns as { email?: string } | null
+          const intern = (c as Record<string, unknown>).interns as { first_name?: string; last_name?: string; email?: string } | null
+          internFirstName = intern?.first_name ?? 'Stagiaire'
           internEmail = intern?.email
         }
       }
@@ -62,14 +62,15 @@ export async function POST(request: Request) {
         if (company?.email) {
           const { data: c } = await supabase
             .from('cases')
-            .select('first_name, last_name')
+            .select('id, interns(first_name, last_name)')
             .eq('id', body.caseId)
             .single()
+          const caseIntern = (c as Record<string, unknown>)?.interns as { first_name?: string; last_name?: string } | null
           await sendJobSubmittedEmployer({
             employerEmail: company.email as string,
             employerName: company.name as string | undefined,
-            internFirstName: (c as Record<string, unknown>)?.first_name as string ?? '',
-            internLastName: (c as Record<string, unknown>)?.last_name as string ?? '',
+            internFirstName: caseIntern?.first_name ?? '',
+            internLastName: caseIntern?.last_name ?? '',
             jobTitle: job?.title as string ?? 'Stage',
             caseId: body.caseId,
           })

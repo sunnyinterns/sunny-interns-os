@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     // Verify case exists
     const { data: caseData } = await supabase
       .from('cases')
-      .select('id, first_name, last_name')
+      .select('id, interns(first_name, last_name)')
       .eq('id', caseId)
       .single()
 
@@ -73,7 +73,7 @@ export async function GET(request: Request) {
       .from('ugc_submissions')
       .select(`
         id, case_id, testimonial, photo_url, video_url, rating, status, submitted_at,
-        cases(first_name, last_name)
+        cases(id, interns(first_name, last_name))
       `)
       .order('submitted_at', { ascending: false })
 

@@ -39,10 +39,10 @@ export async function GET(request: Request) {
     let query = supabase
       .from('cases')
       .select(`
-        id, first_name, last_name, arrival_date, return_date,
+        id, actual_start_date, actual_end_date, desired_start_date,
         touchpoint_j3_sent_at, touchpoint_j30_sent_at,
         touchpoint_j60_sent_at, touchpoint_end_sent_at,
-        interns(email)
+        interns(first_name, last_name, email)
       `)
       .eq('status', 'active')
 
@@ -61,19 +61,19 @@ export async function GET(request: Request) {
     }> = []
 
     for (const c of data ?? []) {
-      if (!c.arrival_date) continue
+      if (!(c.actual_start_date || c.desired_start_date)) continue
       const intern = c.interns as unknown as { email?: string } | null
 
       for (const tp of TOUCHPOINTS) {
         const alreadySent = (c as Record<string, unknown>)[tp.column]
         if (alreadySent) continue
 
-        const triggerDate = getTouchpointTriggerDate(c.arrival_date, c.return_date, tp.offsetDays)
+        const triggerDate = getTouchpointTriggerDate((c.actual_start_date || c.desired_start_date), c.actual_end_date, tp.offsetDays)
         if (triggerDate <= today) {
           const daysOverdue = Math.floor((today.getTime() - triggerDate.getTime()) / (1000 * 60 * 60 * 24))
           pending.push({
             caseId: c.id,
-            internName: `${c.first_name} ${c.last_name}`,
+            internName: `${(c.interns as any)?.first_name} ${(c.interns as any)?.last_name}`,
             email: intern?.email ?? '',
             touchpointKey: tp.key,
             triggerDate: triggerDate.toISOString(),
@@ -104,7 +104,7 @@ export async function POST(request: Request) {
     // Get case + intern info
     const { data: caseData, error: fetchError } = await supabase
       .from('cases')
-      .select('id, first_name, last_name, arrival_date, return_date, interns(email, first_name, last_name)')
+      .select(`id, actual_start_date, actual_end_date, desired_start_date, interns(first_name, last_name, email)`)
       .eq('id', case_id)
       .single()
 
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
     // Build email body
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
     let emailHtml = `
-      <p>Bonjour ${caseData.first_name},</p>
+      <p>Bonjour ${intern?.first_name ?? ''},</p>
       <p>${tp.templateSubject.replace(/^\[.*?\]\s*/, '')}</p>
     `
     if (touchpoint_key === 'j30') {

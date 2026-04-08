@@ -16,7 +16,6 @@ export interface KanbanCase {
   daysUntil: number | null
   isCritical: boolean
   assignedTo: string | null
-  destination: string | null
   internshipType: string | null
   passportExpiry?: string | null
   billet_avion?: boolean | null
@@ -62,7 +61,6 @@ const createCaseSchema = z.object({
   notes: z.string().optional(),
   // Step 3 — Projet
   start_date: z.string().optional(),
-  destination: z.string().optional(),
   dropoff_address: z.string().optional(),
   main_desired_job: z.string().optional(),
   school_name: z.string().optional(),
@@ -80,7 +78,6 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const view = searchParams.get('view')
   const assignedTo = searchParams.get('assigned_to')
-  const destination = searchParams.get('destination')
   const month = searchParams.get('month') // YYYY-MM
   const email = searchParams.get('email')
 
@@ -147,7 +144,6 @@ export async function GET(request: Request) {
         daysUntil,
         isCritical: daysUntil !== null && daysUntil <= 7,
         assignedTo: c.assigned_manager_name ?? null,
-        destination: null,
         internshipType: null,
         passportExpiry: intern?.passport_expiry ?? null,
         billet_avion: c.billet_avion,
@@ -199,7 +195,6 @@ export async function POST(request: Request) {
     internship_type,
     notes,
     start_date,
-    destination,
     dropoff_address,
     main_desired_job,
     school_name,
@@ -254,12 +249,11 @@ export async function POST(request: Request) {
       .insert({
         intern_id: intern.id,
         status: 'lead',
-        arrival_date: start_date ?? null,
-        destination: destination ?? null,
+        desired_start_date: start_date ?? null,
         dropoff_address: dropoff_address ?? null,
         internship_type: internship_type ?? null,
         notes: notes ?? null,
-        assigned_to: user.id,
+        assigned_manager_name: user.id,
       })
       .select()
       .single()

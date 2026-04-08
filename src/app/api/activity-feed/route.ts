@@ -33,7 +33,7 @@ export async function GET(request: Request) {
 
   // Filters
   if (filter === 'mine' && appUser?.full_name) {
-    query = query.eq('assigned_to', appUser.full_name)
+    query = query.eq('cases.assigned_manager_name', appUser.full_name)
   } else if (filter === 'pending') {
     query = query.neq('status', 'done')
   } else if (filter === 'high') {
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
       message: item.message,
       priority: item.priority || 'normal',
       status: item.status || 'pending',
-      assigned_to: item.assigned_to || caseData?.assigned_manager_name || null,
+      assigned_to: caseData?.assigned_manager_name || null,
       case_id: item.case_id,
       intern_name: caseData?.interns ? `${caseData.interns.first_name} ${caseData.interns.last_name}` : null,
       action_url: item.case_id ? `/fr/cases/${item.case_id}` : null,
