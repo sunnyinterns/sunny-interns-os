@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Avatar } from '@/components/ui/Avatar'
-import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Toast } from '@/components/ui/Toast'
 import type { ActivityItem, CaseStatus } from '@/lib/types'
@@ -13,23 +13,30 @@ interface ActivityCardProps {
   onStatusUpdate?: (itemId: string, newStatus: CaseStatus) => void
 }
 
+const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> = {
+  lead: { label: 'Demande', bg: '#e5e7eb', text: '#374151' },
+  rdv_booked: { label: 'RDV Booké', bg: '#dbeafe', text: '#1d4ed8' },
+  qualification_done: { label: 'Qualif OK', bg: '#ede9fe', text: '#7c3aed' },
+  job_submitted: { label: 'Jobs proposés', bg: '#ffedd5', text: '#c2410c' },
+  job_retained: { label: 'Job retenu', bg: '#d1fae5', text: '#065f46' },
+  convention_signed: { label: 'Convention', bg: '#d1fae5', text: '#065f46' },
+  payment_pending: { label: 'Paiement \u23f3', bg: '#fee2e2', text: '#dc2626' },
+  payment_received: { label: 'Payé \u2713', bg: '#d1fae5', text: '#065f46' },
+  visa_docs_sent: { label: 'Docs visa', bg: '#ffedd5', text: '#c2410c' },
+  visa_submitted: { label: 'Visa soumis', bg: '#dbeafe', text: '#1d4ed8' },
+  visa_in_progress: { label: 'Visa en cours', bg: '#dbeafe', text: '#1d4ed8' },
+  visa_received: { label: 'Visa reçu \u2713', bg: '#d1fae5', text: '#065f46' },
+  arrival_prep: { label: 'Départ imminent', bg: '#fee2e2', text: '#dc2626' },
+  active: { label: 'En stage \ud83c\udf34', bg: '#d1fae5', text: '#065f46' },
+  alumni: { label: 'Alumni', bg: '#fef3c7', text: '#92400e' },
+}
+
 function getDaysTag(daysUntil: number): { label: string; color: string } {
   if (daysUntil < 0) return { label: `J${daysUntil}`, color: 'text-[#dc2626] bg-red-50' }
   if (daysUntil < 3) return { label: `J-${daysUntil}`, color: 'text-[#dc2626] bg-red-50' }
   if (daysUntil < 7) return { label: `J-${daysUntil}`, color: 'text-[#d97706] bg-amber-50' }
   if (daysUntil < 30) return { label: `J-${daysUntil}`, color: 'text-yellow-700 bg-yellow-50' }
   return { label: `J-${daysUntil}`, color: 'text-[#0d9e75] bg-emerald-50' }
-}
-
-function priorityToVariant(
-  priority: ActivityItem['priority']
-): 'default' | 'success' | 'attention' | 'critical' | 'info' {
-  switch (priority) {
-    case 'critical': return 'critical'
-    case 'attention': return 'attention'
-    case 'completed': return 'success'
-    default: return 'default'
-  }
 }
 
 function formatTime(iso: string): string {
@@ -55,15 +62,16 @@ function buildWhatsAppUrl(item: ActivityItem): string {
 }
 
 export function ActivityCard({ item, dimmed = false, onStatusUpdate }: ActivityCardProps) {
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   const daysTag = item.daysUntil !== undefined ? getDaysTag(item.daysUntil) : null
-
   const hasFlight = !!(item.metadata?.flight_number)
+  const badge = STATUS_BADGE[item.status]
+  const googleMeetLink = item.metadata?.google_meet_link as string | undefined
 
   async function handleStatusUpdate(newStatus: CaseStatus) {
-    // Optimistic update
     onStatusUpdate?.(item.id, newStatus)
     setLoading(true)
 
@@ -75,7 +83,6 @@ export function ActivityCard({ item, dimmed = false, onStatusUpdate }: ActivityC
       })
 
       if (!res.ok) {
-        // Revert optimistic update
         onStatusUpdate?.(item.id, item.status)
         setToast({ message: 'Erreur lors de la mise à jour du statut', type: 'error' })
       } else {
@@ -86,6 +93,12 @@ export function ActivityCard({ item, dimmed = false, onStatusUpdate }: ActivityC
       setToast({ message: 'Erreur réseau', type: 'error' })
     } finally {
       setLoading(false)
+    }
+  }
+
+  function goToCase() {
+    if (item.caseId && item.caseId !== 'demo') {
+      router.push(`/fr/cases/${item.caseId}?tab=process`)
     }
   }
 
@@ -106,6 +119,14 @@ export function ActivityCard({ item, dimmed = false, onStatusUpdate }: ActivityC
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-semibold text-[#1a1918]">{item.internName}</span>
+              {badge && (
+                <span
+                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
+                  style={{ backgroundColor: badge.bg, color: badge.text }}
+                >
+                  {badge.label}
+                </span>
+              )}
               {daysTag && (
                 <span
                   className={[
@@ -122,34 +143,93 @@ export function ActivityCard({ item, dimmed = false, onStatusUpdate }: ActivityC
 
           {/* Right */}
           <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-            <Badge label={item.priority} variant={priorityToVariant(item.priority)} />
             <span className="text-xs text-zinc-400">{formatTime(item.createdAt)}</span>
           </div>
         </div>
 
-        {/* Action buttons */}
+        {/* Quick action buttons per status */}
         {!dimmed && (
           <div className="flex gap-2 flex-wrap">
+            {item.status === 'lead' && (
+              <>
+                <Button size="sm" variant="primary" loading={loading} onClick={() => handleStatusUpdate('rdv_booked')}>
+                  \ud83d\udcde Booker RDV
+                </Button>
+                <Button size="sm" variant="secondary" onClick={goToCase}>
+                  \u2192 Voir dossier
+                </Button>
+              </>
+            )}
+
+            {item.status === 'rdv_booked' && (
+              <>
+                <Button size="sm" variant="primary" loading={loading} onClick={() => handleStatusUpdate('qualification_done')}>
+                  \u2705 Qualif faite
+                </Button>
+                {googleMeetLink && (
+                  <Button size="sm" variant="secondary" onClick={() => window.open(googleMeetLink, '_blank')}>
+                    \ud83d\udd17 Meet
+                  </Button>
+                )}
+                <Button size="sm" variant="secondary" onClick={goToCase}>
+                  \u2192 Voir dossier
+                </Button>
+              </>
+            )}
+
+            {item.status === 'qualification_done' && (
+              <>
+                <Button size="sm" variant="primary" onClick={goToCase}>
+                  \u2795 Proposer job
+                </Button>
+                <Button size="sm" variant="secondary" onClick={goToCase}>
+                  \u2192 Voir dossier
+                </Button>
+              </>
+            )}
+
             {item.status === 'payment_pending' && (
-              <Button
-                size="sm"
-                variant="primary"
-                loading={loading}
-                onClick={() => handleStatusUpdate('payment_received')}
-              >
-                Paiement reçu
-              </Button>
+              <>
+                <Button size="sm" variant="primary" loading={loading} onClick={() => handleStatusUpdate('payment_received')}>
+                  \ud83d\udcb3 Paiement reçu
+                </Button>
+                <Button size="sm" variant="secondary" onClick={goToCase}>
+                  \u2192 Voir dossier
+                </Button>
+              </>
+            )}
+
+            {item.status === 'visa_docs_sent' && (
+              <>
+                <Button size="sm" variant="primary" onClick={goToCase}>
+                  \ud83d\udea9 Envoyer FAZZA
+                </Button>
+                <Button size="sm" variant="secondary" onClick={goToCase}>
+                  \u2192 Voir dossier
+                </Button>
+              </>
             )}
 
             {item.status === 'visa_in_progress' && (
-              <Button
-                size="sm"
-                variant="primary"
-                loading={loading}
-                onClick={() => handleStatusUpdate('visa_received')}
-              >
-                Visa reçu
-              </Button>
+              <>
+                <Button size="sm" variant="primary" loading={loading} onClick={() => handleStatusUpdate('visa_received')}>
+                  Visa reçu
+                </Button>
+                <Button size="sm" variant="secondary" onClick={goToCase}>
+                  \u2192 Voir dossier
+                </Button>
+              </>
+            )}
+
+            {item.status === 'arrival_prep' && (
+              <>
+                <Button size="sm" variant="primary" loading={loading} onClick={() => handleStatusUpdate('active')}>
+                  \u2705 Chauffeur OK
+                </Button>
+                <Button size="sm" variant="secondary" onClick={goToCase}>
+                  \u2192 Voir dossier
+                </Button>
+              </>
             )}
 
             {hasFlight && (
@@ -159,6 +239,13 @@ export function ActivityCard({ item, dimmed = false, onStatusUpdate }: ActivityC
                 onClick={() => window.open(buildWhatsAppUrl(item), '_blank')}
               >
                 WhatsApp Chauffeur
+              </Button>
+            )}
+
+            {/* Default: just "Voir dossier" for statuses not covered above */}
+            {!['lead', 'rdv_booked', 'qualification_done', 'payment_pending', 'visa_docs_sent', 'visa_in_progress', 'arrival_prep'].includes(item.status) && (
+              <Button size="sm" variant="secondary" onClick={goToCase}>
+                \u2192 Voir dossier
               </Button>
             )}
           </div>

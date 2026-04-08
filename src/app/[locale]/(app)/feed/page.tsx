@@ -8,6 +8,15 @@ import { NewCaseModal } from '@/components/cases/NewCaseModal'
 import { Toast } from '@/components/ui/Toast'
 import type { FeedData } from '@/lib/types'
 
+interface AgendaCase {
+  id: string
+  first_name: string
+  last_name: string
+  status: string
+  actual_start_date?: string | null
+  actual_end_date?: string | null
+}
+
 interface KPIs {
   candidats_month: number
   active_bali: number
@@ -43,10 +52,40 @@ function FeedSkeleton() {
 
 type FeedFilter = 'all' | 'pending' | 'mine' | 'high'
 
+const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> = {
+  lead: { label: 'Demande', bg: '#e5e7eb', text: '#374151' },
+  rdv_booked: { label: 'RDV Booké', bg: '#dbeafe', text: '#1d4ed8' },
+  qualification_done: { label: 'Qualif OK', bg: '#ede9fe', text: '#7c3aed' },
+  job_submitted: { label: 'Jobs proposés', bg: '#ffedd5', text: '#c2410c' },
+  job_retained: { label: 'Job retenu', bg: '#d1fae5', text: '#065f46' },
+  convention_signed: { label: 'Convention', bg: '#d1fae5', text: '#065f46' },
+  payment_pending: { label: 'Paiement \u23f3', bg: '#fee2e2', text: '#dc2626' },
+  payment_received: { label: 'Payé \u2713', bg: '#d1fae5', text: '#065f46' },
+  visa_docs_sent: { label: 'Docs visa', bg: '#ffedd5', text: '#c2410c' },
+  visa_submitted: { label: 'Visa soumis', bg: '#dbeafe', text: '#1d4ed8' },
+  visa_received: { label: 'Visa reçu \u2713', bg: '#d1fae5', text: '#065f46' },
+  arrival_prep: { label: 'Départ imminent', bg: '#fee2e2', text: '#dc2626' },
+  active: { label: 'En stage \ud83c\udf34', bg: '#d1fae5', text: '#065f46' },
+  alumni: { label: 'Alumni', bg: '#fef3c7', text: '#92400e' },
+}
+
+function isThisWeek(dateStr: string): boolean {
+  const d = new Date(dateStr)
+  const now = new Date()
+  const startOfWeek = new Date(now)
+  startOfWeek.setDate(now.getDate() - now.getDay() + 1)
+  startOfWeek.setHours(0, 0, 0, 0)
+  const endOfWeek = new Date(startOfWeek)
+  endOfWeek.setDate(startOfWeek.getDate() + 6)
+  endOfWeek.setHours(23, 59, 59, 999)
+  return d >= startOfWeek && d <= endOfWeek
+}
+
 export default function FeedPage() {
   const [feed, setFeed] = useState<FeedData | null>(null)
   const [kpis, setKpis] = useState<KPIs | null>(null)
   const [alerts, setAlerts] = useState<Alert[]>([])
+  const [agendaCases, setAgendaCases] = useState<AgendaCase[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -59,11 +98,13 @@ export default function FeedPage() {
       fetch('/api/feed').then(r => r.ok ? r.json() as Promise<FeedData> : Promise.reject(new Error(`HTTP ${r.status}`))),
       fetch('/api/dashboard/kpis').then(r => r.ok ? r.json() as Promise<KPIs> : null).catch(() => null),
       fetch('/api/dashboard/alerts').then(r => r.ok ? r.json() as Promise<Alert[]> : []).catch(() => [] as Alert[]),
+      fetch('/api/cases').then(r => r.ok ? r.json() as Promise<AgendaCase[]> : []).catch(() => [] as AgendaCase[]),
     ])
-      .then(([feedData, kpiData, alertData]) => {
+      .then(([feedData, kpiData, alertData, casesData]) => {
         setFeed(feedData)
         setKpis(kpiData)
         setAlerts(alertData as Alert[])
+        setAgendaCases(casesData as AgendaCase[])
         setLoading(false)
       })
       .catch((err: unknown) => {
@@ -159,21 +200,75 @@ export default function FeedPage() {
         </div>
       )}
 
-      {/* SECTION 3 — Agenda semaine (placeholder) */}
+      {/* SECTION 3 — Agenda semaine */}
       <div className="bg-white border border-zinc-200 rounded-xl p-4 mb-6">
         <h2 className="text-sm font-semibold text-[#1a1918] mb-3">Agenda de la semaine</h2>
-        <div className="grid grid-cols-3 gap-3 text-center">
-          {[
-            { label: 'RDVs qualif', count: feed?.todo.filter(i => i.status === 'rdv_booked').length ?? 0 },
-            { label: 'Arrivées', count: feed?.todo.filter(i => i.status === 'arrival_prep').length ?? 0 },
-            { label: 'Fins de stage', count: feed?.today.filter(i => i.status === 'active').length ?? 0 },
-          ].map((item) => (
-            <div key={item.label} className="bg-zinc-50 rounded-lg p-3">
-              <p className="text-lg font-bold text-[#1a1918]">{item.count}</p>
-              <p className="text-xs text-zinc-500">{item.label}</p>
+        {(() => {
+          const arrivals = agendaCases.filter(c => c.actual_start_date && isThisWeek(c.actual_start_date)).slice(0, 5)
+          const departures = agendaCases.filter(c => c.actual_end_date && isThisWeek(c.actual_end_date)).slice(0, 5)
+          const rdvs = feed?.todo.filter(i => i.status === 'rdv_booked').length ?? 0
+          return (
+            <div className="space-y-4">
+              {/* Summary counters */}
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="bg-zinc-50 rounded-lg p-3">
+                  <p className="text-lg font-bold text-[#1a1918]">{rdvs}</p>
+                  <p className="text-xs text-zinc-500">RDVs qualif</p>
+                </div>
+                <div className="bg-zinc-50 rounded-lg p-3">
+                  <p className="text-lg font-bold text-[#1a1918]">{arrivals.length}</p>
+                  <p className="text-xs text-zinc-500">Arrivées</p>
+                </div>
+                <div className="bg-zinc-50 rounded-lg p-3">
+                  <p className="text-lg font-bold text-[#1a1918]">{departures.length}</p>
+                  <p className="text-xs text-zinc-500">Fins de stage</p>
+                </div>
+              </div>
+
+              {/* Arrivals list */}
+              {arrivals.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Arrivées cette semaine</p>
+                  <div className="space-y-1.5">
+                    {arrivals.map(c => {
+                      const b = STATUS_BADGE[c.status]
+                      return (
+                        <a key={c.id} href={`/fr/cases/${c.id}?tab=process`} className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-zinc-50 transition-colors">
+                          <span className="text-sm font-medium text-[#1a1918] flex-1">{c.first_name} {c.last_name}</span>
+                          <span className="text-xs text-zinc-400">{new Date(c.actual_start_date!).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                          {b && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: b.bg, color: b.text }}>{b.label}</span>}
+                        </a>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Departures list */}
+              {departures.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Fins de stage cette semaine</p>
+                  <div className="space-y-1.5">
+                    {departures.map(c => {
+                      const b = STATUS_BADGE[c.status]
+                      return (
+                        <a key={c.id} href={`/fr/cases/${c.id}?tab=process`} className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-zinc-50 transition-colors">
+                          <span className="text-sm font-medium text-[#1a1918] flex-1">{c.first_name} {c.last_name}</span>
+                          <span className="text-xs text-zinc-400">{new Date(c.actual_end_date!).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                          {b && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: b.bg, color: b.text }}>{b.label}</span>}
+                        </a>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {arrivals.length === 0 && departures.length === 0 && (
+                <p className="text-xs text-zinc-400 text-center py-2">Aucune arrivée ou fin de stage cette semaine</p>
+              )}
             </div>
-          ))}
-        </div>
+          )
+        })()}
       </div>
 
       {loading && <FeedSkeleton />}
