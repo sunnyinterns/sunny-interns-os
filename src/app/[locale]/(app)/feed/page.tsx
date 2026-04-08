@@ -157,10 +157,17 @@ function TodoCard({ item, onNavigate }: { item: FeedItem; onNavigate: (id: strin
             </span>
           )}
         </div>
-        <p className="text-[11px] text-zinc-500 mt-0.5 flex items-center gap-1">
-          <span className="inline-block w-3 h-3 text-center leading-3">📌</span>
-          {item.action_label}
-        </p>
+        {item.action_label && (
+          <div className="mt-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold"
+            style={{
+              backgroundColor: item.urgency === 'critical' ? '#fef2f2' : item.urgency === 'high' ? '#fffbeb' : '#fafaf9',
+              color: item.urgency === 'critical' ? '#dc2626' : item.urgency === 'high' ? '#d97706' : '#1a1918',
+              border: `1px solid ${item.urgency === 'critical' ? '#fecaca' : item.urgency === 'high' ? '#fde68a' : '#e4e4e7'}`,
+            }}
+          >
+            {item.action_label}
+          </div>
+        )}
       </div>
 
       <Button size="sm" variant={item.cta_action === 'open_meet' ? 'primary' : 'secondary'} onClick={handleCta}>
@@ -190,7 +197,7 @@ function WaitingRow({ item, onNavigate }: { item: FeedItem; onNavigate: (id: str
           {badge.label}
         </span>
       )}
-      <span className="text-[11px] text-zinc-400 truncate flex-1">{item.wait_label}</span>
+      <span className="text-[11px] text-zinc-500 font-medium truncate flex-1">{item.wait_label}</span>
       {item.days_info && (
         <span className="text-[11px] text-zinc-400 whitespace-nowrap">{item.days_info}</span>
       )}

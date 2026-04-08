@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { logActivity } from '@/lib/activity-logger'
 
 const supabaseAdmin = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -63,16 +64,17 @@ export async function POST(
 
   if (allComplete) {
     await supabase.from('cases').update({ papiers_visas: true, updated_at: new Date().toISOString() }).eq('id', caseRow.id)
-    await supabase.from('activity_feed').insert({
-      case_id: caseRow.id,
-      type: 'visa_docs_ready',
-      title: 'Documents visa complets',
-      description: 'Documents visa complets - envoi agent possible',
+    await logActivity({
+      caseId: caseRow.id,
+      type: 'visa_docs_completed',
+      title: 'Documents visa complétés',
+      description: 'Le candidat a uploadé tous les documents requis pour le visa (passeport, photo, relevé bancaire, billet avion)',
+      priority: 'high',
     })
   } else {
-    await supabase.from('activity_feed').insert({
-      case_id: caseRow.id,
-      type: 'doc_uploaded',
+    await logActivity({
+      caseId: caseRow.id,
+      type: 'doc_uploaded' as 'cv_uploaded',
       title: 'Document uploadé',
       description: `Document uploadé par le candidat: ${field.replace(/_url$/, '').replace(/_/g, ' ')}`,
     })

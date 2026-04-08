@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { sendPaymentRequest, sendNewLeadInternal, sendJobSubmittedEmployer } from '@/lib/email/resend'
+import { logActivity } from '@/lib/activity-logger'
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -44,6 +45,15 @@ export async function POST(request: Request) {
         amount: body.paymentAmount ?? 0,
         invoiceUrl: body.filloutBillFormUrl ?? null,
       })
+      if (body.caseId) {
+        await logActivity({
+          caseId: body.caseId,
+          type: 'email_sent',
+          title: `Email envoyé à ${internFirstName}`,
+          description: `Email "Demande de paiement" envoyé à ${internEmail}`,
+          metadata: { template: 'payment_request', to: internEmail },
+        })
+      }
       return NextResponse.json({ success: true })
     }
 
@@ -73,6 +83,13 @@ export async function POST(request: Request) {
             internLastName: caseIntern?.last_name ?? '',
             jobTitle: job?.title as string ?? 'Stage',
             caseId: body.caseId,
+          })
+          await logActivity({
+            caseId: body.caseId,
+            type: 'email_sent',
+            title: `Email envoyé à ${company.name as string ?? 'employeur'}`,
+            description: `Email "Rappel documents employeur" envoyé à ${company.email as string}`,
+            metadata: { template: 'employer_docs_reminder', to: company.email as string },
           })
           return NextResponse.json({ success: true })
         }

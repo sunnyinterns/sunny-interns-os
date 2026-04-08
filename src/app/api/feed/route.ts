@@ -26,21 +26,21 @@ const ACTIVE_STATUSES = ['active']
 const ALUMNI_STATUSES = ['alumni']
 
 const ACTION_LABELS: Record<string, string> = {
-  lead: 'Booker un RDV de qualification',
-  rdv_booked: "Faire l'entretien de qualification",
-  qualification_done: 'Proposer des offres de stage',
-  payment_pending: 'Relancer pour le paiement',
-  visa_docs_sent: 'Envoyer le dossier à FAZZA',
-  visa_received: "Préparer l'arrivée",
+  lead: '📞 Appeler et booker un RDV de qualification',
+  rdv_booked: "🎯 Mener l'entretien de qualification",
+  qualification_done: '💼 Sélectionner et proposer des offres de stage',
+  payment_pending: '💳 Relancer le candidat — paiement en attente',
+  visa_docs_sent: "🚀 Envoyer le dossier complet à l'agent FAZZA",
+  visa_received: "🛫 Organiser la logistique d'arrivée (chauffeur, welcome kit)",
 }
 
 const WAIT_LABELS: Record<string, string> = {
-  job_submitted: 'Attente réponse candidat et employeur',
-  job_retained: 'Convention à envoyer',
-  convention_signed: 'Attente paiement',
-  payment_received: 'Attente docs visa du candidat',
-  visa_submitted: 'Attente visa FAZZA',
-  arrival_prep: 'Prépare son arrivée',
+  job_submitted: '⏳ En attente — réponse candidat + employeur',
+  job_retained: "📝 À faire : envoyer la convention de stage",
+  convention_signed: '⏳ En attente — paiement à réception',
+  payment_received: '📋 En attente — candidat doit envoyer ses documents visa',
+  visa_submitted: "⏳ En attente — réception visa de FAZZA",
+  arrival_prep: '✅ Logistique en cours — arrivée prévue bientôt',
 }
 
 function getCta(status: string, googleMeetLink: string | null): { label: string; action: string; data?: Record<string, string> } {

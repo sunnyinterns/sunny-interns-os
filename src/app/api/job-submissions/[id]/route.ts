@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { logActivity } from '@/lib/activity-logger'
 
 export async function PATCH(
   request: Request,
@@ -66,6 +67,24 @@ export async function PATCH(
         .from('cases')
         .update({ status: 'job_retained', updated_at: new Date().toISOString() })
         .eq('id', sub.case_id)
+
+      // Fetch job details for activity log
+      const { data: jobDetails } = await supabase
+        .from('jobs')
+        .select('title, companies(name)')
+        .eq('id', sub.job_id)
+        .single()
+      const jTitle = (jobDetails as Record<string, unknown>)?.title as string ?? 'Offre'
+      const cName = ((jobDetails as Record<string, unknown>)?.companies as Record<string, unknown>)?.name as string ?? ''
+
+      await logActivity({
+        caseId: sub.case_id,
+        type: 'job_retained',
+        title: `Job retenu : ${jTitle}`,
+        description: `Le poste "${jTitle}" chez ${cName} a été retenu`,
+        priority: 'high',
+        metadata: { job_id: sub.job_id, job_title: jTitle, company_name: cName },
+      })
 
       console.log('[EMAIL] is the intern your next intern?', { submissionId: id, jobId: sub.job_id })
     }

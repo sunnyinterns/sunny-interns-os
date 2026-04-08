@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { logActivity } from '@/lib/activity-logger'
 
 function getServiceClient() {
   return createClient(
@@ -142,16 +143,13 @@ export async function POST(request: Request) {
     }
 
     // Log activity
-    try {
-      await supabase.from('activity_feed').insert({
-        case_id: newCase.id,
-        type: 'case_created',
-        title: 'Nouvelle candidature',
-        description: `${d.first_name} ${d.last_name} a soumis sa candidature via /apply`,
-      })
-    } catch {
-      // Non-blocking
-    }
+    await logActivity({
+      caseId: newCase.id,
+      type: 'case_created' as 'status_changed',
+      title: `Nouveau dossier créé — ${d.first_name} ${d.last_name}`,
+      description: `${d.first_name} ${d.last_name} a soumis sa candidature via /apply`,
+      source: 'candidature',
+    })
 
     // Email confirmation (log if Resend not configured)
     try {

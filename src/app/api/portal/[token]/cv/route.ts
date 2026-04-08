@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { logActivity } from '@/lib/activity-logger'
 
 const supabaseAdmin = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -69,8 +70,8 @@ export async function POST(
   }).eq('id', caseRow.id)
 
   // Activity log
-  await supabase.from('activity_feed').insert({
-    case_id: caseRow.id,
+  await logActivity({
+    caseId: caseRow.id,
     type: 'cv_uploaded',
     title: 'CV uploadé',
     description: `Nouveau CV uploadé par le candidat (v${versionNumber})`,

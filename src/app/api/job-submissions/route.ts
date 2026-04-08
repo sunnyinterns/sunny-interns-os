@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { sendJobSubmittedEmployer } from '@/lib/email/resend'
+import { logActivity } from '@/lib/activity-logger'
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -17,11 +18,21 @@ export async function POST(request: Request) {
       .single()
     if (error) throw error
 
-    await supabase.from('activity_feed').insert({
-      case_id: body.case_id,
-      action_type: 'job_submitted',
-      description: `Job soumis: ${body.job_id}`,
-      created_by: user.id,
+    // Fetch job details for activity log
+    const { data: jobRow } = await supabase
+      .from('jobs')
+      .select('title, companies(name)')
+      .eq('id', body.job_id)
+      .single()
+    const jobTitle = (jobRow as Record<string, unknown>)?.title as string ?? 'Offre'
+    const companyName = ((jobRow as Record<string, unknown>)?.companies as Record<string, unknown>)?.name as string ?? ''
+
+    await logActivity({
+      caseId: body.case_id,
+      type: 'job_proposed',
+      title: `Offre proposée : ${jobTitle}`,
+      description: `L'offre "${jobTitle}" chez ${companyName} a été proposée au candidat`,
+      metadata: { job_id: body.job_id, job_title: jobTitle, company_name: companyName },
     })
 
     // Email employeur

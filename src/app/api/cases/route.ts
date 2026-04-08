@@ -4,6 +4,7 @@ import { z } from 'zod'
 import type { CaseStatus } from '@/lib/types'
 import { getDaysUntil } from '@/lib/retroplanning'
 import { sendNewLeadInternal } from '@/lib/email/resend'
+import { logActivity } from '@/lib/activity-logger'
 
 // ─── Kanban types ────────────────────────────────────────────────────────────
 
@@ -276,16 +277,13 @@ export async function POST(request: Request) {
     if (caseError) return NextResponse.json({ error: caseError.message }, { status: 500 })
 
     // 4. Log activity
-    try {
-      await supabase.from('activity_feed').insert({
-        case_id: newCase.id,
-        type: 'case_created',
-        title: 'Nouveau dossier',
-        description: `Dossier créé pour ${first_name} ${last_name}`,
-      })
-    } catch {
-      // Non-blocking
-    }
+    await logActivity({
+      caseId: newCase.id,
+      type: 'case_created' as 'status_changed',
+      title: `Nouveau dossier créé — ${first_name} ${last_name}`,
+      description: `Candidature reçue de ${first_name} ${last_name} (${school_name ?? 'École non renseignée'})`,
+      source: 'candidature',
+    })
 
     // 5. Email interne Charly
     void sendNewLeadInternal({
