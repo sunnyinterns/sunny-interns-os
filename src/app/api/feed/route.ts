@@ -37,7 +37,7 @@ export async function GET() {
   try {
     const { data: cases } = await supabase
       .from('cases')
-      .select('id, status, actual_start_date, actual_end_date, desired_start_date, flight_number, created_at, interns(first_name, last_name)')
+      .select('id, status, actual_start_date, actual_end_date, desired_start_date, flight_number, created_at, google_meet_link, portal_token, interns(first_name, last_name, email)')
       .order('created_at', { ascending: false })
       .limit(50)
 
@@ -93,6 +93,8 @@ export async function GET() {
           createdAt: c.created_at,
           metadata: {
             flight_number: c.flight_number ?? undefined,
+            google_meet_link: (c as any).google_meet_link ?? undefined,
+            portal_token: (c as any).portal_token ?? undefined,
           },
         }
 
