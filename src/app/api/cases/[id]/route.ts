@@ -48,7 +48,6 @@ export async function GET(
           private_comment_for_employer, referred_by_code, preferred_language,
           phone, avatar_url, qualification_debrief, passport_issue_city, passport_issue_date
         ),
-        schools ( id, name, city ),
         destinations ( name ),
         packages ( id, name, price_eur, visa_cost_idr, package_type, processing_days, validity_label ),
         visa_types ( id, code, name ),

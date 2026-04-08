@@ -118,7 +118,6 @@ interface CaseDetail {
     bank_statement_url?: string | null
     return_plane_ticket_url?: string | null
   } | null
-  schools?: { id: string; name: string; city?: string | null } | null
   destinations?: { name: string } | null
   packages?: { id: string; name: string; price_eur: number; visa_cost_idr?: number | null; package_type?: string | null; processing_days?: number | null; validity_label?: string | null } | null
   visa_types?: { id: string; code: string; name: string } | null
@@ -435,7 +434,7 @@ export default function CaseDetailPage() {
             intern={caseData.interns ?? null}
             arrivalDate={caseData.actual_start_date ?? caseData.desired_start_date ?? null}
             internId={(caseData.interns as any)?.id ?? null}
-            schoolName={(caseData.schools as any)?.name ?? null}
+            schoolName={null}
             desiredStartDate={caseData.desired_start_date ?? null}
             desiredEndDate={caseData.actual_end_date ?? caseData.desired_end_date ?? null}
             desiredDurationMonths={caseData.desired_duration_months ?? null}

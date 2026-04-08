@@ -36,7 +36,7 @@ export async function POST(
   if (body.caseId) {
     const { data: caseData } = await supabase
       .from('cases')
-      .select('*, interns(*), schools(name), packages(name, price_eur)')
+      .select('*, interns(*), packages(name, price_eur)')
       .eq('id', body.caseId)
       .single()
 
