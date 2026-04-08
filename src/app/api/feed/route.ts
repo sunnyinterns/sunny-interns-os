@@ -1,20 +1,91 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import type { ActivityItem, FeedData } from '@/lib/types'
-import {
-  calculateStayDuration,
-  getRetroPlanningAlerts,
-} from '@/lib/retroplanning'
+import type { FeedItem, FeedResponse } from '@/lib/types'
 
-const PAYMENT_DONE_STATUSES = [
-  'payment_received',
-  'visa_in_progress',
-  'visa_received',
-  'arrival_prep',
-  'active',
-  'alumni',
-  'completed',
-]
+const STATUS_LABELS: Record<string, string> = {
+  lead: 'Nouveau lead',
+  rdv_booked: 'RDV booké',
+  qualification_done: 'Qualifié',
+  job_submitted: 'Jobs proposés',
+  job_retained: 'Job retenu',
+  convention_signed: 'Convention signée',
+  payment_pending: 'Paiement en attente',
+  payment_received: 'Payé',
+  visa_docs_sent: 'Docs visa envoyés',
+  visa_submitted: 'Visa soumis',
+  visa_in_progress: 'Visa en cours',
+  visa_received: 'Visa reçu',
+  arrival_prep: 'Prép. arrivée',
+  active: 'En stage',
+  alumni: 'Alumni',
+}
+
+const TODO_STATUSES = ['lead', 'rdv_booked', 'qualification_done', 'payment_pending', 'visa_docs_sent', 'visa_received']
+const WAITING_STATUSES = ['job_submitted', 'job_retained', 'convention_signed', 'payment_received', 'visa_submitted', 'arrival_prep']
+const ACTIVE_STATUSES = ['active']
+const ALUMNI_STATUSES = ['alumni']
+
+const ACTION_LABELS: Record<string, string> = {
+  lead: 'Booker un RDV de qualification',
+  rdv_booked: "Faire l'entretien de qualification",
+  qualification_done: 'Proposer des offres de stage',
+  payment_pending: 'Relancer pour le paiement',
+  visa_docs_sent: 'Envoyer le dossier à FAZZA',
+  visa_received: "Préparer l'arrivée",
+}
+
+const WAIT_LABELS: Record<string, string> = {
+  job_submitted: 'Attente réponse candidat et employeur',
+  job_retained: 'Convention à envoyer',
+  convention_signed: 'Attente paiement',
+  payment_received: 'Attente docs visa du candidat',
+  visa_submitted: 'Attente visa FAZZA',
+  arrival_prep: 'Prépare son arrivée',
+}
+
+function getCta(status: string, googleMeetLink: string | null): { label: string; action: string; data?: Record<string, string> } {
+  if (status === 'rdv_booked' && googleMeetLink) {
+    return { label: 'Ouvrir Meet', action: 'open_meet', data: { url: googleMeetLink } }
+  }
+  if (status === 'visa_docs_sent') {
+    return { label: 'Voir dossier (Visa)', action: 'navigate_case' }
+  }
+  return { label: 'Voir dossier', action: 'navigate_case' }
+}
+
+function computeUrgency(status: string, daysSince: number, internFirstMeetingDate: string | null): 'critical' | 'high' | 'normal' | 'low' {
+  if (status === 'lead' && daysSince > 3) return 'critical'
+  if (status === 'rdv_booked' && internFirstMeetingDate) {
+    const meetDate = new Date(internFirstMeetingDate)
+    if (meetDate.getTime() < Date.now()) return 'high'
+  }
+  if (status === 'payment_pending' && daysSince > 5) return 'high'
+  if (status === 'visa_docs_sent' && daysSince > 3) return 'high'
+  return 'normal'
+}
+
+function computeDaysInfo(
+  category: 'todo' | 'waiting' | 'active' | 'alumni',
+  status: string,
+  daysSince: number,
+  daysUntilArrival: number | null,
+): string | null {
+  if (category === 'todo' && daysSince > 1) return `Depuis ${daysSince}j`
+  if (status === 'arrival_prep' && daysUntilArrival !== null && daysUntilArrival < 14) {
+    return `Arrive dans ${daysUntilArrival}j`
+  }
+  if (category === 'waiting') {
+    if (status === 'visa_submitted' && daysSince > 0) return `Visa soumis il y a ${daysSince}j`
+    if (status === 'convention_signed' && daysSince > 0) return `Convention signée il y a ${daysSince}j`
+    if (status === 'payment_received' && daysSince > 0) return `Payé il y a ${daysSince}j`
+    if (daysSince > 1) return `Depuis ${daysSince}j`
+  }
+  if (category === 'active' && daysUntilArrival !== null) {
+    const daysLeft = daysUntilArrival
+    if (daysLeft > 0) return `Encore ${daysLeft}j`
+  }
+  return null
+}
 
 export async function GET() {
   const supabase = await createClient()
@@ -27,164 +98,110 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const feed: FeedData = {
-    today: [],
-    todo: [],
-    waiting: [],
-    completed: [],
+  const { data: cases, error } = await supabase
+    .from('cases')
+    .select(
+      'id, status, created_at, updated_at, desired_start_date, actual_start_date, actual_end_date, google_meet_link, portal_token, payment_amount, payment_date, visa_submitted_to_agent_at, intern_first_meeting_date, discount_percentage, interns(first_name, last_name), schools(name)'
+    )
+    .not('status', 'in', '(not_interested,not_qualified,no_job_found,lost,archived,completed,on_hold,suspended,visa_refused)')
+    .order('updated_at', { ascending: false })
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  try {
-    const { data: cases } = await supabase
-      .from('cases')
-      .select('id, status, actual_start_date, actual_end_date, desired_start_date, flight_number, created_at, google_meet_link, portal_token, interns(first_name, last_name, email)')
-      .not('status', 'in', '(alumni,not_interested,no_job_found,lost)')
-      .order('created_at', { ascending: false })
-      .limit(50)
+  const now = Date.now()
+  const todo: FeedItem[] = []
+  const waiting: FeedItem[] = []
+  const active: FeedItem[] = []
+  const alumni: FeedItem[] = []
 
-    if (cases) {
-      const now = new Date()
-      now.setHours(0, 0, 0, 0)
+  let activeCount = 0
+  let arrivingSoon = 0
+  let revenueMonth = 0
 
-      for (const c of cases) {
-        const returnDate = c.actual_end_date ? new Date(c.actual_end_date) : null
-        const stayDurationDays =
-          (c.actual_start_date || c.desired_start_date) && returnDate
-            ? calculateStayDuration(new Date((c.actual_start_date || c.desired_start_date)), returnDate)
-            : 0
+  const currentMonth = new Date().getMonth()
+  const currentYear = new Date().getFullYear()
 
-        // Build retroplanning alerts as extra feed items
-        if ((c.actual_start_date || c.desired_start_date)) {
-          const alerts = getRetroPlanningAlerts({
-            caseId: c.id,
-            arrivalDate: new Date((c.actual_start_date || c.desired_start_date)),
-            hasTicket: !!c.flight_number,
-            hasPayment: PAYMENT_DONE_STATUSES.includes(c.status),
-            hasFlight: !!c.flight_number,
-            stayDurationDays,
-          })
+  for (const c of cases ?? []) {
+    const internRaw = c.interns as unknown
+    const intern = Array.isArray(internRaw) ? internRaw[0] as { first_name: string; last_name: string } | undefined : internRaw as { first_name: string; last_name: string } | null
+    const schoolRaw = c.schools as unknown
+    const school = Array.isArray(schoolRaw) ? schoolRaw[0] as { name: string } | undefined : schoolRaw as { name: string } | null
+    const internName = intern ? `${intern.first_name} ${intern.last_name}`.trim() : 'Sans nom'
+    const daysSince = Math.floor((now - new Date(c.updated_at).getTime()) / 86400000)
 
-          for (const alert of alerts) {
-            const alertItem: ActivityItem = {
-              id: `${c.id}-alert-${alert.label}`,
-              caseId: c.id,
-              internId: c.id,
-              internName: `${(c.interns as any)?.first_name ?? ""} ${(c.interns as any)?.last_name ?? ""}`,
-              actionType: 'retro_alert',
-              description: alert.label,
-              daysUntil: alert.daysUntilArrival,
-              priority: alert.type,
-              status: c.status,
-              createdAt: c.created_at,
-              metadata: { action: alert.action },
-            }
-            feed.todo.push(alertItem)
-          }
-        }
+    const arrivalDate = c.actual_start_date || c.desired_start_date
+    const endDate = c.actual_end_date
+    const daysUntilArrival = arrivalDate ? Math.ceil((new Date(arrivalDate).getTime() - now) / 86400000) : null
+    const daysUntilEnd = endDate ? Math.ceil((new Date(endDate).getTime() - now) / 86400000) : null
 
-        const item: ActivityItem = {
-          id: c.id,
-          caseId: c.id,
-          internId: c.id,
-          internName: `${(c.interns as any)?.first_name ?? ""} ${(c.interns as any)?.last_name ?? ""}`,
-          actionType: 'status_update',
-          description: `Statut: ${c.status}`,
-          priority: 'normal',
-          status: c.status,
-          createdAt: c.created_at,
-          metadata: {
-            flight_number: c.flight_number ?? undefined,
-            google_meet_link: (c as any).google_meet_link ?? undefined,
-            portal_token: (c as any).portal_token ?? undefined,
-          },
-        }
-
-        if ((c.actual_start_date || c.desired_start_date)) {
-          const arrival = new Date((c.actual_start_date || c.desired_start_date))
-          const daysUntil = Math.floor(
-            (arrival.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-          )
-          item.daysUntil = daysUntil
-
-          if (daysUntil <= 0) {
-            feed.today.push({ ...item, priority: 'critical' })
-          } else if (daysUntil <= 7) {
-            feed.todo.push({ ...item, priority: 'critical' })
-          } else if (daysUntil <= 30) {
-            feed.todo.push({ ...item, priority: 'attention' })
-          } else {
-            feed.waiting.push(item)
-          }
-        } else {
-          feed.waiting.push(item)
-        }
+    // Revenue calculation
+    if (c.payment_date) {
+      const pd = new Date(c.payment_date)
+      if (pd.getMonth() === currentMonth && pd.getFullYear() === currentYear && c.payment_amount) {
+        const discount = c.discount_percentage ?? 0
+        revenueMonth += Math.round(c.payment_amount * (1 - discount / 100))
       }
-
-      // Sort todo by daysUntil asc (most urgent first)
-      feed.todo.sort((a, b) => (a.daysUntil ?? 999) - (b.daysUntil ?? 999))
     }
-  } catch {
-    // Cases table not yet created — return empty feed gracefully
+
+    const cta = getCta(c.status, c.google_meet_link)
+
+    const item: FeedItem = {
+      case_id: c.id,
+      intern_name: internName,
+      status: c.status,
+      status_label: STATUS_LABELS[c.status] ?? c.status,
+      action_label: ACTION_LABELS[c.status] ?? '',
+      wait_label: WAIT_LABELS[c.status] ?? '',
+      cta_label: cta.label,
+      cta_action: cta.action,
+      cta_data: cta.data ?? null,
+      urgency: 'normal',
+      days_info: null,
+      days_since_status: daysSince,
+      google_meet_link: c.google_meet_link ?? null,
+      portal_token: c.portal_token ?? null,
+      school_name: school?.name ?? null,
+    }
+
+    if (TODO_STATUSES.includes(c.status)) {
+      item.urgency = computeUrgency(c.status, daysSince, c.intern_first_meeting_date)
+      item.days_info = computeDaysInfo('todo', c.status, daysSince, daysUntilArrival)
+      todo.push(item)
+    } else if (WAITING_STATUSES.includes(c.status)) {
+      item.days_info = computeDaysInfo('waiting', c.status, daysSince, daysUntilArrival)
+      if (c.status === 'arrival_prep' && daysUntilArrival !== null && daysUntilArrival <= 7) {
+        arrivingSoon++
+      }
+      waiting.push(item)
+    } else if (ACTIVE_STATUSES.includes(c.status)) {
+      activeCount++
+      item.days_info = computeDaysInfo('active', c.status, daysSince, daysUntilEnd)
+      active.push(item)
+    } else if (ALUMNI_STATUSES.includes(c.status)) {
+      alumni.push(item)
+    }
   }
 
-  const isEmpty =
-    feed.today.length === 0 &&
-    feed.todo.length === 0 &&
-    feed.waiting.length === 0 &&
-    feed.completed.length === 0
+  // Sort todo: critical → high → normal, then by days_since DESC
+  const urgencyOrder = { critical: 0, high: 1, normal: 2, low: 3 }
+  todo.sort((a, b) => urgencyOrder[a.urgency] - urgencyOrder[b.urgency] || b.days_since_status - a.days_since_status)
+  waiting.sort((a, b) => b.days_since_status - a.days_since_status)
+  active.sort((a, b) => (a.days_info ?? '').localeCompare(b.days_info ?? ''))
 
-  if (isEmpty) {
-    const now = new Date().toISOString()
-    const demoItems: ActivityItem[] = [
-      {
-        id: 'demo-1',
-        caseId: 'demo',
-        internId: 'demo',
-        internName: 'Sunny Interns',
-        actionType: 'info_new_lead',
-        description: 'Créez votre premier dossier stagiaire pour commencer',
-        priority: 'normal',
-        status: 'active',
-        createdAt: now,
-        metadata: { isDemo: true, title: 'Bienvenue sur Sunny Interns OS 🌴' },
-      },
-      {
-        id: 'demo-2',
-        caseId: 'demo',
-        internId: 'demo',
-        internName: 'Sunny Interns',
-        actionType: 'info_status_changed',
-        description: '22 écoles · 30 companies · 22 guesthouses · 28 templates email',
-        priority: 'normal',
-        status: 'active',
-        createdAt: now,
-        metadata: { isDemo: true, title: 'Base de données configurée ✅' },
-      },
-      {
-        id: 'demo-3',
-        caseId: 'demo',
-        internId: 'demo',
-        internName: 'Sunny Interns',
-        actionType: 'info_new_lead',
-        description: 'Allez sur Pipeline → Nouveau dossier pour démarrer',
-        priority: 'attention',
-        status: 'active',
-        createdAt: now,
-        metadata: { isDemo: true, title: 'Créer votre premier dossier' },
-      },
-    ]
-    return NextResponse.json({
-      ...feed,
-      waiting: demoItems,
-      isEmpty: true,
-      isDemo: true,
-      stats: { critical: 0, attention: 1, pending: 2, active: 0 },
-    })
+  const response: FeedResponse = {
+    todo,
+    waiting,
+    active,
+    alumni,
+    kpis: {
+      todo_count: todo.length,
+      active_bali: activeCount,
+      arriving_soon: arrivingSoon,
+      revenue_month: revenueMonth,
+    },
   }
 
-  return NextResponse.json({
-    ...feed,
-    isEmpty,
-    stats: { critical: 0, attention: 0, pending: 0, active: 0 },
-  })
+  return NextResponse.json(response)
 }

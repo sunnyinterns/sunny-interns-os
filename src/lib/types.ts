@@ -52,3 +52,36 @@ export interface FeedData {
     active: number
   }
 }
+
+// === New Feed types ===
+
+export interface FeedItem {
+  case_id: string
+  intern_name: string
+  status: string
+  status_label: string
+  action_label: string
+  wait_label: string
+  cta_label: string | null
+  cta_action: string | null
+  cta_data: Record<string, string> | null
+  urgency: 'critical' | 'high' | 'normal' | 'low'
+  days_info: string | null
+  days_since_status: number
+  google_meet_link: string | null
+  portal_token: string | null
+  school_name: string | null
+}
+
+export interface FeedResponse {
+  todo: FeedItem[]
+  waiting: FeedItem[]
+  active: FeedItem[]
+  alumni: FeedItem[]
+  kpis: {
+    todo_count: number
+    active_bali: number
+    arriving_soon: number
+    revenue_month: number
+  }
+}
