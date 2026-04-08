@@ -169,7 +169,7 @@ export function KanbanBoard({ cases, locale = 'fr' }: KanbanBoardProps) {
           return (
             <div
               key={status}
-              className="flex-shrink-0 w-52 flex flex-col bg-zinc-50 rounded-xl border border-zinc-100"
+              className="flex-shrink-0 w-[280px] flex flex-col bg-zinc-50 rounded-xl border border-zinc-100"
             >
               <div className="px-3 py-2.5 border-b border-zinc-100 flex items-center justify-between gap-2">
                 <span className="text-xs font-semibold text-zinc-600 truncate">
@@ -228,7 +228,7 @@ export function KanbanBoard({ cases, locale = 'fr' }: KanbanBoardProps) {
                 const items = lostCases.filter((c) => c.status === status)
                 if (items.length === 0) return null
                 return (
-                  <div key={status} className="flex-shrink-0 w-52 flex flex-col bg-zinc-50/50 rounded-xl border border-zinc-100 opacity-70">
+                  <div key={status} className="flex-shrink-0 w-[280px] flex flex-col bg-zinc-50/50 rounded-xl border border-zinc-100 opacity-70">
                     <div className="px-3 py-2 border-b border-zinc-100 flex items-center justify-between gap-2">
                       <span className="text-xs font-medium text-zinc-400 truncate">{LOST_LABELS[status]}</span>
                       <span className="text-xs text-zinc-400 font-bold">{items.length}</span>

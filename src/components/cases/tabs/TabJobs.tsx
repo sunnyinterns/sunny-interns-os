@@ -218,7 +218,41 @@ export function TabJobs({ caseId, firstName, lastName }: TabJobsProps) {
         </div>
       ) : (
         <div className="space-y-2">
-          {submissions.map((sub) => {
+          {/* Retained job — affiché en premier et mis en évidence */}
+          {submissions.filter((s) => s.status === 'retained').map((sub) => {
+            const title = sub.jobs?.public_title ?? sub.jobs?.title ?? 'Offre sans titre'
+            const company = sub.jobs?.companies?.name ?? null
+            const date = sub.submitted_at ?? sub.created_at
+            return (
+              <div
+                key={sub.id}
+                className="flex items-center gap-3 px-4 py-4 bg-emerald-50 border-2 border-[#0d9e75] rounded-xl"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="px-2 py-0.5 text-[10px] font-bold bg-[#0d9e75] text-white rounded-full uppercase tracking-wide">
+                      Retenu
+                    </span>
+                  </div>
+                  <p className="text-sm font-semibold text-[#1a1918] truncate">{title}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {company && <span className="text-xs text-zinc-500 font-medium">{company}</span>}
+                    {date && (
+                      <span className="text-xs text-zinc-400">
+                        {new Date(date).toLocaleDateString('fr-FR')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#0d9e75" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            )
+          })}
+
+          {/* Autres soumissions */}
+          {submissions.filter((s) => s.status !== 'retained').map((sub) => {
             const title = sub.jobs?.public_title ?? sub.jobs?.title ?? 'Offre sans titre'
             const company = sub.jobs?.companies?.name ?? null
             const date = sub.submitted_at ?? sub.created_at
@@ -227,10 +261,15 @@ export function TabJobs({ caseId, firstName, lastName }: TabJobsProps) {
             return (
               <div
                 key={sub.id}
-                className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-zinc-100"
+                className={[
+                  'flex items-center gap-3 px-4 py-3 bg-white rounded-xl border',
+                  sub.status === 'rejected' ? 'border-red-100 opacity-60' : 'border-zinc-100',
+                ].join(' ')}
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[#1a1918] truncate">{title}</p>
+                  <p className={['text-sm font-medium truncate', sub.status === 'rejected' ? 'line-through text-zinc-400' : 'text-[#1a1918]'].join(' ')}>
+                    {title}
+                  </p>
                   <div className="flex items-center gap-2 mt-0.5">
                     {company && <span className="text-xs text-zinc-400">{company}</span>}
                     {date && (

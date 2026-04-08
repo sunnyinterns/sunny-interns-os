@@ -50,11 +50,14 @@ const createCaseSchema = z.object({
   passport_expiry: z.string().optional(),
   // Step 2 — Profil
   internship_type: z.string().optional(),
+  duration_months: z.number().optional(),
   notes: z.string().optional(),
-  // Step 3 — Destination
+  // Step 3 — Projet
   start_date: z.string().optional(),
   destination: z.string().optional(),
   dropoff_address: z.string().optional(),
+  main_desired_job: z.string().optional(),
+  school_name: z.string().optional(),
 })
 
 // ─── GET /api/cases ───────────────────────────────────────────────────────────
@@ -173,6 +176,8 @@ export async function POST(request: Request) {
     start_date,
     destination,
     dropoff_address,
+    main_desired_job,
+    school_name,
   } = parsed.data
 
   // Passport 6-month check: expiry must be at least 6 months after arrival_date
@@ -210,6 +215,8 @@ export async function POST(request: Request) {
         birth_date,
         passport_number,
         passport_expiry,
+        ...(main_desired_job ? { main_desired_job } : {}),
+        ...(school_name ? { school: school_name } : {}),
       })
       .select()
       .single()

@@ -37,8 +37,9 @@ export async function GET(
       .select(`
         *,
         interns ( * ),
-        jobs ( *, companies ( id, name ) ),
-        activity_feed ( * )
+        activity_feed ( * ),
+        job_submissions ( id, status, created_at, jobs ( id, title, public_title, companies ( id, name ) ) ),
+        packages ( id, name, price_eur, visa_cost_idr, package_type, processing_days, validity_label )
       `)
       .eq('id', id)
       .single()

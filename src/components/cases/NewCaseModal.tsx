@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import { z } from 'zod'
 import { Button } from '@/components/ui/Button'
 
@@ -9,39 +10,52 @@ interface NewCaseModalProps {
   onSuccess: () => void
 }
 
-// --- Zod schemas per step ---
 const step1Schema = z.object({
   first_name: z.string().min(1, 'Prénom requis'),
   last_name: z.string().min(1, 'Nom requis'),
   email: z.string().email('Email invalide'),
-  phone: z.string().optional(),
-  nationality: z.string().optional(),
-  birth_date: z.string().optional(),
+  whatsapp: z.string().optional(),
 })
 
 const step2Schema = z.object({
-  passport_number: z.string().min(1, 'Numéro de passeport requis'),
-  passport_expiry: z.string().min(1, 'Date d\'expiration requise'),
-  start_date: z.string().min(1, 'Date d\'arrivée requise'),
-  duration_weeks: z.number().optional(),
-  sectors: z.array(z.string()).optional(),
-  internship_type: z.enum(['convention', 'visa_only']),
-  notes: z.string().optional(),
-})
-
-const step3Schema = z.object({
-  destination: z.enum(['Bali', 'Bangkok', 'autres']),
-  dropoff_address: z.string().optional(),
-  housing_type: z.string().optional(),
+  birth_date: z.string().optional(),
+  nationality: z.string().optional(),
+  passport_expiry: z.string().optional(),
+  desired_start_date: z.string().min(1, 'Date de début requise'),
+  desired_duration_months: z.number().min(1).max(6),
 })
 
 type Step1Data = z.infer<typeof step1Schema>
 type Step2Data = z.infer<typeof step2Schema>
-type Step3Data = z.infer<typeof step3Schema>
-
+interface Step3Data {
+  school_name?: string
+  main_desired_job?: string
+  notes?: string
+}
 type FieldErrors = Record<string, string>
 
-const SECTORS = ['Marketing', 'Communication', 'Finance', 'RH', 'IT', 'Commerce', 'Hôtellerie']
+interface School {
+  id: string
+  name: string
+  city?: string | null
+}
+
+const JOBS_14 = [
+  'Marketing Digital',
+  'Communication',
+  'Finance & Comptabilité',
+  'Ressources Humaines',
+  'Informatique & Tech',
+  'Commerce & Vente',
+  'Hôtellerie & Restauration',
+  'Surf & Sports Nautiques',
+  'Yoga & Bien-être',
+  'Photographie & Vidéo',
+  'Design Graphique',
+  'Événementiel',
+  'Administration',
+  'Autre',
+]
 
 function Field({
   label,
@@ -65,18 +79,30 @@ const inputClass =
   'px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white text-[#1a1918] focus:outline-none focus:ring-2 focus:ring-[#c8a96e] disabled:opacity-60'
 
 export function NewCaseModal({ onClose, onSuccess }: NewCaseModalProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const locale = pathname.split('/')[1] ?? 'fr'
+
   const [step, setStep] = useState(1)
   const [submitting, setSubmitting] = useState(false)
   const [globalError, setGlobalError] = useState<string | null>(null)
-
-  // Step data
-  const [step1, setStep1] = useState<Partial<Step1Data>>({})
-  const [step2, setStep2] = useState<Partial<Step2Data>>({ internship_type: 'convention', sectors: [] })
-  const [step3, setStep3] = useState<Partial<Step3Data>>({ destination: 'Bali' })
-
   const [errors, setErrors] = useState<FieldErrors>({})
   const [emailExists, setEmailExists] = useState(false)
   const [checkingEmail, setCheckingEmail] = useState(false)
+  const [schools, setSchools] = useState<School[]>([])
+
+  const [step1, setStep1] = useState<Partial<Step1Data>>({})
+  const [step2, setStep2] = useState<Partial<Step2Data>>({ desired_duration_months: 3 })
+  const [step3, setStep3] = useState<Step3Data>({})
+
+  useEffect(() => {
+    if (step === 3) {
+      fetch('/api/schools')
+        .then((r) => r.ok ? r.json() as Promise<School[]> : Promise.resolve([]))
+        .then(setSchools)
+        .catch(() => setSchools([]))
+    }
+  }, [step])
 
   async function checkEmail(email: string) {
     if (!email) return
@@ -92,19 +118,29 @@ export function NewCaseModal({ onClose, onSuccess }: NewCaseModalProps) {
     }
   }
 
+  // Warning rouge si passeport expire < 6 mois après desired_start_date
+  const passportWarn = (() => {
+    const { passport_expiry, desired_start_date } = step2
+    if (!passport_expiry || !desired_start_date) return false
+    const start = new Date(desired_start_date)
+    const expiry = new Date(passport_expiry)
+    const limit = new Date(start)
+    limit.setMonth(limit.getMonth() + 6)
+    return expiry < limit
+  })()
+
   function validateStep1(): boolean {
     const result = step1Schema.safeParse(step1)
     if (!result.success) {
       const errs: FieldErrors = {}
       for (const issue of result.error.issues) {
-        const key = issue.path[0] as string
-        errs[key] = issue.message
+        errs[issue.path[0] as string] = issue.message
       }
       setErrors(errs)
       return false
     }
     if (emailExists) {
-      setErrors({ email: 'Email déjà utilisé' })
+      setErrors({ email: 'Cet email est déjà utilisé — dossier existant ?' })
       return false
     }
     setErrors({})
@@ -116,34 +152,7 @@ export function NewCaseModal({ onClose, onSuccess }: NewCaseModalProps) {
     if (!result.success) {
       const errs: FieldErrors = {}
       for (const issue of result.error.issues) {
-        const key = issue.path[0] as string
-        errs[key] = issue.message
-      }
-      setErrors(errs)
-      return false
-    }
-    // Passport validity check: must be > 6 months after start_date
-    if (step2.passport_expiry && step2.start_date) {
-      const arrival = new Date(step2.start_date)
-      const expiry = new Date(step2.passport_expiry)
-      const sixMonthsAfter = new Date(arrival)
-      sixMonthsAfter.setMonth(sixMonthsAfter.getMonth() + 6)
-      if (expiry < sixMonthsAfter) {
-        setErrors({ passport_expiry: 'Le passeport doit être valide 6 mois après la date d\'arrivée' })
-        return false
-      }
-    }
-    setErrors({})
-    return true
-  }
-
-  function validateStep3(): boolean {
-    const result = step3Schema.safeParse(step3)
-    if (!result.success) {
-      const errs: FieldErrors = {}
-      for (const issue of result.error.issues) {
-        const key = issue.path[0] as string
-        errs[key] = issue.message
+        errs[issue.path[0] as string] = issue.message
       }
       setErrors(errs)
       return false
@@ -153,40 +162,55 @@ export function NewCaseModal({ onClose, onSuccess }: NewCaseModalProps) {
   }
 
   function handleNext() {
-    if (step === 1 && validateStep1()) setStep(2)
-    else if (step === 2 && validateStep2()) setStep(3)
+    if (step === 1 && validateStep1()) { setStep(2); setErrors({}) }
+    else if (step === 2 && validateStep2()) { setStep(3); setErrors({}) }
   }
 
   async function handleSubmit() {
-    if (!validateStep3()) return
     setSubmitting(true)
     setGlobalError(null)
     try {
-      const payload = { ...step1, ...step2, ...step3 }
+      const payload = {
+        first_name: step1.first_name,
+        last_name: step1.last_name,
+        email: step1.email,
+        phone: step1.whatsapp,
+        birth_date: step2.birth_date || null,
+        nationality: step2.nationality || null,
+        passport_expiry: step2.passport_expiry || null,
+        start_date: step2.desired_start_date,
+        duration_months: step2.desired_duration_months,
+        main_desired_job: step3.main_desired_job || null,
+        school_name: step3.school_name || null,
+        notes: step3.notes || null,
+        destination: 'Bali',
+      }
       const res = await fetch('/api/cases', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
+      const data = await res.json() as { id?: string; error?: string }
       if (!res.ok) {
-        const data = await res.json() as { error?: string }
-        setGlobalError(data.error ?? 'Erreur lors de la création')
+        if (res.status === 409) {
+          setGlobalError('Email déjà utilisé — un dossier existe déjà pour cet email.')
+        } else {
+          setGlobalError(data.error ?? 'Erreur lors de la création')
+        }
+        return
+      }
+      if (!data.id) {
+        setGlobalError('Dossier créé mais ID manquant — rechargez la page.')
+        onSuccess()
         return
       }
       onSuccess()
+      router.push(`/${locale}/cases/${data.id}`)
     } catch {
       setGlobalError('Erreur réseau')
     } finally {
       setSubmitting(false)
     }
-  }
-
-  function toggleSector(sector: string) {
-    const current = step2.sectors ?? []
-    const next = current.includes(sector)
-      ? current.filter((s) => s !== sector)
-      : [...current, sector]
-    setStep2((p) => ({ ...p, sectors: next }))
   }
 
   return (
@@ -231,6 +255,7 @@ export function NewCaseModal({ onClose, onSuccess }: NewCaseModalProps) {
                     className={inputClass}
                     value={step1.first_name ?? ''}
                     onChange={(e) => setStep1((p) => ({ ...p, first_name: e.target.value }))}
+                    autoFocus
                   />
                 </Field>
                 <Field label="Nom *" error={errors.last_name}>
@@ -251,35 +276,20 @@ export function NewCaseModal({ onClose, onSuccess }: NewCaseModalProps) {
                     onBlur={(e) => void checkEmail(e.target.value)}
                   />
                   {checkingEmail && (
-                    <span className="absolute right-3 top-2 text-xs text-zinc-400">Vérification…</span>
+                    <span className="absolute right-3 top-2 text-xs text-zinc-400">Vérif…</span>
                   )}
                 </div>
                 {emailExists && !errors.email && (
-                  <p className="text-xs text-[#dc2626]">Email déjà utilisé</p>
+                  <p className="text-xs text-[#dc2626]">Cet email est déjà utilisé — dossier existant ?</p>
                 )}
               </Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Téléphone" error={errors.phone}>
-                  <input
-                    className={inputClass}
-                    value={step1.phone ?? ''}
-                    onChange={(e) => setStep1((p) => ({ ...p, phone: e.target.value }))}
-                  />
-                </Field>
-                <Field label="Nationalité" error={errors.nationality}>
-                  <input
-                    className={inputClass}
-                    value={step1.nationality ?? ''}
-                    onChange={(e) => setStep1((p) => ({ ...p, nationality: e.target.value }))}
-                  />
-                </Field>
-              </div>
-              <Field label="Date de naissance" error={errors.birth_date}>
+              <Field label="WhatsApp (avec indicatif)" error={errors.whatsapp}>
                 <input
                   className={inputClass}
-                  type="date"
-                  value={step1.birth_date ?? ''}
-                  onChange={(e) => setStep1((p) => ({ ...p, birth_date: e.target.value }))}
+                  type="tel"
+                  placeholder="+33 6 XX XX XX XX"
+                  value={step1.whatsapp ?? ''}
+                  onChange={(e) => setStep1((p) => ({ ...p, whatsapp: e.target.value }))}
                 />
               </Field>
             </>
@@ -290,111 +300,103 @@ export function NewCaseModal({ onClose, onSuccess }: NewCaseModalProps) {
             <>
               <p className="text-xs text-zinc-400 font-medium uppercase tracking-wide">Étape 2 — Profil</p>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="N° Passeport *" error={errors.passport_number}>
-                  <input
-                    className={inputClass}
-                    value={step2.passport_number ?? ''}
-                    onChange={(e) => setStep2((p) => ({ ...p, passport_number: e.target.value }))}
-                  />
-                </Field>
-                <Field label="Expiration passeport *" error={errors.passport_expiry}>
+                <Field label="Date de naissance" error={errors.birth_date}>
                   <input
                     className={inputClass}
                     type="date"
-                    value={step2.passport_expiry ?? ''}
-                    onChange={(e) => setStep2((p) => ({ ...p, passport_expiry: e.target.value }))}
+                    value={step2.birth_date ?? ''}
+                    onChange={(e) => setStep2((p) => ({ ...p, birth_date: e.target.value }))}
+                  />
+                </Field>
+                <Field label="Nationalité" error={errors.nationality}>
+                  <input
+                    className={inputClass}
+                    placeholder="Ex: Française"
+                    value={step2.nationality ?? ''}
+                    onChange={(e) => setStep2((p) => ({ ...p, nationality: e.target.value }))}
                   />
                 </Field>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Date d'arrivée *" error={errors.start_date}>
-                  <input
-                    className={inputClass}
-                    type="date"
-                    value={step2.start_date ?? ''}
-                    onChange={(e) => setStep2((p) => ({ ...p, start_date: e.target.value }))}
-                  />
-                </Field>
-                <Field label="Durée (semaines)" error={errors.duration_weeks}>
-                  <input
-                    className={inputClass}
-                    type="number"
-                    min={1}
-                    value={step2.duration_weeks ?? ''}
-                    onChange={(e) => setStep2((p) => ({ ...p, duration_weeks: Number(e.target.value) }))}
-                  />
-                </Field>
-              </div>
-              <Field label="Type de stage *" error={errors.internship_type}>
-                <select
-                  className={inputClass}
-                  value={step2.internship_type ?? 'convention'}
-                  onChange={(e) => setStep2((p) => ({ ...p, internship_type: e.target.value as 'convention' | 'visa_only' }))}
-                >
-                  <option value="convention">Convention de stage</option>
-                  <option value="visa_only">Visa Only</option>
-                </select>
-              </Field>
-              <Field label="Secteurs" error={undefined}>
-                <div className="flex flex-wrap gap-2">
-                  {SECTORS.map((s) => {
-                    const selected = (step2.sectors ?? []).includes(s)
-                    return (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => toggleSector(s)}
-                        className={[
-                          'px-2.5 py-1 text-xs rounded-full border transition-colors',
-                          selected
-                            ? 'bg-[#c8a96e] text-white border-[#c8a96e]'
-                            : 'bg-white text-zinc-600 border-zinc-200 hover:border-[#c8a96e]',
-                        ].join(' ')}
-                      >
-                        {s}
-                      </button>
-                    )
-                  })}
-                </div>
-              </Field>
-              <Field label="Notes" error={errors.notes}>
-                <textarea
-                  className={inputClass + ' resize-none'}
-                  rows={3}
-                  value={step2.notes ?? ''}
-                  onChange={(e) => setStep2((p) => ({ ...p, notes: e.target.value }))}
+              <Field label="Expiration passeport" error={errors.passport_expiry}>
+                <input
+                  className={inputClass + (passportWarn ? ' !border-[#dc2626] ring-1 ring-[#dc2626]' : '')}
+                  type="date"
+                  value={step2.passport_expiry ?? ''}
+                  onChange={(e) => setStep2((p) => ({ ...p, passport_expiry: e.target.value }))}
                 />
+                {passportWarn && (
+                  <div className="flex items-start gap-1.5 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+                    <span className="text-[#dc2626] text-xs flex-shrink-0">⚠</span>
+                    <p className="text-xs text-[#dc2626]">
+                      Passeport invalide — doit être valide 6 mois après la date d&apos;arrivée
+                    </p>
+                  </div>
+                )}
               </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Date d'arrivée souhaitée *" error={errors.desired_start_date}>
+                  <input
+                    className={inputClass}
+                    type="date"
+                    value={step2.desired_start_date ?? ''}
+                    onChange={(e) => setStep2((p) => ({ ...p, desired_start_date: e.target.value }))}
+                  />
+                </Field>
+                <Field label="Durée souhaitée *" error={errors.desired_duration_months?.toString()}>
+                  <select
+                    className={inputClass}
+                    value={step2.desired_duration_months ?? 3}
+                    onChange={(e) => setStep2((p) => ({ ...p, desired_duration_months: Number(e.target.value) }))}
+                  >
+                    <option value={1}>1 mois</option>
+                    <option value={2}>2 mois</option>
+                    <option value={3}>3 mois</option>
+                    <option value={4}>4 mois</option>
+                    <option value={5}>5 mois</option>
+                    <option value={6}>6 mois (max B211A)</option>
+                  </select>
+                </Field>
+              </div>
             </>
           )}
 
-          {/* Step 3 — Destination */}
+          {/* Step 3 — Projet de stage */}
           {step === 3 && (
             <>
-              <p className="text-xs text-zinc-400 font-medium uppercase tracking-wide">Étape 3 — Destination</p>
-              <Field label="Destination *" error={errors.destination}>
+              <p className="text-xs text-zinc-400 font-medium uppercase tracking-wide">Étape 3 — Projet de stage</p>
+              <Field label="École / Université" error={undefined}>
                 <select
                   className={inputClass}
-                  value={step3.destination ?? 'Bali'}
-                  onChange={(e) => setStep3((p) => ({ ...p, destination: e.target.value as 'Bali' | 'Bangkok' | 'autres' }))}
+                  value={step3.school_name ?? ''}
+                  onChange={(e) => setStep3((p) => ({ ...p, school_name: e.target.value }))}
                 >
-                  <option value="Bali">Bali</option>
-                  <option value="Bangkok">Bangkok</option>
-                  <option value="autres">Autres</option>
+                  <option value="">— Sélectionner (optionnel) —</option>
+                  {schools.map((s) => (
+                    <option key={s.id} value={s.name}>
+                      {s.name}{s.city ? ` (${s.city})` : ''}
+                    </option>
+                  ))}
                 </select>
               </Field>
-              <Field label="Adresse de dépôt" error={errors.dropoff_address}>
-                <input
+              <Field label="Métier souhaité" error={undefined}>
+                <select
                   className={inputClass}
-                  value={step3.dropoff_address ?? ''}
-                  onChange={(e) => setStep3((p) => ({ ...p, dropoff_address: e.target.value }))}
-                />
+                  value={step3.main_desired_job ?? ''}
+                  onChange={(e) => setStep3((p) => ({ ...p, main_desired_job: e.target.value }))}
+                >
+                  <option value="">— Sélectionner —</option>
+                  {JOBS_14.map((j) => (
+                    <option key={j} value={j}>{j}</option>
+                  ))}
+                </select>
               </Field>
-              <Field label="Type d'hébergement" error={errors.housing_type}>
-                <input
-                  className={inputClass}
-                  value={step3.housing_type ?? ''}
-                  onChange={(e) => setStep3((p) => ({ ...p, housing_type: e.target.value }))}
+              <Field label="Commentaire libre" error={undefined}>
+                <textarea
+                  className={inputClass + ' resize-none'}
+                  rows={3}
+                  placeholder="Motivations, contraintes, questions…"
+                  value={step3.notes ?? ''}
+                  onChange={(e) => setStep3((p) => ({ ...p, notes: e.target.value }))}
                 />
               </Field>
 
@@ -409,7 +411,11 @@ export function NewCaseModal({ onClose, onSuccess }: NewCaseModalProps) {
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-zinc-100 flex justify-between items-center">
-          <Button variant="ghost" size="sm" onClick={step === 1 ? onClose : () => setStep((s) => s - 1)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={step === 1 ? onClose : () => { setStep((s) => s - 1); setErrors({}) }}
+          >
             {step === 1 ? 'Annuler' : '← Retour'}
           </Button>
           {step < 3 ? (

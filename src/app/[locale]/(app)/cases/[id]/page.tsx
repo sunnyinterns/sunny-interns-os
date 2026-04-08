@@ -324,6 +324,8 @@ export default function CaseDetailPage() {
             visa_submitted_to_agent_at: caseData.visa_submitted_to_agent_at,
             visa_submitted_at: caseData.visa_submitted_at,
             visa_received_at: caseData.visa_received_at,
+            billet_avion: caseData.billet_avion,
+            papiers_visas: caseData.papiers_visas,
             interns: caseData.interns,
           }} />
         )}

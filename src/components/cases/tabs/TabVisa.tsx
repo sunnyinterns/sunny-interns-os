@@ -37,6 +37,8 @@ interface TabVisaProps {
     visa_submitted_to_agent_at?: string | null
     visa_submitted_at?: string | null
     visa_received_at?: string | null
+    billet_avion?: boolean | null
+    papiers_visas?: boolean | null
     interns?: {
       passport_page4_url?: string | null
       photo_id_url?: string | null
@@ -70,6 +72,8 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
   const [noteForAgent, setNoteForAgent] = useState(caseData.note_for_agent ?? '')
   const [saving, setSaving] = useState(false)
   const [savingNote, setSavingNote] = useState(false)
+  const [sendingToAgent, setSendingToAgent] = useState(false)
+  const [sentToAgent, setSentToAgent] = useState(!!caseData.visa_submitted_to_agent_at)
   const [copied, setCopied] = useState(false)
   const [loadingPkgs, setLoadingPkgs] = useState(true)
 
@@ -123,6 +127,21 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
     void navigator.clipboard.writeText(portalLink)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const canSendToAgent = !!caseData.billet_avion && !!caseData.papiers_visas
+
+  async function handleSendToAgent() {
+    if (!canSendToAgent || sentToAgent) return
+    setSendingToAgent(true)
+    try {
+      const res = await fetch(`/api/cases/${caseData.id}/send-to-agent`, { method: 'POST' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      setSentToAgent(true)
+      onStatusChange?.()
+    } finally {
+      setSendingToAgent(false)
+    }
   }
 
   const docsReady = DOCS.filter((d) => !!caseData.interns?.[d.urlField]).length
@@ -265,6 +284,48 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
           className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
         />
         {savingNote && <p className="text-xs text-zinc-400">Sauvegarde…</p>}
+      </div>
+
+      {/* Envoyer à FAZZA */}
+      <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-3">
+        <h4 className="text-sm font-semibold text-[#1a1918]">Transmission à FAZZA</h4>
+        {!canSendToAgent && (
+          <div className="flex items-start gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+            <span className="text-[#d97706] text-xs flex-shrink-0 mt-0.5">⚠</span>
+            <p className="text-xs text-amber-900">
+              Requis avant envoi :
+              {!caseData.billet_avion && <span className="font-medium"> billet avion</span>}
+              {!caseData.billet_avion && !caseData.papiers_visas && ' +'}
+              {!caseData.papiers_visas && <span className="font-medium"> papiers visa</span>}
+            </p>
+          </div>
+        )}
+        {sentToAgent ? (
+          <div className="flex items-center gap-2 text-sm text-[#0d9e75] font-medium">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            Dossier envoyé à FAZZA
+            {caseData.visa_submitted_to_agent_at && (
+              <span className="text-zinc-400 font-normal text-xs">
+                le {new Date(caseData.visa_submitted_to_agent_at).toLocaleDateString('fr-FR')}
+              </span>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={() => { void handleSendToAgent() }}
+            disabled={!canSendToAgent || sendingToAgent}
+            className={[
+              'w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-colors',
+              canSendToAgent
+                ? 'bg-[#c8a96e] hover:bg-[#b8945a] text-white'
+                : 'bg-zinc-100 text-zinc-400 cursor-not-allowed',
+            ].join(' ')}
+          >
+            {sendingToAgent ? 'Envoi en cours…' : 'Envoyer à FAZZA'}
+          </button>
+        )}
       </div>
     </div>
   )
