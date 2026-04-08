@@ -18,6 +18,14 @@ export interface KanbanCase {
   assignedTo: string | null
   destination: string | null
   internshipType: string | null
+  passportExpiry?: string | null
+  billet_avion?: boolean | null
+  papiers_visas?: boolean | null
+  visa_recu?: boolean | null
+  logement_reserve?: boolean | null
+  scooter_reserve_check?: boolean | null
+  convention_signee_check?: boolean | null
+  chauffeur_reserve?: boolean | null
 }
 
 const FUNNEL_STATUSES: { status: CaseStatus; label: string }[] = [
@@ -93,15 +101,22 @@ export async function GET(request: Request) {
   try {
     let query = supabase
       .from('cases')
-      .select('id, first_name, last_name, status, arrival_date, return_date, destination, assigned_to, created_at, internship_type, billet_avion, papiers_visas, visa_recu, logement_scooter_formulaire, logement_reserve, scooter_reserve_check, convention_signee_check, chauffeur_reserve, interns(first_name, last_name, passport_expiry, school)')
-      .order('arrival_date', { ascending: true })
+      .select(`
+        id, status, desired_start_date, actual_start_date, actual_end_date,
+        created_at, assigned_manager_name, desired_duration_months,
+        billet_avion, papiers_visas, visa_recu, logement_scooter_formulaire,
+        logement_reserve, scooter_reserve_check, convention_signee_check, chauffeur_reserve,
+        portal_token, intern_first_meeting_date,
+        interns(first_name, last_name, passport_expiry),
+        schools(name)
+      `)
+      .order('created_at', { ascending: false })
 
-    if (assignedTo) query = query.eq('assigned_to', assignedTo)
-    if (destination) query = query.ilike('destination', `%${destination}%`)
+    if (assignedTo) query = query.eq('assigned_manager_name', assignedTo)
     if (month) {
       const start = `${month}-01`
       const end = `${month}-31`
-      query = query.gte('arrival_date', start).lte('arrival_date', end)
+      query = query.gte('desired_start_date', start).lte('desired_start_date', end)
     }
 
     const { data, error } = await query
@@ -120,18 +135,28 @@ export async function GET(request: Request) {
       const col = columnMap.get(c.status as CaseStatus)
       if (!col) continue // dead-end statuses (not_interested, etc.)
 
-      const daysUntil = c.arrival_date ? getDaysUntil(new Date(c.arrival_date)) : null
+      const intern = c.interns as {first_name?: string; last_name?: string; passport_expiry?: string} | null
+      const startDate = c.actual_start_date || c.desired_start_date
+      const daysUntil = startDate ? getDaysUntil(new Date(startDate)) : null
       col.push({
         id: c.id,
-        firstName: c.first_name,
-        lastName: c.last_name,
+        firstName: intern?.first_name ?? '',
+        lastName: intern?.last_name ?? '',
         status: c.status as CaseStatus,
-        arrivalDate: c.arrival_date ?? null,
+        arrivalDate: startDate ?? null,
         daysUntil,
         isCritical: daysUntil !== null && daysUntil <= 7,
-        assignedTo: c.assigned_to ?? null,
-        destination: c.destination ?? null,
-        internshipType: (c as Record<string, unknown>).internship_type as string | null ?? null,
+        assignedTo: c.assigned_manager_name ?? null,
+        destination: null,
+        internshipType: null,
+        passportExpiry: intern?.passport_expiry ?? null,
+        billet_avion: c.billet_avion,
+        papiers_visas: c.papiers_visas,
+        visa_recu: c.visa_recu,
+        logement_reserve: c.logement_reserve,
+        scooter_reserve_check: c.scooter_reserve_check,
+        convention_signee_check: c.convention_signee_check,
+        chauffeur_reserve: c.chauffeur_reserve,
       })
     }
 
