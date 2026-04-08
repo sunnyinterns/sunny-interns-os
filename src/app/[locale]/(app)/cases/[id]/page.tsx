@@ -330,6 +330,7 @@ export default function CaseDetailPage() {
           <TabProfil
             intern={(caseData as any).interns ?? null}
             internId={(caseData as any).interns?.id ?? null}
+            caseId={caseData.id}
             schoolName={schoolName}
             desiredStartDate={(caseData as any).desired_start_date ?? null}
             desiredEndDate={(caseData as any).actual_end_date ?? (caseData as any).interns?.desired_end_date ?? null}

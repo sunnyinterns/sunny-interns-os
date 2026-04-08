@@ -52,10 +52,24 @@ interface TabProfilProps {
   intern: InternData | null
   arrivalDate?: string | null
   internId?: string | null
+  caseId?: string | null
   schoolName?: string | null
   desiredStartDate?: string | null
   desiredEndDate?: string | null
   desiredDurationMonths?: number | null
+}
+
+const FIELD_LABELS: Record<string, string> = {
+  email: 'Email', whatsapp: 'WhatsApp', gender: 'Genre', birth_date: 'Date de naissance',
+  nationality: 'Nationalité', passport_number: 'N° passeport', passport_expiry: 'Expiration passeport',
+  passport_issue_city: 'Ville délivrance', passport_issue_date: 'Date délivrance',
+  main_desired_job: 'Poste souhaité', intern_level: 'Niveau', diploma_track: 'Diplôme',
+  school_contact_name: 'Responsable pédagogique', school_contact_email: 'Email responsable',
+  emergency_contact_name: 'Contact urgence', emergency_contact_phone: 'Tél urgence',
+  insurance_company: 'Assurance', housing_budget: 'Budget logement', housing_city: 'Ville logement',
+  linkedin_url: 'LinkedIn', stage_ideal: 'Stage idéal', touchpoint: 'Touchpoint',
+  preferred_language: 'Langue préférée', referred_by_code: 'Code parrainage',
+  private_comment_for_employer: 'Commentaire employeur', wants_scooter: 'Scooter souhaité',
 }
 
 function isPassportValid(passportExpiry?: string | null, arrivalDate?: string | null): boolean | null {
@@ -72,6 +86,7 @@ function EditableField({
   value,
   fieldKey,
   internId,
+  caseId,
   type = 'text',
   badge,
 }: {
@@ -79,6 +94,7 @@ function EditableField({
   value?: string | null
   fieldKey: string
   internId?: string
+  caseId?: string | null
   type?: 'text' | 'date' | 'email' | 'textarea' | 'url'
   badge?: React.ReactNode
 }) {
@@ -90,12 +106,28 @@ function EditableField({
   async function save() {
     if (!internId || current === (value ?? '')) { setEditing(false); return }
     setSaving(true)
+    const oldValue = value ?? ''
     try {
       await fetch(`/api/interns/${internId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [fieldKey]: current || null }),
       })
+      // Log field edit
+      if (caseId) {
+        fetch(`/api/cases/${caseId}/logs`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'field_edited',
+            field_name: fieldKey,
+            field_label: FIELD_LABELS[fieldKey] ?? fieldKey,
+            old_value: String(oldValue),
+            new_value: String(current || ''),
+            description: `Modification de ${FIELD_LABELS[fieldKey] ?? fieldKey}`,
+          }),
+        }).catch(() => null)
+      }
     } finally {
       setSaving(false)
       setEditing(false)
@@ -162,11 +194,13 @@ function ToggleField({
   value,
   fieldKey,
   internId,
+  caseId,
 }: {
   label: string
   value?: boolean
   fieldKey: string
   internId?: string
+  caseId?: string | null
 }) {
   const [current, setCurrent] = useState(!!value)
 
@@ -174,11 +208,29 @@ function ToggleField({
     if (!internId) return
     const newVal = !current
     setCurrent(newVal)
-    await fetch(`/api/interns/${internId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ [fieldKey]: newVal }),
-    }).catch(() => setCurrent(!newVal))
+    try {
+      await fetch(`/api/interns/${internId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [fieldKey]: newVal }),
+      })
+      if (caseId) {
+        fetch(`/api/cases/${caseId}/logs`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'field_edited',
+            field_name: fieldKey,
+            field_label: FIELD_LABELS[fieldKey] ?? fieldKey,
+            old_value: String(!newVal),
+            new_value: String(newVal),
+            description: `Modification de ${FIELD_LABELS[fieldKey] ?? fieldKey}`,
+          }),
+        }).catch(() => null)
+      }
+    } catch {
+      setCurrent(!newVal)
+    }
   }
 
   return (
@@ -229,7 +281,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-export function TabProfil({ intern, arrivalDate, internId, schoolName, desiredStartDate, desiredEndDate, desiredDurationMonths }: TabProfilProps) {
+export function TabProfil({ intern, arrivalDate, internId, caseId, schoolName, desiredStartDate, desiredEndDate, desiredDurationMonths }: TabProfilProps) {
   if (!intern) {
     return <p className="text-sm text-zinc-400">Aucun profil associé</p>
   }
@@ -276,23 +328,23 @@ export function TabProfil({ intern, arrivalDate, internId, schoolName, desiredSt
           </div>
         </div>
         <EditableField label="Email" value={intern.email} fieldKey="email" internId={iid} type="email" />
-        <EditableField label="WhatsApp" value={intern.whatsapp} fieldKey="whatsapp" internId={iid} />
-        <EditableField label="Genre" value={intern.gender} fieldKey="gender" internId={iid} />
+        <EditableField label="WhatsApp" value={intern.whatsapp} fieldKey="whatsapp" internId={iid} caseId={caseId} />
+        <EditableField label="Genre" value={intern.gender} fieldKey="gender" internId={iid} caseId={caseId} />
         <EditableField label="Date de naissance" value={intern.birth_date} fieldKey="birth_date" internId={iid} type="date" />
-        <EditableField label="Nationalité" value={intern.nationality} fieldKey="nationality" internId={iid} />
+        <EditableField label="Nationalité" value={intern.nationality} fieldKey="nationality" internId={iid} caseId={caseId} />
       </Section>
 
       {/* SECTION 2 — Passeport */}
       <Section title="Passeport">
-        <EditableField label="Numéro" value={intern.passport_number} fieldKey="passport_number" internId={iid} />
+        <EditableField label="Numéro" value={intern.passport_number} fieldKey="passport_number" internId={iid} caseId={caseId} />
         <EditableField label="Expiration" value={intern.passport_expiry} fieldKey="passport_expiry" internId={iid} type="date" badge={passportBadge} />
-        <EditableField label="Ville de délivrance" value={intern.passport_issue_city} fieldKey="passport_issue_city" internId={iid} />
+        <EditableField label="Ville de délivrance" value={intern.passport_issue_city} fieldKey="passport_issue_city" internId={iid} caseId={caseId} />
         <EditableField label="Date de délivrance" value={intern.passport_issue_date} fieldKey="passport_issue_date" internId={iid} type="date" />
       </Section>
 
       {/* SECTION 3 — Stage recherché */}
       <Section title="Stage recherché">
-        <EditableField label="Poste souhaité" value={intern.main_desired_job} fieldKey="main_desired_job" internId={iid} />
+        <EditableField label="Poste souhaité" value={intern.main_desired_job} fieldKey="main_desired_job" internId={iid} caseId={caseId} />
         <ReadonlyField label="Durée souhaitée" value={desiredDurationMonths ? `${desiredDurationMonths} mois` : null} />
         <ReadonlyField label="Date démarrage souhaitée" value={desiredStartDate ? new Date(desiredStartDate).toLocaleDateString('fr-FR') : null} />
         <ReadonlyField label="Date fin souhaitée" value={desiredEndDate ? new Date(desiredEndDate).toLocaleDateString('fr-FR') : null} />
@@ -303,33 +355,33 @@ export function TabProfil({ intern, arrivalDate, internId, schoolName, desiredSt
       {/* SECTION 4 — Formation */}
       <Section title="Formation">
         <ReadonlyField label="École" value={schoolName} />
-        <EditableField label="Niveau" value={intern.intern_level} fieldKey="intern_level" internId={iid} />
-        <EditableField label="Diplôme track" value={intern.diploma_track} fieldKey="diploma_track" internId={iid} />
-        <EditableField label="Responsable pédagogique" value={intern.school_contact_name} fieldKey="school_contact_name" internId={iid} />
+        <EditableField label="Niveau" value={intern.intern_level} fieldKey="intern_level" internId={iid} caseId={caseId} />
+        <EditableField label="Diplôme track" value={intern.diploma_track} fieldKey="diploma_track" internId={iid} caseId={caseId} />
+        <EditableField label="Responsable pédagogique" value={intern.school_contact_name} fieldKey="school_contact_name" internId={iid} caseId={caseId} />
         <EditableField label="Email responsable" value={intern.school_contact_email} fieldKey="school_contact_email" internId={iid} type="email" />
       </Section>
 
       {/* SECTION 5 — Contact urgence + Assurance */}
       <Section title="Contact d'urgence & Assurance">
-        <EditableField label="Nom contact urgence" value={intern.emergency_contact_name} fieldKey="emergency_contact_name" internId={iid} />
-        <EditableField label="Téléphone urgence" value={intern.emergency_contact_phone} fieldKey="emergency_contact_phone" internId={iid} />
-        <EditableField label="Compagnie assurance" value={intern.insurance_company} fieldKey="insurance_company" internId={iid} />
+        <EditableField label="Nom contact urgence" value={intern.emergency_contact_name} fieldKey="emergency_contact_name" internId={iid} caseId={caseId} />
+        <EditableField label="Téléphone urgence" value={intern.emergency_contact_phone} fieldKey="emergency_contact_phone" internId={iid} caseId={caseId} />
+        <EditableField label="Compagnie assurance" value={intern.insurance_company} fieldKey="insurance_company" internId={iid} caseId={caseId} />
       </Section>
 
       {/* SECTION 6 — Logement & Transport */}
       <Section title="Logement & Transport">
-        <EditableField label="Budget logement" value={intern.housing_budget} fieldKey="housing_budget" internId={iid} />
-        <EditableField label="Ville logement" value={intern.housing_city} fieldKey="housing_city" internId={iid} />
-        <ToggleField label="Scooter souhaité" value={intern.wants_scooter} fieldKey="wants_scooter" internId={iid} />
+        <EditableField label="Budget logement" value={intern.housing_budget} fieldKey="housing_budget" internId={iid} caseId={caseId} />
+        <EditableField label="Ville logement" value={intern.housing_city} fieldKey="housing_city" internId={iid} caseId={caseId} />
+        <ToggleField label="Scooter souhaité" value={intern.wants_scooter} fieldKey="wants_scooter" internId={iid} caseId={caseId} />
       </Section>
 
       {/* SECTION 7 — Divers */}
       <Section title="Divers">
         <EditableField label="LinkedIn" value={intern.linkedin_url} fieldKey="linkedin_url" internId={iid} type="url" />
         <EditableField label="Ton stage idéal" value={intern.stage_ideal} fieldKey="stage_ideal" internId={iid} type="textarea" />
-        <EditableField label="Touchpoint (comment trouvé)" value={intern.touchpoint} fieldKey="touchpoint" internId={iid} />
-        <EditableField label="Langue préférée" value={intern.preferred_language} fieldKey="preferred_language" internId={iid} />
-        <EditableField label="Code parrainage utilisé" value={intern.referred_by_code} fieldKey="referred_by_code" internId={iid} />
+        <EditableField label="Touchpoint (comment trouvé)" value={intern.touchpoint} fieldKey="touchpoint" internId={iid} caseId={caseId} />
+        <EditableField label="Langue préférée" value={intern.preferred_language} fieldKey="preferred_language" internId={iid} caseId={caseId} />
+        <EditableField label="Code parrainage utilisé" value={intern.referred_by_code} fieldKey="referred_by_code" internId={iid} caseId={caseId} />
         <EditableField label="Commentaire privé pour employeur" value={intern.private_comment_for_employer} fieldKey="private_comment_for_employer" internId={iid} type="textarea" />
       </Section>
     </div>

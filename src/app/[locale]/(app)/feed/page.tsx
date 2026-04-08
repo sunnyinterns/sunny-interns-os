@@ -7,6 +7,30 @@ import { NewCaseModal } from '@/components/cases/NewCaseModal'
 import { Toast } from '@/components/ui/Toast'
 import type { FeedResponse, FeedItem } from '@/lib/types'
 
+interface CaseLog {
+  id: string
+  author_name: string
+  action: string
+  field_label?: string | null
+  old_value?: string | null
+  new_value?: string | null
+  description: string
+  created_at: string
+  cases?: { id: string; interns?: { first_name: string; last_name: string } | null } | null
+}
+
+function relativeDate(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'à l\'instant'
+  if (mins < 60) return `il y a ${mins}min`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `il y a ${hrs}h`
+  const days = Math.floor(hrs / 24)
+  if (days < 30) return `il y a ${days}j`
+  return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+}
+
 const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> = {
   lead: { label: 'Lead', bg: '#f4f4f5', text: '#71717a' },
   rdv_booked: { label: 'RDV Booké', bg: '#dbeafe', text: '#1d4ed8' },
@@ -219,6 +243,7 @@ export default function FeedPage() {
   const [showModal, setShowModal] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [alumniOpen, setAlumniOpen] = useState(false)
+  const [caseLogs, setCaseLogs] = useState<CaseLog[]>([])
 
   const fetchFeed = useCallback(() => {
     setLoading(true)
@@ -239,6 +264,10 @@ export default function FeedPage() {
 
   useEffect(() => {
     fetchFeed()
+    fetch('/api/case-logs')
+      .then(r => r.ok ? r.json() as Promise<CaseLog[]> : [])
+      .then(setCaseLogs)
+      .catch(() => {})
   }, [fetchFeed])
 
   function handleCaseCreated() {
@@ -403,6 +432,66 @@ export default function FeedPage() {
                   ))}
                 </div>
               )}
+            </section>
+          )}
+          {/* SECTION Activité récente */}
+          {caseLogs.length > 0 && (
+            <section className="mb-6">
+              <div className="bg-white rounded-xl border border-[#e4e4e7] p-5">
+                <h2 className="text-sm font-semibold text-[#1a1918] mb-4">📋 Activité récente</h2>
+                <div className="relative">
+                  <div className="absolute left-3.5 top-0 bottom-0 w-px bg-zinc-100" />
+                  <div className="space-y-4">
+                    {caseLogs.map((log) => (
+                      <div key={log.id} className="flex items-start gap-4 pl-1">
+                        <div className={[
+                          'w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5',
+                          log.action === 'status_changed' ? 'bg-blue-50 text-blue-600' :
+                          log.action === 'field_edited' ? 'bg-amber-50 text-amber-600' :
+                          log.action === 'email_sent' ? 'bg-green-50 text-green-600' :
+                          log.action === 'note_added' ? 'bg-purple-50 text-purple-600' :
+                          'bg-zinc-50 text-zinc-400'
+                        ].join(' ')}>
+                          <span className="text-xs">
+                            {log.action === 'status_changed' ? '🔄' :
+                             log.action === 'field_edited' ? '✏️' :
+                             log.action === 'email_sent' ? '📧' :
+                             log.action === 'note_added' ? '💬' :
+                             log.action === 'doc_uploaded' ? '📎' :
+                             '•'}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-[#1a1918]">{log.description}</p>
+                          {log.field_label && log.old_value && log.new_value && log.action !== 'status_changed' && (
+                            <p className="text-xs text-zinc-400 mt-0.5">
+                              <span className="line-through">{log.old_value}</span>
+                              {' → '}
+                              <span className="text-zinc-600">{String(log.new_value).substring(0, 50)}{String(log.new_value).length > 50 ? '…' : ''}</span>
+                            </p>
+                          )}
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs font-medium text-zinc-400">{log.author_name}</span>
+                            <span className="text-zinc-200">·</span>
+                            <span className="text-xs text-zinc-400">{relativeDate(log.created_at)}</span>
+                            {log.cases?.id && (
+                              <>
+                                <span className="text-zinc-200">·</span>
+                                <a
+                                  href={`/fr/cases/${log.cases.id}?tab=process`}
+                                  className="text-xs text-[#c8a96e] hover:underline"
+                                >
+                                  Voir le dossier →
+                                </a>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </section>
           )}
         </>

@@ -1,5 +1,33 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { logActivity } from '@/lib/activity-logger'
+
+const FIELD_LABELS: Record<string, string> = {
+  status: 'Statut',
+  qualification_notes: 'Commentaire entretien',
+  note_for_agent: 'Note pour agent visa',
+  payment_amount: 'Montant paiement',
+  payment_date: 'Date paiement',
+  payment_type: 'Type paiement',
+  invoice_number: 'Numéro facture',
+  actual_start_date: 'Date début stage',
+  actual_end_date: 'Date fin stage',
+  flight_number: 'Numéro de vol',
+  flight_departure_city: 'Ville départ',
+  flight_arrival_time_local: 'Heure arrivée locale',
+  billet_avion: 'Billet avion',
+  papiers_visas: 'Documents visa',
+  visa_recu: 'Visa reçu',
+  convention_signee_check: 'Convention signée',
+  chauffeur_reserve: 'Chauffeur réservé',
+  fazza_transfer_sent: 'Virement FAZZA',
+  fazza_transfer_amount_idr: 'Montant FAZZA (IDR)',
+  welcome_kit_sent_at: 'Welcome kit envoyé',
+  driver_booked: 'Chauffeur réservé',
+  discount_percentage: 'Remise %',
+  intern_level: 'Niveau étude',
+  diploma_track: 'Type diplôme',
+}
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient()
@@ -8,6 +36,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { id } = await params
   try {
     const body = await request.json() as Record<string, unknown>
+
+    // Fetch existing case for change detection
+    const { data: existingCase } = await supabase
+      .from('cases')
+      .select('*, interns(first_name, last_name)')
+      .eq('id', id)
+      .single()
+
     const { data, error } = await supabase
       .from('cases')
       .update({ ...body, updated_at: new Date().toISOString() })
@@ -15,6 +51,88 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       .select()
       .single()
     if (error) throw error
+
+    // Get author name
+    const { data: appUser } = await supabase
+      .from('app_users')
+      .select('full_name')
+      .eq('auth_user_id', user.id)
+      .maybeSingle()
+    const authorName = appUser?.full_name ?? user.email ?? 'Équipe'
+    const internData = (existingCase as Record<string, unknown>)?.interns as { first_name?: string; last_name?: string } | null
+    const internName = `${internData?.first_name ?? ''} ${internData?.last_name ?? ''}`.trim()
+
+    // Log field changes to case_logs
+    if (existingCase) {
+      for (const key of Object.keys(body)) {
+        if (!FIELD_LABELS[key]) continue
+        const oldVal = (existingCase as Record<string, unknown>)[key]
+        const newVal = body[key]
+        if (oldVal === newVal) continue
+
+        await supabase.from('case_logs').insert({
+          case_id: id,
+          author_name: authorName,
+          author_email: user.email,
+          action: key === 'status' ? 'status_changed' : 'field_edited',
+          field_name: key,
+          field_label: FIELD_LABELS[key],
+          old_value: String(oldVal ?? ''),
+          new_value: String(newVal ?? ''),
+          description: key === 'status'
+            ? `${authorName} a changé le statut de ${internName} : ${oldVal} → ${newVal}`
+            : `${authorName} a modifié ${FIELD_LABELS[key]}`,
+          metadata: { intern_name: internName },
+        }).then(() => {}, () => {})
+      }
+    }
+
+    // Activity logging for key field changes
+    if (body.payment_date || body.status === 'payment_received') {
+      await logActivity({
+        caseId: id,
+        type: 'payment_received',
+        title: `Paiement reçu — ${body.payment_amount ?? ''}€`,
+        description: `Paiement de ${body.payment_amount ?? '?'}€ confirmé par virement`,
+        priority: 'high',
+        metadata: { amount: body.payment_amount, payment_type: body.payment_type, invoice_number: body.invoice_number },
+      })
+    }
+    if (body.fazza_transfer_sent === true) {
+      await logActivity({
+        caseId: id,
+        type: 'fazza_transfer',
+        title: 'Virement FAZZA envoyé',
+        description: `Virement de ${body.fazza_transfer_amount_idr ?? '?'} IDR envoyé à l'agent visa`,
+        metadata: { amount_idr: body.fazza_transfer_amount_idr },
+      })
+    }
+    if (body.visa_recu === true) {
+      await logActivity({
+        caseId: id,
+        type: 'visa_received',
+        title: "Visa reçu de l'agent FAZZA",
+        description: 'Le visa a été reçu et est prêt pour le départ',
+        priority: 'high',
+      })
+    }
+    if (body.welcome_kit_sent_at) {
+      await logActivity({
+        caseId: id,
+        type: 'welcome_kit_sent',
+        title: 'Welcome kit envoyé',
+        description: 'Le welcome kit Bali Interns a été envoyé au stagiaire',
+      })
+    }
+    if (body.driver_booked === true || body.chauffeur_reserve === true) {
+      await logActivity({
+        caseId: id,
+        type: 'driver_booked',
+        title: 'Chauffeur réservé',
+        description: "Le chauffeur pour l'arrivée à l'aéroport a été confirmé",
+      })
+    }
+
     return NextResponse.json(data)
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
