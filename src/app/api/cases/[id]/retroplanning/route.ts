@@ -69,14 +69,14 @@ export async function POST(
   const retroItems = calculateRetroplanning(arrivalDate)
   const feedEntries = retroItems.map((item) => ({
     case_id: id,
-    action_type: 'retroplanning',
+    type: 'retroplanning',
+    title: `Rétro-planning J-${item.daysBeforeArrival}`,
     description: item.label,
     metadata: {
       days_before_arrival: item.daysBeforeArrival,
       target_date: item.date.toISOString(),
       priority: item.type,
     },
-    created_by: user.id,
   }))
 
   try {
@@ -85,7 +85,7 @@ export async function POST(
       .from('activity_feed')
       .delete()
       .eq('case_id', id)
-      .eq('action_type', 'retroplanning')
+      .eq('type', 'retroplanning')
 
     await supabase.from('activity_feed').insert(feedEntries)
   } catch {

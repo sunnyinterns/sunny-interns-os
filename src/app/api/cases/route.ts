@@ -232,13 +232,12 @@ export async function POST(request: Request) {
         first_name,
         last_name,
         email,
-        phone,
+        whatsapp: phone ?? null,
         nationality,
         birth_date,
         passport_number,
         passport_expiry,
         ...(main_desired_job ? { main_desired_job } : {}),
-        ...(school_name ? { school: school_name } : {}),
       })
       .select()
       .single()
@@ -252,9 +251,8 @@ export async function POST(request: Request) {
         intern_id: intern.id,
         status: 'lead',
         desired_start_date: start_date ?? null,
-        dropoff_address: dropoff_address ?? null,
-        internship_type: internship_type ?? null,
-        notes: notes ?? null,
+        case_type: internship_type ?? null,
+        qualification_notes: notes ?? null,
         assigned_manager_name: user.id,
       })
       .select()
@@ -266,9 +264,9 @@ export async function POST(request: Request) {
     try {
       await supabase.from('activity_feed').insert({
         case_id: newCase.id,
-        action_type: 'case_created',
+        type: 'case_created',
+        title: 'Nouveau dossier',
         description: `Dossier créé pour ${first_name} ${last_name}`,
-        created_by: user.id,
       })
     } catch {
       // Non-blocking

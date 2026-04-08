@@ -63,17 +63,16 @@ export async function POST(
   // Update intern cv_url
   await supabase.from('interns').update({ cv_url: publicUrl }).eq('id', caseRow.intern_id)
 
-  // Clear cv_revision_requested, mark cv_revision_done
+  // Update case timestamp
   await supabase.from('cases').update({
-    cv_revision_requested: false,
-    cv_revision_done: true,
     updated_at: new Date().toISOString(),
   }).eq('id', caseRow.id)
 
   // Activity log
   await supabase.from('activity_feed').insert({
     case_id: caseRow.id,
-    action_type: 'cv_uploaded',
+    type: 'cv_uploaded',
+    title: 'CV uploadé',
     description: `Nouveau CV uploadé par le candidat (v${versionNumber})`,
   })
 

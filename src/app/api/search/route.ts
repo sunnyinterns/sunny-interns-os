@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   try {
     const [internsRes, companiesRes, jobsRes] = await Promise.all([
       supabase.from('interns').select('id, first_name, last_name, email').or(`first_name.ilike.${pattern},last_name.ilike.${pattern},email.ilike.${pattern}`).limit(5),
-      supabase.from('companies').select('id, name, destination').ilike('name', pattern).limit(5),
+      supabase.from('companies').select('id, name, destination_id').ilike('name', pattern).limit(5),
       supabase.from('jobs').select('id, title, status').ilike('title', pattern).limit(5),
     ])
 

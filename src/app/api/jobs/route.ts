@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     .order('created_at', { ascending: false })
 
   if (status && status !== 'all') query = query.eq('status', status)
-  if (departmentId) query = query.eq('department_id', departmentId)
+  if (departmentId) query = query.eq('department', departmentId)
 
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     ...j,
     company_name: (j.companies as { name: string } | null)?.name ?? null,
     contact_name: j.contacts ? `${(j.contacts as { first_name: string; last_name: string | null }).first_name} ${(j.contacts as { first_name: string; last_name: string | null }).last_name ?? ''}`.trim() : null,
-    department_name: (j.job_departments as { name: string } | null)?.name ?? j.department ?? null,
+    department_name: j.department ?? null,
   }))
 
   return NextResponse.json(jobs)

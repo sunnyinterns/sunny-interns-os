@@ -43,7 +43,7 @@ export async function GET(request: Request) {
   // Fetch active cases with dates
   const { data: cases } = await supabase
     .from('cases')
-    .select('id, status, actual_start_date, actual_end_date, desired_start_date, alert_sent_flags, interns(email, first_name, last_name)')
+    .select('id, status, actual_start_date, actual_end_date, desired_start_date, alert_j7_sent, alert_j4_sent, interns(email, first_name, last_name)')
     .in('status', ['convention_signed', 'payment_pending', 'payment_received', 'visa_in_progress', 'visa_received', 'arrival_prep', 'active'])
 
   if (!cases || cases.length === 0) {
@@ -54,7 +54,7 @@ export async function GET(request: Request) {
   let alertsSent = 0
 
   for (const c of cases) {
-    const sentFlags = (c.alert_sent_flags ?? {}) as Record<string, boolean>
+    const sentFlags = { j7: c.alert_j7_sent ?? false, j4: c.alert_j4_sent ?? false } as Record<string, boolean>
     const newFlags: Record<string, boolean> = {}
     let updated = false
 

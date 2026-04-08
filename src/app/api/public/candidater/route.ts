@@ -93,7 +93,7 @@ export async function POST(request: Request) {
         first_name: d.first_name,
         last_name: d.last_name,
         email: d.email,
-        phone: d.whatsapp ?? null,
+        whatsapp: d.whatsapp ?? null,
         nationality,
         birth_date: d.birth_date || null,
         sexe: d.sexe || null,
@@ -103,22 +103,24 @@ export async function POST(request: Request) {
         passport_issue_date: d.passport_issue_date || null,
         intern_level: d.intern_level || null,
         diploma_track: d.diploma_track || null,
-        school: d.school || null,
         main_desired_job: d.main_desired_job || null,
         spoken_languages: d.spoken_languages ?? null,
         linkedin_url: d.linkedin_url || null,
         cv_url: d.cv_url || null,
         school_contact_name: d.school_contact_name || null,
         school_contact_email: d.school_contact_email || null,
-        school_contact_phone: d.school_contact_phone || null,
         emergency_contact_name: d.emergency_contact_name || null,
         emergency_contact_phone: d.emergency_contact_phone || null,
         touchpoint: d.touchpoint || null,
         referred_by_code: d.referred_by_code || null,
         stage_ideal: d.stage_ideal || null,
-        desired_duration: d.desired_duration || null,
         desired_end_date: d.desired_end_date || null,
         affiliate_id: affiliateInternId || null,
+        commitment_price_accepted: d.commitment_price_accepted ?? false,
+        commitment_budget_accepted: d.commitment_budget_accepted ?? false,
+        commitment_terms_accepted: d.commitment_terms_accepted ?? false,
+        commitment_accepted_at: d.commitment_price_accepted ? new Date().toISOString() : null,
+        commitment_ip: d.commitment_price_accepted ? ip : null,
       })
       .select()
       .single()
@@ -132,15 +134,9 @@ export async function POST(request: Request) {
         intern_id: intern.id,
         status: d.rdv_slot_start ? 'rdv_booked' : 'lead',
         desired_start_date: d.desired_start_date || null,
-        internship_type: 'stage',
-        notes: d.comment || null,
-        commitment_price_accepted: d.commitment_price_accepted ?? false,
-        commitment_budget_accepted: d.commitment_budget_accepted ?? false,
-        commitment_terms_accepted: d.commitment_terms_accepted ?? false,
-        commitment_accepted_at: d.commitment_price_accepted ? new Date().toISOString() : null,
-        commitment_ip: d.commitment_price_accepted ? ip : null,
-        referred_by_code: d.referred_by_code || null,
-        rdv_start_at: d.rdv_slot_start || null,
+        case_type: 'stage',
+        qualification_notes: d.comment || null,
+        ...(d.rdv_slot_start ? { intern_first_meeting_date: d.rdv_slot_start } : {}),
       })
       .select()
       .single()
@@ -159,14 +155,15 @@ export async function POST(request: Request) {
     const code = `${d.first_name.toUpperCase().slice(0, 5)}${Math.random().toString(36).slice(2, 6).toUpperCase()}`
     await supabase
       .from('affiliate_codes')
-      .insert({ code, intern_id: intern.id, case_id: newCase.id })
+      .insert({ code, intern_id: intern.id })
       .select()
       .single()
 
     // 7. Activity feed
     await supabase.from('activity_feed').insert({
       case_id: newCase.id,
-      action_type: 'case_created',
+      type: 'case_created',
+      title: 'Nouvelle candidature',
       description: `Candidature de ${d.first_name} ${d.last_name}${d.rdv_slot_start ? ' — RDV planifié' : ''}`,
     })
 

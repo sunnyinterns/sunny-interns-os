@@ -35,16 +35,15 @@ export async function POST(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  const body = await request.json() as { action_type: string; description: string; author_name?: string }
+  const body = await request.json() as { type?: string; action_type?: string; description: string; title?: string }
 
   const { data, error } = await supabase
     .from('activity_feed')
     .insert({
       case_id: id,
-      action_type: body.action_type,
+      type: body.type ?? body.action_type ?? 'note',
+      title: body.title ?? null,
       description: body.description,
-      author_name: body.author_name ?? null,
-      created_by: user.id,
     })
     .select()
     .single()

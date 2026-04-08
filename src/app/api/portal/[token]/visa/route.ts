@@ -65,13 +65,15 @@ export async function POST(
     await supabase.from('cases').update({ papiers_visas: true, updated_at: new Date().toISOString() }).eq('id', caseRow.id)
     await supabase.from('activity_feed').insert({
       case_id: caseRow.id,
-      action_type: 'visa_docs_ready',
+      type: 'visa_docs_ready',
+      title: 'Documents visa complets',
       description: 'Documents visa complets - envoi agent possible',
     })
   } else {
     await supabase.from('activity_feed').insert({
       case_id: caseRow.id,
-      action_type: 'doc_uploaded',
+      type: 'doc_uploaded',
+      title: 'Document uploadé',
       description: `Document uploadé par le candidat: ${field.replace(/_url$/, '').replace(/_/g, ' ')}`,
     })
   }

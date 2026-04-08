@@ -22,7 +22,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ token:
 
   await supabase.from('cases').update({
     logement_scooter_formulaire: true,
-    ...(housingId ? { housing_id: housingId } : {}),
+    ...(housingId ? { guesthouse_preselection: [housingId] } : {}),
   }).eq('id', caseData.id)
 
   if (caseData.intern_id && wantsScooter !== undefined) {

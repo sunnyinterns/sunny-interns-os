@@ -32,9 +32,9 @@ export async function PATCH(
   try {
     await supabase.from('activity_feed').insert({
       case_id: id,
-      action_type: 'status_changed',
+      type: 'status_changed',
+      title: 'Changement de statut',
       description: `Statut → ${newStatus}`,
-      created_by: user.id,
     })
   } catch { /* non-blocking */ }
 

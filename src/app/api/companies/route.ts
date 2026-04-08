@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   try {
     let query = supabase.from('companies').select('*, jobs(id, status)')
     if (q) query = query.ilike('name', `%${q}%`)
-    if (destination && destination !== 'all') query = query.eq('destination', destination)
+    if (destination && destination !== 'all') query = query.eq('destination_id', destination)
     const { data, error } = await query.order('name')
     if (error) throw error
     return NextResponse.json(data ?? [])

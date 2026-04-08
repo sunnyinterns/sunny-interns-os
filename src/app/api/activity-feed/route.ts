@@ -22,7 +22,6 @@ export async function GET(request: Request) {
   let query = supabase
     .from('activity_feed')
     .select('*, cases(id, intern_id, assigned_manager_name, interns(first_name, last_name))')
-    .or('snoozed_until.is.null,snoozed_until.lt.' + new Date().toISOString())
     .order('created_at', { ascending: false })
     .limit(limit)
 
@@ -50,14 +49,13 @@ export async function GET(request: Request) {
     return {
       id: item.id,
       type: item.type,
-      message: item.message,
+      message: item.title ?? item.description,
       priority: item.priority || 'normal',
       status: item.status || 'pending',
       assigned_to: caseData?.assigned_manager_name || null,
       case_id: item.case_id,
       intern_name: caseData?.interns ? `${caseData.interns.first_name} ${caseData.interns.last_name}` : null,
       action_url: item.case_id ? `/fr/cases/${item.case_id}` : null,
-      snoozed_until: item.snoozed_until,
       created_at: item.created_at,
     }
   })
@@ -70,12 +68,11 @@ export async function PATCH(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await request.json() as { id: string; status?: string; snoozed_until?: string }
+  const body = await request.json() as { id: string; status?: string }
   if (!body.id) return NextResponse.json({ error: 'id requis' }, { status: 400 })
 
   const updates: Record<string, unknown> = {}
   if (body.status) updates.status = body.status
-  if (body.snoozed_until) updates.snoozed_until = body.snoozed_until
 
   const { data, error } = await supabase
     .from('activity_feed')

@@ -150,9 +150,9 @@ export async function POST(request: Request) {
     // Log activity
     await supabase.from('activity_feed').insert({
       case_id,
-      action_type: `touchpoint_${touchpoint_key}`,
+      type: `touchpoint_${touchpoint_key}`,
+      title: `Touchpoint ${tp.key.toUpperCase()}`,
       description: `Touchpoint ${tp.key.toUpperCase()} envoyé à ${email}`,
-      created_by: user.id,
     })
 
     return NextResponse.json({ success: true, touchpoint: tp.key })
