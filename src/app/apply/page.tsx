@@ -583,14 +583,20 @@ export default function ApplyPage() {
     if (form.first_name) params.set('firstName', form.first_name)
     if (form.last_name) params.set('lastName', form.last_name)
     window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`)
-    const existing = document.getElementById('fillout-script')
-    if (existing) existing.remove()
-    const script = document.createElement('script')
-    script.id = 'fillout-script'
-    script.src = 'https://server.fillout.com/embed/v1/'
-    script.async = true
-    document.head.appendChild(script)
+    // Délai court pour que le DOM soit mis à jour avec les data-attributes
+    const timer = setTimeout(() => {
+      const existing = document.getElementById('fillout-script')
+      if (existing) existing.remove()
+      // Nettoyer les anciens embeds fillout
+      document.querySelectorAll('[data-fillout-widget]').forEach(el => el.remove())
+      const script = document.createElement('script')
+      script.id = 'fillout-script'
+      script.src = 'https://server.fillout.com/embed/v1/'
+      script.async = true
+      document.head.appendChild(script)
+    }, 100)
     return () => {
+      clearTimeout(timer)
       const s = document.getElementById('fillout-script')
       if (s) s.remove()
       window.history.replaceState({}, '', window.location.pathname)
@@ -1597,11 +1603,16 @@ export default function ApplyPage() {
             </div>
             {/* Fillout scheduling embed — standard */}
             <div
+              key={`fillout-${form.first_name}-${form.email}`}
               style={{ width: '100%', height: '500px' }}
               data-fillout-id="iqn73wjLFeus"
               data-fillout-embed-type="standard"
               data-fillout-inherit-parameters
               data-fillout-dynamic-resize
+              {...(form.first_name && form.last_name ? { 'data-name': `${form.first_name} ${form.last_name}`.trim() } : {})}
+              {...(form.first_name ? { 'data-firstName': form.first_name } : {})}
+              {...(form.last_name ? { 'data-lastName': form.last_name } : {})}
+              {...(form.email ? { 'data-email': form.email } : {})}
             />
             <p className="text-xs text-zinc-400 text-center">
               {lang === 'fr'
