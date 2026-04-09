@@ -322,7 +322,15 @@ export default function FeedPage() {
           <h1 className="text-lg font-semibold text-[#1a1918]">Bonjour 👋</h1>
           <p className="text-xs text-zinc-400 mt-0.5 capitalize">{today}</p>
         </div>
-        <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
+        <a
+              href="/apply"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#c8a96e] text-[#c8a96e] rounded-lg hover:bg-[#c8a96e] hover:text-white transition-colors"
+            >
+              🔗 Formulaire candidat
+            </a>
+            <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
           + Nouveau dossier
         </Button>
       </div>

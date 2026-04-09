@@ -137,6 +137,14 @@ export default function PipelinePage() {
           <Button variant="secondary" size="sm" onClick={() => setShowGroupModal(true)}>
             + Groupe
           </Button>
+          <a
+            href="/apply"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#c8a96e] text-[#c8a96e] rounded-lg hover:bg-[#c8a96e] hover:text-white transition-colors"
+          >
+            🔗 Candidat
+          </a>
           <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
             + Nouveau
           </Button>
