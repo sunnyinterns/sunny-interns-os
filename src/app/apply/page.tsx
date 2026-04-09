@@ -536,15 +536,18 @@ export default function ApplyPage() {
 
   // Vérification email en temps réel
   useEffect(() => {
-    const email = form.email
-    if (!email || !isValidEmail(email)) { setEmailExists(false); return }
+    const email = (form.email as string) ?? ''
+    if (!email || !isValidEmail(email)) { setEmailExists(false); setEmailChecking(false); return }
+    setEmailChecking(true)
     const timer = setTimeout(() => {
-      setEmailChecking(true)
-      fetch('/api/check-email?email=' + encodeURIComponent(email))
-        .then(r => r.json())
-        .then((d: { exists: boolean }) => { setEmailExists(d.exists); setEmailChecking(false) })
-        .catch(() => setEmailChecking(false))
-    }, 600)
+      const controller = new AbortController()
+      const timeout = setTimeout(() => { controller.abort(); setEmailChecking(false) }, 3000)
+      fetch('/api/check-email?email=' + encodeURIComponent(email), { signal: controller.signal })
+        .then(r => r.ok ? r.json() : { exists: false })
+        .then((d: { exists: boolean }) => { setEmailExists(!!d.exists); setEmailChecking(false) })
+        .catch(() => { setEmailExists(false); setEmailChecking(false) })
+        .finally(() => clearTimeout(timeout))
+    }, 800)
     return () => clearTimeout(timer)
   }, [form.email])
 
@@ -622,13 +625,14 @@ export default function ApplyPage() {
   function canNext(): boolean {
     switch (step) {
       case 0: {
-        const phoneErr = validatePhone(form.whatsapp_code ?? '+33', form.whatsapp_number)
+        // Phone = warning only (not blocking — formats vary by country)
+        // emailChecking = NOT blocking (API might be slow)
         return !!(
           form.first_name.trim() && form.last_name.trim() &&
           form.email.trim() && isValidEmail(form.email) &&
-          !emailExists && !emailChecking &&
-          form.whatsapp_number.trim() && !phoneErr &&
-          form.nationalities.length > 0 &&
+          !emailExists &&
+          form.whatsapp_number.trim() &&
+          (form.nationalities as string[]).length > 0 &&
           form.birth_date && form.passport_expiry
         )
       }
