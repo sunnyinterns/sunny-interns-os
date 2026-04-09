@@ -63,15 +63,16 @@ function ConfirmationContent() {
             </div>
           </div>
           <div className="flex items-start gap-3 bg-white border border-zinc-200 rounded-xl p-4">
-            <span className="text-xl flex-shrink-0">{'\uD83D\uDCF1'}</span>
+            <span className="text-xl flex-shrink-0">{'ℹ️'}</span>
             <div>
               <p className="text-sm font-medium text-[#1a1918]">
-                {isFr ? 'WhatsApp sous 24h' : 'WhatsApp within 24h'}
+                {isFr ? "Pas d'email reçu ?" : "No confirmation email?"}
               </p>
               <p className="text-xs text-zinc-500">
                 {isFr
-                  ? "L'\u00e9quipe te contactera sous 24h sur WhatsApp."
-                  : 'The team will contact you within 24h on WhatsApp.'}
+                  ? <span>Contacte-nous à <a href="mailto:team@bali-interns.com" className="text-[#c8a96e] underline">team@bali-interns.com</a></span>
+                  : <span>Contact us at <a href="mailto:team@bali-interns.com" className="text-[#c8a96e] underline">team@bali-interns.com</a></span>
+                }
               </p>
             </div>
           </div>

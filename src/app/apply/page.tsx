@@ -597,6 +597,7 @@ export default function ApplyPage() {
       clearTimeout(timer)
       const s = document.getElementById('fillout-script')
       if (s) s.remove()
+      document.querySelectorAll('[class*="fillout"], [id*="fillout"], iframe[src*="fillout"]').forEach(el => el.remove())
       window.history.replaceState({}, '', window.location.pathname)
     }
   }, [step, form.first_name, form.last_name, form.email])
@@ -753,7 +754,7 @@ export default function ApplyPage() {
       }
 
       localStorage.removeItem('apply_form_v1')
-      router.push(`/apply/confirmation?name=${encodeURIComponent(form.first_name)}&lang=${lang}`)
+      // candidature soumise — on avance vers step 4 (Fillout RDV)
     } catch (e) {
       setError(e instanceof Error ? e.message : T('Erreur inconnue', 'Unknown error', lang))
     } finally {
@@ -1615,6 +1616,14 @@ export default function ApplyPage() {
                 ? "Le créneau sera confirmé par email • Manila (GMT+8)"
                 : "The slot will be confirmed by email • Manila (GMT+8)"}
             </p>
+            <div className="mt-6 p-4 bg-[#0d9e75]/10 rounded-xl text-center">
+              <p className="text-sm text-[#0d9e75] font-medium mb-3">
+                {lang === 'fr' ? 'RDV réservé ? 🎉' : 'Slot booked? 🎉'}
+              </p>
+              <button type="button" onClick={() => router.push(`/apply/confirmation?name=${encodeURIComponent(form.first_name)}&lang=${lang}&rdv=1`)} className="px-6 py-2.5 rounded-xl text-sm font-bold bg-[#0d9e75] text-white hover:bg-[#0a8a65] transition-all">
+                {lang === 'fr' ? 'Terminer ✓' : 'Done ✓'}
+              </button>
+            </div>
           </div>
         )}
 
@@ -1651,7 +1660,7 @@ export default function ApplyPage() {
             <button
               type="button"
               disabled={!canNext() || submitting}
-              onClick={() => { void handleSubmit() }}
+              onClick={async () => { await handleSubmit(); setStep(4); setError(''); window.scrollTo(0,0) }}
               className="flex-1 py-3 min-h-[48px] rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a]"
             >
               {submitting
