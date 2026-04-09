@@ -34,17 +34,29 @@ function ConfirmationContent() {
           Your application has been received!
         </p>
 
-        <p className="text-sm text-[#8a7d6d] mb-8">
+        <p className="text-sm text-[#8a7d6d] mb-2">
           Tu vas recevoir un email de confirmation dans quelques minutes.
           <br />
           You will receive a confirmation email shortly.
         </p>
 
+        <p className="text-sm text-[#c8a96e]/80 mb-8">
+          Nous te contactons dans les 24h.
+          <br />
+          We&apos;ll get back to you within 24 hours.
+        </p>
+
         <a
           href="/portal"
-          className="inline-flex items-center justify-center w-full py-3 rounded-xl text-sm font-bold bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a] transition-all"
+          className="inline-flex items-center justify-center w-full py-3 rounded-xl text-sm font-bold bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a] transition-all mb-3"
         >
           Accéder à ton espace / Access your space
+        </a>
+        <a
+          href="/"
+          className="inline-flex items-center justify-center w-full py-3 rounded-xl text-sm font-medium border border-[#c8a96e]/30 text-[#c8a96e] hover:bg-[#c8a96e]/10 transition-all"
+        >
+          Retour à l&apos;accueil / Back to homepage
         </a>
       </div>
     </div>

@@ -828,11 +828,6 @@ export default function ApplyPage() {
                   <option key={country} value={country}>{country}</option>
                 ))}
               </select>
-              <p className={helperClass}>
-                {lang==='fr'
-                  ? "Pays dans lequel ta convention de stage sera \u00e9tablie de droit commun."
-                  : "Country where your internship agreement will be issued by law."}
-              </p>
             </div>
           </div>
         )}
