@@ -47,8 +47,9 @@ export async function POST(request: Request) {
     const email = emailParam || emailQuestion
 
     if (!email) {
-      console.error('[Fillout webhook] No email found in payload')
-      return NextResponse.json({ error: 'No email' }, { status: 400 })
+      // Payload de test Fillout sans email — on ignore gracieusement
+      console.log('[Fillout webhook] Test payload received (no email) - webhook is connected!')
+      return NextResponse.json({ ok: true, message: 'Webhook connected - test payload received' })
     }
 
     // Trouver le case associé à cet email
