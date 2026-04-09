@@ -545,8 +545,7 @@ export default function ApplyPage() {
           form.email.trim() && isValidEmail(form.email) &&
           form.whatsapp_number.trim() &&
           form.nationalities.length > 0 &&
-          form.birth_date && form.passport_expiry &&
-          form.school_country
+          form.birth_date && form.passport_expiry
         )
       case 1:
         return !!(form.cv_en_file && form.spoken_languages.length > 0 && !cvUploading)
@@ -1417,17 +1416,21 @@ export default function ApplyPage() {
               {lang==='fr'?'Retour':'Back'}
             </button>
           )}
-          {step < 5 ? (
+          {step < 4 ? (
             <button
               type="button"
               disabled={!canNext()}
               onClick={() => { setStep(s => s + 1); setError('') }}
               className="flex-1 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a]"
             >
-              {step === 4
-                ? (lang==='fr'?'Réserver mon appel gratuit 🎉':'Book My Free Call 🎉')
-                : (lang==='fr'?'Continuer →':'Continue →')}
+              {lang==='fr'?'Continuer →':'Continue →'}
             </button>
+          ) : step === 4 ? (
+            <p className="flex-1 text-center text-sm text-zinc-400 py-3">
+              {lang==='fr'
+                ? '👆 Choisis ton créneau ci-dessus pour confirmer ton RDV'
+                : '👆 Choose your slot above to confirm your booking'}
+            </p>
           ) : (
             <button
               type="button"
