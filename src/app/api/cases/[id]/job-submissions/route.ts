@@ -28,3 +28,34 @@ export async function GET(
     return NextResponse.json([], { status: 200 })
   }
 }
+
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id } = await params
+  try {
+    const body = await request.json() as { job_id: string }
+    if (!body.job_id) return NextResponse.json({ error: 'job_id requis' }, { status: 400 })
+
+    const { data, error } = await supabase
+      .from('job_submissions')
+      .insert({
+        case_id: id,
+        job_id: body.job_id,
+        status: 'proposed',
+        created_by: user.id,
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+    return NextResponse.json(data, { status: 201 })
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 })
+  }
+}

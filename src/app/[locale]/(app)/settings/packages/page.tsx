@@ -15,7 +15,7 @@ interface Package {
   is_visa_only: boolean
   is_active: boolean
   visa_types: { id: string; code: string; name: string; validity_label: string | null; max_stay_days: number | null } | null
-  visa_agents: { id: string; name: string } | null
+  visa_agents: { id: string; company_name: string } | null
 }
 
 const TYPE_COLORS = {
@@ -165,7 +165,7 @@ export default function PackagesPage() {
                     ) : (
                       <div className="flex flex-wrap gap-3 text-xs text-zinc-500">
                         {pkg.visa_types && <span>Visa: <strong className="text-[#1a1918]">{pkg.visa_types.code}</strong></span>}
-                        {pkg.visa_agents && <span>Agent: <strong className="text-[#1a1918]">{pkg.visa_agents.name}</strong></span>}
+                        {pkg.visa_agents && <span>Agent: <strong className="text-[#1a1918]">{pkg.visa_agents.company_name}</strong></span>}
                         {pkg.max_stay_days && <span>Séjour: <strong className="text-[#1a1918]">{pkg.max_stay_days}j max</strong></span>}
                         {pkg.processing_days && <span>Délai: <strong className="text-[#1a1918]">{pkg.processing_days}j</strong></span>}
                         {pkg.visa_cost_idr && <span>Coût visa: <strong className="text-[#1a1918]">{formatIDR(pkg.visa_cost_idr)}</strong></span>}

@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   const all = searchParams.get('all') === 'true'
   let query = supabase
     .from('packages')
-    .select('*, visa_types(id, code, name, validity_label, max_stay_days), visa_agents(id, name)')
+    .select('*, visa_types(id, code, name, validity_label, max_stay_days), visa_agents(id, company_name)')
     .order('price_eur')
   if (!all) query = query.eq('is_active', true)
   const { data, error } = await query
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const body = await request.json() as Record<string, unknown>
-  const { data, error } = await supabase.from('packages').insert(body).select('*, visa_types(id, code, name), visa_agents(id, name)').single()
+  const { data, error } = await supabase.from('packages').insert(body).select('*, visa_types(id, code, name), visa_agents(id, company_name)').single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data, { status: 201 })
 }

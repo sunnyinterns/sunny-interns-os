@@ -53,14 +53,19 @@ function getCta(status: string, googleMeetLink: string | null): { label: string;
   return { label: 'Voir dossier', action: 'navigate_case' }
 }
 
-function computeUrgency(status: string, daysSince: number, internFirstMeetingDate: string | null): 'critical' | 'high' | 'normal' | 'low' {
+function computeUrgency(status: string, daysSince: number, internFirstMeetingDate: string | null, visaSubmittedAt: string | null): 'critical' | 'high' | 'normal' | 'low' {
   if (status === 'lead' && daysSince > 3) return 'critical'
   if (status === 'rdv_booked' && internFirstMeetingDate) {
     const meetDate = new Date(internFirstMeetingDate)
     if (meetDate.getTime() < Date.now()) return 'high'
   }
+  if (status === 'payment_pending' && daysSince > 7) return 'critical'
   if (status === 'payment_pending' && daysSince > 5) return 'high'
   if (status === 'visa_docs_sent' && daysSince > 3) return 'high'
+  if (status === 'visa_submitted' && visaSubmittedAt) {
+    const daysSinceVisa = Math.floor((Date.now() - new Date(visaSubmittedAt).getTime()) / 86400000)
+    if (daysSinceVisa > 25) return 'high'
+  }
   return 'normal'
 }
 
@@ -167,10 +172,11 @@ export async function GET() {
     }
 
     if (TODO_STATUSES.includes(c.status)) {
-      item.urgency = computeUrgency(c.status, daysSince, c.intern_first_meeting_date)
+      item.urgency = computeUrgency(c.status, daysSince, c.intern_first_meeting_date, c.visa_submitted_to_agent_at)
       item.days_info = computeDaysInfo('todo', c.status, daysSince, daysUntilArrival)
       todo.push(item)
     } else if (WAITING_STATUSES.includes(c.status)) {
+      item.urgency = computeUrgency(c.status, daysSince, c.intern_first_meeting_date, c.visa_submitted_to_agent_at)
       item.days_info = computeDaysInfo('waiting', c.status, daysSince, daysUntilArrival)
       // suggest_action for stale waiting items
       if (c.status === 'job_retained' && daysSince > 3) {

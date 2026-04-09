@@ -22,6 +22,7 @@ export function Sidebar() {
   const [pipelineCount, setPipelineCount] = useState<number | null>(null)
   const [hasTodos, setHasTodos] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [unreadNotifs, setUnreadNotifs] = useState(0)
 
   useEffect(() => {
     const isSettings = pathname.startsWith('/fr/settings')
@@ -41,6 +42,11 @@ export function Sidebar() {
   }, [])
 
   useEffect(() => {
+    fetch('/api/admin-notifications/count')
+      .then((res) => res.ok ? res.json() as Promise<{ unread: number }> : null)
+      .then((data) => { if (data) setUnreadNotifs(data.unread) })
+      .catch(() => {})
+
     fetch('/api/jobs?status=open')
       .then((res) => res.ok ? res.json() as Promise<unknown[]> : Promise.resolve([]))
       .then((data) => setOpenJobsCount(Array.isArray(data) ? data.length : 0))
@@ -135,6 +141,7 @@ export function Sidebar() {
     { href: '/fr/settings/ugc', label: 'UGC', indent: true, icon: <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.069A1 1 0 0121 8.869v6.262a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg> },
     { href: '/fr/settings/users', label: 'Utilisateurs', indent: true, icon: <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg> },
     { href: '/fr/settings/templates', label: 'Contrats', indent: true, icon: <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> },
+    { href: '/fr/settings/schools', label: 'Écoles', indent: true, icon: <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /></svg> },
   ]
 
   function isActive(href: string) {
@@ -194,6 +201,11 @@ export function Sidebar() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
             Paramètres
+            {unreadNotifs > 0 && (
+              <span className="ml-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full text-white text-[10px] font-semibold bg-[#dc2626]">
+                {unreadNotifs}
+              </span>
+            )}
             <svg
               width="14" height="14"
               className={['ml-auto transition-transform', settingsOpen ? 'rotate-90' : ''].join(' ')}
