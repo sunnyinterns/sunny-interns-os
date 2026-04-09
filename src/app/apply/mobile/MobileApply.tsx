@@ -1025,7 +1025,7 @@ export function MobileApply({
 
   // ── Main render ──
   return (
-    <div className="min-h-screen bg-[#fafaf9] flex flex-col" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+    <div className="min-h-screen bg-[#fafaf9] flex flex-col" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       {/* Progress bar */}
       <div className="flex-shrink-0">
         <div className="h-1 bg-zinc-100">
@@ -1090,9 +1090,17 @@ export function MobileApply({
         )}
       </div>
 
-      {/* Bottom navigation */}
+      {/* Bottom navigation — position fixe au bas du viewport */}
       {!isSchedule && (
-        <div className="px-6 pt-4 flex-shrink-0 border-t border-zinc-100 bg-[#fafaf9]" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
+        <div className="px-6 pt-3 border-t border-zinc-100 bg-[#fafaf9]"
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 50,
+            paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+          }}>
           <button
             onClick={goNext}
             disabled={(question.required !== false && !canGoNext()) || submitting}
