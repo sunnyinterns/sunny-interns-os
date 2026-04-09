@@ -338,6 +338,7 @@ function FileUpload({
 export default function ApplyPage() {
   const [step, setStep] = useState(0)
   const [lang, setLang] = useState<'fr'|'en'>('fr')
+  const [phoneDropOpen, setPhoneDropOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [price, setPrice] = useState(990)
@@ -687,30 +688,47 @@ export default function ApplyPage() {
             {/* WhatsApp */}
             <div>
               <label className={labelClass}>WhatsApp*</label>
-              <div className="flex gap-2 items-start">
-                <select
-                  value={form.whatsapp_code}
-                  onChange={e => set('whatsapp_code', e.target.value)}
-                  className={`${inputClass} w-28 flex-shrink-0 text-sm`}
-                >
-                  {COUNTRY_PHONE_CODES.map((c, i) => (
-                    <option key={`${c.name}-${i}`} value={c.code}>
-                      {c.flag} {c.code} {c.name}
-                    </option>
-                  ))}
-                </select>
+              <div className="flex gap-2">
+                {/* Indicatif custom dropdown */}
+                <div className="relative flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setPhoneDropOpen(o => !o)}
+                    className="flex items-center gap-1.5 px-3 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-[#1a1918] hover:border-[#c8a96e] transition-colors"
+                  >
+                    <span>{COUNTRY_PHONE_CODES.find(p => p.code === form.whatsapp_code)?.flag ?? '🌍'}</span>
+                    <span className="text-zinc-600">{form.whatsapp_code}</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M19 9l-7 7-7-7"/></svg>
+                  </button>
+                  {phoneDropOpen && (
+                    <div className="absolute z-50 top-full left-0 mt-1 w-56 max-h-60 overflow-y-auto bg-white border border-zinc-200 rounded-xl shadow-xl">
+                      {COUNTRY_PHONE_CODES.map((p, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => { set('whatsapp_code', p.code); setPhoneDropOpen(false) }}
+                          className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-50 text-left transition-colors ${p.code === form.whatsapp_code ? 'text-[#c8a96e] font-semibold' : 'text-[#1a1918]'}`}
+                        >
+                          <span className="flex-shrink-0 text-base">{p.flag}</span>
+                          <span className="text-zinc-400 text-xs flex-shrink-0">{p.code}</span>
+                          <span className="truncate text-xs">{p.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {phoneDropOpen && <div className="fixed inset-0 z-40" onClick={() => setPhoneDropOpen(false)} />}
+                </div>
+                {/* Input numéro */}
                 <input
                   type="tel"
                   value={form.whatsapp_number}
                   onChange={e => set('whatsapp_number', e.target.value)}
-                  className={inputClass}
-                  placeholder="6 12 34 56 78"
+                  className={`${inputClass} flex-1`}
+                  placeholder={lang === 'fr' ? '6 12 34 56 78' : '612 345 678'}
                 />
               </div>
               <p className={helperClass}>
-                Tout le monde à Bali l&apos;utilise, mets un numéro joignable !
-                <br />
-                Everyone uses it in Bali, make sure the number is correct.
+                📱 {lang === 'fr' ? "Tout le monde à Bali l'utilise, mets un numéro joignable !" : "Everyone uses it in Bali, make sure the number is correct."}
               </p>
             </div>
 
@@ -733,7 +751,7 @@ export default function ApplyPage() {
                 onChange={e => { setNationalitySearch(e.target.value); setShowNationalityDropdown(true) }}
                 onFocus={() => setShowNationalityDropdown(true)}
                 className={inputClass}
-                placeholder="Rechercher un pays / Search country..."
+                placeholder={lang==='fr' ? "Rechercher un pays..." : "Search country..."}
               />
               {showNationalityDropdown && filteredNationalities.length > 0 && (
                 <div className="absolute z-40 w-full mt-1 max-h-48 overflow-y-auto bg-white border border-zinc-200 rounded-xl shadow-lg">
@@ -767,13 +785,13 @@ export default function ApplyPage() {
 
             {/* Passeport expiry */}
             <div>
-              <label className={labelClass}>Date d&apos;expiration du passeport* / Passport expiry date*</label>
+              <label className={labelClass}>{lang==='fr'?"Date d'expiration du passeport *":'Passport expiry date *'}</label>
               <input type="date" value={form.passport_expiry} onChange={e => set('passport_expiry', e.target.value)} className={inputClass} />
               {passportWarning && (
                 <p className="mt-2 text-sm text-amber-400 bg-amber-900/20 border border-amber-800/30 rounded-lg px-3 py-2">
-                  Ton passeport doit être valide au moins 6 mois après ton arrivée à Bali
-                  <br />
-                  Your passport must be valid at least 6 months after your arrival in Bali
+                  {lang === 'fr'
+                    ? "⚠️ Ton passeport doit être valide au moins 6 mois après ton arrivée à Bali. Tu pourras le mettre à jour plus tard."
+                    : "⚠️ Your passport must be valid at least 6 months after your arrival in Bali. You can update it later."}
                 </p>
               )}
             </div>
@@ -791,12 +809,12 @@ export default function ApplyPage() {
                 }}
                 onFocus={() => setShowSchoolCountryDropdown(true)}
                 className={inputClass}
-                placeholder="Rechercher un pays / Search country..."
+                placeholder={lang==='fr' ? "Rechercher un pays..." : "Search country..."}
               />
               <p className={helperClass}>
-                Pays dans lequel votre convention de stage sera établie (droit commun)
-                <br />
-                Country where your internship agreement will be issued (by law)
+                {lang === 'fr'
+                  ? "Pays dans lequel ta convention de stage sera établie de droit commun."
+                  : "Country where your internship agreement will be issued by law."}
               </p>
               {showSchoolCountryDropdown && filteredSchoolCountries.length > 0 && (
                 <div className="absolute z-40 w-full mt-1 max-h-48 overflow-y-auto bg-white border border-zinc-200 rounded-xl shadow-lg">
