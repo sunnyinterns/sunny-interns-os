@@ -1,0 +1,975 @@
+'use client'
+
+import { useState, useRef, useEffect, useCallback } from 'react'
+
+// ─── Types ─────────────────────────────────────────────────────
+// Re-use the same FormData shape from the parent page
+type FormData = {
+  first_name: string
+  last_name: string
+  email: string
+  whatsapp_code: string
+  whatsapp_number: string
+  nationalities: string[]
+  birth_date: string
+  passport_expiry: string
+  school_country: string
+  linkedin_url: string
+  cv_en_file: File | null
+  cv_en_filename: string
+  cv_local_file: File | null
+  cv_local_filename: string
+  cv_url: string
+  local_cv_url: string
+  extra_docs_files: File[]
+  extra_docs_names: string[]
+  spoken_languages: string[]
+  school_search: string
+  school_id: string | null
+  school_name: string
+  school_not_found: boolean
+  school_custom_name: string
+  end_date: string
+  desired_jobs: string[]
+  custom_jobs: string[]
+  custom_job_input: string
+  duration: string
+  start_date: string
+  stage_ideal: string
+  commitment_price: boolean
+  commitment_budget: boolean
+  commitment_terms: boolean
+  touchpoints: string[]
+  touchpoint: string
+  referred_by_code: string
+  rdv_slot: string
+}
+
+interface JobType {
+  id: string
+  name: string
+  name_fr: string | null
+  name_en: string | null
+  category_fr: string | null
+  category_en: string | null
+}
+
+interface School {
+  id: string
+  name: string
+  city: string | null
+  country: string | null
+}
+
+interface Question {
+  id: string
+  label: string
+  labelEn: string
+  helper?: string
+  helperEn?: string
+  type: 'text' | 'email' | 'tel_whatsapp' | 'date' | 'select' | 'multi_select' | 'file' | 'textarea' | 'chips' | 'checkbox_group' | 'schedule'
+  field: keyof FormData
+  required?: boolean
+  options?: string[]
+  optionsFn?: 'languages' | 'durations' | 'touchpoints' | 'jobTypes'
+  validate?: (val: unknown, form: FormData) => string | null
+  skip?: (form: FormData) => boolean
+  hint?: string
+  hintEn?: string
+  maxSelect?: number
+  accept?: string
+}
+
+interface MobileApplyProps {
+  form: FormData
+  setForm: React.Dispatch<React.SetStateAction<FormData>>
+  lang: 'fr' | 'en'
+  setLang: (l: 'fr' | 'en') => void
+  onSubmit: () => Promise<void>
+  submitting: boolean
+  error: string
+  price: number
+  jobTypes: JobType[]
+  cvUploading: boolean
+  cvLocalUploading: boolean
+  onCvUpload: (file: File) => void
+  onCvLocalUpload: (file: File) => void
+}
+
+// ─── Constants ─────────────────────────────────────────────────
+
+const ANGLOPHONE_COUNTRIES = [
+  'United Kingdom', 'United States', 'Canada', 'Australia',
+  'Ireland', 'New Zealand', 'Singapore', 'South Africa',
+]
+
+const COUNTRIES = [
+  'France', 'Belgique', 'Suisse', 'Luxembourg', 'Canada', 'Maroc', 'Algérie', 'Tunisie',
+  'Sénégal', "Côte d'Ivoire", 'Cameroun', 'Madagascar', 'Mali', 'Burkina Faso',
+  'Niger', 'Bénin', 'Togo', 'République démocratique du Congo', 'Rwanda', 'Burundi',
+  'Gabon', 'Congo', 'Mauritanie', 'Djibouti', 'Comores', 'Maurice',
+  'Allemagne', 'Espagne', 'Italie', 'Portugal', 'Pays-Bas', 'Autriche',
+  'Suède', 'Norvège', 'Danemark', 'Finlande', 'Pologne', 'Roumanie', 'Grèce',
+  'Hongrie', 'République tchèque', 'Slovaquie', 'Croatie', 'Slovénie', 'Serbie',
+  'Bulgarie', 'Lituanie', 'Lettonie', 'Estonie', 'Irlande', 'Malte',
+  'Afghanistan', 'Albania', 'Algeria', 'Angola', 'Argentina', 'Armenia', 'Australia',
+  'Azerbaijan', 'Bahrain', 'Bangladesh', 'Belarus', 'Belize', 'Bhutan',
+  'Bolivia', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Brunei',
+  'Cambodia', 'Cabo Verde', 'Central African Republic', 'Chad', 'Chile', 'China',
+  'Colombia', 'Costa Rica', 'Cuba', 'Cyprus', 'Denmark', 'Dominican Republic',
+  'Ecuador', 'Egypt', 'El Salvador', 'Equatorial Guinea', 'Eritrea', 'Eswatini',
+  'Ethiopia', 'Fiji', 'Georgia', 'Ghana', 'Grenada', 'Guatemala', 'Guinea',
+  'Guinea-Bissau', 'Guyana', 'Haiti', 'Honduras', 'Iceland', 'India', 'Indonesia',
+  'Iran', 'Iraq', 'Israel', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya',
+  'Kiribati', 'Kosovo', 'Kuwait', 'Kyrgyzstan', 'Laos', 'Lebanon', 'Lesotho',
+  'Liberia', 'Libya', 'Liechtenstein', 'Malawi', 'Malaysia', 'Maldives',
+  'Marshall Islands', 'Mauritania', 'Mexico', 'Micronesia', 'Moldova', 'Monaco',
+  'Mongolia', 'Montenegro', 'Mozambique', 'Myanmar', 'Namibia', 'Nepal',
+  'New Zealand', 'Nicaragua', 'Nigeria', 'North Korea', 'North Macedonia', 'Oman',
+  'Pakistan', 'Palau', 'Palestine', 'Panama', 'Papua New Guinea', 'Paraguay', 'Peru',
+  'Philippines', 'Qatar', 'Saint Kitts and Nevis', 'Saint Lucia', 'Samoa',
+  'San Marino', 'Saudi Arabia', 'Sierra Leone', 'Singapore', 'Solomon Islands',
+  'Somalia', 'South Africa', 'South Korea', 'South Sudan', 'Sri Lanka', 'Sudan',
+  'Suriname', 'Syria', 'Taiwan', 'Tajikistan', 'Tanzania', 'Thailand', 'Timor-Leste',
+  'Trinidad and Tobago', 'Turkey', 'Turkmenistan', 'Uganda', 'Ukraine',
+  'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay', 'Uzbekistan',
+  'Vanuatu', 'Vatican City', 'Venezuela', 'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe',
+  'Autre / Other',
+]
+
+const LANGUAGES_LIST_FR = [
+  'Français', 'Anglais', 'Espagnol', 'Allemand', 'Mandarin', 'Arabe',
+  'Italien', 'Portugais', 'Japonais', 'Coréen', 'Néerlandais', 'Russe', 'Hindi', 'Indonésien', 'Autre',
+]
+const LANGUAGES_LIST_EN = [
+  'French', 'English', 'Spanish', 'German', 'Mandarin', 'Arabic',
+  'Italian', 'Portuguese', 'Japanese', 'Korean', 'Dutch', 'Russian', 'Hindi', 'Indonesian', 'Other',
+]
+
+const DURATIONS = [
+  { value: '3', fr: '3 mois', en: '3 months' },
+  { value: '4', fr: '4 mois', en: '4 months' },
+  { value: '5', fr: '5 mois', en: '5 months' },
+  { value: '6', fr: '6 mois', en: '6 months' },
+  { value: '7', fr: '+6 mois', en: '+6 months' },
+]
+
+const TOUCHPOINTS = [
+  { value: 'Instagram', fr: 'Instagram', en: 'Instagram' },
+  { value: 'TikTok', fr: 'TikTok', en: 'TikTok' },
+  { value: 'Facebook', fr: 'Facebook', en: 'Facebook' },
+  { value: 'Google', fr: 'Google', en: 'Google' },
+  { value: 'Bouche à oreille', fr: 'Bouche à oreille', en: 'Word of mouth' },
+  { value: 'École', fr: 'École', en: 'School' },
+  { value: 'Ambassadeur Bali Interns', fr: 'Ambassadeur Bali Interns', en: 'Bali Interns Ambassador' },
+]
+
+const COUNTRY_PHONE_CODES: { flag: string; code: string; name: string }[] = [
+  { flag: '\u{1F1EB}\u{1F1F7}', code: '+33', name: 'France' },
+  { flag: '\u{1F1EC}\u{1F1E7}', code: '+44', name: 'United Kingdom' },
+  { flag: '\u{1F1FA}\u{1F1F8}', code: '+1', name: 'United States' },
+  { flag: '\u{1F1E9}\u{1F1EA}', code: '+49', name: 'Germany' },
+  { flag: '\u{1F1EA}\u{1F1F8}', code: '+34', name: 'Spain' },
+  { flag: '\u{1F1EE}\u{1F1F9}', code: '+39', name: 'Italy' },
+  { flag: '\u{1F1F5}\u{1F1F9}', code: '+351', name: 'Portugal' },
+  { flag: '\u{1F1E7}\u{1F1EA}', code: '+32', name: 'Belgium' },
+  { flag: '\u{1F1E8}\u{1F1ED}', code: '+41', name: 'Switzerland' },
+  { flag: '\u{1F1F3}\u{1F1F1}', code: '+31', name: 'Netherlands' },
+  { flag: '\u{1F1E6}\u{1F1F9}', code: '+43', name: 'Austria' },
+  { flag: '\u{1F1F5}\u{1F1F1}', code: '+48', name: 'Poland' },
+  { flag: '\u{1F1F7}\u{1F1F4}', code: '+40', name: 'Romania' },
+  { flag: '\u{1F1E8}\u{1F1FF}', code: '+420', name: 'Czech Republic' },
+  { flag: '\u{1F1ED}\u{1F1FA}', code: '+36', name: 'Hungary' },
+  { flag: '\u{1F1F8}\u{1F1EA}', code: '+46', name: 'Sweden' },
+  { flag: '\u{1F1F3}\u{1F1F4}', code: '+47', name: 'Norway' },
+  { flag: '\u{1F1E9}\u{1F1F0}', code: '+45', name: 'Denmark' },
+  { flag: '\u{1F1EB}\u{1F1EE}', code: '+358', name: 'Finland' },
+  { flag: '\u{1F1EE}\u{1F1EA}', code: '+353', name: 'Ireland' },
+  { flag: '\u{1F1EC}\u{1F1F7}', code: '+30', name: 'Greece' },
+  { flag: '\u{1F1E6}\u{1F1EA}', code: '+971', name: 'UAE' },
+  { flag: '\u{1F1F2}\u{1F1E6}', code: '+212', name: 'Morocco' },
+  { flag: '\u{1F1E9}\u{1F1FF}', code: '+213', name: 'Algeria' },
+  { flag: '\u{1F1F9}\u{1F1F3}', code: '+216', name: 'Tunisia' },
+  { flag: '\u{1F1F8}\u{1F1F3}', code: '+221', name: 'Senegal' },
+  { flag: '\u{1F1E7}\u{1F1F7}', code: '+55', name: 'Brazil' },
+  { flag: '\u{1F1EE}\u{1F1E9}', code: '+62', name: 'Indonesia' },
+  { flag: '\u{1F1EE}\u{1F1F3}', code: '+91', name: 'India' },
+  { flag: '\u{1F1E6}\u{1F1FA}', code: '+61', name: 'Australia' },
+]
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
+// ─── Component ─────────────────────────────────────────────────
+
+export function MobileApply({
+  form, setForm, lang, setLang, onSubmit, submitting, error,
+  price, jobTypes, cvUploading, cvLocalUploading, onCvUpload, onCvLocalUpload,
+}: MobileApplyProps) {
+  const [currentQ, setCurrentQ] = useState(0)
+  const [fieldError, setFieldError] = useState('')
+  const [searchText, setSearchText] = useState('')
+  const [phoneDropOpen, setPhoneDropOpen] = useState(false)
+  const [schoolResults, setSchoolResults] = useState<School[]>([])
+  const [isSearchingSchool, setIsSearchingSchool] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+  const searchSchoolsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // ── Question list ──
+  const questions: Question[] = [
+    { id: 'first_name', type: 'text', label: 'Quel est ton prénom ?', labelEn: 'What is your first name?', field: 'first_name', required: true, hint: 'ex: Jean', hintEn: 'e.g. John' },
+    { id: 'last_name', type: 'text', label: 'Et ton nom ?', labelEn: 'And your last name?', field: 'last_name', required: true },
+    { id: 'email', type: 'email', label: 'Ton adresse email ?', labelEn: 'Your email address?', field: 'email', required: true, helper: "On t'enverra la confirmation ici", helperEn: 'We\'ll send your confirmation here' },
+    { id: 'whatsapp', type: 'tel_whatsapp', label: 'Ton numéro WhatsApp ?', labelEn: 'Your WhatsApp number?', field: 'whatsapp_number', required: true, helper: "Tout le monde à Bali l'utilise !", helperEn: 'Everyone uses it in Bali!' },
+    { id: 'nationalities', type: 'chips', label: 'Ta ou tes nationalités ?', labelEn: 'Your nationality(ies)?', field: 'nationalities', required: true, options: COUNTRIES },
+    { id: 'birth_date', type: 'date', label: 'Ta date de naissance ?', labelEn: 'Your date of birth?', field: 'birth_date', required: true },
+    { id: 'passport_expiry', type: 'date', label: 'Expiration de ton passeport ?', labelEn: 'Your passport expiry date?', field: 'passport_expiry', required: true, helper: 'Doit être valide 6 mois après ton arrivée', helperEn: 'Must be valid 6 months after arrival' },
+    { id: 'school_country', type: 'select', label: 'Pays où tu fais tes études ?', labelEn: 'Country where you study?', field: 'school_country', required: true, options: COUNTRIES, helper: 'Détermine le type de convention de stage', helperEn: 'Determines your internship agreement type' },
+    { id: 'linkedin_url', type: 'text', label: 'Ton profil LinkedIn ?', labelEn: 'Your LinkedIn profile?', field: 'linkedin_url', required: false, hint: 'https://linkedin.com/in/...', hintEn: 'Optionnel / Optional' },
+    { id: 'cv_en', type: 'file', label: 'Ton CV en anglais', labelEn: 'Your CV in English', field: 'cv_en_file', required: true, helper: 'PDF, DOC ou DOCX - Max 20MB', helperEn: 'PDF, DOC or DOCX - Max 20MB', accept: '.pdf,.doc,.docx,.jpg,.jpeg,.png,.odt,.rtf' },
+    { id: 'cv_local', type: 'file', label: 'Ton CV en français (ou langue locale)', labelEn: 'Your CV in French (or local language)', field: 'cv_local_file', required: false, skip: (f) => ANGLOPHONE_COUNTRIES.includes(f.school_country), accept: '.pdf,.doc,.docx,.jpg,.jpeg,.png,.odt,.rtf' },
+    { id: 'spoken_languages', type: 'chips', label: 'Tes langues professionnelles ?', labelEn: 'Your professional languages?', field: 'spoken_languages', required: true },
+    { id: 'school_name', type: 'text', label: 'Ton école ou université ?', labelEn: 'Your school or university?', field: 'school_name', required: false, helper: 'Commence à taper pour chercher', helperEn: 'Start typing to search' },
+    { id: 'duration', type: 'chips', label: 'Durée souhaitée du stage ?', labelEn: 'Desired internship duration?', field: 'duration', required: true },
+    { id: 'start_date', type: 'date', label: 'Date de démarrage souhaitée ?', labelEn: 'Desired start date?', field: 'start_date', required: true, helper: 'À 2-4 semaines près, c\'est ok', helperEn: 'Give or take 2-4 weeks, that\'s fine' },
+    { id: 'desired_jobs', type: 'chips', label: 'Métiers souhaités ? (max 3)', labelEn: 'Desired positions? (max 3)', field: 'desired_jobs', required: false, maxSelect: 3 },
+    { id: 'stage_ideal', type: 'textarea', label: 'Ton stage idéal en quelques lignes', labelEn: 'Your ideal internship in a few lines', field: 'stage_ideal', required: true },
+    { id: 'touchpoints', type: 'chips', label: 'Comment tu nous as trouvé ?', labelEn: 'How did you find us?', field: 'touchpoints', required: false },
+    { id: 'referral_code', type: 'text', label: 'Tu as un code parrain ?', labelEn: 'Do you have a referral code?', field: 'referred_by_code', required: false, skip: (f) => !f.touchpoints.includes('Ambassadeur Bali Interns') },
+    { id: 'commitment', type: 'checkbox_group', label: 'Avant de continuer', labelEn: 'Before continuing', field: 'commitment_price', required: true },
+    { id: 'schedule', type: 'schedule', label: 'Réserve ton appel de qualification gratuit', labelEn: 'Book your free qualification call', field: 'rdv_slot', required: false },
+  ]
+
+  // Filter out skipped questions
+  const activeQuestions = questions.filter(q => !q.skip || !q.skip(form))
+  const totalQ = activeQuestions.length
+  const question = activeQuestions[currentQ] || activeQuestions[activeQuestions.length - 1]
+
+  // Autofocus on question change
+  useEffect(() => {
+    setFieldError('')
+    setSearchText('')
+    const timer = setTimeout(() => {
+      if (question.type === 'text' || question.type === 'email' || question.type === 'textarea') {
+        inputRef.current?.focus()
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [currentQ, question.type])
+
+  // Fillout script for schedule step
+  useEffect(() => {
+    if (question.type !== 'schedule') return
+    const params = new URLSearchParams()
+    const fullName = `${form.first_name} ${form.last_name}`.trim()
+    if (fullName) params.set('name', fullName)
+    if (form.email) params.set('email', form.email)
+    if (form.first_name) params.set('firstName', form.first_name)
+    if (form.last_name) params.set('lastName', form.last_name)
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`)
+    const existing = document.getElementById('fillout-script')
+    if (existing) existing.remove()
+    const script = document.createElement('script')
+    script.id = 'fillout-script'
+    script.src = 'https://server.fillout.com/embed/v1/'
+    script.async = true
+    document.head.appendChild(script)
+    return () => {
+      const s = document.getElementById('fillout-script')
+      if (s) s.remove()
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [question.type, form.first_name, form.last_name, form.email])
+
+  // ── Helpers ──
+  function set<K extends keyof FormData>(key: K, value: FormData[K]) {
+    setForm(f => ({ ...f, [key]: value }))
+  }
+
+  function toggleArray(key: 'nationalities' | 'spoken_languages' | 'desired_jobs' | 'touchpoints', value: string, max?: number) {
+    setForm(f => {
+      const arr = (f[key] as string[]) ?? []
+      if (arr.includes(value)) return { ...f, [key]: arr.filter((v: string) => v !== value) }
+      if (max && arr.length >= max) return f
+      return { ...f, [key]: [...arr, value] }
+    })
+  }
+
+  const searchSchools = useCallback((q: string) => {
+    if (searchSchoolsTimeout.current) clearTimeout(searchSchoolsTimeout.current)
+    if (q.length < 2) { setSchoolResults([]); setIsSearchingSchool(false); return }
+    setIsSearchingSchool(true)
+    searchSchoolsTimeout.current = setTimeout(() => {
+      const countryParam = form.school_country ? `&country=${encodeURIComponent(form.school_country)}` : ''
+      fetch(`/api/public/schools?q=${encodeURIComponent(q)}${countryParam}`)
+        .then(r => r.ok ? r.json() : [])
+        .then((data: School[]) => { setSchoolResults(Array.isArray(data) ? data : []); setIsSearchingSchool(false) })
+        .catch(() => { setSchoolResults([]); setIsSearchingSchool(false) })
+    }, 400)
+  }, [form.school_country])
+
+  // ── Can advance? ──
+  function canGoNext(): boolean {
+    const q = question
+    const val = form[q.field]
+
+    if (q.type === 'schedule') return true
+    if (!q.required) return true
+
+    switch (q.type) {
+      case 'text':
+      case 'email':
+      case 'textarea':
+        if (!(val as string)?.trim()) return false
+        if (q.type === 'email' && !isValidEmail(val as string)) return false
+        return true
+      case 'tel_whatsapp':
+        return !!(form.whatsapp_number?.trim())
+      case 'date':
+        return !!(val as string)
+      case 'select':
+        return !!(val as string)
+      case 'chips': {
+        const arr = val as string[]
+        return arr && arr.length > 0
+      }
+      case 'file':
+        if (q.id === 'cv_en') return !!(form.cv_en_file || form.cv_url)
+        if (q.id === 'cv_local') return !!(form.cv_local_file || form.local_cv_url)
+        return true
+      case 'checkbox_group':
+        return !!(form.commitment_price && form.commitment_budget && form.commitment_terms)
+      default:
+        return true
+    }
+  }
+
+  function goNext() {
+    setFieldError('')
+    if (question.id === 'commitment') {
+      // Submit then go to schedule
+      void onSubmit().then(() => {
+        if (currentQ < totalQ - 1) setCurrentQ(currentQ + 1)
+      })
+      return
+    }
+    if (currentQ < totalQ - 1) {
+      setCurrentQ(currentQ + 1)
+    }
+  }
+
+  function goPrev() {
+    if (currentQ > 0) {
+      setFieldError('')
+      setCurrentQ(currentQ - 1)
+    }
+  }
+
+  const isLastQuestion = question.id === 'commitment'
+  const isSchedule = question.type === 'schedule'
+
+  const selectedPhone = COUNTRY_PHONE_CODES.find(c => c.code === form.whatsapp_code) ?? COUNTRY_PHONE_CODES[0]
+
+  // ── Render field by type ──
+  function renderField() {
+    const q = question
+
+    switch (q.type) {
+      case 'text':
+        if (q.id === 'school_name') {
+          return (
+            <div className="relative">
+              <input
+                ref={inputRef}
+                type="text"
+                value={form.school_name || form.school_search}
+                onChange={e => {
+                  const v = e.target.value
+                  set('school_search', v)
+                  set('school_name', '')
+                  set('school_id', null)
+                  searchSchools(v)
+                }}
+                className="w-full px-4 py-4 bg-white border border-zinc-200 rounded-2xl text-[16px] text-[#1a1918] placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+                placeholder={lang === 'fr' ? 'Rechercher ton école...' : 'Search your school...'}
+                onKeyDown={e => { if (e.key === 'Enter' && canGoNext()) goNext() }}
+              />
+              {isSearchingSchool && (
+                <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                  <svg className="animate-spin w-4 h-4 text-[#c8a96e]" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                </div>
+              )}
+              {schoolResults.length > 0 && form.school_search.length >= 2 && !form.school_name && (
+                <div className="mt-2 max-h-48 overflow-y-auto bg-white border border-zinc-200 rounded-2xl shadow-lg">
+                  {schoolResults.map(s => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        set('school_id', s.id)
+                        set('school_name', s.name)
+                        set('school_search', '')
+                        setSchoolResults([])
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm text-[#1a1918] hover:bg-zinc-50 border-b border-zinc-50 last:border-0"
+                    >
+                      <span className="font-medium">{s.name}</span>
+                      {s.city && <span className="text-zinc-500"> — {s.city}{s.country ? `, ${s.country}` : ''}</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        }
+        return (
+          <input
+            ref={inputRef}
+            type="text"
+            value={(form[q.field] as string) ?? ''}
+            onChange={e => set(q.field, e.target.value as never)}
+            className="w-full px-4 py-4 bg-white border border-zinc-200 rounded-2xl text-[16px] text-[#1a1918] placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+            placeholder={lang === 'fr' ? (q.hint || '') : (q.hintEn || '')}
+            onKeyDown={e => { if (e.key === 'Enter' && canGoNext()) goNext() }}
+          />
+        )
+
+      case 'email':
+        return (
+          <input
+            ref={inputRef}
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            value={(form[q.field] as string) ?? ''}
+            onChange={e => set(q.field, e.target.value as never)}
+            className="w-full px-4 py-4 bg-white border border-zinc-200 rounded-2xl text-[16px] text-[#1a1918] placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+            placeholder="your@email.com"
+            onKeyDown={e => { if (e.key === 'Enter' && canGoNext()) goNext() }}
+          />
+        )
+
+      case 'tel_whatsapp':
+        return (
+          <div className="flex gap-2">
+            <div className="relative flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setPhoneDropOpen(o => !o)}
+                className="flex items-center gap-1 px-3 py-4 bg-white border border-zinc-200 rounded-2xl text-sm font-medium text-[#1a1918] whitespace-nowrap"
+              >
+                <span>{selectedPhone.flag}</span>
+                <span>{selectedPhone.code}</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M19 9l-7 7-7-7"/></svg>
+              </button>
+              {phoneDropOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setPhoneDropOpen(false)} />
+                  <div className="absolute z-50 top-full left-0 mt-1 w-64 max-h-64 overflow-y-auto bg-white border border-zinc-200 rounded-2xl shadow-lg">
+                    {COUNTRY_PHONE_CODES.map((c, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => { set('whatsapp_code', c.code); setPhoneDropOpen(false) }}
+                        className={`w-full flex items-center gap-2 px-3 py-3 text-sm hover:bg-zinc-50 text-left min-h-[48px] ${c.code === form.whatsapp_code ? 'text-[#c8a96e] font-medium' : 'text-[#1a1918]'}`}
+                      >
+                        <span>{c.flag}</span>
+                        <span className="text-zinc-500">{c.code}</span>
+                        <span className="truncate">{c.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            <input
+              ref={inputRef}
+              type="tel"
+              inputMode="tel"
+              value={form.whatsapp_number}
+              onChange={e => set('whatsapp_number', e.target.value)}
+              className="flex-1 px-4 py-4 bg-white border border-zinc-200 rounded-2xl text-[16px] text-[#1a1918] placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+              placeholder="6 12 34 56 78"
+              onKeyDown={e => { if (e.key === 'Enter' && canGoNext()) goNext() }}
+            />
+          </div>
+        )
+
+      case 'date':
+        return (
+          <input
+            type="date"
+            value={(form[q.field] as string) ?? ''}
+            onChange={e => set(q.field, e.target.value as never)}
+            className={`w-full px-4 py-4 bg-white border border-zinc-200 rounded-2xl text-[16px] text-[#1a1918] focus:outline-none focus:ring-2 focus:ring-[#c8a96e] ${!(form[q.field] as string) ? 'text-zinc-400' : ''}`}
+            min={q.id === 'start_date' ? new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0] : undefined}
+          />
+        )
+
+      case 'select':
+        return (
+          <div>
+            {/* Selected chip */}
+            {(form[q.field] as string) && (
+              <div className="mb-3">
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-[#c8a96e] text-white">
+                  {form[q.field] as string}
+                  <button type="button" onClick={() => { set(q.field, '' as never); setSearchText('') }} className="hover:text-red-200">&times;</button>
+                </span>
+              </div>
+            )}
+            {!(form[q.field] as string) && (
+              <>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={searchText}
+                  onChange={e => setSearchText(e.target.value)}
+                  className="w-full px-4 py-4 bg-white border border-zinc-200 rounded-2xl text-[16px] text-[#1a1918] placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c8a96e] mb-3"
+                  placeholder={lang === 'fr' ? 'Rechercher...' : 'Search...'}
+                />
+                <div className="max-h-56 overflow-y-auto space-y-1.5">
+                  {(q.options || [])
+                    .filter(o => !searchText || o.toLowerCase().includes(searchText.toLowerCase()))
+                    .slice(0, 20)
+                    .map(opt => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => { set(q.field, opt as never); setSearchText('') }}
+                      className="w-full text-left px-4 py-3 rounded-xl text-sm bg-white border border-zinc-200 hover:border-[#c8a96e] active:bg-[#c8a96e]/10 transition-all min-h-[48px]"
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )
+
+      case 'chips': {
+        const arr = (form[q.field] as string[]) ?? []
+
+        // Nationalities — search-based
+        if (q.id === 'nationalities') {
+          const filtered = searchText
+            ? COUNTRIES.filter(c => c.toLowerCase().includes(searchText.toLowerCase()))
+            : COUNTRIES.slice(0, 15)
+          return (
+            <div>
+              {arr.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {arr.map(n => (
+                    <span key={n} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-[#c8a96e] text-white">
+                      {n}
+                      <button type="button" onClick={() => toggleArray('nationalities', n)} className="hover:text-red-200">&times;</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <input
+                ref={inputRef}
+                type="text"
+                value={searchText}
+                onChange={e => setSearchText(e.target.value)}
+                className="w-full px-4 py-4 bg-white border border-zinc-200 rounded-2xl text-[16px] text-[#1a1918] placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c8a96e] mb-3"
+                placeholder={lang === 'fr' ? 'Rechercher un pays...' : 'Search a country...'}
+              />
+              <div className="max-h-48 overflow-y-auto space-y-1.5">
+                {filtered.slice(0, 20).map(c => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => { toggleArray('nationalities', c); setSearchText('') }}
+                    className={`w-full text-left px-4 py-3 rounded-xl text-sm transition-all min-h-[48px] ${
+                      arr.includes(c)
+                        ? 'bg-[#c8a96e] text-white font-medium'
+                        : 'bg-white border border-zinc-200 hover:border-[#c8a96e]'
+                    }`}
+                  >
+                    {c} {arr.includes(c) ? '\u2713' : ''}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )
+        }
+
+        // Spoken languages
+        if (q.id === 'spoken_languages') {
+          const langList = lang === 'fr' ? LANGUAGES_LIST_FR : LANGUAGES_LIST_EN
+          return (
+            <div className="flex flex-wrap gap-2">
+              {langList.map((l, idx) => {
+                const value = LANGUAGES_LIST_FR[idx]
+                const selected = (form.spoken_languages as string[]).includes(value)
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => toggleArray('spoken_languages', value)}
+                    className={`px-4 py-3 rounded-full text-sm font-medium transition-all min-h-[48px] ${
+                      selected ? 'bg-[#c8a96e] text-white' : 'bg-white text-[#8a7d6d] border border-zinc-200'
+                    }`}
+                  >
+                    {l}
+                  </button>
+                )
+              })}
+            </div>
+          )
+        }
+
+        // Duration
+        if (q.id === 'duration') {
+          return (
+            <div className="grid grid-cols-2 gap-2">
+              {DURATIONS.map(d => (
+                <button
+                  key={d.value}
+                  type="button"
+                  onClick={() => set('duration', d.value)}
+                  className={`py-4 rounded-2xl text-sm font-medium transition-all min-h-[48px] ${
+                    form.duration === d.value
+                      ? 'bg-[#c8a96e] text-white'
+                      : 'bg-white text-[#8a7d6d] border border-zinc-200'
+                  }`}
+                >
+                  {lang === 'fr' ? d.fr : d.en}
+                </button>
+              ))}
+            </div>
+          )
+        }
+
+        // Job types
+        if (q.id === 'desired_jobs') {
+          return (
+            <div className="flex flex-wrap gap-2">
+              {jobTypes.filter(j => j.name_fr !== 'Autre' && j.name_en !== 'Other').map(j => {
+                const jLabel = lang === 'fr' ? (j.name_fr || j.name) : (j.name_en || j.name)
+                const selected = form.desired_jobs.includes(j.name)
+                return (
+                  <button
+                    key={j.id}
+                    type="button"
+                    onClick={() => toggleArray('desired_jobs', j.name, 3)}
+                    className={`px-4 py-3 rounded-full text-sm font-medium transition-all min-h-[48px] ${
+                      selected ? 'bg-[#c8a96e] text-white' : 'bg-white text-[#8a7d6d] border border-zinc-200'
+                    }`}
+                  >
+                    {jLabel}
+                  </button>
+                )
+              })}
+              <p className="w-full text-xs text-zinc-400 mt-1">
+                {form.desired_jobs.length}/3 {lang === 'fr' ? 'sélectionnés' : 'selected'}
+              </p>
+            </div>
+          )
+        }
+
+        // Touchpoints
+        if (q.id === 'touchpoints') {
+          return (
+            <div className="grid grid-cols-1 gap-2">
+              {TOUCHPOINTS.map(t => {
+                const selected = form.touchpoints.includes(t.value)
+                return (
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => {
+                      const cur = form.touchpoints
+                      const next = selected ? cur.filter(x => x !== t.value) : [...cur, t.value]
+                      set('touchpoints', next)
+                      set('touchpoint', next.join(', '))
+                      if (!next.includes('Ambassadeur Bali Interns')) set('referred_by_code', '')
+                    }}
+                    className={`py-4 px-4 rounded-2xl text-sm font-medium text-left transition-all flex items-center gap-2 min-h-[48px] ${
+                      selected
+                        ? 'bg-[#c8a96e] text-white'
+                        : 'bg-white text-[#1a1918] border border-zinc-200'
+                    }`}
+                  >
+                    {selected && (
+                      <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+                      </svg>
+                    )}
+                    {lang === 'fr' ? t.fr : t.en}
+                  </button>
+                )
+              })}
+            </div>
+          )
+        }
+
+        return null
+      }
+
+      case 'file': {
+        const fileName = q.id === 'cv_en' ? form.cv_en_filename : form.cv_local_filename
+        const uploading = q.id === 'cv_en' ? cvUploading : cvLocalUploading
+        const uploaded = q.id === 'cv_en' ? !!form.cv_url : !!form.local_cv_url
+        return (
+          <div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept={q.accept || '.pdf,.doc,.docx'}
+              className="hidden"
+              onChange={e => {
+                const f = e.target.files?.[0]
+                if (f) {
+                  if (f.size > 20 * 1024 * 1024) {
+                    setFieldError(lang === 'fr' ? `Fichier trop volumineux (max 20MB)` : 'File too large (max 20MB)')
+                    return
+                  }
+                  if (q.id === 'cv_en') {
+                    set('cv_en_file', f)
+                    set('cv_en_filename', f.name)
+                    onCvUpload(f)
+                  } else {
+                    set('cv_local_file', f)
+                    set('cv_local_filename', f.name)
+                    onCvLocalUpload(f)
+                  }
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className={`w-full py-12 border-2 border-dashed rounded-2xl text-center transition-all min-h-[48px] ${
+                fileName
+                  ? 'border-[#c8a96e] bg-[#c8a96e]/10'
+                  : 'border-zinc-200 bg-white active:bg-zinc-50'
+              }`}
+            >
+              {uploading ? (
+                <div className="flex items-center justify-center gap-2 text-[#c8a96e]">
+                  <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                  <span className="text-sm font-medium">{lang === 'fr' ? 'Upload en cours...' : 'Uploading...'}</span>
+                </div>
+              ) : fileName ? (
+                <div>
+                  <span className="text-sm text-[#c8a96e] font-medium">{fileName}</span>
+                  {uploaded && <p className="text-xs text-green-600 mt-1">{'\u2713'} {lang === 'fr' ? 'Uploadé' : 'Uploaded'}</p>}
+                </div>
+              ) : (
+                <div>
+                  <svg className="w-8 h-8 mx-auto mb-2 text-zinc-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.338-2.32 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/>
+                  </svg>
+                  <span className="text-sm text-zinc-500">
+                    {lang === 'fr' ? 'Appuie pour choisir un fichier' : 'Tap to select a file'}
+                  </span>
+                </div>
+              )}
+            </button>
+          </div>
+        )
+      }
+
+      case 'textarea':
+        return (
+          <textarea
+            ref={inputRef as unknown as React.RefObject<HTMLTextAreaElement>}
+            value={(form[q.field] as string) ?? ''}
+            onChange={e => set(q.field, e.target.value as never)}
+            rows={5}
+            maxLength={1000}
+            placeholder={lang === 'fr'
+              ? 'Objectifs, compétences, types d\'entreprises...'
+              : 'Goals, skills, company types...'}
+            className="w-full px-4 py-4 bg-white border border-zinc-200 rounded-2xl text-[16px] text-[#1a1918] placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c8a96e] resize-none"
+          />
+        )
+
+      case 'checkbox_group':
+        return (
+          <div className="space-y-4">
+            {/* Price card */}
+            <div className="bg-white border border-zinc-200 rounded-2xl p-5 mb-4">
+              <div className="text-center mb-3">
+                <p className="text-3xl font-bold text-[#c8a96e]">{price}{'\u20ac'}</p>
+                <p className="text-xs text-zinc-500 mt-1">{lang === 'fr' ? 'TTC' : 'Tax included'}</p>
+              </div>
+              <p className="text-sm text-[#8a7d6d] leading-relaxed">
+                {lang === 'fr'
+                  ? `Le service Bali Interns coûte ${price}\u20ac TTC. Paiement uniquement après signature de la convention — avant ça, 0\u20ac.`
+                  : `Bali Interns costs \u20ac${price} (tax incl.). Payment only after internship agreement is signed — before that, \u20ac0.`}
+              </p>
+            </div>
+
+            <label className="flex items-start gap-3 cursor-pointer min-h-[48px]">
+              <input
+                type="checkbox"
+                checked={form.commitment_price}
+                onChange={e => set('commitment_price', e.target.checked)}
+                className="mt-0.5 w-6 h-6 rounded accent-[#c8a96e] flex-shrink-0"
+              />
+              <span className="text-sm text-[#8a7d6d] leading-relaxed">
+                {lang === 'fr'
+                  ? `Je confirme avoir compris le prix (${price}\u20ac TTC) et que le paiement intervient après signature.`
+                  : `I confirm I understand the price (\u20ac${price} incl. tax) and payment happens only after signing.`}
+              </span>
+            </label>
+
+            <label className="flex items-start gap-3 cursor-pointer min-h-[48px]">
+              <input
+                type="checkbox"
+                checked={form.commitment_budget}
+                onChange={e => set('commitment_budget', e.target.checked)}
+                className="mt-0.5 w-6 h-6 rounded accent-[#c8a96e] flex-shrink-0"
+              />
+              <span className="text-sm text-[#8a7d6d] leading-relaxed">
+                {lang === 'fr'
+                  ? `Je confirme disposer du budget pour régler ${price}\u20ac TTC.`
+                  : `I confirm I have the budget to pay \u20ac${price} incl. tax.`}
+              </span>
+            </label>
+
+            <label className="flex items-start gap-3 cursor-pointer min-h-[48px]">
+              <input
+                type="checkbox"
+                checked={form.commitment_terms}
+                onChange={e => set('commitment_terms', e.target.checked)}
+                className="mt-0.5 w-6 h-6 rounded accent-[#c8a96e] flex-shrink-0"
+              />
+              <span className="text-sm text-[#8a7d6d] leading-relaxed">
+                {lang === 'fr'
+                  ? 'Je confirme avoir pris connaissance des éléments contractuels.'
+                  : 'I confirm I have read the contractual terms.'}
+              </span>
+            </label>
+
+            <p className="text-[11px] text-[#5a5347] leading-relaxed mt-4">
+              {lang === 'fr'
+                ? "En validant : (1) Tu autorises Bali Interns à partager les informations avec nos partenaires. (2) Tu t'engages à ne pas signer en dehors de notre processus. (3) La suite passe par la prise de rendez-vous."
+                : "By submitting: (1) You authorize sharing info with partners. (2) You agree not to sign outside our process. (3) Next step is booking a call."}
+            </p>
+          </div>
+        )
+
+      case 'schedule':
+        return (
+          <div>
+            <p className="text-sm text-zinc-500 mb-4">
+              {lang === 'fr'
+                ? 'Choisis un créneau pour ton entretien de qualification (45 min, Google Meet).'
+                : 'Choose a time slot for your qualification interview (45 min, Google Meet).'}
+            </p>
+            <div
+              style={{ width: '100%', height: '500px' }}
+              data-fillout-id="iqn73wjLFeus"
+              data-fillout-embed-type="standard"
+              data-fillout-inherit-parameters
+              data-fillout-dynamic-resize
+            />
+          </div>
+        )
+
+      default:
+        return null
+    }
+  }
+
+  // ── Main render ──
+  return (
+    <div className="min-h-screen bg-[#fafaf9] flex flex-col">
+      {/* Progress bar */}
+      <div className="h-1 bg-zinc-100 flex-shrink-0">
+        <div
+          className="h-full bg-[#c8a96e] transition-all duration-500"
+          style={{ width: `${((currentQ + 1) / totalQ) * 100}%` }}
+        />
+      </div>
+
+      {/* Language toggle */}
+      <div className="flex justify-end px-4 pt-3">
+        <div className="inline-flex rounded-lg border border-zinc-200 bg-white overflow-hidden text-xs font-medium">
+          <button
+            onClick={() => setLang('fr')}
+            className={`px-3 py-1.5 transition-colors ${lang === 'fr' ? 'bg-[#c8a96e] text-white' : 'text-zinc-500'}`}
+          >
+            FR
+          </button>
+          <button
+            onClick={() => setLang('en')}
+            className={`px-3 py-1.5 transition-colors ${lang === 'en' ? 'bg-[#c8a96e] text-white' : 'text-zinc-500'}`}
+          >
+            EN
+          </button>
+        </div>
+      </div>
+
+      {/* Question area */}
+      <div className="flex-1 flex flex-col justify-start px-6 py-6 overflow-y-auto">
+        {/* Counter */}
+        <p className="text-xs font-medium text-[#c8a96e] mb-2 uppercase tracking-wider">
+          {currentQ + 1} / {totalQ}
+        </p>
+
+        {/* Question label */}
+        <h2 className="text-2xl font-bold text-[#1a1918] mb-2 leading-tight">
+          {lang === 'fr' ? question.label : question.labelEn}
+        </h2>
+
+        {/* Helper */}
+        {(question.helper || question.helperEn) && (
+          <p className="text-sm text-zinc-500 mb-4">
+            {lang === 'fr' ? question.helper : question.helperEn}
+          </p>
+        )}
+
+        {/* Field */}
+        <div className="mt-2">
+          {renderField()}
+        </div>
+
+        {/* Error */}
+        {(fieldError || error) && (
+          <p className="mt-3 text-sm text-red-600 flex items-center gap-1">
+            <span>&#9888;&#65039;</span> {fieldError || error}
+          </p>
+        )}
+      </div>
+
+      {/* Bottom navigation */}
+      {!isSchedule && (
+        <div className="px-6 pb-8 pt-4 bg-[#fafaf9] border-t border-zinc-100 flex-shrink-0">
+          <button
+            onClick={goNext}
+            disabled={question.required !== false && !canGoNext()}
+            className="w-full py-4 rounded-2xl text-base font-bold bg-[#c8a96e] text-white disabled:opacity-40 transition-all active:scale-[0.98]"
+          >
+            {submitting
+              ? (lang === 'fr' ? 'Envoi en cours...' : 'Submitting...')
+              : isLastQuestion
+                ? (lang === 'fr' ? 'Confirmer ma candidature' : 'Submit my application')
+                : !question.required
+                  ? (lang === 'fr' ? 'Passer \u2192' : 'Skip \u2192')
+                  : (lang === 'fr' ? 'Continuer \u2192' : 'Continue \u2192')}
+          </button>
+
+          {currentQ > 0 && (
+            <button onClick={goPrev} className="w-full py-3 text-sm text-zinc-500 mt-2 min-h-[48px]">
+              {'\u2190'} {lang === 'fr' ? 'Retour' : 'Back'}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { MobileApply } from './mobile/MobileApply'
 
 
 // ─── Lang helper ────────────────────────────────────────────────────────────
@@ -431,6 +432,7 @@ export default function ApplyPage() {
   const [emailExists, setEmailExists] = useState(false)
   const [emailChecking, setEmailChecking] = useState(false)
   const [phoneError, setPhoneError] = useState('')
+  const [isMobile, setIsMobile] = useState(false)
 
   const cvEnRef = useRef<HTMLInputElement>(null)
   const cvLocalRef = useRef<HTMLInputElement>(null)
@@ -448,6 +450,14 @@ export default function ApplyPage() {
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [phoneDropOpen])
+
+  // ── Mobile detection ──
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   // ── Form state ──
   const [form, setForm] = useState<FormData>(() => {
@@ -747,6 +757,47 @@ export default function ApplyPage() {
   const filteredNationalities = nationalitySearch.length > 0
     ? COUNTRIES.filter(c => c.toLowerCase().includes(nationalitySearch.toLowerCase()))
     : COUNTRIES
+
+  // ── CV upload handlers for mobile ──
+  function handleCvUpload(f: File) {
+    setCvUploading(true)
+    const fd = new FormData(); fd.append('file', f)
+    fetch('/api/upload', { method: 'POST', body: fd })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('Upload error')))
+      .then((d: { url: string }) => { set('cv_url', d.url) })
+      .catch(() => {})
+      .finally(() => setCvUploading(false))
+  }
+  function handleCvLocalUpload(f: File) {
+    setCvLocalUploading(true)
+    const fd = new FormData(); fd.append('file', f)
+    fetch('/api/upload', { method: 'POST', body: fd })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('Upload error')))
+      .then((d: { url: string }) => { set('local_cv_url', d.url) })
+      .catch(() => {})
+      .finally(() => setCvLocalUploading(false))
+  }
+
+  // ── Mobile view ──
+  if (isMobile) {
+    return (
+      <MobileApply
+        form={form}
+        setForm={setForm}
+        lang={lang}
+        setLang={setLang}
+        onSubmit={handleSubmit}
+        submitting={submitting}
+        error={error}
+        price={price}
+        jobTypes={jobTypes}
+        cvUploading={cvUploading}
+        cvLocalUploading={cvLocalUploading}
+        onCvUpload={handleCvUpload}
+        onCvLocalUpload={handleCvLocalUpload}
+      />
+    )
+  }
 
   return (
     <div className="min-h-screen bg-[#fafaf9] text-[#1a1918]">
