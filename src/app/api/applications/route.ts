@@ -87,7 +87,6 @@ export async function POST(request: Request) {
         local_cv_url: d.local_cv_url ?? null,
         spoken_languages: d.spoken_languages ?? [],
         main_desired_job: allJobs[0] ?? null,
-        desired_sectors: allJobs,
         stage_ideal: d.stage_ideal ?? null,
         touchpoint: d.touchpoints?.join(', ') ?? d.touchpoint ?? null,
         referred_by_code: d.referred_by_code ?? null,
