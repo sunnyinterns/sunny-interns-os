@@ -10,44 +10,40 @@ import { NewCaseModal } from '@/components/cases/NewCaseModal'
 import { Toast } from '@/components/ui/Toast'
 import type { CaseStatus } from '@/lib/types'
 
+const PRE_EMBAUCHE_STATUSES = [
+  'lead', 'rdv_booked', 'qualification_done', 'job_submitted',
+  'job_retained', 'convention_signed', 'payment_pending', 'payment_received',
+]
+
 interface CaseRow {
   id: string
-  first_name: string
-  last_name: string
   status: CaseStatus
-  arrival_date: string | null
-  destination: string | null
   created_at: string
+  desired_start_date: string | null
+  interns: {
+    first_name: string
+    last_name: string
+    email: string
+    main_desired_job: string | null
+  } | null
 }
 
 function statusToVariant(status: CaseStatus): 'default' | 'success' | 'attention' | 'critical' | 'info' {
-  if (['payment_pending', 'visa_in_progress'].includes(status)) return 'attention'
+  if (['payment_pending'].includes(status)) return 'attention'
   if (['not_interested', 'not_qualified', 'visa_refused', 'suspended'].includes(status)) return 'critical'
-  if (['active', 'alumni', 'completed'].includes(status)) return 'success'
+  if (['payment_received', 'job_retained', 'convention_signed'].includes(status)) return 'success'
   return 'default'
 }
 
 const STATUS_LABELS: Partial<Record<CaseStatus, string>> = {
   lead: 'Lead',
-  rdv_booked: 'RDV planifié',
-  qualification_done: 'Qualifié',
-  job_submitted: 'CV envoyé',
+  rdv_booked: 'RDV planifie',
+  qualification_done: 'Qualifie',
+  job_submitted: 'CV envoye',
   job_retained: 'CV retenu',
-  convention_signed: 'Convention signée',
+  convention_signed: 'Convention signee',
   payment_pending: 'Paiement en attente',
-  payment_received: 'Paiement reçu',
-  visa_in_progress: 'Visa en cours',
-  visa_received: 'Visa reçu',
-  arrival_prep: 'Arrivée prévue',
-  active: 'En stage',
-  alumni: 'Alumni',
-  not_interested: 'Pas intéressé',
-  not_qualified: 'Non qualifié',
-  on_hold: 'En pause',
-  suspended: 'Suspendu',
-  visa_refused: 'Visa refusé',
-  archived: 'Archivé',
-  completed: 'Terminé',
+  payment_received: 'Paiement recu',
 }
 
 function CasesSkeleton() {
@@ -75,10 +71,11 @@ export default function CasesPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/cases')
+      const res = await fetch('/api/cases?view=all')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json() as CaseRow[]
-      setCases(data)
+      const candidats = data.filter((c) => PRE_EMBAUCHE_STATUSES.includes(c.status))
+      setCases(candidats)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue')
     } finally {
@@ -93,11 +90,8 @@ export default function CasesPage() {
   const filtered = cases.filter((c) => {
     if (!search) return true
     const q = search.toLowerCase()
-    return (
-      c.first_name.toLowerCase().includes(q) ||
-      c.last_name.toLowerCase().includes(q) ||
-      (c.destination?.toLowerCase().includes(q) ?? false)
-    )
+    const name = `${c.interns?.first_name ?? ''} ${c.interns?.last_name ?? ''}`.toLowerCase()
+    return name.includes(q) || (c.interns?.email?.toLowerCase().includes(q) ?? false)
   })
 
   return (
@@ -105,8 +99,8 @@ export default function CasesPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-semibold text-[#1a1918]">Dossiers</h1>
-          <p className="text-sm text-zinc-500 mt-0.5">{cases.length} dossiers au total</p>
+          <h1 className="text-xl font-semibold text-[#1a1918]">Candidats</h1>
+          <p className="text-sm text-zinc-500 mt-0.5">{cases.length} candidats en cours</p>
         </div>
         <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
           + Nouveau dossier
@@ -117,10 +111,10 @@ export default function CasesPage() {
       <div className="mb-4">
         <input
           type="text"
-          placeholder="Rechercher par nom, destination…"
+          placeholder="Rechercher par nom, email..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white text-[#1a1918] focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+          className="w-full max-w-xs px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white text-[#1a1918] focus:outline-none focus:ring-2 focus:ring-[#c8a96e]/40"
         />
       </div>
 
@@ -137,33 +131,37 @@ export default function CasesPage() {
         <div className="space-y-2">
           {filtered.length === 0 ? (
             <div className="py-12 text-center text-sm text-zinc-400 bg-white rounded-xl border border-zinc-100 border-dashed">
-              {search ? 'Aucun dossier trouvé pour cette recherche' : 'Aucun dossier'}
+              {search ? 'Aucun candidat trouve pour cette recherche' : 'Aucun candidat'}
             </div>
           ) : (
-            filtered.map((c) => (
-              <Link
-                key={c.id}
-                href={`/${locale}/cases/${c.id}`}
-                className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-zinc-100 hover:shadow-sm hover:border-zinc-200 transition-all"
-              >
-                <Avatar name={`${c.first_name} ${c.last_name}`} size="sm" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[#1a1918]">
-                    {c.first_name} {c.last_name}
-                  </p>
-                  <p className="text-xs text-zinc-400 truncate">
-                    {c.destination ?? '—'}
-                    {c.arrival_date
-                      ? ` · ${new Date(c.arrival_date).toLocaleDateString('fr-FR')}`
-                      : ''}
-                  </p>
-                </div>
-                <Badge
-                  label={STATUS_LABELS[c.status] ?? c.status}
-                  variant={statusToVariant(c.status)}
-                />
-              </Link>
-            ))
+            filtered.map((c) => {
+              const intern = c.interns
+              return (
+                <Link
+                  key={c.id}
+                  href={`/${locale}/cases/${c.id}`}
+                  className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-zinc-100 hover:shadow-sm hover:border-zinc-200 transition-all"
+                >
+                  <Avatar name={`${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`} size="sm" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-[#1a1918]">
+                      {intern?.first_name} {intern?.last_name}
+                    </p>
+                    <p className="text-xs text-zinc-400 truncate">
+                      {intern?.email ?? '\u2014'}
+                      {intern?.main_desired_job ? ` \u00b7 ${intern.main_desired_job}` : ''}
+                    </p>
+                  </div>
+                  <Badge
+                    label={STATUS_LABELS[c.status] ?? c.status}
+                    variant={statusToVariant(c.status)}
+                  />
+                  <span className="text-xs text-zinc-400 flex-shrink-0">
+                    {new Date(c.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                  </span>
+                </Link>
+              )
+            })
           )}
         </div>
       )}
@@ -173,7 +171,7 @@ export default function CasesPage() {
           onClose={() => setShowModal(false)}
           onSuccess={() => {
             setShowModal(false)
-            setToast({ message: 'Dossier créé avec succès', type: 'success' })
+            setToast({ message: 'Dossier cree avec succes', type: 'success' })
             void fetchCases()
           }}
         />

@@ -17,44 +17,44 @@ type CaseDetail = Record<string, any>
 
 const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> = {
   lead: { label: 'Demande', bg: '#f4f4f5', text: '#71717a' },
-  rdv_booked: { label: 'RDV Booké', bg: '#dbeafe', text: '#1d4ed8' },
+  rdv_booked: { label: 'RDV Booke', bg: '#dbeafe', text: '#1d4ed8' },
   qualification_done: { label: 'Qualif OK', bg: '#ede9fe', text: '#6d28d9' },
-  job_submitted: { label: 'Jobs proposés', bg: '#fef3c7', text: '#d97706' },
+  job_submitted: { label: 'Jobs proposes', bg: '#fef3c7', text: '#d97706' },
   job_retained: { label: 'Job retenu', bg: '#d1fae5', text: '#059669' },
   convention_signed: { label: 'Convention', bg: '#dcfce7', text: '#16a34a' },
-  payment_pending: { label: 'Paiement ⏳', bg: '#fee2e2', text: '#dc2626' },
-  payment_received: { label: 'Payé ✓', bg: '#d1fae5', text: '#059669' },
+  payment_pending: { label: 'Paiement en attente', bg: '#fee2e2', text: '#dc2626' },
+  payment_received: { label: 'Paye', bg: '#d1fae5', text: '#059669' },
   visa_docs_sent: { label: 'Docs visa', bg: '#fef3c7', text: '#d97706' },
   visa_submitted: { label: 'Visa soumis', bg: '#dbeafe', text: '#1d4ed8' },
   visa_in_progress: { label: 'Visa en cours', bg: '#dbeafe', text: '#1d4ed8' },
-  visa_received: { label: 'Visa ✓', bg: '#d1fae5', text: '#059669' },
-  arrival_prep: { label: '🛫 Départ imminent', bg: '#fee2e2', text: '#dc2626' },
-  active: { label: '🌴 En stage', bg: '#d1fae5', text: '#059669' },
+  visa_received: { label: 'Visa OK', bg: '#d1fae5', text: '#059669' },
+  arrival_prep: { label: 'Depart imminent', bg: '#fee2e2', text: '#dc2626' },
+  active: { label: 'En stage', bg: '#d1fae5', text: '#059669' },
   alumni: { label: 'Alumni', bg: '#fef3c7', text: '#92400e' },
-  not_interested: { label: 'Pas intéressé', bg: '#f4f4f5', text: '#71717a' },
-  not_qualified: { label: 'Non qualifié', bg: '#fee2e2', text: '#dc2626' },
+  not_interested: { label: 'Pas interesse', bg: '#f4f4f5', text: '#71717a' },
+  not_qualified: { label: 'Non qualifie', bg: '#fee2e2', text: '#dc2626' },
   on_hold: { label: 'En attente', bg: '#fef3c7', text: '#d97706' },
   suspended: { label: 'Suspendu', bg: '#fee2e2', text: '#dc2626' },
-  visa_refused: { label: 'Visa refusé', bg: '#fee2e2', text: '#dc2626' },
-  archived: { label: 'Archivé', bg: '#f4f4f5', text: '#71717a' },
-  completed: { label: 'Terminé', bg: '#d1fae5', text: '#059669' },
+  visa_refused: { label: 'Visa refuse', bg: '#fee2e2', text: '#dc2626' },
+  archived: { label: 'Archive', bg: '#f4f4f5', text: '#71717a' },
+  completed: { label: 'Termine', bg: '#d1fae5', text: '#059669' },
 }
 
 const NEXT_ACTIONS: Record<string, { text: string; cta: string | null; action: string | null }> = {
   lead: { text: 'Booker un RDV de qualification', cta: 'Booker RDV', action: 'process' },
-  rdv_booked: { text: 'Faire l\u2019entretien et qualifier', cta: 'Voir Meet', action: 'meet' },
+  rdv_booked: { text: "Faire l'entretien et qualifier", cta: 'Voir Meet', action: 'meet' },
   qualification_done: { text: 'Proposer des offres de stage', cta: 'Proposer job', action: 'jobs' },
-  job_submitted: { text: 'Attendre la réponse candidat/employeur', cta: null, action: null },
+  job_submitted: { text: 'Attendre la reponse candidat/employeur', cta: null, action: null },
   job_retained: { text: 'Envoyer la convention de stage', cta: null, action: null },
   convention_signed: { text: 'Demander le paiement', cta: null, action: null },
-  payment_pending: { text: 'Confirmer la réception du paiement', cta: 'Marquer payé', action: 'mark_paid' },
-  payment_received: { text: 'Préparer les documents visa', cta: null, action: null },
-  visa_docs_sent: { text: 'Envoyer le dossier à l\u2019agent FAZZA', cta: 'Envoyer FAZZA', action: 'visa' },
-  visa_submitted: { text: 'Attendre la réception du visa', cta: null, action: null },
-  visa_in_progress: { text: 'Attendre la réception du visa', cta: null, action: null },
-  visa_received: { text: 'Préparer l\u2019arrivée', cta: null, action: null },
-  arrival_prep: { text: 'Confirmer chauffeur et hébergement', cta: 'Voir logistique', action: 'arrivee' },
-  active: { text: 'Suivre le stage et préparer le départ', cta: null, action: null },
+  payment_pending: { text: 'Confirmer la reception du paiement', cta: 'Marquer paye', action: 'mark_paid' },
+  payment_received: { text: 'Preparer les documents visa', cta: null, action: null },
+  visa_docs_sent: { text: "Envoyer le dossier a l'agent FAZZA", cta: 'Envoyer FAZZA', action: 'visa' },
+  visa_submitted: { text: 'Attendre la reception du visa', cta: null, action: null },
+  visa_in_progress: { text: 'Attendre la reception du visa', cta: null, action: null },
+  visa_received: { text: "Preparer l'arrivee", cta: null, action: null },
+  arrival_prep: { text: 'Confirmer chauffeur et hebergement', cta: 'Voir logistique', action: 'arrivee' },
+  active: { text: 'Suivre le stage et preparer le depart', cta: null, action: null },
   alumni: { text: 'Envoyer le formulaire ambassadeur', cta: null, action: null },
 }
 
@@ -102,19 +102,19 @@ export default function CaseDetailPage() {
   if (loading) {
     return (
       <div className="flex flex-col h-full bg-[#fafaf9]">
-        <div className="px-5 py-3 bg-white border-b border-[#e4e4e7] animate-pulse">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-zinc-200" />
+        <div className="px-6 py-4 bg-white border-b border-zinc-200 animate-pulse">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-zinc-200" />
             <div className="flex-1 space-y-2">
-              <div className="h-4 w-40 bg-zinc-200 rounded" />
-              <div className="h-3 w-56 bg-zinc-100 rounded" />
+              <div className="h-5 w-48 bg-zinc-200 rounded" />
+              <div className="h-3 w-64 bg-zinc-100 rounded" />
             </div>
           </div>
         </div>
-        <div className="h-10 bg-white border-b border-[#e4e4e7] animate-pulse" />
-        <div className="flex-1 p-5 space-y-3 animate-pulse">
-          <div className="h-24 bg-zinc-100 rounded-lg" />
-          <div className="h-24 bg-zinc-100 rounded-lg" />
+        <div className="h-11 bg-white border-b border-zinc-200 animate-pulse" />
+        <div className="flex-1 p-6 space-y-4 animate-pulse">
+          <div className="h-24 bg-zinc-100 rounded-xl" />
+          <div className="h-24 bg-zinc-100 rounded-xl" />
         </div>
       </div>
     )
@@ -129,9 +129,9 @@ export default function CaseDetailPage() {
         </div>
         <button
           onClick={() => router.push(`/${locale}/pipeline`)}
-          className="px-4 py-2 text-sm font-medium bg-white border border-[#e4e4e7] hover:bg-zinc-50 text-[#1a1918] rounded-lg transition-colors"
+          className="px-4 py-2 text-sm font-medium bg-white border border-zinc-200 hover:bg-zinc-50 text-[#1a1918] rounded-lg transition-colors"
         >
-          ← Retour au pipeline
+          &larr; Retour au pipeline
         </button>
       </div>
     )
@@ -140,24 +140,18 @@ export default function CaseDetailPage() {
   const intern = caseData.interns ?? {}
   const firstName = intern.first_name ?? ''
   const lastName = intern.last_name ?? ''
-  const schoolName = (caseData as any).schools?.name ?? ''
-  const poste = (caseData as any).job_title ?? (caseData as any).desired_sectors?.[0] ?? ''
+  const email = intern.email ?? ''
+  const whatsapp = intern.whatsapp ?? ''
+  const schoolName = caseData.schools?.name ?? intern.school_country ?? ''
+  const mainJob = intern.main_desired_job ?? ''
+  const touchpoint = intern.touchpoint ?? ''
   const departDate = caseData.actual_start_date ?? caseData.desired_start_date
-  const dateDepart = departDate ? new Date(departDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : ''
+  const dateDepart = departDate ? new Date(departDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
+  const durationMonths = caseData.desired_duration_months ?? ''
   const isVisaOnly = caseData.case_type === 'visa_only'
 
   const badge = STATUS_BADGE[caseData.status] ?? { label: caseData.status, bg: '#f4f4f5', text: '#71717a' }
   const actionInfo = NEXT_ACTIONS[caseData.status]
-
-  // Urgency: payment_pending or arrival_prep with arrival < 7 days
-  const isUrgent = (() => {
-    if (caseData.status === 'payment_pending') return true
-    if (caseData.status === 'arrival_prep' && departDate) {
-      const daysUntil = Math.floor((new Date(departDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-      return daysUntil < 7
-    }
-    return false
-  })()
 
   const handleCtaClick = () => {
     if (!actionInfo?.action) return
@@ -166,8 +160,8 @@ export default function CaseDetailPage() {
         setActiveTab('process')
         break
       case 'meet':
-        if ((caseData as any).google_meet_link) {
-          window.open((caseData as any).google_meet_link, '_blank')
+        if (caseData.google_meet_link) {
+          window.open(caseData.google_meet_link, '_blank')
         } else {
           setActiveTab('process')
         }
@@ -192,112 +186,111 @@ export default function CaseDetailPage() {
   }
 
   const tabs: { key: TabKey; label: string }[] = [
-    { key: 'process', label: 'Process' },
+    { key: 'process', label: 'Processus' },
     { key: 'profil', label: 'Profil' },
     ...(!isVisaOnly ? [{ key: 'jobs' as TabKey, label: 'Jobs' }] : []),
     { key: 'visa', label: 'Visa' },
-    ...(!isVisaOnly ? [{ key: 'arrivee' as TabKey, label: 'Arrivée' }] : []),
+    ...(!isVisaOnly ? [{ key: 'arrivee' as TabKey, label: 'Arrivee' }] : []),
     { key: 'facturation', label: 'Facturation' },
   ]
 
-  const subtitleParts = [schoolName, poste, dateDepart].filter(Boolean)
-
   return (
     <div className="flex flex-col h-full bg-[#fafaf9]">
-      {/* ROW 1 — Header compact 56px */}
-      <div className="flex items-center gap-3 px-5 py-3 bg-white border-b border-[#e4e4e7]">
-        {/* Back */}
-        <button
-          onClick={() => router.push(`/${locale}/pipeline`)}
-          className="text-zinc-400 hover:text-zinc-600 flex-shrink-0"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path d="M19 12H5M12 5l-7 7 7 7" />
-          </svg>
-        </button>
-
-        {/* Avatar */}
-        <div className="w-9 h-9 rounded-full bg-[#c8a96e] flex items-center justify-center flex-shrink-0">
-          <span className="text-white text-xs font-bold">{getInitials(firstName, lastName)}</span>
-        </div>
-
-        {/* Name + info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-base font-semibold text-[#1a1918] truncate">{firstName} {lastName}</h1>
+      {/* ── HEADER ── */}
+      <div className="bg-white border-b border-zinc-200 px-6 py-4">
+        {/* Row 1: Back + Status badge + Actions */}
+        <div className="flex items-center justify-between mb-3">
+          <button
+            onClick={() => router.back()}
+            className="text-sm text-zinc-500 hover:text-zinc-900 flex items-center gap-1 transition-colors"
+          >
+            &larr; Retour
+          </button>
+          <div className="flex items-center gap-2">
             <span
-              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0"
+              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
               style={{ backgroundColor: badge.bg, color: badge.text }}
             >
               {badge.label}
             </span>
             {isVisaOnly && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 bg-blue-50 text-blue-700">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
                 Visa Only
               </span>
             )}
+            {caseData.portal_token && (
+              <a
+                href={`/portal/${caseData.portal_token}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs px-3 py-1.5 rounded-lg border border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition-colors"
+              >
+                Portail candidat
+              </a>
+            )}
+            {caseData.status === 'active' && (
+              <button
+                onClick={() => setShowInternCard(true)}
+                className="text-xs px-3 py-1.5 rounded-lg bg-[#c8a96e] text-white hover:opacity-90 transition-opacity"
+              >
+                Carte stagiaire
+              </button>
+            )}
           </div>
-          {subtitleParts.length > 0 && (
-            <p className="text-xs text-[#71717a] truncate">{subtitleParts.join(' · ')}</p>
-          )}
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          {caseData.portal_token && (
-            <a
-              href={`/portal/${caseData.portal_token}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs px-2.5 py-1.5 rounded-lg border border-[#e4e4e7] text-[#71717a] hover:bg-zinc-50"
-            >
-              Portail
-            </a>
-          )}
-          {caseData.status === 'active' && (
-            <button
-              onClick={() => setShowInternCard(true)}
-              className="text-xs px-2.5 py-1.5 rounded-lg bg-[#c8a96e] text-white hover:opacity-90"
-            >
-              Carte
-            </button>
-          )}
+        {/* Row 2: Avatar + Identity */}
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-[#c8a96e]/20 flex items-center justify-center flex-shrink-0">
+            <span className="text-lg font-bold text-[#c8a96e]">{getInitials(firstName, lastName)}</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-bold text-[#1a1918]">{firstName} {lastName}</h1>
+            <p className="text-sm text-zinc-500">
+              {[email, whatsapp].filter(Boolean).join(' \u00b7 ')}
+            </p>
+          </div>
+        </div>
+
+        {/* Row 3: Key info pills */}
+        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-sm text-zinc-600">
+          {schoolName && <span>🎓 {schoolName}</span>}
+          {mainJob && <span>💼 {mainJob}</span>}
+          {dateDepart && <span>📅 Depart: {dateDepart}</span>}
+          {durationMonths && <span>⏱ {durationMonths} mois</span>}
+          {touchpoint && <span>🔗 Via {touchpoint}</span>}
         </div>
       </div>
 
-      {/* ROW 2 — Action banner (conditional) */}
-      {actionInfo?.cta && (
-        <div
-          className="flex items-center justify-between px-5 py-2 border-b text-xs"
-          style={{
-            backgroundColor: isUrgent ? '#fef2f2' : '#fffbeb',
-            borderColor: isUrgent ? '#fecaca' : '#fde68a',
-          }}
-        >
-          <span className="text-[#1a1918]">
-            <span className="font-semibold">{isUrgent ? '🔴' : '⚡'}</span>{' '}
-            {actionInfo.text}
-          </span>
-          <button
-            onClick={handleCtaClick}
-            className="ml-3 text-xs font-semibold text-[#c8a96e] hover:underline flex-shrink-0"
-          >
-            {actionInfo.cta} →
-          </button>
+      {/* ── NEXT ACTION ── */}
+      {actionInfo && (
+        <div className="px-6 py-3">
+          <div className="bg-[#0d9e75]/10 border border-[#0d9e75]/30 rounded-xl p-4">
+            <p className="text-sm text-[#0d9e75] font-medium">Prochaine etape</p>
+            <p className="text-base font-semibold text-[#1a1918] mt-1">{actionInfo.text}</p>
+            {actionInfo.cta && (
+              <button
+                onClick={handleCtaClick}
+                className="mt-2 px-4 py-2 bg-[#0d9e75] text-white text-sm rounded-lg font-medium hover:bg-[#0b8a66] transition-colors"
+              >
+                {actionInfo.cta} &rarr;
+              </button>
+            )}
+          </div>
         </div>
       )}
 
-      {/* ROW 3 — Tabs */}
-      <div className="flex border-b border-[#e4e4e7] bg-white px-5 overflow-x-auto flex-shrink-0">
+      {/* ── TABS ── */}
+      <div className="flex border-b border-zinc-200 bg-white px-4 overflow-x-auto flex-shrink-0">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={[
-              'px-3.5 py-2.5 text-[13px] font-medium border-b-2 transition-colors whitespace-nowrap',
+              'px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
               activeTab === tab.key
                 ? 'border-[#c8a96e] text-[#c8a96e]'
-                : 'border-transparent text-[#71717a] hover:text-[#1a1918]',
+                : 'border-transparent text-zinc-500 hover:text-[#1a1918]',
             ].join(' ')}
           >
             {tab.label}
@@ -305,8 +298,8 @@ export default function CaseDetailPage() {
         ))}
       </div>
 
-      {/* ROW 4 — Tab content */}
-      <div className="flex-1 overflow-y-auto p-5">
+      {/* ── TAB CONTENT ── */}
+      <div className="flex-1 overflow-y-auto p-6">
         {activeTab === 'process' && (
           <TabProcess
             caseId={caseData.id}
