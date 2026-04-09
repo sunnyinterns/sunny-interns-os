@@ -340,6 +340,9 @@ export default function ApplyPage() {
   const [lang, setLang] = useState<'fr'|'en'>('fr')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [stepErrors, setStepErrors] = useState<Record<number, string>>({})
+  const [cvUploading, setCvUploading] = useState(false)
+  const [cvLocalUploading, setCvLocalUploading] = useState(false)
   const [price, setPrice] = useState(990)
   const [phoneDropOpen, setPhoneDropOpen] = useState(false)
 
@@ -378,6 +381,8 @@ export default function ApplyPage() {
     cv_en_filename: '',
     cv_local_file: null as File | null,
     cv_local_filename: '',
+    cv_url: '',
+    local_cv_url: '',
     extra_docs_files: [] as File[],
     extra_docs_names: [] as string[],
     spoken_languages: [] as string[],
@@ -460,6 +465,13 @@ export default function ApplyPage() {
   }, [])
 
   // ── Setters ──
+  function setStepError(step: number, msg: string) {
+    setStepErrors(e => ({ ...e, [step]: msg }))
+  }
+  function clearStepError(step: number) {
+    setStepErrors(e => { const n = {...e}; delete n[step]; return n })
+  }
+
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm(f => ({ ...f, [key]: value }))
   }
@@ -511,7 +523,7 @@ export default function ApplyPage() {
           form.school_country
         )
       case 1:
-        return !!(form.cv_en_file && form.spoken_languages.length > 0)
+        return !!(form.cv_en_file && form.spoken_languages.length > 0 && !cvUploading)
       case 2:
         return !!(
           form.duration &&
@@ -535,29 +547,9 @@ export default function ApplyPage() {
     setSubmitting(true)
     setError('')
     try {
-      // Upload CV EN
-      let cv_url = ''
-      if (form.cv_en_file) {
-        const fd = new FormData()
-        fd.append('file', form.cv_en_file)
-        fd.append('bucket', 'intern-cvs')
-        const r = await fetch('/api/upload', { method: 'POST', body: fd })
-        if (!r.ok) throw new Error(T('Erreur upload CV', 'CV upload error', lang))
-        const d = await r.json() as { url: string }
-        cv_url = d.url
-      }
-
-      // Upload CV local
-      let local_cv_url = ''
-      if (form.cv_local_file) {
-        const fd = new FormData()
-        fd.append('file', form.cv_local_file)
-        fd.append('bucket', 'intern-cvs')
-        const r = await fetch('/api/upload', { method: 'POST', body: fd })
-        if (!r.ok) throw new Error(T('Erreur upload CV local', 'Local CV upload error', lang))
-        const d = await r.json() as { url: string }
-        local_cv_url = d.url
-      }
+      // CV déjà uploadé en temps réel à l'étape 2
+      const cv_url = form.cv_url || ''
+      const local_cv_url = form.local_cv_url || ''
 
       // If school not found -> create pending
       if (form.school_not_found && form.school_custom_name.trim()) {
@@ -857,6 +849,23 @@ export default function ApplyPage() {
             </div>
 
             {/* CV anglais */}
+            {cvUploading && (
+              <div className="flex items-center gap-2 text-sm text-[#c8a96e] bg-amber-50 rounded-lg px-3 py-2 mb-2">
+                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                {lang === 'fr' ? 'Upload en cours...' : 'Uploading...'}
+              </div>
+            )}
+            {form.cv_url && !cvUploading && (
+              <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 rounded-lg px-3 py-2 mb-2">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+                {lang === 'fr' ? 'CV uploadé avec succès ✓' : 'CV uploaded successfully ✓'}
+              </div>
+            )}
             <FileUpload
               label={lang==='fr'?'CV en anglais * (PDF/DOC, max 5MB)':'English CV * (PDF/DOC, max 5MB)'}
               helper={lang==='fr'
@@ -864,10 +873,22 @@ export default function ApplyPage() {
                 : "Even at a French-speaking company, English is essential daily."}
               fileName={form.cv_en_filename}
               onFileSelect={f => {
-                if (f.size > 5 * 1024 * 1024) { setError(T('Fichier trop volumineux (max 5MB)', 'File too large (max 5MB)', lang)); return }
+                // Vérif taille
+                if (f.size > 5 * 1024 * 1024) {
+                  setStepError(1, T(`Fichier trop volumineux : ${(f.size / 1024 / 1024).toFixed(1)}MB (max 5MB)`, `File too large: ${(f.size / 1024 / 1024).toFixed(1)}MB (max 5MB)`, lang))
+                  return
+                }
                 set('cv_en_file', f)
                 set('cv_en_filename', f.name)
-                setError('')
+                clearStepError(1)
+                // Upload immédiat
+                setCvUploading(true)
+                const fd = new FormData(); fd.append('file', f)
+                fetch('/api/upload', { method: 'POST', body: fd })
+                  .then(r => r.ok ? r.json() : Promise.reject(new Error(T('Erreur serveur lors de l\'upload', 'Server error during upload', lang))))
+                  .then((d: { url: string }) => { set('cv_url', d.url); clearStepError(1) })
+                  .catch((e: Error) => setStepError(1, T(`Erreur upload CV: ${e.message}`, `CV upload error: ${e.message}`, lang)))
+                  .finally(() => setCvUploading(false))
               }}
               inputRef={cvEnRef}
               lang={lang}
@@ -882,10 +903,21 @@ export default function ApplyPage() {
                   : "Optional but recommended for local companies"}
                 fileName={form.cv_local_filename}
                 onFileSelect={f => {
-                  if (f.size > 5 * 1024 * 1024) { setError(T('Fichier trop volumineux (max 5MB)', 'File too large (max 5MB)', lang)); return }
+                  if (f.size > 5 * 1024 * 1024) {
+                    setStepError(1, T(`Fichier trop volumineux : ${(f.size / 1024 / 1024).toFixed(1)}MB (max 5MB)`, `File too large: ${(f.size / 1024 / 1024).toFixed(1)}MB (max 5MB)`, lang))
+                    return
+                  }
                   set('cv_local_file', f)
                   set('cv_local_filename', f.name)
-                  setError('')
+                  clearStepError(1)
+                  // Upload immédiat
+                  setCvLocalUploading(true)
+                  const fd2 = new FormData(); fd2.append('file', f)
+                  fetch('/api/upload', { method: 'POST', body: fd2 })
+                    .then(r => r.ok ? r.json() : Promise.reject(new Error(T('Erreur serveur', 'Server error', lang))))
+                    .then((d: { url: string }) => { set('local_cv_url', d.url); clearStepError(1) })
+                    .catch((e: Error) => setStepError(1, T(`Erreur upload CV local: ${e.message}`, `Local CV upload error: ${e.message}`, lang)))
+                    .finally(() => setCvLocalUploading(false))
                 }}
                 inputRef={cvLocalRef}
                 lang={lang}
@@ -1331,9 +1363,10 @@ export default function ApplyPage() {
         )}
 
         {/* ── Error ── */}
-        {error && (
-          <div className="mt-4 px-4 py-3 bg-red-900/20 border border-red-800/30 rounded-xl text-sm text-red-400">
-            {error}
+        {(error || stepErrors[step]) && (
+          <div className="mt-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 flex items-start gap-2">
+            <span className="flex-shrink-0">⚠️</span>
+            <span>{stepErrors[step] || error}</span>
           </div>
         )}
 
