@@ -580,8 +580,6 @@ export default function ApplyPage() {
     const fullName = `${form.first_name} ${form.last_name}`.trim()
     if (fullName) params.set('name', fullName)
     if (form.email) params.set('email', form.email)
-    if (form.first_name) params.set('firstName', form.first_name)
-    if (form.last_name) params.set('lastName', form.last_name)
     window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`)
     // Délai court pour que le DOM soit mis à jour avec les data-attributes
     const timer = setTimeout(() => {
@@ -1609,9 +1607,7 @@ export default function ApplyPage() {
               data-fillout-embed-type="standard"
               data-fillout-inherit-parameters
               data-fillout-dynamic-resize
-              {...(form.first_name && form.last_name ? { 'data-name': `${form.first_name} ${form.last_name}`.trim() } : {})}
-              {...(form.first_name ? { 'data-firstName': form.first_name } : {})}
-              {...(form.last_name ? { 'data-lastName': form.last_name } : {})}
+              {...(form.first_name ? { 'data-name': `${form.first_name} ${form.last_name}`.trim() } : {})}
               {...(form.email ? { 'data-email': form.email } : {})}
             />
             <p className="text-xs text-zinc-400 text-center">
