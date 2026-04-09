@@ -301,7 +301,7 @@ function isValidEmail(email: string): boolean {
 // REUSABLE SUB-COMPONENTS
 // ─────────────────────────────────────────────────────────────
 
-const inputClass = 'w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-[#1a1918] placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c8a96e] text-sm'
+const inputClass = 'w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-[#1a1918] placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c8a96e] text-base'
 const labelClass = 'block text-sm font-medium text-[#c8a96e] mb-1.5'
 const helperClass = 'text-xs text-zinc-500 mt-1'
 const chipSelectedClass = 'bg-[#c8a96e] text-[#1a1410]'
@@ -718,6 +718,7 @@ export default function ApplyPage() {
         throw new Error(d.error ?? T('Erreur lors de la soumission', 'Submission error', lang))
       }
 
+      localStorage.removeItem('apply_form_v1')
       router.push(`/apply/confirmation?name=${encodeURIComponent(form.first_name)}&lang=${lang}`)
     } catch (e) {
       setError(e instanceof Error ? e.message : T('Erreur inconnue', 'Unknown error', lang))
@@ -1536,7 +1537,7 @@ export default function ApplyPage() {
             <button
               type="button"
               onClick={() => { setStep(s => s - 1); setError(''); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; window.scrollTo(0, 0) }}
-              className="px-6 py-3 rounded-xl text-sm font-medium bg-white text-[#8a7d6d] border border-zinc-200 hover:border-[#c8a96e] transition-all"
+              className="px-6 py-3 min-h-[48px] rounded-xl text-sm font-medium bg-white text-[#8a7d6d] border border-zinc-200 hover:border-[#c8a96e] transition-all"
             >
               {lang==='fr'?'\u2190 Retour':'\u2190 Back'}
             </button>
@@ -1546,7 +1547,7 @@ export default function ApplyPage() {
               type="button"
               disabled={!canNext()}
               onClick={() => { setStep(s => s + 1); setError(''); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; window.scrollTo(0, 0) }}
-              className="flex-1 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a]"
+              className="flex-1 py-3 min-h-[48px] rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a]"
             >
               {lang==='fr'?'Continuer \u2192':'Continue \u2192'}
             </button>
@@ -1556,7 +1557,7 @@ export default function ApplyPage() {
               type="button"
               disabled={!canNext() || submitting}
               onClick={() => { void handleSubmit() }}
-              className="flex-1 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a]"
+              className="flex-1 py-3 min-h-[48px] rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a]"
             >
               {submitting
                 ? (lang==='fr'?'Envoi en cours...':'Submitting...')

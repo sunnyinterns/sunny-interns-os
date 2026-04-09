@@ -124,7 +124,7 @@ export async function POST(request: Request) {
         intern_id: intern.id,
         destination_id: dest?.id ?? 'fc9ece85-e5d5-41d2-9142-79054244bbce',
         status: 'lead',
-        desired_start_date: d.start_date ?? null,
+        desired_start_date: d.start_date || null,
         desired_duration_months: durationMonths,
         desired_sectors: allJobs,
         school_id: d.school_id ?? null,

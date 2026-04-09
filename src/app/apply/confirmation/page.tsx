@@ -1,7 +1,7 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { Suspense } from 'react'
+import { Suspense, useEffect } from 'react'
 
 function ConfirmationContent() {
   const params = useSearchParams()
@@ -9,6 +9,11 @@ function ConfirmationContent() {
   const rdv = params.get('rdv')
   const langParam = params.get('lang')
   const isFr = langParam !== 'en'
+
+  // Clear form data on mount
+  useEffect(() => {
+    try { localStorage.removeItem('apply_form_v1') } catch {}
+  }, [])
 
   return (
     <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center px-4 py-12">
