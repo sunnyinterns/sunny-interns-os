@@ -2,6 +2,10 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 
+
+// ─── Lang helper ────────────────────────────────────────────────────────────
+function T(fr: string, en: string, lang: 'fr'|'en') { return lang === 'fr' ? fr : en }
+
 // ─────────────────────────────────────────────────────────────
 // CONSTANTS
 // ─────────────────────────────────────────────────────────────
@@ -333,6 +337,7 @@ function FileUpload({
 
 export default function ApplyPage() {
   const [step, setStep] = useState(0)
+  const [lang, setLang] = useState<'fr'|'en'>('fr')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [price, setPrice] = useState(990)
@@ -487,7 +492,7 @@ export default function ApplyPage() {
           form.duration &&
           form.start_date &&
           (form.desired_jobs.length > 0 || form.custom_jobs.length > 0) &&
-          form.stage_ideal.length >= 50
+          form.stage_ideal.trim().length > 0
         )
       case 3:
         return !!(form.commitment_price && form.commitment_budget && form.commitment_terms)
@@ -631,6 +636,23 @@ export default function ApplyPage() {
       </div>
 
       <div className="max-w-xl mx-auto px-4 py-8">
+        {/* Toggle langue */}
+        <div className="flex justify-end mb-4">
+          <div className="inline-flex rounded-lg border border-zinc-200 bg-white overflow-hidden text-xs font-medium">
+            <button
+              onClick={() => setLang('fr')}
+              className={`px-3 py-1.5 transition-colors ${lang === 'fr' ? 'bg-[#c8a96e] text-white' : 'text-zinc-500 hover:bg-zinc-50'}`}
+            >
+              🇫🇷 FR
+            </button>
+            <button
+              onClick={() => setLang('en')}
+              className={`px-3 py-1.5 transition-colors ${lang === 'en' ? 'bg-[#c8a96e] text-white' : 'text-zinc-500 hover:bg-zinc-50'}`}
+            >
+              🇬🇧 EN
+            </button>
+          </div>
+        </div>
         <h1 className="text-2xl font-bold text-[#1a1918] mb-6">{STEP_TITLES[step]}</h1>
 
         {/* ════════════════════════════════════════════════════════
@@ -641,11 +663,11 @@ export default function ApplyPage() {
             {/* Prénom + Nom */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className={labelClass}>Prénom* / First name*</label>
+                <label className={labelClass}>{lang==='fr'?'Prénom*':'First name*'}</label>
                 <input type="text" value={form.first_name} onChange={e => set('first_name', e.target.value)} className={inputClass} placeholder="Prénom / First name" />
               </div>
               <div>
-                <label className={labelClass}>Nom* / Last name*</label>
+                <label className={labelClass}>{lang==='fr'?'Nom*':'Last name*'}</label>
                 <input type="text" value={form.last_name} onChange={e => set('last_name', e.target.value)} className={inputClass} placeholder="Nom / Last name" />
               </div>
             </div>
@@ -665,11 +687,11 @@ export default function ApplyPage() {
             {/* WhatsApp */}
             <div>
               <label className={labelClass}>WhatsApp*</label>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-start">
                 <select
                   value={form.whatsapp_code}
                   onChange={e => set('whatsapp_code', e.target.value)}
-                  className={`${inputClass} w-36 flex-shrink-0`}
+                  className={`${inputClass} w-28 flex-shrink-0 text-sm`}
                 >
                   {COUNTRY_PHONE_CODES.map((c, i) => (
                     <option key={`${c.name}-${i}`} value={c.code}>
@@ -694,7 +716,7 @@ export default function ApplyPage() {
 
             {/* Nationalité(s) — multi-select with search */}
             <div className="relative">
-              <label className={labelClass}>Nationalité(s)* / Nationality(ies)*</label>
+              <label className={labelClass}>{lang==='fr'?'Nationalité(s)*':'Nationality(ies)*'}</label>
               {form.nationalities.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   {form.nationalities.map(n => (
@@ -739,7 +761,7 @@ export default function ApplyPage() {
 
             {/* Date de naissance */}
             <div>
-              <label className={labelClass}>Date de naissance* / Date of birth*</label>
+              <label className={labelClass}>{lang==='fr'?'Date de naissance*':'Date of birth*'}</label>
               <input type="date" value={form.birth_date} onChange={e => set('birth_date', e.target.value)} className={inputClass} />
             </div>
 
@@ -758,7 +780,7 @@ export default function ApplyPage() {
 
             {/* Pays d'études */}
             <div className="relative">
-              <label className={labelClass}>Pays où les études sont réalisées* / Country of study*</label>
+              <label className={labelClass}>{lang==='fr'?"Pays où les études sont réalisées*":'Country of study*'}</label>
               <input
                 type="text"
                 value={form.school_country || schoolCountrySearch}
@@ -844,7 +866,7 @@ export default function ApplyPage() {
 
             {/* Documents supplémentaires */}
             <div>
-              <label className={labelClass}>Documents supplémentaires / Additional documents</label>
+              <label className={labelClass}>{lang==='fr'?'Documents supplémentaires':'Additional documents'}</label>
               <input
                 ref={docsRef}
                 type="file"
@@ -1009,7 +1031,7 @@ export default function ApplyPage() {
             {/* Date de fin calculée */}
             {computedEndDate && (
               <div>
-                <label className={labelClass}>Date de fin estimée / Estimated end date</label>
+                <label className={labelClass}>{lang==='fr'?'Date de fin maximum possible':'Latest possible end date'}</label>
                 <p className="text-sm text-zinc-500 bg-white rounded-xl px-4 py-3">
                   {new Date(computedEndDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                   {' / '}
@@ -1094,11 +1116,11 @@ export default function ApplyPage() {
                 onChange={e => set('stage_ideal', e.target.value)}
                 rows={6}
                 maxLength={1000}
-                placeholder={"🇫🇷 Objectifs, compétences, types d'entreprises, contraintes (dates / remote / horaires), et ce que tu veux apprendre. Pas besoin d'être parfait, on clarifie ensemble en appel.\n🇬🇧 Goals, skills, company types, constraints (dates / remote / hours), and what you want to learn. No need to be perfect, we'll clarify together on the call."}
+                placeholder={lang==='fr' ? "Objectifs, compétences, types d'entreprises, contraintes (dates / remote / horaires), et ce que tu veux apprendre. Pas besoin d'être parfait, on clarifie ensemble en appel." : "Goals, skills, company types, constraints (dates / remote / hours), and what you want to learn. No need to be perfect, we'll clarify together on the call."}
                 className={`${inputClass} resize-none`}
               />
-              <p className={`text-xs mt-1 ${form.stage_ideal.length < 50 ? 'text-red-400' : 'text-zinc-500'}`}>
-                {form.stage_ideal.length}/1000 (min 50)
+              <p className={`text-xs mt-1 text-zinc-400`}>
+                {form.stage_ideal.length}/1000
               </p>
             </div>
           </div>
