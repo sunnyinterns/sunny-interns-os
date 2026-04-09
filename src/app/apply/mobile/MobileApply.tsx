@@ -237,6 +237,7 @@ export function MobileApply({
     } catch { return 0 }
   })
   const [fieldError, setFieldError] = useState('')
+  const [fieldTouched, setFieldTouched] = useState(false)
   const [searchText, setSearchText] = useState('')
   const [phoneDropOpen, setPhoneDropOpen] = useState(false)
   const [schoolResults, setSchoolResults] = useState<School[]>([])
@@ -296,6 +297,7 @@ export function MobileApply({
   // ── Autofocus on question change ──
   useEffect(() => {
     setFieldError('')
+    setFieldTouched(false)
     setSearchText('')
     const timer = setTimeout(() => {
       const el = document.querySelector<HTMLElement>(

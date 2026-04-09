@@ -432,6 +432,8 @@ export default function ApplyPage() {
   const [emailExists, setEmailExists] = useState(false)
   const [emailChecking, setEmailChecking] = useState(false)
   const [phoneError, setPhoneError] = useState('')
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
+  const touch = (field: string) => setTouched(t => ({ ...t, [field]: true }))
   const [isMobile, setIsMobile] = useState(false)
 
   const cvEnRef = useRef<HTMLInputElement>(null)
@@ -861,8 +863,9 @@ export default function ApplyPage() {
                 type="email"
                 value={form.email}
                 onChange={e => set('email', e.target.value)}
-                className={`${inputClass} ${form.email && (!isValidEmail(form.email) || emailExists) ? 'ring-2 ring-red-500' : form.email && isValidEmail(form.email) && !emailExists && !emailChecking ? 'ring-2 ring-green-400' : ''}`}
+                className={`${inputClass} ${touched.email && form.email && (!isValidEmail(form.email) || emailExists) ? 'ring-2 ring-red-500' : touched.email && form.email && isValidEmail(form.email) && !emailExists && !emailChecking ? 'ring-2 ring-green-400' : ''}`}
                 placeholder="your@email.com"
+                onBlur={() => touch('email')}
               />
               {emailChecking && (
                 <p className="text-xs text-zinc-400 mt-1 flex items-center gap-1">
@@ -997,8 +1000,8 @@ export default function ApplyPage() {
             {/* Passeport expiry */}
             <div>
               <label className={labelClass}>{lang==='fr'?"Date d\u2019expiration du passeport *":'Passport expiry date *'}</label>
-<input type="date" value={form.passport_expiry} onChange={e => set('passport_expiry', e.target.value)} className={`${inputClass} ${!form.passport_expiry ? "text-zinc-400" : ""}`} />
-              {passportWarning && (
+<input type="date" value={form.passport_expiry} onChange={e => set('passport_expiry', e.target.value)} onBlur={() => touch('passport_expiry')} className={`${inputClass} ${!form.passport_expiry ? "text-zinc-400" : ""}`} />
+              {touched.passport_expiry && passportWarning && (
                 <div className="mt-2 flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-300 rounded-lg px-3 py-2.5">
                   <span className="flex-shrink-0 font-bold">⚠️</span>
                   <span>
