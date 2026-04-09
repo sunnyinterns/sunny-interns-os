@@ -8,48 +8,103 @@ function getServiceClient() {
   )
 }
 
-// GET: Retourner les events confirmés à venir depuis la DB
+async function getAccessToken(): Promise<string | null> {
+  const clientId = process.env.GOOGLE_CLIENT_ID
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN
+  if (!clientId || !clientSecret || !refreshToken) return null
+
+  try {
+    const r = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret, refresh_token: refreshToken, grant_type: 'refresh_token' })
+    })
+    const d = await r.json() as { access_token?: string }
+    return d.access_token ?? null
+  } catch { return null }
+}
+
+async function fetchCalendarEvents(accessToken: string, calendarId: string) {
+  const now = new Date().toISOString()
+  const future = new Date(Date.now() + 60 * 86400000).toISOString()
+  
+  const r = await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?timeMin=${now}&timeMax=${future}&maxResults=50&singleEvents=true&orderBy=startTime`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  )
+  if (!r.ok) return []
+  const d = await r.json() as { items?: GoogleCalendarEvent[] }
+  return d.items ?? []
+}
+
+interface GoogleCalendarEvent {
+  id: string
+  summary?: string
+  description?: string
+  status?: string
+  start?: { dateTime?: string; date?: string }
+  end?: { dateTime?: string; date?: string }
+  hangoutLink?: string
+  attendees?: Array<{ email: string; displayName?: string; responseStatus?: string; self?: boolean }>
+  organizer?: { email: string }
+  htmlLink?: string
+}
+
+// POST: Sync Google Calendar → DB
+export async function POST() {
+  const accessToken = await getAccessToken()
+  if (!accessToken) {
+    return NextResponse.json({ error: 'No Google credentials configured' }, { status: 503 })
+  }
+
+  const supabase = getServiceClient()
+  const calendars = ['charly@bali-interns.com', 'team@bali-interns.com']
+  let totalSynced = 0
+
+  for (const calId of calendars) {
+    const events = await fetchCalendarEvents(accessToken, calId)
+    
+    for (const ev of events) {
+      const internAttendee = ev.attendees?.find(a => !a.email.includes('bali-interns.com') && !a.self)
+      const internNameMatch = ev.summary?.match(/Team Bali Interns and (.+)/i)
+      const rescheduleMatch = ev.description?.match(/Cancel or reschedule: (https:\/\/\S+)/i)
+
+      await supabase.from('calendar_events').upsert({
+        id: ev.id,
+        google_calendar_id: calId,
+        summary: ev.summary ?? null,
+        description: ev.description ?? null,
+        status: ev.status ?? 'confirmed',
+        start_datetime: ev.start?.dateTime ?? ev.start?.date ?? null,
+        end_datetime: ev.end?.dateTime ?? ev.end?.date ?? null,
+        meet_link: ev.hangoutLink ?? null,
+        cancel_reschedule_link: rescheduleMatch?.[1] ?? null,
+        intern_email: internAttendee?.email ?? null,
+        intern_name: internNameMatch?.[1]?.trim() ?? null,
+        my_response_status: ev.attendees?.find(a => a.self)?.responseStatus ?? null,
+        html_link: ev.htmlLink ?? null,
+        organizer_email: ev.organizer?.email ?? calId,
+        synced_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' }).catch(() => null)
+      
+      totalSynced++
+    }
+  }
+
+  return NextResponse.json({ ok: true, synced: totalSynced, calendars })
+}
+
+// GET: Retourner les events depuis la DB  
 export async function GET() {
   const supabase = getServiceClient()
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from('calendar_events')
     .select('*')
     .eq('status', 'confirmed')
     .gte('start_datetime', new Date().toISOString())
     .order('start_datetime', { ascending: true })
     .limit(30)
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data ?? [])
-}
-
-// POST: Ajouter/mettre à jour un event (appelé par webhook ou manuellement)
-export async function POST(req: Request) {
-  const supabase = getServiceClient()
-  const event = await req.json() as {
-    id: string
-    summary?: string
-    status?: string
-    start_datetime: string
-    end_datetime?: string
-    intern_name?: string
-    intern_email?: string
-    meet_link?: string
-    cancel_reschedule_link?: string
-    google_calendar_id?: string
-    case_id?: string
-  }
-
-  if (!event.id || !event.start_datetime) {
-    return NextResponse.json({ error: 'id and start_datetime are required' }, { status: 400 })
-  }
-
-  const { error } = await supabase.from('calendar_events').upsert({
-    ...event,
-    updated_at: new Date().toISOString(),
-    synced_at: new Date().toISOString(),
-  }, { onConflict: 'id' })
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ ok: true })
 }
