@@ -285,7 +285,7 @@ function FileUpload({
   fileName,
   onFileSelect,
   inputRef,
-  accept = '.pdf,.doc,.docx',
+  accept = '.pdf,.doc,.docx,.jpg,.jpeg,.png,.odt,.rtf',
   lang,
 }: {
   label: string
@@ -796,13 +796,15 @@ export default function ApplyPage() {
             {/* Date de naissance */}
             <div>
               <label className={labelClass}>{lang==='fr'?'Date de naissance *':'Date of birth *'}</label>
+              <p className={helperClass + " mb-1"}>{lang==='fr' ? 'Format : jj/mm/aaaa' : 'Format: dd/mm/yyyy'}</p>
               <input type="date" value={form.birth_date} onChange={e => set('birth_date', e.target.value)} className={inputClass} />
             </div>
 
             {/* Passeport expiry */}
             <div>
               <label className={labelClass}>{lang==='fr'?"Date d\u2019expiration du passeport *":'Passport expiry date *'}</label>
-              <input type="date" value={form.passport_expiry} onChange={e => set('passport_expiry', e.target.value)} className={inputClass} />
+                            <p className={helperClass + " mb-1"}>{lang==='fr' ? 'Format : jj/mm/aaaa' : 'Format: dd/mm/yyyy'}</p>
+<input type="date" value={form.passport_expiry} onChange={e => set('passport_expiry', e.target.value)} className={inputClass} />
               {passportWarning && (
                 <div className="mt-2 flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-300 rounded-lg px-3 py-2.5">
                   <span className="flex-shrink-0 font-bold">⚠️</span>
@@ -865,15 +867,15 @@ export default function ApplyPage() {
               </div>
             )}
             <FileUpload
-              label={lang==='fr'?'CV en anglais * (PDF/DOC, max 5MB)':'English CV * (PDF/DOC, max 5MB)'}
+              label={lang==='fr'?'CV en anglais * (PDF/DOC/JPG, max 20MB)':'English CV * (PDF/DOC/JPG, max 20MB)'}
               helper={lang==='fr'
                 ? "M\u00eame avec une entreprise francophone, l\u2019anglais est indispensable au quotidien."
                 : "Even at a French-speaking company, English is essential daily."}
               fileName={form.cv_en_filename}
               onFileSelect={f => {
                 // Vérif taille
-                if (f.size > 5 * 1024 * 1024) {
-                  setStepError(1, T(`Fichier trop volumineux : ${(f.size / 1024 / 1024).toFixed(1)}MB (max 5MB)`, `File too large: ${(f.size / 1024 / 1024).toFixed(1)}MB (max 5MB)`, lang))
+                if (f.size > 20 * 1024 * 1024) {
+                  setStepError(1, T(`Fichier trop volumineux : ${(f.size / 1024 / 1024).toFixed(1)}MB (max 20MB)`, `File too large: ${(f.size / 1024 / 1024).toFixed(1)}MB (max 20MB)`, lang))
                   return
                 }
                 set('cv_en_file', f)
@@ -901,8 +903,8 @@ export default function ApplyPage() {
                   : "Optional but recommended for local companies"}
                 fileName={form.cv_local_filename}
                 onFileSelect={f => {
-                  if (f.size > 5 * 1024 * 1024) {
-                    setStepError(1, T(`Fichier trop volumineux : ${(f.size / 1024 / 1024).toFixed(1)}MB (max 5MB)`, `File too large: ${(f.size / 1024 / 1024).toFixed(1)}MB (max 5MB)`, lang))
+                  if (f.size > 20 * 1024 * 1024) {
+                    setStepError(1, T(`Fichier trop volumineux : ${(f.size / 1024 / 1024).toFixed(1)}MB (max 20MB)`, `File too large: ${(f.size / 1024 / 1024).toFixed(1)}MB (max 20MB)`, lang))
                     return
                   }
                   set('cv_local_file', f)
@@ -1104,7 +1106,8 @@ export default function ApplyPage() {
 
             {/* Date de début */}
             <div>
-              <label className={labelClass}>{lang==='fr'?'Date de d\u00e9marrage souhait\u00e9e *':'Desired start date *'}</label>
+              <label className={labelClass}>{lang==='fr'?'Date de démarrage souhaitée *':'Desired start date *'}</label>
+              <p className={helperClass + " mb-1"}>{lang==='fr' ? 'Format : jj/mm/aaaa' : 'Format: dd/mm/yyyy'}</p>
               <input type="date" value={form.start_date} onChange={e => set('start_date', e.target.value)} className={inputClass} />
               <p className={helperClass}>{lang==='fr'?"\u00c0 2-4 semaines pr\u00e8s, c\u2019est ok":"Give or take 2-4 weeks, that\u2019s fine"}</p>
             </div>

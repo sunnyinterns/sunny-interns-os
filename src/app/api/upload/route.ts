@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     const bucket = (formData.get('bucket') as string) || 'intern-cvs'
 
     if (!file) return NextResponse.json({ error: 'Fichier manquant' }, { status: 400 })
-    if (file.size > 10 * 1024 * 1024) return NextResponse.json({ error: 'Fichier trop large (max 10 MB)' }, { status: 400 })
+    if (file.size > 20 * 1024 * 1024) return NextResponse.json({ error: 'Fichier trop large (max 20MB)' }, { status: 400 })
 
     const ext = file.name.split('.').pop() ?? 'pdf'
     const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     const supabase = getServiceClient()
     const { error } = await supabase.storage
       .from(bucket)
-      .upload(filename, arrayBuffer, { contentType: file.type, upsert: false })
+      .upload(filename, arrayBuffer, { contentType: file.type || 'application/octet-stream', upsert: false })
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
