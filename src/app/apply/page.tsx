@@ -126,40 +126,40 @@ const COUNTRY_PHONE_CODES: { flag: string; code: string; name: string }[] = [
 ]
 
 const COUNTRIES = [
-  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua and Barbuda',
-  'Argentina', 'Armenia', 'Australia', 'Austria', 'Azerbaijan', 'Bahamas', 'Bahrain',
-  'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Benin', 'Bhutan',
-  'Bolivia', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Brunei', 'Bulgaria',
-  'Burkina Faso', 'Burundi', 'Cabo Verde', 'Cambodia', 'Cameroon', 'Canada',
-  'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros',
-  'Congo (DRC)', 'Congo (Republic)', 'Costa Rica', 'Croatia', "C\u00f4te d'Ivoire",
-  'Cuba', 'Cyprus', 'Czech Republic', 'Denmark', 'Djibouti', 'Dominica',
-  'Dominican Republic', 'East Timor', 'Ecuador', 'Egypt', 'El Salvador',
-  'Equatorial Guinea', 'Eritrea', 'Estonia', 'Eswatini', 'Ethiopia', 'Fiji',
-  'Finland', 'France', 'Gabon', 'Gambia', 'Georgia', 'Germany', 'Ghana', 'Greece',
-  'Grenada', 'Guatemala', 'Guinea', 'Guinea-Bissau', 'Guyana', 'Haiti', 'Honduras',
-  'Hungary', 'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland', 'Israel',
-  'Italy', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya', 'Kiribati', 'Kosovo',
-  'Kuwait', 'Kyrgyzstan', 'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya',
-  'Liechtenstein', 'Lithuania', 'Luxembourg', 'Madagascar', 'Malawi', 'Malaysia',
-  'Maldives', 'Mali', 'Malta', 'Marshall Islands', 'Mauritania', 'Mauritius', 'Mexico',
-  'Micronesia', 'Moldova', 'Monaco', 'Mongolia', 'Montenegro', 'Morocco', 'Mozambique',
-  'Myanmar', 'Namibia', 'Nauru', 'Nepal', 'Netherlands', 'New Zealand', 'Nicaragua',
-  'Niger', 'Nigeria', 'North Korea', 'North Macedonia', 'Norway', 'Oman', 'Pakistan',
-  'Palau', 'Palestine', 'Panama', 'Papua New Guinea', 'Paraguay', 'Peru', 'Philippines',
-  'Poland', 'Portugal', 'Qatar', 'Romania', 'Russia', 'Rwanda', 'Saint Kitts and Nevis',
-  'Saint Lucia', 'Saint Vincent and the Grenadines', 'Samoa', 'San Marino',
-  'Sao Tome and Principe', 'Saudi Arabia', 'Senegal', 'Serbia', 'Seychelles',
-  'Sierra Leone', 'Singapore', 'Slovakia', 'Slovenia', 'Solomon Islands', 'Somalia',
-  'South Africa', 'South Korea', 'South Sudan', 'Spain', 'Sri Lanka', 'Sudan',
-  'Suriname', 'Sweden', 'Switzerland', 'Syria', 'Taiwan', 'Tajikistan', 'Tanzania',
-  'Thailand', 'Togo', 'Tonga', 'Trinidad and Tobago', 'Tunisia', 'Turkey',
-  'Turkmenistan', 'Tuvalu', 'UAE', 'Uganda', 'Ukraine', 'United Kingdom',
-  'United States', 'Uruguay', 'Uzbekistan', 'Vanuatu', 'Vatican City', 'Venezuela',
-  'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe',
-  // French overseas
-  'La R\u00e9union', 'Guadeloupe', 'Martinique', 'French Guiana', 'Mayotte',
-  'French Polynesia', 'New Caledonia',
+  // 🇫🇷 Francophones en premier
+  'France', 'Belgique', 'Suisse', 'Luxembourg', 'Canada', 'Maroc', 'Algérie', 'Tunisie',
+  'Sénégal', "Côte d'Ivoire", 'Cameroun', 'Madagascar', 'Mali', 'Burkina Faso',
+  'Niger', 'Bénin', 'Togo', 'République démocratique du Congo', 'Rwanda', 'Burundi',
+  'Gabon', 'Congo', 'Mauritanie', 'Djibouti', 'Comores', 'Maurice',
+  // 🇪🇺 Europe
+  'Allemagne', 'Espagne', 'Italie', 'Portugal', 'Pays-Bas', 'Belgique', 'Autriche',
+  'Suède', 'Norvège', 'Danemark', 'Finlande', 'Pologne', 'Roumanie', 'Grèce',
+  'Hongrie', 'République tchèque', 'Slovaquie', 'Croatie', 'Slovénie', 'Serbie',
+  'Bulgarie', 'Lituanie', 'Lettonie', 'Estonie', 'Irlande', 'Malte',
+  // 🌍 Monde
+  'Afghanistan', 'Albania', 'Algeria', 'Angola', 'Argentina', 'Armenia', 'Australia',
+  'Azerbaijan', 'Bahrain', 'Bangladesh', 'Belarus', 'Belize', 'Bhutan',
+  'Bolivia', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Brunei',
+  'Cambodia', 'Cabo Verde', 'Central African Republic', 'Chad', 'Chile', 'China',
+  'Colombia', 'Costa Rica', 'Cuba', 'Cyprus', 'Denmark', 'Dominican Republic',
+  'Ecuador', 'Egypt', 'El Salvador', 'Equatorial Guinea', 'Eritrea', 'Eswatini',
+  'Ethiopia', 'Fiji', 'Georgia', 'Ghana', 'Grenada', 'Guatemala', 'Guinea',
+  'Guinea-Bissau', 'Guyana', 'Haiti', 'Honduras', 'Iceland', 'India', 'Indonesia',
+  'Iran', 'Iraq', 'Israel', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya',
+  'Kiribati', 'Kosovo', 'Kuwait', 'Kyrgyzstan', 'Laos', 'Lebanon', 'Lesotho',
+  'Liberia', 'Libya', 'Liechtenstein', 'Malawi', 'Malaysia', 'Maldives',
+  'Marshall Islands', 'Mauritania', 'Mexico', 'Micronesia', 'Moldova', 'Monaco',
+  'Mongolia', 'Montenegro', 'Mozambique', 'Myanmar', 'Namibia', 'Nepal',
+  'New Zealand', 'Nicaragua', 'Nigeria', 'North Korea', 'North Macedonia', 'Oman',
+  'Pakistan', 'Palau', 'Palestine', 'Panama', 'Papua New Guinea', 'Paraguay', 'Peru',
+  'Philippines', 'Qatar', 'Saint Kitts and Nevis', 'Saint Lucia', 'Samoa',
+  'San Marino', 'Saudi Arabia', 'Sierra Leone', 'Singapore', 'Solomon Islands',
+  'Somalia', 'South Africa', 'South Korea', 'South Sudan', 'Sri Lanka', 'Sudan',
+  'Suriname', 'Syria', 'Taiwan', 'Tajikistan', 'Tanzania', 'Thailand', 'Timor-Leste',
+  'Trinidad and Tobago', 'Turkey', 'Turkmenistan', 'Uganda', 'Ukraine',
+  'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay', 'Uzbekistan',
+  'Vanuatu', 'Vatican City', 'Venezuela', 'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe',
+  'Autre / Other',
 ]
 
 const LANGUAGES_LIST_FR = [
@@ -432,6 +432,8 @@ export default function ApplyPage() {
   const [calendarSlots, setCalendarSlots] = useState<CalendarSlot[]>([])
   const [nationalitySearch, setNationalitySearch] = useState('')
   const [showNationalityDropdown, setShowNationalityDropdown] = useState(false)
+  const [schoolCountrySearch, setSchoolCountrySearch] = useState('')
+  const [showSchoolCountryDropdown, setShowSchoolCountryDropdown] = useState(false)
 
   // ── Fetch on mount ──
   useEffect(() => {
@@ -868,16 +870,45 @@ export default function ApplyPage() {
               <p className={helperClass + " mb-2"}>
                 {lang === 'fr' ? "Pays dans lequel ta convention de stage sera établie de droit commun." : "Country where your internship agreement will be issued by law."}
               </p>
-              <select
-                value={form.school_country}
-                onChange={e => set('school_country', e.target.value)}
-                className="w-full px-4 py-3 border border-zinc-200 rounded-xl text-[#1a1918] bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e] text-sm cursor-pointer"
-              >
-                <option value="">{lang==='fr'?'S\u00e9lectionner un pays...':'Select a country...'}</option>
-                {COUNTRIES.map(country => (
-                  <option key={country} value={country}>{country}</option>
-                ))}
-              </select>
+              {/* Chip selected */}
+              {form.school_country && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#c8a96e] text-white">
+                    {form.school_country}
+                    <button type="button" onClick={() => { set('school_country', ''); setSchoolCountrySearch('') }} className="hover:text-red-200 ml-0.5">×</button>
+                  </span>
+                </div>
+              )}
+              {!form.school_country && (
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={schoolCountrySearch}
+                    onChange={e => { setSchoolCountrySearch(e.target.value); setShowSchoolCountryDropdown(true) }}
+                    onFocus={() => setShowSchoolCountryDropdown(true)}
+                    className={inputClass}
+                    placeholder={lang==='fr' ? 'Rechercher un pays...' : 'Search country...'}
+                  />
+                  {showSchoolCountryDropdown && schoolCountrySearch.length >= 1 && (
+                    <div className="absolute z-40 w-full mt-1 max-h-52 overflow-y-auto bg-white border border-zinc-200 rounded-xl shadow-lg">
+                      {COUNTRIES.filter(c => c.toLowerCase().includes(schoolCountrySearch.toLowerCase())).slice(0, 15).map(country => (
+                        <button
+                          key={country}
+                          type="button"
+                          onClick={() => { set('school_country', country); setSchoolCountrySearch(''); setShowSchoolCountryDropdown(false) }}
+                          className="w-full text-left px-4 py-2.5 text-sm text-[#1a1918] hover:bg-zinc-50 border-b border-zinc-50 last:border-0"
+                        >
+                          {country}
+                        </button>
+                      ))}
+                      {COUNTRIES.filter(c => c.toLowerCase().includes(schoolCountrySearch.toLowerCase())).length === 0 && (
+                        <p className="px-4 py-3 text-sm text-zinc-400">{lang==='fr' ? 'Aucun résultat' : 'No results'}</p>
+                      )}
+                    </div>
+                  )}
+                  {showSchoolCountryDropdown && <div className="fixed inset-0 z-30" onClick={() => setShowSchoolCountryDropdown(false)} />}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1431,7 +1462,7 @@ export default function ApplyPage() {
           {step > 0 && (
             <button
               type="button"
-              onClick={() => { setStep(s => s - 1); setError(''); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+              onClick={() => { setStep(s => s - 1); setError(''); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; window.scrollTo(0, 0) }}
               className="px-6 py-3 rounded-xl text-sm font-medium bg-white text-[#8a7d6d] border border-zinc-200 hover:border-[#c8a96e] transition-all"
             >
               {lang==='fr'?'\u2190 Retour':'\u2190 Back'}
@@ -1441,7 +1472,7 @@ export default function ApplyPage() {
             <button
               type="button"
               disabled={!canNext()}
-              onClick={() => { setStep(s => s + 1); setError(''); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+              onClick={() => { setStep(s => s + 1); setError(''); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; window.scrollTo(0, 0) }}
               className="flex-1 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a]"
             >
               {lang==='fr'?'Continuer \u2192':'Continue \u2192'}
