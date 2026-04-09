@@ -153,7 +153,7 @@ export async function POST(request: Request) {
       title: `${d.first_name} ${d.last_name} a candidaté`,
       description: `Nouvelle candidature de ${d.first_name} ${d.last_name} - ${d.email}`,
       priority: 'normal',
-      status: 'done',
+      status: 'completed',
       source: 'automation',
       metadata: {
         email: d.email,
