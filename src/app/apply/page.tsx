@@ -811,15 +811,13 @@ export default function ApplyPage() {
             {/* Date de naissance */}
             <div>
               <label className={labelClass}>{lang==='fr'?'Date de naissance *':'Date of birth *'}</label>
-              <p className={helperClass + " mb-1"}>{lang==='fr' ? 'Format : jj/mm/aaaa' : 'Format: dd/mm/yyyy'}</p>
-              <input type="date" value={form.birth_date} onChange={e => set('birth_date', e.target.value)} className={inputClass} />
+              <input type="text" value={form.birth_date} onChange={e => set('birth_date', e.target.value)} className={inputClass} placeholder={lang==='fr'?'jj/mm/aaaa':'dd/mm/yyyy'} />
             </div>
 
             {/* Passeport expiry */}
             <div>
               <label className={labelClass}>{lang==='fr'?"Date d\u2019expiration du passeport *":'Passport expiry date *'}</label>
-                            <p className={helperClass + " mb-1"}>{lang==='fr' ? 'Format : jj/mm/aaaa' : 'Format: dd/mm/yyyy'}</p>
-<input type="date" value={form.passport_expiry} onChange={e => set('passport_expiry', e.target.value)} className={inputClass} />
+<input type="text" value={form.passport_expiry} onChange={e => set('passport_expiry', e.target.value)} className={inputClass} placeholder={lang==='fr'?'jj/mm/aaaa':'dd/mm/yyyy'} />
               {passportWarning && (
                 <div className="mt-2 flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-300 rounded-lg px-3 py-2.5">
                   <span className="flex-shrink-0 font-bold">⚠️</span>
@@ -1122,8 +1120,7 @@ export default function ApplyPage() {
             {/* Date de début */}
             <div>
               <label className={labelClass}>{lang==='fr'?'Date de démarrage souhaitée *':'Desired start date *'}</label>
-              <p className={helperClass + " mb-1"}>{lang==='fr' ? 'Format : jj/mm/aaaa' : 'Format: dd/mm/yyyy'}</p>
-              <input type="date" value={form.start_date} onChange={e => set('start_date', e.target.value)} className={inputClass} />
+              <input type="text" value={form.start_date} onChange={e => set('start_date', e.target.value)} className={inputClass} placeholder={lang==='fr'?'jj/mm/aaaa':'dd/mm/yyyy'} />
               <p className={helperClass}>{lang==='fr'?"\u00c0 2-4 semaines pr\u00e8s, c\u2019est ok":"Give or take 2-4 weeks, that\u2019s fine"}</p>
             </div>
 
@@ -1131,7 +1128,8 @@ export default function ApplyPage() {
             <div>
               <label className={labelClass}>{lang==='fr'?'Date de fin maximum possible (optionnel)':'Latest possible end date (optional)'}</label>
               <input
-                type="date"
+                type="text"
+                placeholder={lang==='fr'?'jj/mm/aaaa':'dd/mm/yyyy'}
                 value={form.end_date ?? ''}
                 onChange={e => set('end_date', e.target.value)}
                 className={inputClass}
