@@ -16,112 +16,112 @@ const ANGLOPHONE_COUNTRIES = [
 ]
 
 const COUNTRY_PHONE_CODES: { flag: string; code: string; name: string }[] = [
-  { flag: '🇫🇷', code: '+33', name: 'France' },
-  { flag: '🇬🇧', code: '+44', name: 'United Kingdom' },
-  { flag: '🇺🇸', code: '+1', name: 'United States' },
-  { flag: '🇩🇪', code: '+49', name: 'Germany' },
-  { flag: '🇪🇸', code: '+34', name: 'Spain' },
-  { flag: '🇮🇹', code: '+39', name: 'Italy' },
-  { flag: '🇵🇹', code: '+351', name: 'Portugal' },
-  { flag: '🇧🇪', code: '+32', name: 'Belgium' },
-  { flag: '🇨🇭', code: '+41', name: 'Switzerland' },
-  { flag: '🇳🇱', code: '+31', name: 'Netherlands' },
-  { flag: '🇦🇹', code: '+43', name: 'Austria' },
-  { flag: '🇵🇱', code: '+48', name: 'Poland' },
-  { flag: '🇷🇴', code: '+40', name: 'Romania' },
-  { flag: '🇨🇿', code: '+420', name: 'Czech Republic' },
-  { flag: '🇭🇺', code: '+36', name: 'Hungary' },
-  { flag: '🇸🇪', code: '+46', name: 'Sweden' },
-  { flag: '🇳🇴', code: '+47', name: 'Norway' },
-  { flag: '🇩🇰', code: '+45', name: 'Denmark' },
-  { flag: '🇫🇮', code: '+358', name: 'Finland' },
-  { flag: '🇮🇪', code: '+353', name: 'Ireland' },
-  { flag: '🇬🇷', code: '+30', name: 'Greece' },
-  { flag: '🇭🇷', code: '+385', name: 'Croatia' },
-  { flag: '🇧🇬', code: '+359', name: 'Bulgaria' },
-  { flag: '🇷🇸', code: '+381', name: 'Serbia' },
-  { flag: '🇸🇰', code: '+421', name: 'Slovakia' },
-  { flag: '🇸🇮', code: '+386', name: 'Slovenia' },
-  { flag: '🇱🇹', code: '+370', name: 'Lithuania' },
-  { flag: '🇱🇻', code: '+371', name: 'Latvia' },
-  { flag: '🇪🇪', code: '+372', name: 'Estonia' },
-  { flag: '🇨🇦', code: '+1', name: 'Canada' },
-  { flag: '🇲🇽', code: '+52', name: 'Mexico' },
-  { flag: '🇧🇷', code: '+55', name: 'Brazil' },
-  { flag: '🇦🇷', code: '+54', name: 'Argentina' },
-  { flag: '🇨🇴', code: '+57', name: 'Colombia' },
-  { flag: '🇨🇱', code: '+56', name: 'Chile' },
-  { flag: '🇵🇪', code: '+51', name: 'Peru' },
-  { flag: '🇻🇪', code: '+58', name: 'Venezuela' },
-  { flag: '🇪🇨', code: '+593', name: 'Ecuador' },
-  { flag: '🇧🇴', code: '+591', name: 'Bolivia' },
-  { flag: '🇺🇾', code: '+598', name: 'Uruguay' },
-  { flag: '🇵🇾', code: '+595', name: 'Paraguay' },
-  { flag: '🇦🇺', code: '+61', name: 'Australia' },
-  { flag: '🇳🇿', code: '+64', name: 'New Zealand' },
-  { flag: '🇯🇵', code: '+81', name: 'Japan' },
-  { flag: '🇰🇷', code: '+82', name: 'South Korea' },
-  { flag: '🇨🇳', code: '+86', name: 'China' },
-  { flag: '🇮🇳', code: '+91', name: 'India' },
-  { flag: '🇮🇩', code: '+62', name: 'Indonesia' },
-  { flag: '🇹🇭', code: '+66', name: 'Thailand' },
-  { flag: '🇻🇳', code: '+84', name: 'Vietnam' },
-  { flag: '🇵🇭', code: '+63', name: 'Philippines' },
-  { flag: '🇲🇾', code: '+60', name: 'Malaysia' },
-  { flag: '🇸🇬', code: '+65', name: 'Singapore' },
-  { flag: '🇹🇼', code: '+886', name: 'Taiwan' },
-  { flag: '🇭🇰', code: '+852', name: 'Hong Kong' },
-  { flag: '🇵🇰', code: '+92', name: 'Pakistan' },
-  { flag: '🇧🇩', code: '+880', name: 'Bangladesh' },
-  { flag: '🇱🇰', code: '+94', name: 'Sri Lanka' },
-  { flag: '🇳🇵', code: '+977', name: 'Nepal' },
-  { flag: '🇲🇲', code: '+95', name: 'Myanmar' },
-  { flag: '🇰🇭', code: '+855', name: 'Cambodia' },
-  { flag: '🇱🇦', code: '+856', name: 'Laos' },
-  { flag: '🇲🇳', code: '+976', name: 'Mongolia' },
-  { flag: '🇦🇪', code: '+971', name: 'UAE' },
-  { flag: '🇸🇦', code: '+966', name: 'Saudi Arabia' },
-  { flag: '🇶🇦', code: '+974', name: 'Qatar' },
-  { flag: '🇰🇼', code: '+965', name: 'Kuwait' },
-  { flag: '🇧🇭', code: '+973', name: 'Bahrain' },
-  { flag: '🇴🇲', code: '+968', name: 'Oman' },
-  { flag: '🇯🇴', code: '+962', name: 'Jordan' },
-  { flag: '🇱🇧', code: '+961', name: 'Lebanon' },
-  { flag: '🇮🇱', code: '+972', name: 'Israel' },
-  { flag: '🇹🇷', code: '+90', name: 'Turkey' },
-  { flag: '🇮🇷', code: '+98', name: 'Iran' },
-  { flag: '🇮🇶', code: '+964', name: 'Iraq' },
-  { flag: '🇪🇬', code: '+20', name: 'Egypt' },
-  { flag: '🇲🇦', code: '+212', name: 'Morocco' },
-  { flag: '🇩🇿', code: '+213', name: 'Algeria' },
-  { flag: '🇹🇳', code: '+216', name: 'Tunisia' },
-  { flag: '🇱🇾', code: '+218', name: 'Libya' },
-  { flag: '🇳🇬', code: '+234', name: 'Nigeria' },
-  { flag: '🇬🇭', code: '+233', name: 'Ghana' },
-  { flag: '🇰🇪', code: '+254', name: 'Kenya' },
-  { flag: '🇹🇿', code: '+255', name: 'Tanzania' },
-  { flag: '🇺🇬', code: '+256', name: 'Uganda' },
-  { flag: '🇪🇹', code: '+251', name: 'Ethiopia' },
-  { flag: '🇿🇦', code: '+27', name: 'South Africa' },
-  { flag: '🇸🇳', code: '+221', name: 'Senegal' },
-  { flag: '🇨🇮', code: '+225', name: "Côte d'Ivoire" },
-  { flag: '🇨🇲', code: '+237', name: 'Cameroon' },
-  { flag: '🇨🇩', code: '+243', name: 'Congo (DRC)' },
-  { flag: '🇲🇬', code: '+261', name: 'Madagascar' },
-  { flag: '🇲🇺', code: '+230', name: 'Mauritius' },
-  { flag: '🇷🇪', code: '+262', name: 'La Réunion' },
-  { flag: '🇬🇵', code: '+590', name: 'Guadeloupe' },
-  { flag: '🇲🇶', code: '+596', name: 'Martinique' },
-  { flag: '🇬🇫', code: '+594', name: 'French Guiana' },
-  { flag: '🇵🇫', code: '+689', name: 'French Polynesia' },
-  { flag: '🇳🇨', code: '+687', name: 'New Caledonia' },
-  { flag: '🇷🇺', code: '+7', name: 'Russia' },
-  { flag: '🇺🇦', code: '+380', name: 'Ukraine' },
-  { flag: '🇬🇪', code: '+995', name: 'Georgia' },
-  { flag: '🇦🇲', code: '+374', name: 'Armenia' },
-  { flag: '🇦🇿', code: '+994', name: 'Azerbaijan' },
-  { flag: '🇰🇿', code: '+7', name: 'Kazakhstan' },
-  { flag: '🇺🇿', code: '+998', name: 'Uzbekistan' },
+  { flag: '\u{1F1EB}\u{1F1F7}', code: '+33', name: 'France' },
+  { flag: '\u{1F1EC}\u{1F1E7}', code: '+44', name: 'United Kingdom' },
+  { flag: '\u{1F1FA}\u{1F1F8}', code: '+1', name: 'United States' },
+  { flag: '\u{1F1E9}\u{1F1EA}', code: '+49', name: 'Germany' },
+  { flag: '\u{1F1EA}\u{1F1F8}', code: '+34', name: 'Spain' },
+  { flag: '\u{1F1EE}\u{1F1F9}', code: '+39', name: 'Italy' },
+  { flag: '\u{1F1F5}\u{1F1F9}', code: '+351', name: 'Portugal' },
+  { flag: '\u{1F1E7}\u{1F1EA}', code: '+32', name: 'Belgium' },
+  { flag: '\u{1F1E8}\u{1F1ED}', code: '+41', name: 'Switzerland' },
+  { flag: '\u{1F1F3}\u{1F1F1}', code: '+31', name: 'Netherlands' },
+  { flag: '\u{1F1E6}\u{1F1F9}', code: '+43', name: 'Austria' },
+  { flag: '\u{1F1F5}\u{1F1F1}', code: '+48', name: 'Poland' },
+  { flag: '\u{1F1F7}\u{1F1F4}', code: '+40', name: 'Romania' },
+  { flag: '\u{1F1E8}\u{1F1FF}', code: '+420', name: 'Czech Republic' },
+  { flag: '\u{1F1ED}\u{1F1FA}', code: '+36', name: 'Hungary' },
+  { flag: '\u{1F1F8}\u{1F1EA}', code: '+46', name: 'Sweden' },
+  { flag: '\u{1F1F3}\u{1F1F4}', code: '+47', name: 'Norway' },
+  { flag: '\u{1F1E9}\u{1F1F0}', code: '+45', name: 'Denmark' },
+  { flag: '\u{1F1EB}\u{1F1EE}', code: '+358', name: 'Finland' },
+  { flag: '\u{1F1EE}\u{1F1EA}', code: '+353', name: 'Ireland' },
+  { flag: '\u{1F1EC}\u{1F1F7}', code: '+30', name: 'Greece' },
+  { flag: '\u{1F1ED}\u{1F1F7}', code: '+385', name: 'Croatia' },
+  { flag: '\u{1F1E7}\u{1F1EC}', code: '+359', name: 'Bulgaria' },
+  { flag: '\u{1F1F7}\u{1F1F8}', code: '+381', name: 'Serbia' },
+  { flag: '\u{1F1F8}\u{1F1F0}', code: '+421', name: 'Slovakia' },
+  { flag: '\u{1F1F8}\u{1F1EE}', code: '+386', name: 'Slovenia' },
+  { flag: '\u{1F1F1}\u{1F1F9}', code: '+370', name: 'Lithuania' },
+  { flag: '\u{1F1F1}\u{1F1FB}', code: '+371', name: 'Latvia' },
+  { flag: '\u{1F1EA}\u{1F1EA}', code: '+372', name: 'Estonia' },
+  { flag: '\u{1F1E8}\u{1F1E6}', code: '+1', name: 'Canada' },
+  { flag: '\u{1F1F2}\u{1F1FD}', code: '+52', name: 'Mexico' },
+  { flag: '\u{1F1E7}\u{1F1F7}', code: '+55', name: 'Brazil' },
+  { flag: '\u{1F1E6}\u{1F1F7}', code: '+54', name: 'Argentina' },
+  { flag: '\u{1F1E8}\u{1F1F4}', code: '+57', name: 'Colombia' },
+  { flag: '\u{1F1E8}\u{1F1F1}', code: '+56', name: 'Chile' },
+  { flag: '\u{1F1F5}\u{1F1EA}', code: '+51', name: 'Peru' },
+  { flag: '\u{1F1FB}\u{1F1EA}', code: '+58', name: 'Venezuela' },
+  { flag: '\u{1F1EA}\u{1F1E8}', code: '+593', name: 'Ecuador' },
+  { flag: '\u{1F1E7}\u{1F1F4}', code: '+591', name: 'Bolivia' },
+  { flag: '\u{1F1FA}\u{1F1FE}', code: '+598', name: 'Uruguay' },
+  { flag: '\u{1F1F5}\u{1F1FE}', code: '+595', name: 'Paraguay' },
+  { flag: '\u{1F1E6}\u{1F1FA}', code: '+61', name: 'Australia' },
+  { flag: '\u{1F1F3}\u{1F1FF}', code: '+64', name: 'New Zealand' },
+  { flag: '\u{1F1EF}\u{1F1F5}', code: '+81', name: 'Japan' },
+  { flag: '\u{1F1F0}\u{1F1F7}', code: '+82', name: 'South Korea' },
+  { flag: '\u{1F1E8}\u{1F1F3}', code: '+86', name: 'China' },
+  { flag: '\u{1F1EE}\u{1F1F3}', code: '+91', name: 'India' },
+  { flag: '\u{1F1EE}\u{1F1E9}', code: '+62', name: 'Indonesia' },
+  { flag: '\u{1F1F9}\u{1F1ED}', code: '+66', name: 'Thailand' },
+  { flag: '\u{1F1FB}\u{1F1F3}', code: '+84', name: 'Vietnam' },
+  { flag: '\u{1F1F5}\u{1F1ED}', code: '+63', name: 'Philippines' },
+  { flag: '\u{1F1F2}\u{1F1FE}', code: '+60', name: 'Malaysia' },
+  { flag: '\u{1F1F8}\u{1F1EC}', code: '+65', name: 'Singapore' },
+  { flag: '\u{1F1F9}\u{1F1FC}', code: '+886', name: 'Taiwan' },
+  { flag: '\u{1F1ED}\u{1F1F0}', code: '+852', name: 'Hong Kong' },
+  { flag: '\u{1F1F5}\u{1F1F0}', code: '+92', name: 'Pakistan' },
+  { flag: '\u{1F1E7}\u{1F1E9}', code: '+880', name: 'Bangladesh' },
+  { flag: '\u{1F1F1}\u{1F1F0}', code: '+94', name: 'Sri Lanka' },
+  { flag: '\u{1F1F3}\u{1F1F5}', code: '+977', name: 'Nepal' },
+  { flag: '\u{1F1F2}\u{1F1F2}', code: '+95', name: 'Myanmar' },
+  { flag: '\u{1F1F0}\u{1F1ED}', code: '+855', name: 'Cambodia' },
+  { flag: '\u{1F1F1}\u{1F1E6}', code: '+856', name: 'Laos' },
+  { flag: '\u{1F1F2}\u{1F1F3}', code: '+976', name: 'Mongolia' },
+  { flag: '\u{1F1E6}\u{1F1EA}', code: '+971', name: 'UAE' },
+  { flag: '\u{1F1F8}\u{1F1E6}', code: '+966', name: 'Saudi Arabia' },
+  { flag: '\u{1F1F6}\u{1F1E6}', code: '+974', name: 'Qatar' },
+  { flag: '\u{1F1F0}\u{1F1FC}', code: '+965', name: 'Kuwait' },
+  { flag: '\u{1F1E7}\u{1F1ED}', code: '+973', name: 'Bahrain' },
+  { flag: '\u{1F1F4}\u{1F1F2}', code: '+968', name: 'Oman' },
+  { flag: '\u{1F1EF}\u{1F1F4}', code: '+962', name: 'Jordan' },
+  { flag: '\u{1F1F1}\u{1F1E7}', code: '+961', name: 'Lebanon' },
+  { flag: '\u{1F1EE}\u{1F1F1}', code: '+972', name: 'Israel' },
+  { flag: '\u{1F1F9}\u{1F1F7}', code: '+90', name: 'Turkey' },
+  { flag: '\u{1F1EE}\u{1F1F7}', code: '+98', name: 'Iran' },
+  { flag: '\u{1F1EE}\u{1F1F6}', code: '+964', name: 'Iraq' },
+  { flag: '\u{1F1EA}\u{1F1EC}', code: '+20', name: 'Egypt' },
+  { flag: '\u{1F1F2}\u{1F1E6}', code: '+212', name: 'Morocco' },
+  { flag: '\u{1F1E9}\u{1F1FF}', code: '+213', name: 'Algeria' },
+  { flag: '\u{1F1F9}\u{1F1F3}', code: '+216', name: 'Tunisia' },
+  { flag: '\u{1F1F1}\u{1F1FE}', code: '+218', name: 'Libya' },
+  { flag: '\u{1F1F3}\u{1F1EC}', code: '+234', name: 'Nigeria' },
+  { flag: '\u{1F1EC}\u{1F1ED}', code: '+233', name: 'Ghana' },
+  { flag: '\u{1F1F0}\u{1F1EA}', code: '+254', name: 'Kenya' },
+  { flag: '\u{1F1F9}\u{1F1FF}', code: '+255', name: 'Tanzania' },
+  { flag: '\u{1F1FA}\u{1F1EC}', code: '+256', name: 'Uganda' },
+  { flag: '\u{1F1EA}\u{1F1F9}', code: '+251', name: 'Ethiopia' },
+  { flag: '\u{1F1FF}\u{1F1E6}', code: '+27', name: 'South Africa' },
+  { flag: '\u{1F1F8}\u{1F1F3}', code: '+221', name: 'Senegal' },
+  { flag: '\u{1F1E8}\u{1F1EE}', code: '+225', name: "C\u00f4te d'Ivoire" },
+  { flag: '\u{1F1E8}\u{1F1F2}', code: '+237', name: 'Cameroon' },
+  { flag: '\u{1F1E8}\u{1F1E9}', code: '+243', name: 'Congo (DRC)' },
+  { flag: '\u{1F1F2}\u{1F1EC}', code: '+261', name: 'Madagascar' },
+  { flag: '\u{1F1F2}\u{1F1FA}', code: '+230', name: 'Mauritius' },
+  { flag: '\u{1F1F7}\u{1F1EA}', code: '+262', name: 'La R\u00e9union' },
+  { flag: '\u{1F1EC}\u{1F1F5}', code: '+590', name: 'Guadeloupe' },
+  { flag: '\u{1F1F2}\u{1F1F6}', code: '+596', name: 'Martinique' },
+  { flag: '\u{1F1EC}\u{1F1EB}', code: '+594', name: 'French Guiana' },
+  { flag: '\u{1F1F5}\u{1F1EB}', code: '+689', name: 'French Polynesia' },
+  { flag: '\u{1F1F3}\u{1F1E8}', code: '+687', name: 'New Caledonia' },
+  { flag: '\u{1F1F7}\u{1F1FA}', code: '+7', name: 'Russia' },
+  { flag: '\u{1F1FA}\u{1F1E6}', code: '+380', name: 'Ukraine' },
+  { flag: '\u{1F1EC}\u{1F1EA}', code: '+995', name: 'Georgia' },
+  { flag: '\u{1F1E6}\u{1F1F2}', code: '+374', name: 'Armenia' },
+  { flag: '\u{1F1E6}\u{1F1FF}', code: '+994', name: 'Azerbaijan' },
+  { flag: '\u{1F1F0}\u{1F1FF}', code: '+7', name: 'Kazakhstan' },
+  { flag: '\u{1F1FA}\u{1F1FF}', code: '+998', name: 'Uzbekistan' },
 ]
 
 const COUNTRIES = [
@@ -131,7 +131,7 @@ const COUNTRIES = [
   'Bolivia', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Brunei', 'Bulgaria',
   'Burkina Faso', 'Burundi', 'Cabo Verde', 'Cambodia', 'Cameroon', 'Canada',
   'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros',
-  'Congo (DRC)', 'Congo (Republic)', 'Costa Rica', 'Croatia', "Côte d'Ivoire",
+  'Congo (DRC)', 'Congo (Republic)', 'Costa Rica', 'Croatia', "C\u00f4te d'Ivoire",
   'Cuba', 'Cyprus', 'Czech Republic', 'Denmark', 'Djibouti', 'Dominica',
   'Dominican Republic', 'East Timor', 'Ecuador', 'Egypt', 'El Salvador',
   'Equatorial Guinea', 'Eritrea', 'Estonia', 'Eswatini', 'Ethiopia', 'Fiji',
@@ -157,37 +157,31 @@ const COUNTRIES = [
   'United States', 'Uruguay', 'Uzbekistan', 'Vanuatu', 'Vatican City', 'Venezuela',
   'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe',
   // French overseas
-  'La Réunion', 'Guadeloupe', 'Martinique', 'French Guiana', 'Mayotte',
+  'La R\u00e9union', 'Guadeloupe', 'Martinique', 'French Guiana', 'Mayotte',
   'French Polynesia', 'New Caledonia',
 ]
 
 const LANGUAGES_LIST = [
-  'Français', 'English', 'Español', 'Deutsch', 'Mandarin', 'Arabic',
+  'Fran\u00e7ais', 'English', 'Espa\u00f1ol', 'Deutsch', 'Mandarin', 'Arabic',
   'Italian', 'Portuguese', 'Japanese', 'Korean', 'Dutch', 'Russian', 'Hindi', 'Autre/Other',
 ]
 
-const DURATIONS = [
-  { value: '3', label: '3 mois / 3 months' },
-  { value: '4', label: '4 mois / 4 months' },
-  { value: '5', label: '5 mois / 5 months' },
-  { value: '6', label: '6 mois / 6 months' },
-  { value: '7', label: '+6 mois / +6 months' },
+const DURATIONS: { value: string; fr: string; en: string }[] = [
+  { value: '3', fr: '3 mois', en: '3 months' },
+  { value: '4', fr: '4 mois', en: '4 months' },
+  { value: '5', fr: '5 mois', en: '5 months' },
+  { value: '6', fr: '6 mois', en: '6 months' },
+  { value: '7', fr: '+6 mois', en: '+6 months' },
 ]
 
-const TOUCHPOINTS = [
-  'Instagram', 'TikTok', 'Facebook', 'Google',
-  'Bouche à oreille / Word of mouth',
-  'École / School',
-  'Ambassadeur Bali Interns / Bali Interns Ambassador',
-]
-
-const STEP_TITLES = [
-  'Qui es-tu ? / Who are you?',
-  'Ton profil / Your profile',
-  'Ton stage / Your internship',
-  'Prix & engagement / Pricing & Commitment',
-  'Comment tu nous as trouvé ? / How did you find us?',
-  'Prends un RDV / Book your call',
+const TOUCHPOINTS: { value: string; fr: string; en: string }[] = [
+  { value: 'Instagram', fr: 'Instagram', en: 'Instagram' },
+  { value: 'TikTok', fr: 'TikTok', en: 'TikTok' },
+  { value: 'Facebook', fr: 'Facebook', en: 'Facebook' },
+  { value: 'Google', fr: 'Google', en: 'Google' },
+  { value: 'Bouche \u00e0 oreille', fr: 'Bouche \u00e0 oreille', en: 'Word of mouth' },
+  { value: '\u00c9cole', fr: '\u00c9cole / Universit\u00e9', en: 'School / University' },
+  { value: 'Ambassadeur Bali Interns', fr: 'Ambassadeur Bali Interns', en: 'Bali Interns Ambassador' },
 ]
 
 // ─────────────────────────────────────────────────────────────
@@ -238,7 +232,7 @@ function generateStaticSlots(): CalendarSlot[] {
         const pad = (n: number) => String(n).padStart(2, '0')
         slots.push({
           start: slotDate.toISOString(),
-          label: `${frLabel} · ${pad(hour)}h00`,
+          label: `${pad(hour)}h00`,
           dayLabel: `${frLabel} / ${enLabel}`,
         })
       }
@@ -288,6 +282,7 @@ function FileUpload({
   onFileSelect,
   inputRef,
   accept = '.pdf,.doc,.docx',
+  lang,
 }: {
   label: string
   helper?: string
@@ -295,6 +290,7 @@ function FileUpload({
   onFileSelect: (file: File) => void
   inputRef: React.RefObject<HTMLInputElement | null>
   accept?: string
+  lang: 'fr' | 'en'
 }) {
   return (
     <div>
@@ -322,7 +318,7 @@ function FileUpload({
           <span className="text-sm text-[#c8a96e] font-medium">{fileName}</span>
         ) : (
           <span className="text-sm text-zinc-500">
-            Glisse ton fichier ici ou clique / Drag & drop or click to select
+            {lang === 'fr' ? 'Glisse ton fichier ici ou clique' : 'Drag & drop or click to select'}
           </span>
         )}
       </button>
@@ -338,14 +334,27 @@ function FileUpload({
 export default function ApplyPage() {
   const [step, setStep] = useState(0)
   const [lang, setLang] = useState<'fr'|'en'>('fr')
-  const [phoneDropOpen, setPhoneDropOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [price, setPrice] = useState(990)
+  const [phoneDropOpen, setPhoneDropOpen] = useState(false)
 
   const cvEnRef = useRef<HTMLInputElement>(null)
   const cvLocalRef = useRef<HTMLInputElement>(null)
   const docsRef = useRef<HTMLInputElement>(null)
+  const phoneDropRef = useRef<HTMLDivElement>(null)
+
+  // ── Close phone dropdown on outside click ──
+  useEffect(() => {
+    if (!phoneDropOpen) return
+    function handleClick(e: MouseEvent) {
+      if (phoneDropRef.current && !phoneDropRef.current.contains(e.target as Node)) {
+        setPhoneDropOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [phoneDropOpen])
 
   // ── Form state ──
   const [form, setForm] = useState({
@@ -396,8 +405,6 @@ export default function ApplyPage() {
   const [schoolResults, setSchoolResults] = useState<School[]>([])
   const [calendarSlots, setCalendarSlots] = useState<CalendarSlot[]>([])
   const [nationalitySearch, setNationalitySearch] = useState('')
-  const [schoolCountrySearch, setSchoolCountrySearch] = useState('')
-  const [showSchoolCountryDropdown, setShowSchoolCountryDropdown] = useState(false)
   const [showNationalityDropdown, setShowNationalityDropdown] = useState(false)
 
   // ── Fetch on mount ──
@@ -462,6 +469,8 @@ export default function ApplyPage() {
   // ── Computed ──
   const isAnglophone = ANGLOPHONE_COUNTRIES.includes(form.school_country)
 
+  const selectedPhone = COUNTRY_PHONE_CODES.find(c => c.code === form.whatsapp_code) ?? COUNTRY_PHONE_CODES[0]
+
   const computedEndDate = form.start_date && form.duration
     ? addMonths(form.start_date, parseInt(form.duration))
     : ''
@@ -472,6 +481,15 @@ export default function ApplyPage() {
     startPlus6.setMonth(startPlus6.getMonth() + 6)
     return new Date(form.passport_expiry) < startPlus6
   })()
+
+  const stepTitles = [
+    T('Qui es-tu ?', 'Who are you?', lang),
+    T('Ton profil', 'Your profile', lang),
+    T('Ton stage', 'Your internship', lang),
+    T('Prix & engagement', 'Pricing & Commitment', lang),
+    T('Comment tu nous as trouv\u00e9 ?', 'How did you find us?', lang),
+    T('Prends ton RDV', 'Book your call', lang),
+  ]
 
   // ── Validation ──
   function canNext(): boolean {
@@ -489,10 +507,8 @@ export default function ApplyPage() {
         return !!(form.cv_en_file && form.spoken_languages.length > 0)
       case 2:
         return !!(
-          (form.school_id || form.school_custom_name.trim()) &&
           form.duration &&
           form.start_date &&
-          (form.desired_jobs.length > 0 || form.custom_jobs.length > 0) &&
           form.stage_ideal.trim().length > 0
         )
       case 3:
@@ -519,7 +535,7 @@ export default function ApplyPage() {
         fd.append('file', form.cv_en_file)
         fd.append('bucket', 'intern-cvs')
         const r = await fetch('/api/upload', { method: 'POST', body: fd })
-        if (!r.ok) throw new Error('Erreur upload CV / CV upload error')
+        if (!r.ok) throw new Error(T('Erreur upload CV', 'CV upload error', lang))
         const d = await r.json() as { url: string }
         cv_url = d.url
       }
@@ -531,12 +547,12 @@ export default function ApplyPage() {
         fd.append('file', form.cv_local_file)
         fd.append('bucket', 'intern-cvs')
         const r = await fetch('/api/upload', { method: 'POST', body: fd })
-        if (!r.ok) throw new Error('Erreur upload CV local')
+        if (!r.ok) throw new Error(T('Erreur upload CV local', 'Local CV upload error', lang))
         const d = await r.json() as { url: string }
         local_cv_url = d.url
       }
 
-      // If school not found → create pending
+      // If school not found -> create pending
       if (form.school_not_found && form.school_custom_name.trim()) {
         await fetch('/api/schools-pending', {
           method: 'POST',
@@ -583,17 +599,21 @@ export default function ApplyPage() {
       })
 
       if (res.status === 409) {
-        setError('Cet email est déjà associé à un dossier. / This email is already linked to an application.')
+        setError(T(
+          'Cet email est d\u00e9j\u00e0 associ\u00e9 \u00e0 un dossier.',
+          'This email is already linked to an application.',
+          lang
+        ))
         return
       }
       if (!res.ok) {
         const d = await res.json().catch(() => ({})) as { error?: string }
-        throw new Error(d.error ?? 'Erreur lors de la soumission / Submission error')
+        throw new Error(d.error ?? T('Erreur lors de la soumission', 'Submission error', lang))
       }
 
       window.location.href = `/apply/confirmation?name=${encodeURIComponent(form.first_name)}`
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erreur inconnue / Unknown error')
+      setError(e instanceof Error ? e.message : T('Erreur inconnue', 'Unknown error', lang))
     } finally {
       setSubmitting(false)
     }
@@ -611,13 +631,9 @@ export default function ApplyPage() {
     }
   }
 
-  // Filtered countries for nationality/school_country search
+  // Filtered countries for nationality search
   const filteredNationalities = nationalitySearch.length > 0
     ? COUNTRIES.filter(c => c.toLowerCase().includes(nationalitySearch.toLowerCase()))
-    : COUNTRIES
-
-  const filteredSchoolCountries = schoolCountrySearch.length > 0
-    ? COUNTRIES.filter(c => c.toLowerCase().includes(schoolCountrySearch.toLowerCase()))
     : COUNTRIES
 
   return (
@@ -644,17 +660,17 @@ export default function ApplyPage() {
               onClick={() => setLang('fr')}
               className={`px-3 py-1.5 transition-colors ${lang === 'fr' ? 'bg-[#c8a96e] text-white' : 'text-zinc-500 hover:bg-zinc-50'}`}
             >
-              🇫🇷 FR
+              {'\u{1F1EB}\u{1F1F7}'} FR
             </button>
             <button
               onClick={() => setLang('en')}
               className={`px-3 py-1.5 transition-colors ${lang === 'en' ? 'bg-[#c8a96e] text-white' : 'text-zinc-500 hover:bg-zinc-50'}`}
             >
-              🇬🇧 EN
+              {'\u{1F1EC}\u{1F1E7}'} EN
             </button>
           </div>
         </div>
-        <h1 className="text-2xl font-bold text-[#1a1918] mb-6">{STEP_TITLES[step]}</h1>
+        <h1 className="text-2xl font-bold text-[#1a1918] mb-6">{stepTitles[step]}</h1>
 
         {/* ════════════════════════════════════════════════════════
             ÉTAPE 1 — Qui es-tu ?
@@ -664,18 +680,18 @@ export default function ApplyPage() {
             {/* Prénom + Nom */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className={labelClass}>{lang==='fr'?'Prénom*':'First name*'}</label>
-                <input type="text" value={form.first_name} onChange={e => set('first_name', e.target.value)} className={inputClass} placeholder="Prénom / First name" />
+                <label className={labelClass}>{lang==='fr'?'Pr\u00e9nom *':'First name *'}</label>
+                <input type="text" value={form.first_name} onChange={e => set('first_name', e.target.value)} className={inputClass} placeholder={lang==='fr'?'Pr\u00e9nom':'First name'} />
               </div>
               <div>
-                <label className={labelClass}>{lang==='fr'?'Nom*':'Last name*'}</label>
-                <input type="text" value={form.last_name} onChange={e => set('last_name', e.target.value)} className={inputClass} placeholder="Nom / Last name" />
+                <label className={labelClass}>{lang==='fr'?'Nom *':'Last name *'}</label>
+                <input type="text" value={form.last_name} onChange={e => set('last_name', e.target.value)} className={inputClass} placeholder={lang==='fr'?'Nom':'Last name'} />
               </div>
             </div>
 
             {/* Email */}
             <div>
-              <label className={labelClass}>Email*</label>
+              <label className={labelClass}>Email *</label>
               <input
                 type="email"
                 value={form.email}
@@ -687,54 +703,57 @@ export default function ApplyPage() {
 
             {/* WhatsApp */}
             <div>
-              <label className={labelClass}>WhatsApp*</label>
+              <label className={labelClass}>WhatsApp *</label>
               <div className="flex gap-2">
                 {/* Indicatif custom dropdown */}
-                <div className="relative flex-shrink-0">
+                <div className="relative flex-shrink-0" ref={phoneDropRef}>
                   <button
                     type="button"
                     onClick={() => setPhoneDropOpen(o => !o)}
-                    className="flex items-center gap-1.5 px-3 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-[#1a1918] hover:border-[#c8a96e] transition-colors"
+                    className="flex items-center gap-1 px-3 py-3 bg-white border border-zinc-200 rounded-xl text-sm font-medium text-[#1a1918] hover:border-[#c8a96e] transition-colors whitespace-nowrap"
                   >
-                    <span>{COUNTRY_PHONE_CODES.find(p => p.code === form.whatsapp_code)?.flag ?? '🌍'}</span>
-                    <span className="text-zinc-600">{form.whatsapp_code}</span>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M19 9l-7 7-7-7"/></svg>
+                    <span>{selectedPhone.flag}</span>
+                    <span>{selectedPhone.code}</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                      <path d="M19 9l-7 7-7-7"/>
+                    </svg>
                   </button>
                   {phoneDropOpen && (
-                    <div className="absolute z-50 top-full left-0 mt-1 w-56 max-h-60 overflow-y-auto bg-white border border-zinc-200 rounded-xl shadow-xl">
-                      {COUNTRY_PHONE_CODES.map((p, i) => (
+                    <div className="absolute z-50 top-full left-0 mt-1 w-56 max-h-64 overflow-y-auto bg-white border border-zinc-200 rounded-xl shadow-lg">
+                      {COUNTRY_PHONE_CODES.map((c, i) => (
                         <button
                           key={i}
                           type="button"
-                          onClick={() => { set('whatsapp_code', p.code); setPhoneDropOpen(false) }}
-                          className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-50 text-left transition-colors ${p.code === form.whatsapp_code ? 'text-[#c8a96e] font-semibold' : 'text-[#1a1918]'}`}
+                          onClick={() => { set('whatsapp_code', c.code); setPhoneDropOpen(false) }}
+                          className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-50 text-left ${c.code === form.whatsapp_code ? 'text-[#c8a96e] font-medium' : 'text-[#1a1918]'}`}
                         >
-                          <span className="flex-shrink-0 text-base">{p.flag}</span>
-                          <span className="text-zinc-400 text-xs flex-shrink-0">{p.code}</span>
-                          <span className="truncate text-xs">{p.name}</span>
+                          <span className="flex-shrink-0">{c.flag}</span>
+                          <span className="text-zinc-500 flex-shrink-0">{c.code}</span>
+                          <span className="truncate">{c.name}</span>
                         </button>
                       ))}
                     </div>
                   )}
-                  {phoneDropOpen && <div className="fixed inset-0 z-40" onClick={() => setPhoneDropOpen(false)} />}
                 </div>
-                {/* Input numéro */}
+                {/* Input numéro — prend tout l'espace */}
                 <input
                   type="tel"
                   value={form.whatsapp_number}
                   onChange={e => set('whatsapp_number', e.target.value)}
                   className={`${inputClass} flex-1`}
-                  placeholder={lang === 'fr' ? '6 12 34 56 78' : '612 345 678'}
+                  placeholder="6 12 34 56 78"
                 />
               </div>
               <p className={helperClass}>
-                📱 {lang === 'fr' ? "Tout le monde à Bali l'utilise, mets un numéro joignable !" : "Everyone uses it in Bali, make sure the number is correct."}
+                {lang === 'fr'
+                  ? "\u{1F4F1} Tout le monde \u00e0 Bali l\u2019utilise, mets un num\u00e9ro joignable !"
+                  : "\u{1F4F1} Everyone uses it in Bali, make sure the number is correct."}
               </p>
             </div>
 
             {/* Nationalité(s) — multi-select with search */}
             <div className="relative">
-              <label className={labelClass}>{lang==='fr'?'Nationalité(s)*':'Nationality(ies)*'}</label>
+              <label className={labelClass}>{lang==='fr'?'Nationalit\u00e9(s) *':'Nationality(ies) *'}</label>
               {form.nationalities.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   {form.nationalities.map(n => (
@@ -751,7 +770,7 @@ export default function ApplyPage() {
                 onChange={e => { setNationalitySearch(e.target.value); setShowNationalityDropdown(true) }}
                 onFocus={() => setShowNationalityDropdown(true)}
                 className={inputClass}
-                placeholder={lang==='fr' ? "Rechercher un pays..." : "Search country..."}
+                placeholder={lang==='fr'?'Rechercher un pays...':'Search country...'}
               />
               {showNationalityDropdown && filteredNationalities.length > 0 && (
                 <div className="absolute z-40 w-full mt-1 max-h-48 overflow-y-auto bg-white border border-zinc-200 rounded-xl shadow-lg">
@@ -766,7 +785,7 @@ export default function ApplyPage() {
                       }}
                       className={`w-full text-left px-4 py-2 text-sm hover:bg-zinc-100 ${form.nationalities.includes(c) ? 'text-[#c8a96e]' : 'text-[#1a1918]'}`}
                     >
-                      {c} {form.nationalities.includes(c) ? '✓' : ''}
+                      {c} {form.nationalities.includes(c) ? '\u2713' : ''}
                     </button>
                   ))}
                 </div>
@@ -779,64 +798,41 @@ export default function ApplyPage() {
 
             {/* Date de naissance */}
             <div>
-              <label className={labelClass}>{lang==='fr'?'Date de naissance*':'Date of birth*'}</label>
+              <label className={labelClass}>{lang==='fr'?'Date de naissance *':'Date of birth *'}</label>
               <input type="date" value={form.birth_date} onChange={e => set('birth_date', e.target.value)} className={inputClass} />
             </div>
 
             {/* Passeport expiry */}
             <div>
-              <label className={labelClass}>{lang==='fr'?"Date d'expiration du passeport *":'Passport expiry date *'}</label>
+              <label className={labelClass}>{lang==='fr'?"Date d\u2019expiration du passeport *":'Passport expiry date *'}</label>
               <input type="date" value={form.passport_expiry} onChange={e => set('passport_expiry', e.target.value)} className={inputClass} />
               {passportWarning && (
                 <p className="mt-2 text-sm text-amber-400 bg-amber-900/20 border border-amber-800/30 rounded-lg px-3 py-2">
-                  {lang === 'fr'
-                    ? "⚠️ Ton passeport doit être valide au moins 6 mois après ton arrivée à Bali. Tu pourras le mettre à jour plus tard."
-                    : "⚠️ Your passport must be valid at least 6 months after your arrival in Bali. You can update it later."}
+                  {lang==='fr'
+                    ? 'Ton passeport doit \u00eatre valide au moins 6 mois apr\u00e8s ton arriv\u00e9e \u00e0 Bali'
+                    : 'Your passport must be valid at least 6 months after your arrival in Bali'}
                 </p>
               )}
             </div>
 
-            {/* Pays d'études */}
-            <div className="relative">
-              <label className={labelClass}>{lang==='fr'?"Pays où les études sont réalisées*":'Country of study*'}</label>
-              <input
-                type="text"
-                value={form.school_country || schoolCountrySearch}
-                onChange={e => {
-                  setSchoolCountrySearch(e.target.value)
-                  set('school_country', '')
-                  setShowSchoolCountryDropdown(true)
-                }}
-                onFocus={() => setShowSchoolCountryDropdown(true)}
+            {/* Pays d'études — select */}
+            <div>
+              <label className={labelClass}>{lang==='fr'?'Pays o\u00f9 tu \u00e9tudies *':'Country where you study *'}</label>
+              <select
+                value={form.school_country}
+                onChange={e => set('school_country', e.target.value)}
                 className={inputClass}
-                placeholder={lang==='fr' ? "Rechercher un pays..." : "Search country..."}
-              />
+              >
+                <option value="">{lang==='fr'?'S\u00e9lectionner un pays...':'Select a country...'}</option>
+                {COUNTRIES.map(country => (
+                  <option key={country} value={country}>{country}</option>
+                ))}
+              </select>
               <p className={helperClass}>
-                {lang === 'fr'
-                  ? "Pays dans lequel ta convention de stage sera établie de droit commun."
+                {lang==='fr'
+                  ? "Pays dans lequel ta convention de stage sera \u00e9tablie de droit commun."
                   : "Country where your internship agreement will be issued by law."}
               </p>
-              {showSchoolCountryDropdown && filteredSchoolCountries.length > 0 && (
-                <div className="absolute z-40 w-full mt-1 max-h-48 overflow-y-auto bg-white border border-zinc-200 rounded-xl shadow-lg">
-                  {filteredSchoolCountries.slice(0, 20).map(c => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => {
-                        set('school_country', c)
-                        setSchoolCountrySearch('')
-                        setShowSchoolCountryDropdown(false)
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-[#1a1918] hover:bg-zinc-100"
-                    >
-                      {c}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {showSchoolCountryDropdown && (
-                <div className="fixed inset-0 z-30" onClick={() => setShowSchoolCountryDropdown(false)} />
-              )}
             </div>
           </div>
         )}
@@ -848,43 +844,49 @@ export default function ApplyPage() {
           <div className="space-y-4">
             {/* LinkedIn */}
             <div>
-              <label className={labelClass}>LinkedIn URL</label>
+              <label className={labelClass}>{lang==='fr'?'LinkedIn (optionnel)':'LinkedIn (optional)'}</label>
               <input type="url" value={form.linkedin_url} onChange={e => set('linkedin_url', e.target.value)} className={inputClass} placeholder="https://linkedin.com/in/..." />
             </div>
 
             {/* CV anglais */}
             <FileUpload
-              label="CV en anglais* / English CV* (PDF/DOC, max 5MB)"
-              helper="Even if matched with a French company, English is essential daily. / Même avec une entreprise francophone, l'anglais est indispensable au quotidien."
+              label={lang==='fr'?'CV en anglais * (PDF/DOC, max 5MB)':'English CV * (PDF/DOC, max 5MB)'}
+              helper={lang==='fr'
+                ? "M\u00eame avec une entreprise francophone, l\u2019anglais est indispensable au quotidien."
+                : "Even at a French-speaking company, English is essential daily."}
               fileName={form.cv_en_filename}
               onFileSelect={f => {
-                if (f.size > 5 * 1024 * 1024) { setError('Fichier trop volumineux (max 5MB) / File too large'); return }
+                if (f.size > 5 * 1024 * 1024) { setError(T('Fichier trop volumineux (max 5MB)', 'File too large (max 5MB)', lang)); return }
                 set('cv_en_file', f)
                 set('cv_en_filename', f.name)
                 setError('')
               }}
               inputRef={cvEnRef}
+              lang={lang}
             />
 
             {/* CV local (conditionnel) */}
             {!isAnglophone && form.school_country && (
               <FileUpload
-                label={`CV dans ta langue / Local language CV (PDF/DOC, max 5MB)`}
-                helper="Optionnel mais recommandé pour les entreprises locales / Optional but recommended for local companies"
+                label={lang==='fr'?'CV dans ta langue (PDF/DOC, max 5MB)':'Local language CV (PDF/DOC, max 5MB)'}
+                helper={lang==='fr'
+                  ? "Optionnel mais recommand\u00e9 pour les entreprises locales"
+                  : "Optional but recommended for local companies"}
                 fileName={form.cv_local_filename}
                 onFileSelect={f => {
-                  if (f.size > 5 * 1024 * 1024) { setError('Fichier trop volumineux (max 5MB)'); return }
+                  if (f.size > 5 * 1024 * 1024) { setError(T('Fichier trop volumineux (max 5MB)', 'File too large (max 5MB)', lang)); return }
                   set('cv_local_file', f)
                   set('cv_local_filename', f.name)
                   setError('')
                 }}
                 inputRef={cvLocalRef}
+                lang={lang}
               />
             )}
 
             {/* Documents supplémentaires */}
             <div>
-              <label className={labelClass}>{lang==='fr'?'Documents supplémentaires':'Additional documents'}</label>
+              <label className={labelClass}>{lang==='fr'?'Documents suppl\u00e9mentaires (optionnel)':'Additional documents (optional)'}</label>
               <input
                 ref={docsRef}
                 type="file"
@@ -906,7 +908,7 @@ export default function ApplyPage() {
                 className="w-full py-6 border-2 border-dashed border-zinc-200 hover:border-[#c8a96e] bg-white rounded-xl text-center transition-all"
               >
                 <span className="text-sm text-zinc-500">
-                  Portfolio, projets, réalisations / Portfolio, projects, achievements
+                  {lang==='fr'?'Portfolio, projets, r\u00e9alisations':'Portfolio, projects, achievements'}
                 </span>
               </button>
               {form.extra_docs_names.length > 0 && (
@@ -932,7 +934,7 @@ export default function ApplyPage() {
 
             {/* Langues */}
             <div>
-              <label className={labelClass}>Langues professionnelles* / Professional languages*</label>
+              <label className={labelClass}>{lang==='fr'?'Langues professionnelles *':'Professional languages *'}</label>
               <div className="flex flex-wrap gap-2">
                 {LANGUAGES_LIST.map(l => (
                   <Chip key={l} selected={form.spoken_languages.includes(l)} onClick={() => toggleArrayField('spoken_languages', l)}>
@@ -951,7 +953,7 @@ export default function ApplyPage() {
           <div className="space-y-4">
             {/* École / Université — autocomplete */}
             <div className="relative">
-              <label className={labelClass}>École / université / School / university</label>
+              <label className={labelClass}>{lang==='fr'?'\u00c9cole / Universit\u00e9':'School / University'}</label>
               {!form.school_not_found ? (
                 <>
                   <input
@@ -965,7 +967,7 @@ export default function ApplyPage() {
                       searchSchools(v)
                     }}
                     className={inputClass}
-                    placeholder="Rechercher ton école / Search your school..."
+                    placeholder={lang==='fr'?'Rechercher ton \u00e9cole...':'Search your school...'}
                   />
                   {schoolResults.length > 0 && form.school_search.length >= 2 && !form.school_name && (
                     <div className="absolute z-40 w-full mt-1 max-h-48 overflow-y-auto bg-white border border-zinc-200 rounded-xl shadow-lg">
@@ -982,7 +984,7 @@ export default function ApplyPage() {
                           className="w-full text-left px-4 py-2 text-sm text-[#1a1918] hover:bg-zinc-100"
                         >
                           <span className="font-medium">{s.name}</span>
-                          {s.city && <span className="text-zinc-500"> — {s.city}{s.country ? `, ${s.country}` : ''}</span>}
+                          {s.city && <span className="text-zinc-500"> {'\u2014'} {s.city}{s.country ? `, ${s.country}` : ''}</span>}
                         </button>
                       ))}
                     </div>
@@ -992,7 +994,7 @@ export default function ApplyPage() {
                     onClick={() => set('school_not_found', true)}
                     className="mt-2 text-xs text-[#c8a96e] underline hover:text-[#b8945a]"
                   >
-                    Mon école n&apos;est pas dans la liste / My school is not in the list
+                    {lang==='fr'?"Mon \u00e9cole n\u2019est pas dans la liste":'My school is not in the list'}
                   </button>
                 </>
               ) : (
@@ -1002,7 +1004,7 @@ export default function ApplyPage() {
                     value={form.school_custom_name}
                     onChange={e => set('school_custom_name', e.target.value)}
                     className={inputClass}
-                    placeholder="Nom de ton école / Your school name"
+                    placeholder={lang==='fr'?'Nom de ton \u00e9cole':'Your school name'}
                   />
                   <button
                     type="button"
@@ -1012,7 +1014,7 @@ export default function ApplyPage() {
                     }}
                     className="mt-2 text-xs text-[#c8a96e] underline hover:text-[#b8945a]"
                   >
-                    Retour à la recherche / Back to search
+                    {lang==='fr'?'Retour \u00e0 la recherche':'Back to search'}
                   </button>
                 </>
               )}
@@ -1020,7 +1022,7 @@ export default function ApplyPage() {
 
             {/* Durée */}
             <div>
-              <label className={labelClass}>Durée souhaitée* / Desired duration*</label>
+              <label className={labelClass}>{lang==='fr'?'Dur\u00e9e souhait\u00e9e *':'Desired duration *'}</label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {DURATIONS.map(d => (
                   <button
@@ -1033,7 +1035,7 @@ export default function ApplyPage() {
                         : 'bg-white text-[#8a7d6d] border border-zinc-200 hover:border-[#c8a96e]'
                     }`}
                   >
-                    {d.label}
+                    {lang==='fr'?d.fr:d.en}
                   </button>
                 ))}
               </div>
@@ -1041,36 +1043,36 @@ export default function ApplyPage() {
 
             {/* Date de début */}
             <div>
-              <label className={labelClass}>Date de démarrage souhaitée* / Desired start date*</label>
+              <label className={labelClass}>{lang==='fr'?'Date de d\u00e9marrage souhait\u00e9e *':'Desired start date *'}</label>
               <input type="date" value={form.start_date} onChange={e => set('start_date', e.target.value)} className={inputClass} />
-              <p className={helperClass}>À 2-4 semaines près, c&apos;est ok / Give or take 2-4 weeks, that&apos;s fine</p>
+              <p className={helperClass}>{lang==='fr'?"\u00c0 2-4 semaines pr\u00e8s, c\u2019est ok":"Give or take 2-4 weeks, that\u2019s fine"}</p>
             </div>
 
             {/* Date de fin calculée */}
             {computedEndDate && (
               <div>
-                <label className={labelClass}>{lang==='fr'?'Date de fin maximum possible':'Latest possible end date'}</label>
+                <label className={labelClass}>{lang==='fr'?'Date de fin maximum possible (optionnel)':'Latest possible end date (optional)'}</label>
                 <p className="text-sm text-zinc-500 bg-white rounded-xl px-4 py-3">
-                  {new Date(computedEndDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  {' / '}
-                  {new Date(computedEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  {lang==='fr'
+                    ? new Date(computedEndDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+                    : new Date(computedEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                 </p>
               </div>
             )}
 
             {/* Métiers souhaités (max 3) */}
             <div>
-              <label className={labelClass}>Métiers souhaités* / Desired positions* (max 3)</label>
+              <label className={labelClass}>{lang==='fr'?'M\u00e9tiers souhait\u00e9s * (max 3)':'Desired positions * (max 3)'}</label>
               <div className="flex flex-wrap gap-2">
                 {jobTypes.map(j => {
-                  const label = j.name_fr ? `${j.name_fr} / ${j.name_en || j.name}` : j.name
+                  const jLabel = lang==='fr' ? (j.name_fr || j.name) : (j.name_en || j.name)
                   return (
                     <Chip
                       key={j.id}
                       selected={form.desired_jobs.includes(j.name)}
                       onClick={() => toggleArrayField('desired_jobs', j.name, 3)}
                     >
-                      {label}
+                      {jLabel}
                     </Chip>
                   )
                 })}
@@ -1082,7 +1084,7 @@ export default function ApplyPage() {
                   value={form.custom_job_input}
                   onChange={e => set('custom_job_input', e.target.value)}
                   className={`${inputClass} flex-1`}
-                  placeholder="Autre métier / Other position..."
+                  placeholder={lang==='fr'?'Autre m\u00e9tier...':'Other position...'}
                   onKeyDown={e => {
                     if (e.key === 'Enter' && form.custom_job_input.trim() && form.custom_jobs.length < 3) {
                       e.preventDefault()
@@ -1122,22 +1124,22 @@ export default function ApplyPage() {
                 </div>
               )}
               <p className={helperClass}>
-                {form.desired_jobs.length + form.custom_jobs.length}/3 sélectionnés / selected
+                {form.desired_jobs.length + form.custom_jobs.length}/3 {lang==='fr'?'s\u00e9lectionn\u00e9s':'selected'}
               </p>
             </div>
 
             {/* Stage idéal */}
             <div>
-              <label className={labelClass}>Ton stage idéal en 5 lignes* / Your ideal internship in 5 lines*</label>
+              <label className={labelClass}>{lang==='fr'?'Ton stage id\u00e9al *':'Your ideal internship *'}</label>
               <textarea
                 value={form.stage_ideal}
                 onChange={e => set('stage_ideal', e.target.value)}
                 rows={6}
                 maxLength={1000}
-                placeholder={lang==='fr' ? "Objectifs, compétences, types d'entreprises, contraintes (dates / remote / horaires), et ce que tu veux apprendre. Pas besoin d'être parfait, on clarifie ensemble en appel." : "Goals, skills, company types, constraints (dates / remote / hours), and what you want to learn. No need to be perfect, we'll clarify together on the call."}
+                placeholder={lang==='fr' ? "Objectifs, comp\u00e9tences, types d\u2019entreprises, contraintes (dates / remote / horaires), et ce que tu veux apprendre. Pas besoin d\u2019\u00eatre parfait, on clarifie ensemble en appel." : "Goals, skills, company types, constraints (dates / remote / hours), and what you want to learn. No need to be perfect, we\u2019ll clarify together on the call."}
                 className={`${inputClass} resize-none`}
               />
-              <p className={`text-xs mt-1 text-zinc-400`}>
+              <p className="text-xs mt-1 text-zinc-400">
                 {form.stage_ideal.length}/1000
               </p>
             </div>
@@ -1152,14 +1154,13 @@ export default function ApplyPage() {
             {/* Price card */}
             <div className="bg-white border border-zinc-200 rounded-2xl p-6">
               <div className="text-center mb-5">
-                <p className="text-4xl font-bold text-[#c8a96e]">{price}€</p>
-                <p className="text-xs text-zinc-500 mt-1">TTC / Tax included</p>
+                <p className="text-4xl font-bold text-[#c8a96e]">{price}{'\u20ac'}</p>
+                <p className="text-xs text-zinc-500 mt-1">{lang==='fr'?'TTC':'Tax included'}</p>
               </div>
-              <p className="text-sm text-[#d4cfc5] leading-relaxed">
-                Le service Bali Interns coûte {price}€ TTC. Paiement uniquement après signature de la convention de stage — avant ça, 0€ à régler. Pour éviter les mauvaises surprises, on s&apos;assure que tout est clair avant de continuer.
-              </p>
-              <p className="text-sm text-[#8a7d6d] leading-relaxed mt-3">
-                Bali Interns service costs €{price} (tax included). Payment only after the internship agreement is signed — before that, €0 to pay. No surprises: everything is clear before moving forward.
+              <p className="text-sm text-[#8a7d6d] leading-relaxed">
+                {lang==='fr'
+                  ? `Le service Bali Interns co\u00fbte ${price}\u20ac TTC. Paiement uniquement apr\u00e8s signature de la convention de stage \u2014 avant \u00e7a, 0\u20ac \u00e0 r\u00e9gler. Pour \u00e9viter les mauvaises surprises, on s\u2019assure que tout est clair avant de continuer.`
+                  : `Bali Interns service costs \u20ac${price} (tax included). Payment only after the internship agreement is signed \u2014 before that, \u20ac0 to pay. No surprises: everything is clear before moving forward.`}
               </p>
             </div>
 
@@ -1172,10 +1173,10 @@ export default function ApplyPage() {
                   onChange={e => set('commitment_price', e.target.checked)}
                   className="mt-0.5 w-5 h-5 rounded accent-[#c8a96e] flex-shrink-0"
                 />
-                <span className="text-sm text-[#d4cfc5] leading-relaxed">
-                  Je confirme avoir compris le prix ({price}€ TTC) et que le paiement intervient uniquement après signature de la convention par l&apos;étudiant(e), l&apos;employeur et l&apos;école/université.
-                  <br />
-                  <span className="text-[#8a7d6d]">I confirm I understand the price (€{price} incl. tax) and that payment happens only after the internship agreement is signed by the student, the employer, and the school/university.</span>
+                <span className="text-sm text-[#8a7d6d] leading-relaxed">
+                  {lang==='fr'
+                    ? `Je confirme avoir compris le prix (${price}\u20ac TTC) et que le paiement intervient uniquement apr\u00e8s signature de la convention par l\u2019\u00e9tudiant(e), l\u2019employeur et l\u2019\u00e9cole/universit\u00e9.`
+                    : `I confirm I understand the price (\u20ac${price} incl. tax) and that payment happens only after the internship agreement is signed by the student, the employer, and the school/university.`}
                 </span>
               </label>
 
@@ -1186,10 +1187,10 @@ export default function ApplyPage() {
                   onChange={e => set('commitment_budget', e.target.checked)}
                   className="mt-0.5 w-5 h-5 rounded accent-[#c8a96e] flex-shrink-0"
                 />
-                <span className="text-sm text-[#d4cfc5] leading-relaxed">
-                  Je confirme disposer du budget (ou d&apos;une solution de financement) pour régler {price}€ TTC une fois la convention signée.
-                  <br />
-                  <span className="text-[#8a7d6d]">I confirm I have the budget (or a financing solution) to pay €{price} incl. tax once the agreement is signed.</span>
+                <span className="text-sm text-[#8a7d6d] leading-relaxed">
+                  {lang==='fr'
+                    ? `Je confirme disposer du budget (ou d\u2019une solution de financement) pour r\u00e9gler ${price}\u20ac TTC une fois la convention sign\u00e9e.`
+                    : `I confirm I have the budget (or a financing solution) to pay \u20ac${price} incl. tax once the agreement is signed.`}
                 </span>
               </label>
 
@@ -1200,19 +1201,19 @@ export default function ApplyPage() {
                   onChange={e => set('commitment_terms', e.target.checked)}
                   className="mt-0.5 w-5 h-5 rounded accent-[#c8a96e] flex-shrink-0"
                 />
-                <span className="text-sm text-[#d4cfc5] leading-relaxed">
-                  Je confirme avoir pris connaissance des éléments contractuels.
-                  <br />
-                  <span className="text-[#8a7d6d]">I confirm I have read and understood the contractual terms.</span>
+                <span className="text-sm text-[#8a7d6d] leading-relaxed">
+                  {lang==='fr'
+                    ? "Je confirme avoir pris connaissance des \u00e9l\u00e9ments contractuels."
+                    : "I confirm I have read and understood the contractual terms."}
                 </span>
               </label>
             </div>
 
             {/* Legal text */}
             <p className="text-[11px] text-[#5a5347] leading-relaxed">
-              En validant ce formulaire : (1) Tu autorises Bali Interns à partager les informations nécessaires de ton dossier avec nos entreprises partenaires et nos prestataires administratifs (ex : visa), uniquement pour traiter ta candidature. (2) Tu t&apos;engages à ne pas signer de convention de stage avec une entreprise présentée par Bali Interns en dehors de notre processus. (3) Tu confirmes que la suite du processus passe par la prise de rendez-vous avec un conseiller.
-              <br /><br />
-              By submitting this form: (1) You authorize Bali Interns to share necessary information with partner companies and administrative providers. (2) You agree not to sign an agreement with a company introduced by Bali Interns outside our process. (3) You confirm the next step is booking a call.
+              {lang==='fr'
+                ? "En validant ce formulaire : (1) Tu autorises Bali Interns \u00e0 partager les informations n\u00e9cessaires de ton dossier avec nos entreprises partenaires et nos prestataires administratifs (ex : visa), uniquement pour traiter ta candidature. (2) Tu t\u2019engages \u00e0 ne pas signer de convention de stage avec une entreprise pr\u00e9sent\u00e9e par Bali Interns en dehors de notre processus. (3) Tu confirmes que la suite du processus passe par la prise de rendez-vous avec un conseiller."
+                : "By submitting this form: (1) You authorize Bali Interns to share necessary information with partner companies and administrative providers. (2) You agree not to sign an agreement with a company introduced by Bali Interns outside our process. (3) You confirm the next step is booking a call."}
             </p>
           </div>
         )}
@@ -1223,23 +1224,24 @@ export default function ApplyPage() {
         {step === 4 && (
           <div className="space-y-4">
             <div>
-              <label className={labelClass}>Source*</label>
+              <label className={labelClass}>Source *</label>
+              <p className={helperClass + ' mb-2'}>{lang==='fr'?'1 seule option':'1 option only'}</p>
               <div className="grid grid-cols-1 gap-2">
                 {TOUCHPOINTS.map(t => (
                   <button
-                    key={t}
+                    key={t.value}
                     type="button"
                     onClick={() => {
-                      set('touchpoint', t)
-                      if (!t.includes('Ambassadeur')) set('referred_by_code', '')
+                      set('touchpoint', t.value)
+                      if (!t.value.includes('Ambassadeur')) set('referred_by_code', '')
                     }}
                     className={`py-3 px-4 rounded-xl text-sm font-medium text-left transition-all ${
-                      form.touchpoint === t
+                      form.touchpoint === t.value
                         ? 'bg-[#c8a96e] text-[#1a1410]'
                         : 'bg-white text-[#8a7d6d] border border-zinc-200 hover:border-[#c8a96e]'
                     }`}
                   >
-                    {t}
+                    {lang==='fr'?t.fr:t.en}
                   </button>
                 ))}
               </div>
@@ -1248,7 +1250,7 @@ export default function ApplyPage() {
             {/* Referral code — conditional */}
             {form.touchpoint.includes('Ambassadeur') && (
               <div className="animate-[fadeIn_0.3s_ease-in-out]">
-                <label className={labelClass}>Code de parrainage / Referral code</label>
+                <label className={labelClass}>{lang==='fr'?'Code de parrainage (optionnel)':'Referral code (optional)'}</label>
                 <input
                   type="text"
                   value={form.referred_by_code}
@@ -1256,7 +1258,7 @@ export default function ApplyPage() {
                   className={inputClass}
                   placeholder="CODE123"
                 />
-                <p className={helperClass}>Si tu as un code, saisis-le ici / If you have a code, enter it here</p>
+                <p className={helperClass}>{lang==='fr'?'Si tu as un code, saisis-le ici':'If you have a code, enter it here'}</p>
               </div>
             )}
           </div>
@@ -1268,9 +1270,9 @@ export default function ApplyPage() {
         {step === 5 && (
           <div className="space-y-4">
             <p className="text-sm text-[#8a7d6d]">
-              Entretien de qualification de 45 minutes avec notre équipe, sur Google Meet
-              <br />
-              45-minute qualification interview with our team, on Google Meet
+              {lang==='fr'
+                ? "Entretien de qualification de 45 minutes avec notre \u00e9quipe, sur Google Meet"
+                : "45-minute qualification interview with our team, on Google Meet"}
             </p>
             <p className="text-xs text-zinc-500 bg-white inline-block px-3 py-1.5 rounded-lg">
               Manila (GMT+8)
@@ -1302,13 +1304,13 @@ export default function ApplyPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-zinc-500">Chargement des créneaux... / Loading slots...</p>
+              <p className="text-sm text-zinc-500">{lang==='fr'?'Chargement des cr\u00e9neaux...':'Loading slots...'}</p>
             )}
 
             <p className="text-xs text-amber-400/80 bg-amber-900/10 border border-amber-800/20 rounded-lg px-3 py-2 leading-relaxed">
-              Si tu ne peux pas honorer ton rendez-vous, tu pourras le reprogrammer via le lien dans l&apos;email de confirmation. En raison du fort volume de demandes, une seule reprogrammation sera accordée.
-              <br /><br />
-              If you can&apos;t make it, you can reschedule via the link in your confirmation email. Due to high demand, only one reschedule is allowed.
+              {lang==='fr'
+                ? "Si tu ne peux pas honorer ton rendez-vous, tu pourras le reprogrammer via le lien dans l\u2019email de confirmation. En raison du fort volume de demandes, une seule reprogrammation sera accord\u00e9e."
+                : "If you can\u2019t make it, you can reschedule via the link in your confirmation email. Due to high demand, only one reschedule is allowed."}
             </p>
           </div>
         )}
@@ -1328,7 +1330,7 @@ export default function ApplyPage() {
               onClick={() => { setStep(s => s - 1); setError('') }}
               className="px-6 py-3 rounded-xl text-sm font-medium bg-white text-[#8a7d6d] border border-zinc-200 hover:border-[#c8a96e] transition-all"
             >
-              Retour / Back
+              {lang==='fr'?'Retour':'Back'}
             </button>
           )}
           {step < 5 ? (
@@ -1338,7 +1340,9 @@ export default function ApplyPage() {
               onClick={() => { setStep(s => s + 1); setError('') }}
               className="flex-1 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a]"
             >
-              Continuer / Continue
+              {step === 3
+                ? (lang==='fr'?'Prendre rendez-vous \u2192':'Book a call \u2192')
+                : (lang==='fr'?'Continuer':'Continue')}
             </button>
           ) : (
             <button
@@ -1347,7 +1351,9 @@ export default function ApplyPage() {
               onClick={() => { void handleSubmit() }}
               className="flex-1 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a]"
             >
-              {submitting ? 'Envoi en cours... / Submitting...' : 'Confirmer ma candidature / Submit my application'}
+              {submitting
+                ? (lang==='fr'?'Envoi en cours...':'Submitting...')
+                : (lang==='fr'?'Confirmer ma candidature \u{1F680}':'Submit my application \u{1F680}')}
             </button>
           )}
         </div>
