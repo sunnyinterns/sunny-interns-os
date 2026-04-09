@@ -161,9 +161,13 @@ const COUNTRIES = [
   'French Polynesia', 'New Caledonia',
 ]
 
-const LANGUAGES_LIST = [
-  'Fran\u00e7ais', 'English', 'Espa\u00f1ol', 'Deutsch', 'Mandarin', 'Arabic',
-  'Italian', 'Portuguese', 'Japanese', 'Korean', 'Dutch', 'Russian', 'Hindi', 'Autre/Other',
+const LANGUAGES_LIST_FR = [
+  'Français', 'Anglais', 'Espagnol', 'Allemand', 'Mandarin', 'Arabe',
+  'Italien', 'Portugais', 'Japonais', 'Coréen', 'Néerlandais', 'Russe', 'Hindi', 'Indonésien', 'Autre',
+]
+const LANGUAGES_LIST_EN = [
+  'French', 'English', 'Spanish', 'German', 'Mandarin', 'Arabic',
+  'Italian', 'Portuguese', 'Japanese', 'Korean', 'Dutch', 'Russian', 'Hindi', 'Indonesian', 'Other',
 ]
 
 const DURATIONS: { value: string; fr: string; en: string }[] = [
@@ -383,6 +387,7 @@ export default function ApplyPage() {
     school_name: '',
     school_not_found: false,
     school_custom_name: '',
+    end_date: '' as string,
     desired_jobs: [] as string[],
     custom_jobs: [] as string[],
     custom_job_input: '',
@@ -402,6 +407,7 @@ export default function ApplyPage() {
 
   // ── Fetched data ──
   const [jobTypes, setJobTypes] = useState<JobType[]>([])
+  const [isSearchingSchool, setIsSearchingSchool] = useState(false)
   const [schoolResults, setSchoolResults] = useState<School[]>([])
   const [calendarSlots, setCalendarSlots] = useState<CalendarSlot[]>([])
   const [nationalitySearch, setNationalitySearch] = useState('')
@@ -443,13 +449,14 @@ export default function ApplyPage() {
   const searchSchoolsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const searchSchools = useCallback((q: string) => {
     if (searchSchoolsTimeout.current) clearTimeout(searchSchoolsTimeout.current)
-    if (q.length < 2) { setSchoolResults([]); return }
+    if (q.length < 2) { setSchoolResults([]); setIsSearchingSchool(false); return }
+    setIsSearchingSchool(true)
     searchSchoolsTimeout.current = setTimeout(() => {
       fetch(`/api/public/schools?q=${encodeURIComponent(q)}`)
         .then(r => r.ok ? r.json() : [])
-        .then((data: School[]) => setSchoolResults(Array.isArray(data) ? data : []))
-        .catch(() => setSchoolResults([]))
-    }, 300)
+        .then((data: School[]) => { setSchoolResults(Array.isArray(data) ? data : []); setIsSearchingSchool(false) })
+        .catch(() => { setSchoolResults([]); setIsSearchingSchool(false) })
+    }, 400)
   }, [])
 
   // ── Setters ──
@@ -936,12 +943,18 @@ export default function ApplyPage() {
             {/* Langues */}
             <div>
               <label className={labelClass}>{lang==='fr'?'Langues professionnelles *':'Professional languages *'}</label>
+              <p className={helperClass + " mb-2"}>
+                {lang==='fr' ? "Langues parlées en environnement professionnel." : "Languages spoken in a professional environment."}
+              </p>
               <div className="flex flex-wrap gap-2">
-                {LANGUAGES_LIST.map(l => (
-                  <Chip key={l} selected={form.spoken_languages.includes(l)} onClick={() => toggleArrayField('spoken_languages', l)}>
-                    {l}
-                  </Chip>
-                ))}
+                {(lang === 'fr' ? LANGUAGES_LIST_FR : LANGUAGES_LIST_EN).map((l, idx) => {
+                  const value = LANGUAGES_LIST_FR[idx] // always store FR value
+                  return (
+                    <Chip key={value} selected={form.spoken_languages.includes(value)} onClick={() => toggleArrayField('spoken_languages', value)}>
+                      {l}
+                    </Chip>
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -957,19 +970,36 @@ export default function ApplyPage() {
               <label className={labelClass}>{lang==='fr'?'\u00c9cole / Universit\u00e9':'School / University'}</label>
               {!form.school_not_found ? (
                 <>
-                  <input
-                    type="text"
-                    value={form.school_name || form.school_search}
-                    onChange={e => {
-                      const v = e.target.value
-                      set('school_search', v)
-                      set('school_name', '')
-                      set('school_id', null)
-                      searchSchools(v)
-                    }}
-                    className={inputClass}
-                    placeholder={lang==='fr'?'Rechercher ton \u00e9cole...':'Search your school...'}
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={form.school_name || form.school_search}
+                      onChange={e => {
+                        const v = e.target.value
+                        set('school_search', v)
+                        set('school_name', '')
+                        set('school_id', null)
+                        searchSchools(v)
+                      }}
+                      className={inputClass}
+                      placeholder={lang==='fr'?'Rechercher ton école...':'Search your school...'}
+                    />
+                    {isSearchingSchool && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <svg className="animate-spin w-4 h-4 text-[#c8a96e]" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                        </svg>
+                      </div>
+                    )}
+                    {form.school_name && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+                        </svg>
+                      </div>
+                    )}
+                  </div>
                   {schoolResults.length > 0 && form.school_search.length >= 2 && !form.school_name && (
                     <div className="absolute z-40 w-full mt-1 max-h-48 overflow-y-auto bg-white border border-zinc-200 rounded-xl shadow-lg">
                       {schoolResults.map(s => (
@@ -1049,17 +1079,19 @@ export default function ApplyPage() {
               <p className={helperClass}>{lang==='fr'?"\u00c0 2-4 semaines pr\u00e8s, c\u2019est ok":"Give or take 2-4 weeks, that\u2019s fine"}</p>
             </div>
 
-            {/* Date de fin calculée */}
-            {computedEndDate && (
-              <div>
-                <label className={labelClass}>{lang==='fr'?'Date de fin maximum possible (optionnel)':'Latest possible end date (optional)'}</label>
-                <p className="text-sm text-zinc-500 bg-white rounded-xl px-4 py-3">
-                  {lang==='fr'
-                    ? new Date(computedEndDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-                    : new Date(computedEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                </p>
-              </div>
-            )}
+            {/* Date de fin — champ libre optionnel */}
+            <div>
+              <label className={labelClass}>{lang==='fr'?'Date de fin maximum possible (optionnel)':'Latest possible end date (optional)'}</label>
+              <input
+                type="date"
+                value={form.end_date ?? ''}
+                onChange={e => set('end_date', e.target.value)}
+                className={inputClass}
+              />
+              <p className={helperClass}>
+                {lang==='fr' ? "Laisse vide si tu n'as pas de contrainte précise." : "Leave empty if you have no specific constraint."}
+              </p>
+            </div>
 
             {/* Métiers souhaités (max 3) */}
             <div>
@@ -1269,49 +1301,31 @@ export default function ApplyPage() {
             ÉTAPE 6 — Prends un RDV
             ════════════════════════════════════════════════════════ */}
         {step === 5 && (
-          <div className="space-y-4">
-            <p className="text-sm text-[#8a7d6d]">
-              {lang==='fr'
-                ? "Entretien de qualification de 45 minutes avec notre \u00e9quipe, sur Google Meet"
-                : "45-minute qualification interview with our team, on Google Meet"}
-            </p>
-            <p className="text-xs text-zinc-500 bg-white inline-block px-3 py-1.5 rounded-lg">
-              Manila (GMT+8)
-            </p>
-
-            {/* Calendar slots grouped by day */}
-            {slotsByDay.length > 0 ? (
-              <div className="space-y-4">
-                {slotsByDay.slice(0, 5).map(day => (
-                  <div key={day.dayLabel}>
-                    <p className="text-sm font-medium text-[#c8a96e] mb-2 capitalize">{day.dayLabel}</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {day.slots.map(slot => (
-                        <button
-                          key={slot.start}
-                          type="button"
-                          onClick={() => set('rdv_slot', slot.start)}
-                          className={`py-3 px-3 rounded-xl text-sm font-medium transition-all text-left ${
-                            form.rdv_slot === slot.start
-                              ? 'bg-[#c8a96e] text-white'
-                              : 'bg-white text-[#1a1410] border border-zinc-200 hover:border-[#c8a96e]'
-                          }`}
-                        >
-                          {slot.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-zinc-500">{lang==='fr'?'Chargement des cr\u00e9neaux...':'Loading slots...'}</p>
-            )}
-
-            <p className="text-xs text-amber-400/80 bg-amber-900/10 border border-amber-800/20 rounded-lg px-3 py-2 leading-relaxed">
-              {lang==='fr'
-                ? "Si tu ne peux pas honorer ton rendez-vous, tu pourras le reprogrammer via le lien dans l\u2019email de confirmation. En raison du fort volume de demandes, une seule reprogrammation sera accord\u00e9e."
-                : "If you can\u2019t make it, you can reschedule via the link in your confirmation email. Due to high demand, only one reschedule is allowed."}
+          <div className="space-y-6">
+            <div>
+              <p className={helperClass + " text-sm mb-4"}>
+                {lang === 'fr'
+                  ? "Choisis un créneau pour ton entretien de qualification (45 min, Google Meet)."
+                  : "Choose a time slot for your qualification interview (45 min, Google Meet)."}
+              </p>
+              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+                {lang === 'fr'
+                  ? "⚠️ Si tu ne peux pas honorer ton rendez-vous, un lien de reprogrammation sera disponible dans l'email de confirmation. En raison du fort volume, une seule reprogrammation sera accordée."
+                  : "⚠️ If you can't make it, a reschedule link will be in your confirmation email. Due to high demand, only one reschedule is allowed."}
+              </p>
+            </div>
+            {/* Fillout scheduling embed */}
+            <div
+              className="w-full rounded-xl overflow-hidden border border-zinc-200"
+              style={{ minHeight: 500 }}
+              dangerouslySetInnerHTML={{
+                __html: `<div style="width:100%;height:500px;" data-fillout-id="iqn73wjLFeus" data-fillout-embed-type="standard" data-fillout-inherit-parameters data-fillout-dynamic-resize></div><script src="https://server.fillout.com/embed/v1/"></script>`
+              }}
+            />
+            <p className="text-xs text-zinc-400 text-center">
+              {lang === 'fr'
+                ? "Le créneau sera confirmé par email • Manila (GMT+8)"
+                : "The slot will be confirmed by email • Manila (GMT+8)"}
             </p>
           </div>
         )}
