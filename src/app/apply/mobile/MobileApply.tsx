@@ -93,6 +93,7 @@ interface MobileApplyProps {
   jobTypes: JobType[]
   cvUploading: boolean
   cvLocalUploading: boolean
+  desktopStep?: number
   onCvUpload: (file: File) => void
   onCvLocalUpload: (file: File) => void
 }
@@ -228,13 +229,16 @@ function isValidEmail(email: string): boolean {
 
 export function MobileApply({
   form, setForm, lang, setLang, onSubmit, submitting, error,
-  price, jobTypes, cvUploading, cvLocalUploading, onCvUpload, onCvLocalUpload,
+  price, jobTypes, cvUploading, cvLocalUploading, onCvUpload, onCvLocalUpload, desktopStep,
 }: MobileApplyProps) {
   const [currentQ, setCurrentQ] = useState(() => {
     try {
       const saved = typeof window !== 'undefined' ? localStorage.getItem('apply_mobile_step_v1') : null
-      return saved ? Math.max(0, parseInt(saved, 10) || 0) : 0
-    } catch { return 0 }
+      if (saved) return Math.max(0, parseInt(saved, 10) || 0)
+    } catch { /* ignore */ }
+    // Si pas de step mobile sauvegardé, utiliser le step desktop comme point de départ
+    const mapping: Record<number, number> = { 0: 0, 1: 6, 2: 10, 3: 16, 4: 19 }
+    return 0 // Sera mis à jour par useEffect après le mount
   })
   const [fieldError, setFieldError] = useState('')
   const [fieldTouched, setFieldTouched] = useState(false)
@@ -256,8 +260,33 @@ export function MobileApply({
   const emailCheckTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // ── Save step to localStorage ──
+
+  // Sync depuis step desktop au premier rendu
   useEffect(() => {
-    try { localStorage.setItem('apply_mobile_step_v1', String(currentQ)) } catch {}
+    try {
+      const saved = localStorage.getItem('apply_mobile_step_v1')
+      if (!saved && desktopStep && desktopStep > 0) {
+        const mapping: Record<number, number> = { 0: 0, 1: 6, 2: 10, 3: 16, 4: 19 }
+        setCurrentQ(mapping[desktopStep] ?? 0)
+      }
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('apply_mobile_step_v1', String(currentQ))
+      // Sync step desktop : mapping inverse question mobile → step desktop
+      const reverseMap = [
+        [0,5,0],[6,9,1],[10,15,2],[16,18,2],[19,19,3],[20,20,4]
+      ]
+      for (const [min, max, dStep] of reverseMap) {
+        if (currentQ >= min && currentQ <= max) {
+          localStorage.setItem('apply_desktop_step_v1', String(dStep))
+          break
+        }
+      }
+    } catch {}
   }, [currentQ])
 
   // ── Question list ──

@@ -420,7 +420,12 @@ export type FormData = typeof FORM_DEFAULTS
 
 export default function ApplyPage() {
   const router = useRouter()
-  const [step, setStep] = useState(0)
+  const [step, setStep] = useState(() => {
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('apply_desktop_step_v1') : null
+      return saved ? Math.min(parseInt(saved), 4) : 0
+    } catch { return 0 }
+  })
   const [lang, setLang] = useState<'fr'|'en'>('fr')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -562,6 +567,11 @@ export default function ApplyPage() {
     }, 800)
     return () => clearTimeout(timer)
   }, [form.email])
+
+  // Sauvegarder l'étape desktop dans localStorage
+  useEffect(() => {
+    try { localStorage.setItem('apply_desktop_step_v1', String(step)) } catch {}
+  }, [step])
 
   // Fillout script loader + pré-remplissage URL params
   useEffect(() => {
@@ -801,6 +811,7 @@ export default function ApplyPage() {
         cvLocalUploading={cvLocalUploading}
         onCvUpload={handleCvUpload}
         onCvLocalUpload={handleCvLocalUpload}
+        desktopStep={step}
       />
     )
   }
