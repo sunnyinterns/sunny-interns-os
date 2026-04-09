@@ -28,6 +28,7 @@ export function Sidebar() {
   const [newLeadsCount, setNewLeadsCount] = useState<number | null>(null)
   const [activeClientsCount, setActiveClientsCount] = useState<number | null>(null)
   const [hasTodos, setHasTodos] = useState(false)
+  const [todoCount, setTodoCount] = useState<number>(0)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [unreadNotifs, setUnreadNotifs] = useState(0)
 
@@ -81,6 +82,12 @@ export function Sidebar() {
       })
       .catch(() => setNewLeadsCount(null))
 
+    // Fetch todo count for Dashboard badge
+    fetch('/api/todo')
+      .then((res) => res.ok ? res.json() as Promise<{ count: number }> : null)
+      .then((data) => { if (data) setTodoCount(data.count) })
+      .catch(() => {})
+
     // Fetch active clients count
     fetch('/api/cases?view=all')
       .then((res) => res.ok ? res.json() as Promise<unknown[]> : Promise.resolve([]))
@@ -106,7 +113,9 @@ export function Sidebar() {
       items: [
         {
           href: '/fr/feed',
-          label: 'Feed',
+          label: 'Dashboard',
+          badgeCount: todoCount > 0 ? todoCount : null,
+          badgeUrgent: todoCount > 0,
           icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
         },
         {

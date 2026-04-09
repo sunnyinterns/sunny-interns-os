@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/Button'
 import { NewCaseModal } from '@/components/cases/NewCaseModal'
 import { Toast } from '@/components/ui/Toast'
 import { CalendarWidget } from '@/components/dashboard/CalendarWidget'
-import type { FeedResponse, FeedItem } from '@/lib/types'
+import type { FeedResponse } from '@/lib/types'
+
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 interface CaseLog {
   id: string
@@ -20,10 +22,41 @@ interface CaseLog {
   cases?: { id: string; interns?: { first_name: string; last_name: string } | null } | null
 }
 
+interface KpiData {
+  candidats_month: number
+  rdv_month: number
+  active_bali: number
+  payments_month: number
+}
+
+interface TodoItem {
+  id: string
+  type: 'action_required' | 'relance' | 'alerte'
+  priority: 'urgent' | 'high' | 'normal'
+  case_id: string
+  intern_name: string
+  title: string
+  description: string
+  cta_label?: string
+  cta_url?: string
+  days_waiting?: number
+  status: string
+}
+
+interface ActiveClient {
+  id: string
+  status: string
+  interns: { first_name: string; last_name: string; main_desired_job?: string | null } | null
+}
+
+type Tab = 'dashboard' | 'todo'
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
 function relativeDate(iso: string) {
   const diff = Date.now() - new Date(iso).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'à l\'instant'
+  if (mins < 1) return "à l'instant"
   if (mins < 60) return `il y a ${mins}min`
   const hrs = Math.floor(mins / 60)
   if (hrs < 24) return `il y a ${hrs}h`
@@ -32,48 +65,21 @@ function relativeDate(iso: string) {
   return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
 }
 
-const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> = {
-  lead: { label: 'Lead', bg: '#f4f4f5', text: '#71717a' },
-  rdv_booked: { label: 'RDV Booké', bg: '#dbeafe', text: '#1d4ed8' },
-  qualification_done: { label: 'Qualifié', bg: '#ede9fe', text: '#6d28d9' },
-  job_submitted: { label: 'Jobs proposés', bg: '#fef3c7', text: '#d97706' },
-  job_retained: { label: 'Job retenu', bg: '#d1fae5', text: '#059669' },
-  convention_signed: { label: 'Convention', bg: '#dcfce7', text: '#16a34a' },
-  payment_pending: { label: 'Paiement', bg: '#fee2e2', text: '#dc2626' },
-  payment_received: { label: 'Payé', bg: '#d1fae5', text: '#059669' },
-  visa_docs_sent: { label: 'Docs visa', bg: '#fef3c7', text: '#d97706' },
-  visa_submitted: { label: 'Visa soumis', bg: '#dbeafe', text: '#1d4ed8' },
-  visa_in_progress: { label: 'Visa en cours', bg: '#dbeafe', text: '#1d4ed8' },
-  visa_received: { label: 'Visa reçu', bg: '#d1fae5', text: '#059669' },
-  arrival_prep: { label: 'Arrivée', bg: '#fee2e2', text: '#dc2626' },
-  active: { label: 'En stage', bg: '#d1fae5', text: '#059669' },
-  alumni: { label: 'Alumni', bg: '#fef3c7', text: '#92400e' },
-}
-
-const URGENCY_BORDER: Record<string, string> = {
-  critical: '#dc2626',
-  high: '#d97706',
-  normal: '#c8a96e',
-  low: '#d4d4d8',
-}
-
-function getInitials(name: string): string {
-  return name.split(' ').slice(0, 2).map(n => n[0] ?? '').join('').toUpperCase()
-}
+// ─── Sub-components ──────────────────────────────────────────────────────────
 
 function FeedSkeleton() {
   return (
     <div className="space-y-6 animate-pulse">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="h-16 bg-zinc-100 rounded-xl" />
+          <div key={i} className="h-20 bg-zinc-100 rounded-xl" />
         ))}
       </div>
       {[1, 2, 3].map(i => (
         <div key={i}>
           <div className="h-4 w-40 bg-zinc-200 rounded mb-3" />
           <div className="space-y-2">
-            {[1, 2, 3].map(j => (
+            {[1, 2].map(j => (
               <div key={j} className="h-16 bg-zinc-100 rounded-xl" />
             ))}
           </div>
@@ -83,229 +89,117 @@ function FeedSkeleton() {
   )
 }
 
-function KpiCard({
-  icon,
-  value,
-  label,
-  highlight,
-  highlightBlue,
-  onClick,
-}: {
+function KpiCard({ icon, label, value, sub, color }: {
   icon: string
-  value: string | number
   label: string
-  highlight?: boolean
-  highlightBlue?: boolean
-  onClick?: () => void
+  value: number
+  sub: string
+  color?: 'emerald'
 }) {
   return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors text-left cursor-pointer ${
-        highlight
-          ? 'bg-red-50 border-red-200 hover:bg-red-100'
-          : highlightBlue
-            ? 'bg-blue-50 border-blue-200 hover:bg-blue-100'
-            : 'bg-white border-zinc-200 hover:bg-zinc-50'
-      }`}
-    >
-      <span className="text-lg">{icon}</span>
-      <div>
-        <p className={`text-2xl font-bold ${highlight ? 'text-[#dc2626]' : highlightBlue ? 'text-blue-700' : 'text-[#1a1918]'}`}>{value}</p>
-        <p className="text-xs text-zinc-400 leading-tight">{label}</p>
+    <div className={`rounded-xl border px-4 py-3 ${color === 'emerald' ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-zinc-200'}`}>
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-lg">{icon}</span>
+        <span className="text-xs text-zinc-500">{label}</span>
       </div>
-    </button>
-  )
-}
-
-function TodoCard({ item, onNavigate }: { item: FeedItem; onNavigate: (id: string) => void }) {
-  const badge = STATUS_BADGE[item.status]
-  const borderColor = URGENCY_BORDER[item.urgency] ?? URGENCY_BORDER.normal
-
-  function handleCta() {
-    if (item.cta_action === 'open_meet' && item.google_meet_link) {
-      window.open(item.google_meet_link, '_blank')
-    } else {
-      onNavigate(item.case_id)
-    }
-  }
-
-  return (
-    <div
-      className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-zinc-100 hover:shadow-sm transition-shadow"
-      style={{ borderLeftWidth: 4, borderLeftColor: borderColor }}
-    >
-      <div className="w-8 h-8 rounded-full bg-[#c8a96e] flex items-center justify-center flex-shrink-0">
-        <span className="text-[11px] font-bold text-white">{getInitials(item.intern_name)}</span>
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-semibold text-[#1a1918] truncate">{item.intern_name}</span>
-          {badge && (
-            <span
-              className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap"
-              style={{ backgroundColor: badge.bg, color: badge.text }}
-            >
-              {badge.label}
-            </span>
-          )}
-          {item.days_since_status > 0 && (
-            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap ${
-              item.days_since_status > 5
-                ? 'bg-red-50 text-[#dc2626]'
-                : item.days_since_status >= 3
-                  ? 'bg-amber-50 text-[#d97706]'
-                  : 'bg-zinc-100 text-zinc-500'
-            }`}>
-              {item.days_since_status <= 2 ? 'Depuis hier' : `Depuis ${item.days_since_status}j`}{item.days_since_status > 5 ? ' 🔴' : item.days_since_status >= 3 ? ' ⚠️' : ''}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5 mt-0.5">
-          {item.school_name && (
-            <span className="text-[11px] text-zinc-400 truncate max-w-[120px]">{item.school_name}</span>
-          )}
-        </div>
-        {item.action_label && (
-          <div className="mt-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold"
-            style={{
-              backgroundColor: item.urgency === 'critical' ? '#fef2f2' : item.urgency === 'high' ? '#fffbeb' : '#fafaf9',
-              color: item.urgency === 'critical' ? '#dc2626' : item.urgency === 'high' ? '#d97706' : '#1a1918',
-              border: `1px solid ${item.urgency === 'critical' ? '#fecaca' : item.urgency === 'high' ? '#fde68a' : '#e4e4e7'}`,
-            }}
-          >
-            {item.action_label}
-          </div>
-        )}
-      </div>
-
-      <Button size="sm" variant={item.cta_action === 'open_meet' ? 'primary' : 'secondary'} onClick={handleCta}>
-        {item.cta_label}
-      </Button>
+      <p className={`text-2xl font-bold ${color === 'emerald' ? 'text-emerald-700' : 'text-[#1a1918]'}`}>{value}</p>
+      <p className="text-[11px] text-zinc-400">{sub}</p>
     </div>
   )
 }
 
-function WaitingRow({ item, onNavigate }: { item: FeedItem; onNavigate: (id: string) => void }) {
-  const badge = STATUS_BADGE[item.status]
+function TodoCard({ item, locale }: { item: TodoItem; locale: string }) {
+  const router = useRouter()
+  const priorityColors = {
+    urgent: { bg: 'bg-red-50', border: 'border-red-200', badge: 'bg-red-100 text-red-700' },
+    high: { bg: 'bg-amber-50', border: 'border-amber-200', badge: 'bg-amber-100 text-amber-700' },
+    normal: { bg: 'bg-white', border: 'border-zinc-200', badge: 'bg-zinc-100 text-zinc-600' },
+  }
+  const typeLabels: Record<string, string> = {
+    action_required: 'Action requise',
+    relance: 'Relance',
+    alerte: 'Alerte',
+  }
+  const colors = priorityColors[item.priority]
 
   return (
-    <button
-      onClick={() => onNavigate(item.case_id)}
-      className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg hover:bg-zinc-100 transition-colors text-left"
-    >
-      <div className="w-8 h-8 rounded-full bg-zinc-200 flex items-center justify-center flex-shrink-0">
-        <span className="text-[11px] font-bold text-zinc-500">{getInitials(item.intern_name)}</span>
-      </div>
-      <span className="text-sm font-medium text-[#1a1918] truncate">{item.intern_name}</span>
-      {badge && (
-        <span
-          className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap"
-          style={{ backgroundColor: badge.bg, color: badge.text }}
-        >
-          {badge.label}
-        </span>
-      )}
-      <div className="flex-1 min-w-0">
-        <span className="text-[11px] text-zinc-500 font-medium truncate block">{item.wait_label}</span>
-        {item.suggest_action && (
-          <div className="text-[11px] text-amber-700 font-medium mt-0.5 bg-amber-50 px-1.5 py-0.5 rounded inline-block">
-            💡 {item.suggest_action}
+    <div className={`${colors.bg} border ${colors.border} rounded-xl p-4`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${colors.badge}`}>
+              {typeLabels[item.type] ?? item.type}
+            </span>
+            {item.days_waiting != null && item.days_waiting > 0 && (
+              <span className="text-xs text-zinc-400">{item.days_waiting}j en attente</span>
+            )}
           </div>
+          <p className="text-sm font-semibold text-[#1a1918] mb-0.5">{item.intern_name}</p>
+          <p className="text-sm text-zinc-700">{item.title}</p>
+          <p className="text-xs text-zinc-500 mt-0.5">{item.description}</p>
+        </div>
+        {item.cta_label && item.cta_url && (
+          <button
+            onClick={() => router.push(`/${locale}${item.cta_url}`)}
+            className="flex-shrink-0 px-3 py-1.5 bg-[#c8a96e] text-white text-xs font-semibold rounded-lg hover:bg-[#b8945a] transition-all whitespace-nowrap"
+          >
+            {item.cta_label}
+          </button>
         )}
       </div>
-      {item.days_info && (
-        <span className="text-[11px] text-zinc-400 whitespace-nowrap">{item.days_info}</span>
-      )}
-      <span className="text-zinc-300 text-sm">→</span>
-    </button>
+    </div>
   )
 }
 
-function ActiveRow({ item, onNavigate }: { item: FeedItem; onNavigate: (id: string) => void }) {
-  return (
-    <button
-      onClick={() => onNavigate(item.case_id)}
-      className="flex items-center gap-3 w-full px-4 py-2 rounded-lg hover:bg-emerald-100/50 transition-colors text-left"
-    >
-      <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-        <span className="text-[11px] font-bold text-emerald-700">{getInitials(item.intern_name)}</span>
-      </div>
-      <span className="text-sm font-medium text-[#1a1918] truncate flex-1">{item.intern_name}</span>
-      {item.days_info && (
-        <span className="text-[11px] text-emerald-600 whitespace-nowrap">{item.days_info}</span>
-      )}
-      <span className="text-zinc-300 text-sm">→</span>
-    </button>
-  )
-}
-
-function AlumniRow({ item, onNavigate }: { item: FeedItem; onNavigate: (id: string) => void }) {
-  return (
-    <button
-      onClick={() => onNavigate(item.case_id)}
-      className="flex items-center gap-3 w-full px-4 py-2 rounded-lg hover:bg-amber-50/50 transition-colors text-left"
-    >
-      <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-        <span className="text-[10px] font-bold text-[#92400e]">{getInitials(item.intern_name)}</span>
-      </div>
-      <span className="text-sm font-medium text-[#1a1918] truncate flex-1">{item.intern_name}</span>
-      {item.school_name && (
-        <span className="text-[11px] text-zinc-400 truncate max-w-[120px]">{item.school_name}</span>
-      )}
-      <span className="text-zinc-300 text-sm">→</span>
-    </button>
-  )
-}
+// ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function FeedPage() {
   const router = useRouter()
-  const [data, setData] = useState<FeedResponse | null>(null)
+  const locale = 'fr'
+
+  const [activeTab, setActiveTab] = useState<Tab>('dashboard')
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
-  const [alumniOpen, setAlumniOpen] = useState(false)
-  const [caseLogs, setCaseLogs] = useState<CaseLog[]>([])
 
-  const fetchFeed = useCallback(() => {
+  // Dashboard state
+  const [kpis, setKpis] = useState<KpiData | null>(null)
+  const [activeClients, setActiveClients] = useState<ActiveClient[]>([])
+  const [caseLogs, setCaseLogs] = useState<CaseLog[]>([])
+  const [feedData, setFeedData] = useState<FeedResponse | null>(null)
+
+  // Todo state
+  const [todos, setTodos] = useState<TodoItem[]>([])
+  const [todoCount, setTodoCount] = useState(0)
+
+  const fetchAll = useCallback(() => {
     setLoading(true)
-    fetch('/api/feed')
-      .then(r => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`)
-        return r.json() as Promise<FeedResponse>
-      })
-      .then(d => {
-        setData(d)
-        setLoading(false)
-      })
-      .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : 'Erreur inconnue')
-        setLoading(false)
-      })
+
+    Promise.all([
+      fetch('/api/dashboard/kpis').then(r => r.ok ? r.json() as Promise<KpiData> : null),
+      fetch('/api/cases?status=active&limit=10').then(r => r.ok ? r.json() as Promise<ActiveClient[]> : []),
+      fetch('/api/case-logs').then(r => r.ok ? r.json() as Promise<CaseLog[]> : []),
+      fetch('/api/todo').then(r => r.ok ? r.json() as Promise<{ todos: TodoItem[]; count: number }> : { todos: [], count: 0 }),
+      fetch('/api/feed').then(r => r.ok ? r.json() as Promise<FeedResponse> : null),
+    ]).then(([kpiData, clients, logs, todoData, feed]) => {
+      if (kpiData) setKpis(kpiData)
+      setActiveClients(Array.isArray(clients) ? clients.slice(0, 10) : [])
+      setCaseLogs(Array.isArray(logs) ? logs.slice(0, 5) : [])
+      setTodos(todoData.todos)
+      setTodoCount(todoData.count)
+      setFeedData(feed)
+      setLoading(false)
+    }).catch(() => {
+      setLoading(false)
+    })
   }, [])
 
-  useEffect(() => {
-    fetchFeed()
-    fetch('/api/case-logs')
-      .then(r => r.ok ? r.json() as Promise<CaseLog[]> : [])
-      .then(setCaseLogs)
-      .catch(() => {})
-  }, [fetchFeed])
+  useEffect(() => { fetchAll() }, [fetchAll])
 
   function handleCaseCreated() {
     setShowModal(false)
     setToast({ message: 'Dossier créé avec succès', type: 'success' })
-    fetchFeed()
-  }
-
-  function navigateCase(caseId: string) {
-    router.push(`/fr/cases/${caseId}?tab=process`)
-  }
-
-  function scrollTo(id: string) {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    fetchAll()
   }
 
   const today = new Date().toLocaleDateString('fr-FR', {
@@ -315,226 +209,227 @@ export default function FeedPage() {
     year: 'numeric',
   })
 
+  // Group todos for display
+  const urgentTodos = todos.filter(t => t.priority === 'urgent')
+  const actionTodos = todos.filter(t => t.type === 'action_required' && t.priority !== 'urgent')
+  const relanceTodos = todos.filter(t => t.type === 'relance' && t.priority !== 'urgent')
+  const alerteTodos = todos.filter(t => t.type === 'alerte' && t.priority !== 'urgent')
+
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto" style={{ backgroundColor: '#fafaf9', minHeight: '100vh' }}>
-      {/* HEADER */}
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h1 className="text-lg font-semibold text-[#1a1918]">Bonjour 👋</h1>
-          <p className="text-xs text-zinc-400 mt-0.5 capitalize">{today}</p>
+    <div className="min-h-screen" style={{ backgroundColor: '#fafaf9' }}>
+      {/* HEADER with tabs */}
+      <div className="bg-white border-b border-zinc-200 sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between py-4">
+            <div>
+              <h1 className="text-xl font-bold text-[#1a1918]">Bali Interns</h1>
+              <p className="text-xs text-zinc-500 capitalize">{today}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex gap-1 bg-zinc-100 rounded-xl p-1">
+                <button
+                  onClick={() => setActiveTab('dashboard')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'dashboard' ? 'bg-white shadow-sm text-[#1a1918]' : 'text-zinc-500'}`}
+                >
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => setActiveTab('todo')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'todo' ? 'bg-white shadow-sm text-[#1a1918]' : 'text-zinc-500'}`}
+                >
+                  Todo
+                  {todoCount > 0 && (
+                    <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{todoCount}</span>
+                  )}
+                </button>
+              </div>
+              <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
+                + Nouveau dossier
+              </Button>
+            </div>
+          </div>
         </div>
-        <a
-              href="/apply"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#c8a96e] text-[#c8a96e] rounded-lg hover:bg-[#c8a96e] hover:text-white transition-colors"
-            >
-              🔗 Formulaire candidat
-            </a>
-            <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
-          + Nouveau dossier
-        </Button>
       </div>
 
-      {loading && <FeedSkeleton />}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+        {loading && <FeedSkeleton />}
 
-      {error && (
-        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-[#dc2626] mb-4">
-          Erreur : {error}
-        </div>
-      )}
+        {!loading && activeTab === 'dashboard' && (
+          <>
+            {/* BLOC A — KPIs du mois */}
+            {kpis && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                <KpiCard icon="🆕" label="Candidatures" value={kpis.candidats_month} sub="ce mois" />
+                <KpiCard icon="📅" label="RDVs planifiés" value={kpis.rdv_month} sub="ce mois" />
+                <KpiCard icon="🌴" label="En stage" value={kpis.active_bali} sub="actuellement" color="emerald" />
+                <KpiCard icon="💶" label="Paiements reçus" value={kpis.payments_month} sub="ce mois" />
+              </div>
+            )}
 
-      {data && (
-        <>
-          {/* KPI STRIP */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <KpiCard
-              icon="⚡"
-              value={data.kpis.todo_count}
-              label="À faire"
-              highlight={data.kpis.todo_count > 0}
-              onClick={() => scrollTo('section-todo')}
-            />
-            <KpiCard
-              icon="🌴"
-              value={data.kpis.active_bali}
-              label="En stage"
-              onClick={() => scrollTo('section-active')}
-            />
-            <KpiCard
-              icon="🛫"
-              value={data.kpis.arriving_soon}
-              label="Arrivent bientôt"
-              highlightBlue={data.kpis.arriving_soon > 0}
-              onClick={() => scrollTo('section-waiting')}
-            />
-            <KpiCard
-              icon="💰"
-              value={`${Math.round(data.kpis.revenue_month / 1000)}k€`}
-              label="Ce mois"
-            />
-          </div>
-
-          {/* CALENDRIER RDV */}
-          <section className="mb-6">
-            <CalendarWidget />
-          </section>
-
-          {/* SECTION Activité récente */}
-          {caseLogs.length > 0 && (
+            {/* BLOC B — Calendrier RDV */}
             <section className="mb-6">
-              <div className="bg-white rounded-xl border border-[#e4e4e7] p-5">
-                <h2 className="text-sm font-semibold text-[#1a1918] mb-4">📋 Activité récente</h2>
-                <div className="relative">
-                  <div className="absolute left-3.5 top-0 bottom-0 w-px bg-zinc-100" />
-                  <div className="space-y-4">
-                    {caseLogs.map((log) => (
-                      <div key={log.id} className="flex items-start gap-4 pl-1">
-                        <div className={[
-                          'w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5',
-                          log.action === 'status_changed' ? 'bg-blue-50 text-blue-600' :
-                          log.action === 'field_edited' ? 'bg-amber-50 text-amber-600' :
-                          log.action === 'email_sent' ? 'bg-green-50 text-green-600' :
-                          log.action === 'note_added' ? 'bg-purple-50 text-purple-600' :
-                          'bg-zinc-50 text-zinc-400'
-                        ].join(' ')}>
-                          <span className="text-xs">
-                            {log.action === 'status_changed' ? '🔄' :
-                             log.action === 'field_edited' ? '✏️' :
-                             log.action === 'email_sent' ? '📧' :
-                             log.action === 'note_added' ? '💬' :
-                             log.action === 'doc_uploaded' ? '📎' :
-                             '•'}
-                          </span>
+              <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-3">📅 Prochains entretiens</h2>
+              <CalendarWidget />
+            </section>
+
+            {/* BLOC C — Clients en stage */}
+            <section className="mb-6">
+              <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-3">🌴 En stage à Bali</h2>
+              {activeClients.length === 0 ? (
+                <p className="text-sm text-zinc-400 text-center py-4">Aucun stagiaire en cours</p>
+              ) : (
+                <div className="space-y-2">
+                  {activeClients.map(c => (
+                    <div
+                      key={c.id}
+                      onClick={() => router.push(`/${locale}/cases/${c.id}`)}
+                      className="bg-white border border-zinc-200 rounded-xl px-4 py-3 flex items-center justify-between cursor-pointer hover:border-[#c8a96e] transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-xs font-bold text-emerald-700">
+                          {c.interns?.first_name?.[0]}{c.interns?.last_name?.[0]}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-[#1a1918]">{log.description}</p>
-                          {log.field_label && log.old_value && log.new_value && log.action !== 'status_changed' && (
-                            <p className="text-xs text-zinc-400 mt-0.5">
-                              <span className="line-through">{log.old_value}</span>
-                              {' → '}
-                              <span className="text-zinc-600">{String(log.new_value).substring(0, 50)}{String(log.new_value).length > 50 ? '…' : ''}</span>
-                            </p>
-                          )}
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs font-medium text-zinc-400">{log.author_name}</span>
-                            <span className="text-zinc-200">·</span>
-                            <span className="text-xs text-zinc-400">{relativeDate(log.created_at)}</span>
-                            {log.cases?.id && (
-                              <>
-                                <span className="text-zinc-200">·</span>
-                                <a
-                                  href={`/fr/cases/${log.cases.id}?tab=process`}
-                                  className="text-xs text-[#c8a96e] hover:underline"
-                                >
-                                  Voir le dossier →
-                                </a>
-                              </>
-                            )}
-                          </div>
+                        <div>
+                          <p className="text-sm font-medium text-[#1a1918]">{c.interns?.first_name} {c.interns?.last_name}</p>
+                          <p className="text-xs text-zinc-500">{c.interns?.main_desired_job || '—'}</p>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* SECTION TODO */}
-          <section id="section-todo" className="mb-6">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-[#1a1918] mb-3 flex items-center gap-2">
-              ⚡ Actions requises
-              <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-50 text-[#dc2626] text-xs font-bold">
-                {data.todo.length}
-              </span>
-            </h2>
-
-            {data.todo.length === 0 ? (
-              <div className="flex items-center gap-3 px-4 py-6 bg-emerald-50 border border-emerald-100 rounded-xl">
-                <span className="text-lg">✅</span>
-                <span className="text-sm font-medium text-emerald-700">
-                  Rien à faire pour l&#39;instant — tu es à jour !
-                </span>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {data.todo.map(item => (
-                  <TodoCard key={item.case_id} item={item} onNavigate={navigateCase} />
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* SECTION WAITING */}
-          <section id="section-waiting" className="mb-6">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-3 flex items-center gap-2">
-              ⏳ En attente
-              <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-zinc-100 text-zinc-500 text-xs font-bold">
-                {data.waiting.length}
-              </span>
-            </h2>
-
-            {data.waiting.length === 0 ? (
-              <div className="flex items-center justify-center py-4 text-sm text-zinc-400 bg-white rounded-xl border border-zinc-100 border-dashed">
-                Aucun dossier en attente
-              </div>
-            ) : (
-              <div className="bg-zinc-50 rounded-xl border border-zinc-100 divide-y divide-zinc-100">
-                {data.waiting.map(item => (
-                  <WaitingRow key={item.case_id} item={item} onNavigate={navigateCase} />
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* SECTION ACTIVE */}
-          <section id="section-active" className="mb-6">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-emerald-600 mb-3 flex items-center gap-2">
-              🌴 En stage
-              <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-emerald-50 text-emerald-600 text-xs font-bold">
-                {data.active.length}
-              </span>
-            </h2>
-
-            {data.active.length === 0 ? (
-              <div className="flex items-center justify-center py-4 text-sm text-zinc-400 bg-white rounded-xl border border-zinc-100 border-dashed">
-                Aucun stagiaire actif
-              </div>
-            ) : (
-              <div className="bg-emerald-50/30 rounded-xl border border-emerald-100 grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 divide-emerald-100">
-                {data.active.map(item => (
-                  <ActiveRow key={item.case_id} item={item} onNavigate={navigateCase} />
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* SECTION ALUMNI */}
-          {data.alumni.length > 0 && (
-            <section className="mb-6">
-              <button
-                onClick={() => setAlumniOpen(prev => !prev)}
-                className="text-xs font-semibold uppercase tracking-wider text-[#92400e] mb-3 flex items-center gap-2 hover:opacity-80 transition-opacity"
-              >
-                🎓 Anciens stagiaires
-                <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-amber-100 text-[#92400e] text-xs font-bold">
-                  {data.alumni.length}
-                </span>
-                <span className={`text-zinc-400 text-[10px] transition-transform ${alumniOpen ? 'rotate-90' : ''}`}>▶</span>
-              </button>
-
-              {alumniOpen && (
-                <div className="bg-white rounded-xl border border-zinc-100 divide-y divide-zinc-50">
-                  {data.alumni.map(item => (
-                    <AlumniRow key={item.case_id} item={item} onNavigate={navigateCase} />
+                      <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full font-medium">En stage</span>
+                    </div>
                   ))}
                 </div>
               )}
             </section>
-          )}
-        </>
-      )}
+
+            {/* BLOC D — Activité récente (5 items max) */}
+            {caseLogs.length > 0 && (
+              <section className="mb-6">
+                <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-3">⚡ Activité récente</h2>
+                <div className="bg-white rounded-xl border border-[#e4e4e7] p-5">
+                  <div className="relative">
+                    <div className="absolute left-3.5 top-0 bottom-0 w-px bg-zinc-100" />
+                    <div className="space-y-4">
+                      {caseLogs.map((log) => (
+                        <div key={log.id} className="flex items-start gap-4 pl-1">
+                          <div className={[
+                            'w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5',
+                            log.action === 'status_changed' ? 'bg-blue-50 text-blue-600' :
+                            log.action === 'field_edited' ? 'bg-amber-50 text-amber-600' :
+                            log.action === 'email_sent' ? 'bg-green-50 text-green-600' :
+                            log.action === 'note_added' ? 'bg-purple-50 text-purple-600' :
+                            'bg-zinc-50 text-zinc-400'
+                          ].join(' ')}>
+                            <span className="text-xs">
+                              {log.action === 'status_changed' ? '🔄' :
+                               log.action === 'field_edited' ? '✏️' :
+                               log.action === 'email_sent' ? '📧' :
+                               log.action === 'note_added' ? '💬' :
+                               log.action === 'doc_uploaded' ? '📎' :
+                               '•'}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-[#1a1918]">{log.description}</p>
+                            {log.field_label && log.old_value && log.new_value && log.action !== 'status_changed' && (
+                              <p className="text-xs text-zinc-400 mt-0.5">
+                                <span className="line-through">{log.old_value}</span>
+                                {' → '}
+                                <span className="text-zinc-600">{String(log.new_value).substring(0, 50)}{String(log.new_value).length > 50 ? '…' : ''}</span>
+                              </p>
+                            )}
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs font-medium text-zinc-400">{log.author_name}</span>
+                              <span className="text-zinc-200">·</span>
+                              <span className="text-xs text-zinc-400">{relativeDate(log.created_at)}</span>
+                              {log.cases?.id && (
+                                <>
+                                  <span className="text-zinc-200">·</span>
+                                  <a
+                                    href={`/fr/cases/${log.cases.id}?tab=process`}
+                                    className="text-xs text-[#c8a96e] hover:underline"
+                                  >
+                                    Voir le dossier →
+                                  </a>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+          </>
+        )}
+
+        {!loading && activeTab === 'todo' && (
+          <>
+            {todos.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="text-5xl mb-4">✅</div>
+                <p className="text-lg font-semibold text-[#1a1918]">Tout est à jour !</p>
+                <p className="text-sm text-zinc-500 mt-1">Aucune action en attente</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Alertes urgentes */}
+                {urgentTodos.length > 0 && (
+                  <section>
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-red-600 mb-3 flex items-center gap-2">
+                      🚨 Alertes urgentes
+                      <span className="bg-red-100 text-red-700 text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">{urgentTodos.length}</span>
+                    </h2>
+                    <div className="space-y-2">
+                      {urgentTodos.map(item => <TodoCard key={item.id} item={item} locale={locale} />)}
+                    </div>
+                  </section>
+                )}
+
+                {/* Actions requises */}
+                {actionTodos.length > 0 && (
+                  <section>
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-amber-600 mb-3 flex items-center gap-2">
+                      ⚡ Actions requises
+                      <span className="bg-amber-100 text-amber-700 text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">{actionTodos.length}</span>
+                    </h2>
+                    <div className="space-y-2">
+                      {actionTodos.map(item => <TodoCard key={item.id} item={item} locale={locale} />)}
+                    </div>
+                  </section>
+                )}
+
+                {/* Alertes non-urgentes */}
+                {alerteTodos.length > 0 && (
+                  <section>
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-orange-600 mb-3 flex items-center gap-2">
+                      🚨 Alertes
+                      <span className="bg-orange-100 text-orange-700 text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">{alerteTodos.length}</span>
+                    </h2>
+                    <div className="space-y-2">
+                      {alerteTodos.map(item => <TodoCard key={item.id} item={item} locale={locale} />)}
+                    </div>
+                  </section>
+                )}
+
+                {/* Relances */}
+                {relanceTodos.length > 0 && (
+                  <section>
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-blue-600 mb-3 flex items-center gap-2">
+                      🔔 Relances
+                      <span className="bg-blue-100 text-blue-700 text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">{relanceTodos.length}</span>
+                    </h2>
+                    <div className="space-y-2">
+                      {relanceTodos.map(item => <TodoCard key={item.id} item={item} locale={locale} />)}
+                    </div>
+                  </section>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       {showModal && (
         <NewCaseModal

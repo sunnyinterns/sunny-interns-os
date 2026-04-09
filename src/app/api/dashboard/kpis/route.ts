@@ -10,39 +10,52 @@ export async function GET() {
   const firstOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
   const lastOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()}`
 
-  // Candidats ce mois
-  const { count: candidatsMonth } = await supabase
-    .from('cases')
-    .select('*', { count: 'exact', head: true })
-    .gte('created_at', firstOfMonth)
-    .lte('created_at', lastOfMonth + 'T23:59:59')
+  const [candidats, rdvs, actifs, payments, revenueData, pendingPaymentRes] = await Promise.all([
+    // Candidats ce mois
+    supabase
+      .from('cases')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', firstOfMonth)
+      .lte('created_at', lastOfMonth + 'T23:59:59'),
+    // RDVs planifiés ce mois
+    supabase
+      .from('calendar_events')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'confirmed')
+      .gte('start_datetime', firstOfMonth),
+    // Actifs à Bali
+    supabase
+      .from('cases')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'active'),
+    // Paiements reçus ce mois
+    supabase
+      .from('cases')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'payment_received')
+      .gte('updated_at', firstOfMonth),
+    // Revenus ce mois
+    supabase
+      .from('cases')
+      .select('payment_amount')
+      .gte('payment_date', firstOfMonth)
+      .lte('payment_date', lastOfMonth)
+      .not('payment_amount', 'is', null),
+    // En attente paiement
+    supabase
+      .from('cases')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'payment_pending'),
+  ])
 
-  // Actifs à Bali
-  const { count: activeBali } = await supabase
-    .from('cases')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'active')
-
-  // Revenus ce mois
-  const { data: revenueData } = await supabase
-    .from('cases')
-    .select('payment_amount')
-    .gte('payment_date', firstOfMonth)
-    .lte('payment_date', lastOfMonth)
-    .not('payment_amount', 'is', null)
-
-  const revenueMonth = (revenueData ?? []).reduce((sum, c) => sum + (Number(c.payment_amount) || 0), 0)
-
-  // En attente paiement
-  const { count: pendingPayment } = await supabase
-    .from('cases')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'payment_pending')
+  const revenueMonth = (revenueData.data ?? []).reduce((sum, c) => sum + (Number(c.payment_amount) || 0), 0)
 
   return NextResponse.json({
-    candidats_month: candidatsMonth ?? 0,
-    active_bali: activeBali ?? 0,
+    candidats_month: candidats.count ?? 0,
+    rdv_month: rdvs.count ?? 0,
+    active_bali: actifs.count ?? 0,
+    payments_month: payments.count ?? 0,
     revenue_month: revenueMonth,
-    pending_payment: pendingPayment ?? 0,
+    pending_payment: pendingPaymentRes.count ?? 0,
   })
 }
