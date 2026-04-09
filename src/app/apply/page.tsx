@@ -709,6 +709,7 @@ export default function ApplyPage() {
         commitment_budget_accepted: true,
         commitment_terms_accepted: true,
         touchpoint: form.touchpoint,
+        touchpoints: form.touchpoints,
         referred_by_code: form.referred_by_code || null,
         rdv_slot: form.rdv_slot,
       }
