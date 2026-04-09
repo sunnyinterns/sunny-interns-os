@@ -525,7 +525,7 @@ export default function ApplyPage() {
 
   function toggleArrayField(key: 'spoken_languages' | 'desired_jobs' | 'nationalities', value: string, max?: number) {
     setForm(f => {
-      const arr = f[key]
+      const arr = (f[key] as string[]) ?? []
       if (arr.includes(value)) return { ...f, [key]: arr.filter((v: string) => v !== value) }
       if (max && arr.length >= max) return f
       return { ...f, [key]: [...arr, value] }
