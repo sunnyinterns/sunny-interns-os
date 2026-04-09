@@ -404,6 +404,7 @@ export default function ApplyPage() {
     commitment_budget: false,
     commitment_terms: false,
     // Step 5
+    touchpoints: [] as string[],
     touchpoint: '',
     referred_by_code: '',
     // Step 6
@@ -533,7 +534,7 @@ export default function ApplyPage() {
       case 3:
         return !!(form.commitment_price && form.commitment_budget && form.commitment_terms)
       case 4:
-        return !!form.touchpoint
+        return !!form.rdv_slot
       case 5:
         return !!form.rdv_slot
       default:
@@ -641,12 +642,12 @@ export default function ApplyPage() {
       <div className="sticky top-0 z-50 bg-[#fafaf9]/95 backdrop-blur border-b border-zinc-200">
         <div className="max-w-xl mx-auto px-4 py-3">
           <div className="flex items-center gap-1.5">
-            {Array.from({ length: 6 }).map((_, i) => (
+            {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className={`h-1.5 flex-1 rounded-full transition-all ${i <= step ? 'bg-[#c8a96e]' : 'bg-zinc-200'}`} />
             ))}
           </div>
           <p className="text-xs text-zinc-500 mt-1.5 text-center">
-            {step + 1} / 6
+            {step + 1} / 5
           </p>
         </div>
       </div>
@@ -1209,6 +1210,61 @@ export default function ApplyPage() {
                 {form.stage_ideal.length}/1000
               </p>
             </div>
+
+            {/* Comment tu nous as trouvé — multi-select */}
+            <div>
+              <label className={labelClass}>
+                {lang==='fr' ? 'Comment tu nous as trouvé ? *' : 'How did you find us? *'}
+              </label>
+              <p className={helperClass + ' mb-2'}>
+                {lang==='fr' ? 'Tu peux sélectionner plusieurs options.' : 'You can select multiple options.'}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {TOUCHPOINTS.map(t => {
+                  const selected = form.touchpoints.includes(t.value)
+                  return (
+                    <button
+                      key={t.value}
+                      type="button"
+                      onClick={() => {
+                        const cur = form.touchpoints
+                        const next = selected ? cur.filter(x => x !== t.value) : [...cur, t.value]
+                        set('touchpoints', next)
+                        set('touchpoint', next.join(', '))
+                        if (!next.includes('Ambassadeur Bali Interns')) set('referred_by_code', '')
+                      }}
+                      className={`py-2.5 px-3 rounded-xl text-sm font-medium text-left transition-all flex items-center gap-2 ${
+                        selected
+                          ? 'bg-[#c8a96e] text-[#1a1410]'
+                          : 'bg-white text-[#1a1918] border border-zinc-200 hover:border-[#c8a96e]'
+                      }`}
+                    >
+                      {selected && (
+                        <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+                        </svg>
+                      )}
+                      {lang==='fr' ? t.fr : t.en}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Referral code conditionnel */}
+              {form.touchpoints.includes('Ambassadeur Bali Interns') && (
+                <div className="mt-3">
+                  <label className={labelClass}>{lang==='fr'?'Code de parrainage (optionnel)':'Referral code (optional)'}</label>
+                  <input
+                    type="text"
+                    value={form.referred_by_code}
+                    onChange={e => set('referred_by_code', e.target.value)}
+                    className={inputClass}
+                    placeholder="CODE123"
+                  />
+                  <p className={helperClass}>{lang==='fr'?'Si tu as un code, saisis-le ici':'If you have a code, enter it here'}</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -1284,56 +1340,12 @@ export default function ApplyPage() {
           </div>
         )}
 
-        {/* ════════════════════════════════════════════════════════
-            ÉTAPE 5 — Comment tu nous as trouvé ?
-            ════════════════════════════════════════════════════════ */}
-        {step === 4 && (
-          <div className="space-y-4">
-            <div>
-              <label className={labelClass}>Source *</label>
-              <p className={helperClass + ' mb-2'}>{lang==='fr'?'1 seule option':'1 option only'}</p>
-              <div className="grid grid-cols-1 gap-2">
-                {TOUCHPOINTS.map(t => (
-                  <button
-                    key={t.value}
-                    type="button"
-                    onClick={() => {
-                      set('touchpoint', t.value)
-                      if (!t.value.includes('Ambassadeur')) set('referred_by_code', '')
-                    }}
-                    className={`py-3 px-4 rounded-xl text-sm font-medium text-left transition-all ${
-                      form.touchpoint === t.value
-                        ? 'bg-[#c8a96e] text-[#1a1410]'
-                        : 'bg-white text-[#8a7d6d] border border-zinc-200 hover:border-[#c8a96e]'
-                    }`}
-                  >
-                    {lang==='fr'?t.fr:t.en}
-                  </button>
-                ))}
-              </div>
-            </div>
 
-            {/* Referral code — conditional */}
-            {form.touchpoint.includes('Ambassadeur') && (
-              <div className="animate-[fadeIn_0.3s_ease-in-out]">
-                <label className={labelClass}>{lang==='fr'?'Code de parrainage (optionnel)':'Referral code (optional)'}</label>
-                <input
-                  type="text"
-                  value={form.referred_by_code}
-                  onChange={e => set('referred_by_code', e.target.value)}
-                  className={inputClass}
-                  placeholder="CODE123"
-                />
-                <p className={helperClass}>{lang==='fr'?'Si tu as un code, saisis-le ici':'If you have a code, enter it here'}</p>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* ════════════════════════════════════════════════════════
             ÉTAPE 6 — Prends un RDV
             ════════════════════════════════════════════════════════ */}
-        {step === 5 && (
+        {step === 4 && (
           <div className="space-y-6">
             <div>
               <p className={helperClass + " text-sm mb-4"}>
@@ -1388,9 +1400,9 @@ export default function ApplyPage() {
               onClick={() => { setStep(s => s + 1); setError('') }}
               className="flex-1 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a]"
             >
-              {step === 3
-                ? (lang==='fr'?'Prendre rendez-vous \u2192':'Book a call \u2192')
-                : (lang==='fr'?'Continuer':'Continue')}
+              {step === 4
+                ? (lang==='fr'?'Réserver mon appel gratuit 🎉':'Book My Free Call 🎉')
+                : (lang==='fr'?'Continuer →':'Continue →')}
             </button>
           ) : (
             <button
