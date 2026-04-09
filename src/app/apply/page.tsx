@@ -259,11 +259,11 @@ function isValidEmail(email: string): boolean {
 // REUSABLE SUB-COMPONENTS
 // ─────────────────────────────────────────────────────────────
 
-const inputClass = 'w-full px-4 py-3 bg-[#2a2318] border border-[#3d3428] rounded-xl text-[#f5f0e6] placeholder-[#6b5d4d] focus:outline-none focus:ring-2 focus:ring-[#c8a96e] text-sm'
+const inputClass = 'w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl text-[#1a1918] placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c8a96e] text-sm'
 const labelClass = 'block text-sm font-medium text-[#c8a96e] mb-1.5'
-const helperClass = 'text-xs text-[#6b5d4d] mt-1'
+const helperClass = 'text-xs text-zinc-500 mt-1'
 const chipSelectedClass = 'bg-[#c8a96e] text-[#1a1410]'
-const chipUnselectedClass = 'bg-[#2a2318] text-[#8a7d6d] border border-[#3d3428] hover:border-[#c8a96e]'
+const chipUnselectedClass = 'bg-white text-[#8a7d6d] border border-zinc-200 hover:border-[#c8a96e]'
 
 function Chip({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
@@ -311,13 +311,13 @@ function FileUpload({
         className={`w-full py-8 border-2 border-dashed rounded-xl text-center transition-all ${
           fileName
             ? 'border-[#c8a96e] bg-[#c8a96e]/10'
-            : 'border-[#3d3428] hover:border-[#c8a96e] bg-[#2a2318]'
+            : 'border-zinc-200 hover:border-[#c8a96e] bg-white'
         }`}
       >
         {fileName ? (
           <span className="text-sm text-[#c8a96e] font-medium">{fileName}</span>
         ) : (
-          <span className="text-sm text-[#6b5d4d]">
+          <span className="text-sm text-zinc-500">
             Glisse ton fichier ici ou clique / Drag & drop or click to select
           </span>
         )}
@@ -615,23 +615,23 @@ export default function ApplyPage() {
     : COUNTRIES
 
   return (
-    <div className="min-h-screen bg-[#1a1410] text-[#f5f0e6]">
+    <div className="min-h-screen bg-[#fafaf9] text-[#1a1918]">
       {/* ── Progress bar ── */}
-      <div className="sticky top-0 z-50 bg-[#1a1410]/95 backdrop-blur border-b border-[#2a2318]">
+      <div className="sticky top-0 z-50 bg-[#fafaf9]/95 backdrop-blur border-b border-zinc-200">
         <div className="max-w-xl mx-auto px-4 py-3">
           <div className="flex items-center gap-1.5">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className={`h-1.5 flex-1 rounded-full transition-all ${i <= step ? 'bg-[#c8a96e]' : 'bg-[#2a2318]'}`} />
+              <div key={i} className={`h-1.5 flex-1 rounded-full transition-all ${i <= step ? 'bg-[#c8a96e]' : 'bg-white'}`} />
             ))}
           </div>
-          <p className="text-xs text-[#6b5d4d] mt-1.5 text-center">
+          <p className="text-xs text-zinc-500 mt-1.5 text-center">
             {step + 1} / 6
           </p>
         </div>
       </div>
 
       <div className="max-w-xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-[#f5f0e6] mb-6">{STEP_TITLES[step]}</h1>
+        <h1 className="text-2xl font-bold text-[#1a1918] mb-6">{STEP_TITLES[step]}</h1>
 
         {/* ════════════════════════════════════════════════════════
             ÉTAPE 1 — Qui es-tu ?
@@ -714,7 +714,7 @@ export default function ApplyPage() {
                 placeholder="Rechercher un pays / Search country..."
               />
               {showNationalityDropdown && filteredNationalities.length > 0 && (
-                <div className="absolute z-40 w-full mt-1 max-h-48 overflow-y-auto bg-[#2a2318] border border-[#3d3428] rounded-xl shadow-lg">
+                <div className="absolute z-40 w-full mt-1 max-h-48 overflow-y-auto bg-white border border-zinc-200 rounded-xl shadow-lg">
                   {filteredNationalities.slice(0, 20).map(c => (
                     <button
                       key={c}
@@ -724,7 +724,7 @@ export default function ApplyPage() {
                         setNationalitySearch('')
                         setShowNationalityDropdown(false)
                       }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-[#3d3428] ${form.nationalities.includes(c) ? 'text-[#c8a96e]' : 'text-[#f5f0e6]'}`}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-zinc-100 ${form.nationalities.includes(c) ? 'text-[#c8a96e]' : 'text-[#1a1918]'}`}
                     >
                       {c} {form.nationalities.includes(c) ? '✓' : ''}
                     </button>
@@ -777,7 +777,7 @@ export default function ApplyPage() {
                 Country where your internship agreement will be issued (by law)
               </p>
               {showSchoolCountryDropdown && filteredSchoolCountries.length > 0 && (
-                <div className="absolute z-40 w-full mt-1 max-h-48 overflow-y-auto bg-[#2a2318] border border-[#3d3428] rounded-xl shadow-lg">
+                <div className="absolute z-40 w-full mt-1 max-h-48 overflow-y-auto bg-white border border-zinc-200 rounded-xl shadow-lg">
                   {filteredSchoolCountries.slice(0, 20).map(c => (
                     <button
                       key={c}
@@ -787,7 +787,7 @@ export default function ApplyPage() {
                         setSchoolCountrySearch('')
                         setShowSchoolCountryDropdown(false)
                       }}
-                      className="w-full text-left px-4 py-2 text-sm text-[#f5f0e6] hover:bg-[#3d3428]"
+                      className="w-full text-left px-4 py-2 text-sm text-[#1a1918] hover:bg-zinc-100"
                     >
                       {c}
                     </button>
@@ -863,16 +863,16 @@ export default function ApplyPage() {
               <button
                 type="button"
                 onClick={() => docsRef.current?.click()}
-                className="w-full py-6 border-2 border-dashed border-[#3d3428] hover:border-[#c8a96e] bg-[#2a2318] rounded-xl text-center transition-all"
+                className="w-full py-6 border-2 border-dashed border-zinc-200 hover:border-[#c8a96e] bg-white rounded-xl text-center transition-all"
               >
-                <span className="text-sm text-[#6b5d4d]">
+                <span className="text-sm text-zinc-500">
                   Portfolio, projets, réalisations / Portfolio, projects, achievements
                 </span>
               </button>
               {form.extra_docs_names.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {form.extra_docs_names.map((name, i) => (
-                    <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs bg-[#2a2318] text-[#c8a96e] border border-[#3d3428]">
+                    <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs bg-white text-[#c8a96e] border border-zinc-200">
                       {name}
                       <button
                         type="button"
@@ -928,7 +928,7 @@ export default function ApplyPage() {
                     placeholder="Rechercher ton école / Search your school..."
                   />
                   {schoolResults.length > 0 && form.school_search.length >= 2 && !form.school_name && (
-                    <div className="absolute z-40 w-full mt-1 max-h-48 overflow-y-auto bg-[#2a2318] border border-[#3d3428] rounded-xl shadow-lg">
+                    <div className="absolute z-40 w-full mt-1 max-h-48 overflow-y-auto bg-white border border-zinc-200 rounded-xl shadow-lg">
                       {schoolResults.map(s => (
                         <button
                           key={s.id}
@@ -939,10 +939,10 @@ export default function ApplyPage() {
                             set('school_search', '')
                             setSchoolResults([])
                           }}
-                          className="w-full text-left px-4 py-2 text-sm text-[#f5f0e6] hover:bg-[#3d3428]"
+                          className="w-full text-left px-4 py-2 text-sm text-[#1a1918] hover:bg-zinc-100"
                         >
                           <span className="font-medium">{s.name}</span>
-                          {s.city && <span className="text-[#6b5d4d]"> — {s.city}{s.country ? `, ${s.country}` : ''}</span>}
+                          {s.city && <span className="text-zinc-500"> — {s.city}{s.country ? `, ${s.country}` : ''}</span>}
                         </button>
                       ))}
                     </div>
@@ -990,7 +990,7 @@ export default function ApplyPage() {
                     className={`py-3 rounded-xl text-sm font-medium transition-all ${
                       form.duration === d.value
                         ? 'bg-[#c8a96e] text-[#1a1410]'
-                        : 'bg-[#2a2318] text-[#8a7d6d] border border-[#3d3428] hover:border-[#c8a96e]'
+                        : 'bg-white text-[#8a7d6d] border border-zinc-200 hover:border-[#c8a96e]'
                     }`}
                   >
                     {d.label}
@@ -1010,7 +1010,7 @@ export default function ApplyPage() {
             {computedEndDate && (
               <div>
                 <label className={labelClass}>Date de fin estimée / Estimated end date</label>
-                <p className="text-sm text-[#6b5d4d] bg-[#2a2318] rounded-xl px-4 py-3">
+                <p className="text-sm text-zinc-500 bg-white rounded-xl px-4 py-3">
                   {new Date(computedEndDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                   {' / '}
                   {new Date(computedEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
@@ -1097,7 +1097,7 @@ export default function ApplyPage() {
                 placeholder={"🇫🇷 Objectifs, compétences, types d'entreprises, contraintes (dates / remote / horaires), et ce que tu veux apprendre. Pas besoin d'être parfait, on clarifie ensemble en appel.\n🇬🇧 Goals, skills, company types, constraints (dates / remote / hours), and what you want to learn. No need to be perfect, we'll clarify together on the call."}
                 className={`${inputClass} resize-none`}
               />
-              <p className={`text-xs mt-1 ${form.stage_ideal.length < 50 ? 'text-red-400' : 'text-[#6b5d4d]'}`}>
+              <p className={`text-xs mt-1 ${form.stage_ideal.length < 50 ? 'text-red-400' : 'text-zinc-500'}`}>
                 {form.stage_ideal.length}/1000 (min 50)
               </p>
             </div>
@@ -1110,10 +1110,10 @@ export default function ApplyPage() {
         {step === 3 && (
           <div className="space-y-5">
             {/* Price card */}
-            <div className="bg-[#2a2318] border border-[#3d3428] rounded-2xl p-6">
+            <div className="bg-white border border-zinc-200 rounded-2xl p-6">
               <div className="text-center mb-5">
                 <p className="text-4xl font-bold text-[#c8a96e]">{price}€</p>
-                <p className="text-xs text-[#6b5d4d] mt-1">TTC / Tax included</p>
+                <p className="text-xs text-zinc-500 mt-1">TTC / Tax included</p>
               </div>
               <p className="text-sm text-[#d4cfc5] leading-relaxed">
                 Le service Bali Interns coûte {price}€ TTC. Paiement uniquement après signature de la convention de stage — avant ça, 0€ à régler. Pour éviter les mauvaises surprises, on s&apos;assure que tout est clair avant de continuer.
@@ -1196,7 +1196,7 @@ export default function ApplyPage() {
                     className={`py-3 px-4 rounded-xl text-sm font-medium text-left transition-all ${
                       form.touchpoint === t
                         ? 'bg-[#c8a96e] text-[#1a1410]'
-                        : 'bg-[#2a2318] text-[#8a7d6d] border border-[#3d3428] hover:border-[#c8a96e]'
+                        : 'bg-white text-[#8a7d6d] border border-zinc-200 hover:border-[#c8a96e]'
                     }`}
                   >
                     {t}
@@ -1232,7 +1232,7 @@ export default function ApplyPage() {
               <br />
               45-minute qualification interview with our team, on Google Meet
             </p>
-            <p className="text-xs text-[#6b5d4d] bg-[#2a2318] inline-block px-3 py-1.5 rounded-lg">
+            <p className="text-xs text-zinc-500 bg-white inline-block px-3 py-1.5 rounded-lg">
               Manila (GMT+8)
             </p>
 
@@ -1262,7 +1262,7 @@ export default function ApplyPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-[#6b5d4d]">Chargement des créneaux... / Loading slots...</p>
+              <p className="text-sm text-zinc-500">Chargement des créneaux... / Loading slots...</p>
             )}
 
             <p className="text-xs text-amber-400/80 bg-amber-900/10 border border-amber-800/20 rounded-lg px-3 py-2 leading-relaxed">
@@ -1286,7 +1286,7 @@ export default function ApplyPage() {
             <button
               type="button"
               onClick={() => { setStep(s => s - 1); setError('') }}
-              className="px-6 py-3 rounded-xl text-sm font-medium bg-[#2a2318] text-[#8a7d6d] border border-[#3d3428] hover:border-[#c8a96e] transition-all"
+              className="px-6 py-3 rounded-xl text-sm font-medium bg-white text-[#8a7d6d] border border-zinc-200 hover:border-[#c8a96e] transition-all"
             >
               Retour / Back
             </button>
