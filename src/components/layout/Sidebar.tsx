@@ -130,7 +130,6 @@ export function Sidebar() {
       <nav className="flex-1 px-2 pb-4 space-y-0.5">
 
         <NavLink href="/fr/feed" label="Dashboard" icon={icons.dashboard} badge={todoCount} urgent={todoCount > 0} />
-        <NavLink href="/fr/activity" label="Activity" icon={icons.activity} />
         <NavLink href="/fr/todo" label="To Do" icon={icons.todo} badge={todoCount} urgent={todoCount > 0} />
         <NavLink href="/fr/calendar" label="Calendrier" icon={icons.calendar} />
         <NavLink href="/fr/pipeline" label="Kanban" icon={icons.kanban} />
