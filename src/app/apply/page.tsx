@@ -254,6 +254,45 @@ function addMonths(dateStr: string, months: number): string {
   return d.toISOString().slice(0, 10)
 }
 
+
+// Nombre de chiffres attendus par indicatif (sans le code pays)
+const PHONE_LENGTHS: Record<string, { min: number; max: number }> = {
+  '+33': { min: 9, max: 9 },   // France: 0612345678 → 9 chiffres
+  '+32': { min: 9, max: 9 },   // Belgique
+  '+41': { min: 9, max: 9 },   // Suisse
+  '+352': { min: 9, max: 9 },  // Luxembourg
+  '+1': { min: 10, max: 10 },  // USA/Canada
+  '+44': { min: 10, max: 10 }, // UK
+  '+49': { min: 10, max: 11 }, // Allemagne
+  '+34': { min: 9, max: 9 },   // Espagne
+  '+39': { min: 9, max: 10 },  // Italie
+  '+351': { min: 9, max: 9 },  // Portugal
+  '+31': { min: 9, max: 9 },   // Pays-Bas
+  '+212': { min: 9, max: 9 },  // Maroc
+  '+213': { min: 9, max: 9 },  // Algérie
+  '+216': { min: 8, max: 8 },  // Tunisie
+  '+221': { min: 9, max: 9 },  // Sénégal
+  '+225': { min: 10, max: 10 }, // Côte d'Ivoire
+  '+237': { min: 9, max: 9 },  // Cameroun
+  '+55': { min: 11, max: 11 }, // Brésil
+  '+52': { min: 10, max: 10 }, // Mexique
+  '+81': { min: 10, max: 11 }, // Japon
+  '+86': { min: 11, max: 11 }, // Chine
+  '+91': { min: 10, max: 10 }, // Inde
+  '+61': { min: 9, max: 9 },   // Australie
+  '+64': { min: 8, max: 9 },   // Nouvelle-Zélande
+  '+65': { min: 8, max: 8 },   // Singapour
+}
+
+function validatePhone(code: string, number: string): string | null {
+  const digits = number.replace(/\D/g, '')
+  const rule = PHONE_LENGTHS[code]
+  if (!rule) return null // pas de règle = on accepte
+  if (digits.length < rule.min) return `Minimum ${rule.min} chiffres requis`
+  if (digits.length > rule.max) return `Maximum ${rule.max} chiffres pour ce pays`
+  return null
+}
+
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
@@ -389,6 +428,9 @@ export default function ApplyPage() {
   const [cvLocalUploading, setCvLocalUploading] = useState(false)
   const [price, setPrice] = useState(990)
   const [phoneDropOpen, setPhoneDropOpen] = useState(false)
+  const [emailExists, setEmailExists] = useState(false)
+  const [emailChecking, setEmailChecking] = useState(false)
+  const [phoneError, setPhoneError] = useState('')
 
   const cvEnRef = useRef<HTMLInputElement>(null)
   const cvLocalRef = useRef<HTMLInputElement>(null)
@@ -492,6 +534,20 @@ export default function ApplyPage() {
     } catch { /* ignore */ }
   }, [form])
 
+  // Vérification email en temps réel
+  useEffect(() => {
+    const email = form.email
+    if (!email || !isValidEmail(email)) { setEmailExists(false); return }
+    const timer = setTimeout(() => {
+      setEmailChecking(true)
+      fetch('/api/check-email?email=' + encodeURIComponent(email))
+        .then(r => r.json())
+        .then((d: { exists: boolean }) => { setEmailExists(d.exists); setEmailChecking(false) })
+        .catch(() => setEmailChecking(false))
+    }, 600)
+    return () => clearTimeout(timer)
+  }, [form.email])
+
   // Fillout script loader + pré-remplissage URL params
   useEffect(() => {
     if (step !== 4) return
@@ -565,14 +621,17 @@ export default function ApplyPage() {
   // ── Validation ──
   function canNext(): boolean {
     switch (step) {
-      case 0:
+      case 0: {
+        const phoneErr = validatePhone(form.whatsapp_code ?? '+33', form.whatsapp_number)
         return !!(
           form.first_name.trim() && form.last_name.trim() &&
           form.email.trim() && isValidEmail(form.email) &&
-          form.whatsapp_number.trim() &&
+          !emailExists && !emailChecking &&
+          form.whatsapp_number.trim() && !phoneErr &&
           form.nationalities.length > 0 &&
           form.birth_date && form.passport_expiry
         )
+      }
       case 1:
         return !!(form.cv_en_file && form.spoken_languages.length > 0 && !cvUploading)
       case 2:
@@ -744,9 +803,23 @@ export default function ApplyPage() {
                 type="email"
                 value={form.email}
                 onChange={e => set('email', e.target.value)}
-                className={`${inputClass} ${form.email && !isValidEmail(form.email) ? 'ring-2 ring-red-500' : ''}`}
+                className={`${inputClass} ${form.email && (!isValidEmail(form.email) || emailExists) ? 'ring-2 ring-red-500' : form.email && isValidEmail(form.email) && !emailExists && !emailChecking ? 'ring-2 ring-green-400' : ''}`}
                 placeholder="your@email.com"
               />
+              {emailChecking && (
+                <p className="text-xs text-zinc-400 mt-1 flex items-center gap-1">
+                  <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                  {lang === 'fr' ? 'Vérification...' : 'Checking...'}
+                </p>
+              )}
+              {emailExists && !emailChecking && (
+                <p className="text-xs text-red-600 mt-1 font-medium">
+                  ⚠️ {lang === 'fr' ? 'Cet email est déjà associé à un dossier. Contacte-nous sur WhatsApp.' : 'This email is already linked to an application. Contact us on WhatsApp.'}
+                </p>
+              )}
+              {form.email && isValidEmail(form.email) && !emailExists && !emailChecking && (
+                <p className="text-xs text-green-600 mt-1">✓ {lang === 'fr' ? 'Email disponible' : 'Email available'}</p>
+              )}
             </div>
 
             {/* WhatsApp */}
