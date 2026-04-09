@@ -36,6 +36,12 @@ interface PortalData {
   cv_revision_requested?: boolean | null
   housing_reserved?: boolean | null
   assigned_manager_name?: string | null
+  flight_number?: string | null
+  flight_departure_city?: string | null
+  flight_arrival_time_local?: string | null
+  flight_last_stopover?: string | null
+  desired_start_date?: string | null
+  visa_submitted_to_agent_at?: string | null
   interns?: {
     first_name?: string | null
     last_name?: string | null
@@ -257,6 +263,54 @@ export default function PortalPage() {
         <Link href={`/portal/${token}/affiliation`} style={{ display: 'inline-block', padding: '8px 16px', background: '#c8a96e', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
           Voir mon code →
         </Link>
+      </div>
+
+      {/* Flight info */}
+      {currentStep >= 7 && data.flight_number && (
+        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>Infos vol</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 13, color: '#6b7280' }}>N° de vol</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1918' }}>{data.flight_number}</span>
+            </div>
+            {data.flight_departure_city && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 13, color: '#6b7280' }}>Départ</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1918' }}>{data.flight_departure_city}</span>
+              </div>
+            )}
+            {data.flight_last_stopover && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 13, color: '#6b7280' }}>Escale</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1918' }}>{data.flight_last_stopover}</span>
+              </div>
+            )}
+            {data.flight_arrival_time_local && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 13, color: '#6b7280' }}>Arrivée Bali</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1918' }}>{data.flight_arrival_time_local}</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <a href={`https://www.flightradar24.com/${data.flight_number}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, textAlign: 'center', padding: '8px 12px', background: '#f3f4f6', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#6b7280', textDecoration: 'none' }}>
+                FlightRadar24
+              </a>
+              <a href={`https://www.flightaware.com/live/flight/${data.flight_number}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, textAlign: 'center', padding: '8px 12px', background: '#f3f4f6', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#6b7280', textDecoration: 'none' }}>
+                FlightAware
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* WhatsApp */}
+      <div style={{ background: 'linear-gradient(135deg, #075e54, #128c7e)', borderRadius: 12, padding: 16, marginBottom: 24 }}>
+        <p style={{ color: 'white', fontWeight: 700, fontSize: 15, marginBottom: 6 }}>Besoin d&apos;aide ?</p>
+        <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginBottom: 12 }}>Notre equipe est disponible sur WhatsApp.</p>
+        <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', background: 'white', color: '#075e54', borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+          WhatsApp Sunny Interns
+        </a>
       </div>
 
       {/* Contact */}
