@@ -19,6 +19,8 @@ export function Sidebar() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userInitials, setUserInitials] = useState('?')
   const [openJobsCount, setOpenJobsCount] = useState<number | null>(null)
+  const [pipelineCount, setPipelineCount] = useState<number | null>(null)
+  const [hasTodos, setHasTodos] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   useEffect(() => {
@@ -43,6 +45,17 @@ export function Sidebar() {
       .then((res) => res.ok ? res.json() as Promise<unknown[]> : Promise.resolve([]))
       .then((data) => setOpenJobsCount(Array.isArray(data) ? data.length : 0))
       .catch(() => setOpenJobsCount(null))
+
+    fetch('/api/dashboard/kpis')
+      .then((res) => res.ok ? res.json() as Promise<{ candidats_month?: number; active_bali?: number; pending_payment?: number }> : null)
+      .then((data) => {
+        if (data) {
+          const total = (data.candidats_month ?? 0) + (data.active_bali ?? 0)
+          setPipelineCount(total)
+          setHasTodos((data.pending_payment ?? 0) > 0)
+        }
+      })
+      .catch(() => setPipelineCount(null))
   }, [])
 
   async function handleLogout() {
@@ -65,6 +78,7 @@ export function Sidebar() {
     {
       href: '/fr/pipeline',
       label: 'Pipeline',
+      badge: true,
       icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" /></svg>,
     },
     {
@@ -147,7 +161,11 @@ export function Sidebar() {
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {mainNav.map((item) => {
           const active = isActive(item.href)
-          const showBadge = item.badge && openJobsCount !== null && openJobsCount > 0
+          const isPipeline = item.href === '/fr/pipeline'
+          const isJobs = item.href === '/fr/jobs'
+          const badgeCount = isPipeline ? pipelineCount : isJobs ? openJobsCount : null
+          const showBadge = item.badge && badgeCount !== null && badgeCount > 0
+          const badgeUrgent = isPipeline && hasTodos
           return (
             <Link
               key={item.href}
@@ -157,8 +175,8 @@ export function Sidebar() {
               {item.icon}
               {item.label}
               {showBadge && (
-                <span className="ml-auto flex-shrink-0 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-[#c8a96e] text-white text-[10px] font-semibold">
-                  {openJobsCount}
+                <span className={`ml-auto flex-shrink-0 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full text-white text-[10px] font-semibold ${badgeUrgent ? 'bg-[#dc2626]' : 'bg-[#c8a96e]'}`}>
+                  {badgeCount}
                 </span>
               )}
             </Link>

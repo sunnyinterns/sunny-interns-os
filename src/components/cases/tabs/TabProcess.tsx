@@ -165,6 +165,7 @@ export function TabProcess({
   }
 
   async function handleStatusChange(newStatus: CaseStatus) {
+    const oldStatus = status
     setStatusChanging(true)
     try {
       const res = await fetch(`/api/cases/${caseId}/status`, {
@@ -174,7 +175,25 @@ export function TabProcess({
       })
       if (!res.ok) throw new Error()
       setStatus(newStatus)
-      showToast(`Statut → ${ALL_STATUSES.find((s) => s.value === newStatus)?.label ?? newStatus}`)
+      const oldLabel = ALL_STATUSES.find((s) => s.value === oldStatus)?.label ?? oldStatus
+      const newLabel = ALL_STATUSES.find((s) => s.value === newStatus)?.label ?? newStatus
+      showToast(`Statut → ${newLabel}`)
+
+      // Log status change
+      fetch(`/api/cases/${caseId}/logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'status_changed',
+          field_label: 'Statut',
+          old_value: oldLabel,
+          new_value: newLabel,
+          description: `Changement de statut: ${oldLabel} → ${newLabel}`,
+        }),
+      })
+        .then(r => r.ok ? r.json() as Promise<CaseLogEntry> : null)
+        .then(log => { if (log) setCaseLogs(prev => [log, ...prev]) })
+        .catch(() => {})
     } catch {
       showToast('Erreur lors du changement de statut', 'error')
     } finally {

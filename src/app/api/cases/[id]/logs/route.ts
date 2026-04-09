@@ -16,7 +16,7 @@ export async function GET(
     .select('id, author_name, action, field_label, old_value, new_value, description, created_at, metadata')
     .eq('case_id', id)
     .order('created_at', { ascending: false })
-    .limit(20)
+    .limit(30)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data ?? [])

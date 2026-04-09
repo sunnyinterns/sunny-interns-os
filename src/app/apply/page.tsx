@@ -46,6 +46,36 @@ const STEP_SUBTITLES = [
   '', '', '', '', '', 'Un entretien de qualification de 20 minutes avec notre équipe.',
 ]
 
+interface CalendarSlot {
+  start: string
+  label: string
+}
+
+function generateStaticSlots(): CalendarSlot[] {
+  const slots: CalendarSlot[] = []
+  const now = new Date()
+  const date = new Date(now)
+  date.setDate(date.getDate() + 1)
+
+  let daysAdded = 0
+  while (daysAdded < 5) {
+    const dayOfWeek = date.getDay()
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      for (const hour of [9, 10, 11, 14, 15, 16]) {
+        const slotDate = new Date(date)
+        slotDate.setHours(hour, 0, 0, 0)
+        slots.push({
+          start: slotDate.toISOString(),
+          label: slotDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' }) + ' à ' + hour + 'h',
+        })
+      }
+      daysAdded++
+    }
+    date.setDate(date.getDate() + 1)
+  }
+  return slots
+}
+
 function getWorkingDays(count: number): Date[] {
   const days: Date[] = []
   const d = new Date()
@@ -104,11 +134,25 @@ export default function ApplyPage() {
     rdv_slot: '',
   })
 
+  const [calendarSlots, setCalendarSlots] = useState<CalendarSlot[]>([])
+  const [selectedCalendarSlot, setSelectedCalendarSlot] = useState<string>('')
+
   useEffect(() => {
     fetch('/api/settings/form_price')
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.value) setPrice(Number(d.value)) })
       .catch(() => {})
+
+    fetch('/api/calendar/slots')
+      .then(r => r.ok ? r.json() as Promise<CalendarSlot[]> : [])
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setCalendarSlots(data)
+        } else {
+          setCalendarSlots(generateStaticSlots())
+        }
+      })
+      .catch(() => setCalendarSlots(generateStaticSlots()))
   }, [])
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
@@ -145,7 +189,7 @@ export default function ApplyPage() {
       case 3: return !!(form.desired_jobs.length > 0 && form.duration && form.start_date)
       case 4: return form.stage_ideal.length >= 50
       case 5: return !!(form.commitment_price && form.commitment_budget && form.commitment_terms && form.touchpoint)
-      case 6: return !!(form.rdv_date && form.rdv_slot)
+      case 6: return !!(selectedCalendarSlot || (form.rdv_date && form.rdv_slot))
       default: return false
     }
   }
@@ -188,7 +232,7 @@ export default function ApplyPage() {
         commitment_price_accepted: form.commitment_price,
         commitment_budget_accepted: form.commitment_budget,
         commitment_terms_accepted: form.commitment_terms,
-        rdv_slot: `${form.rdv_date}T${form.rdv_slot.replace('h', ':')}:00`,
+        rdv_slot: selectedCalendarSlot || `${form.rdv_date}T${form.rdv_slot.replace('h', ':')}:00`,
       }
 
       const res = await fetch('/api/applications', {
@@ -449,34 +493,58 @@ export default function ApplyPage() {
         {/* ── STEP 7 ── */}
         {step === 6 && (
           <div className="space-y-4">
-            {/* Date picker */}
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {workingDays.map(d => {
-                const iso = d.toISOString().slice(0, 10)
-                const dayName = d.toLocaleDateString('fr-FR', { weekday: 'short' })
-                const dayNum = d.getDate()
-                const monthName = d.toLocaleDateString('fr-FR', { month: 'short' })
-                return (
-                  <button key={iso} type="button" onClick={() => { set('rdv_date', iso); set('rdv_slot', '') }}
-                    className={`flex-shrink-0 w-16 py-3 rounded-xl text-center transition-all ${form.rdv_date === iso ? 'bg-[#c8a96e] text-[#1a1410]' : 'bg-[#2a2318] text-[#8a7d6d] border border-[#3d3428] hover:border-[#c8a96e]'}`}>
-                    <p className="text-[10px] uppercase font-medium">{dayName}</p>
-                    <p className="text-lg font-bold">{dayNum}</p>
-                    <p className="text-[10px]">{monthName}</p>
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* Time slots */}
-            {form.rdv_date && (
-              <div className="grid grid-cols-3 gap-2">
-                {SLOTS.map(s => (
-                  <button key={s} type="button" onClick={() => set('rdv_slot', s)}
-                    className={`py-3 rounded-xl text-sm font-medium transition-all ${form.rdv_slot === s ? 'bg-[#c8a96e] text-[#1a1410]' : 'bg-[#2a2318] text-[#8a7d6d] border border-[#3d3428] hover:border-[#c8a96e]'}`}>
-                    {s}
+            {/* Calendar slots grid (from API or static fallback) */}
+            {calendarSlots.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2">
+                {calendarSlots.map(slot => (
+                  <button
+                    key={slot.start}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCalendarSlot(slot.start)
+                      set('rdv_date', slot.start.slice(0, 10))
+                      set('rdv_slot', new Date(slot.start).getHours() + 'h00')
+                    }}
+                    className={`py-3 px-3 rounded-xl text-sm font-medium transition-all text-left ${
+                      selectedCalendarSlot === slot.start
+                        ? 'bg-[#c8a96e] text-white'
+                        : 'bg-white text-[#1a1410] border border-zinc-200 hover:border-[#c8a96e]'
+                    }`}
+                  >
+                    {slot.label}
                   </button>
                 ))}
               </div>
+            ) : (
+              <>
+                {/* Fallback: date picker + time slots */}
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {workingDays.map(d => {
+                    const iso = d.toISOString().slice(0, 10)
+                    const dayName = d.toLocaleDateString('fr-FR', { weekday: 'short' })
+                    const dayNum = d.getDate()
+                    const monthName = d.toLocaleDateString('fr-FR', { month: 'short' })
+                    return (
+                      <button key={iso} type="button" onClick={() => { set('rdv_date', iso); set('rdv_slot', '') }}
+                        className={`flex-shrink-0 w-16 py-3 rounded-xl text-center transition-all ${form.rdv_date === iso ? 'bg-[#c8a96e] text-[#1a1410]' : 'bg-[#2a2318] text-[#8a7d6d] border border-[#3d3428] hover:border-[#c8a96e]'}`}>
+                        <p className="text-[10px] uppercase font-medium">{dayName}</p>
+                        <p className="text-lg font-bold">{dayNum}</p>
+                        <p className="text-[10px]">{monthName}</p>
+                      </button>
+                    )
+                  })}
+                </div>
+                {form.rdv_date && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {SLOTS.map(s => (
+                      <button key={s} type="button" onClick={() => set('rdv_slot', s)}
+                        className={`py-3 rounded-xl text-sm font-medium transition-all ${form.rdv_slot === s ? 'bg-[#c8a96e] text-[#1a1410]' : 'bg-[#2a2318] text-[#8a7d6d] border border-[#3d3428] hover:border-[#c8a96e]'}`}>
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

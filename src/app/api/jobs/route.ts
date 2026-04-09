@@ -12,7 +12,7 @@ export async function GET(request: Request) {
 
   let query = supabase
     .from('jobs')
-    .select('*, companies(id, name), contacts(id, first_name, last_name, job_title)')
+    .select('*, companies(id, name), contacts(id, first_name, last_name, job_title), job_submissions(id)')
     .order('created_at', { ascending: false })
 
   if (status && status !== 'all') query = query.eq('status', status)
@@ -23,6 +23,7 @@ export async function GET(request: Request) {
 
   const jobs = (data ?? []).map(j => ({
     ...j,
+    submissions_count: Array.isArray(j.job_submissions) ? j.job_submissions.length : 0,
     company_name: (j.companies as { name: string } | null)?.name ?? null,
     contact_name: j.contacts ? `${(j.contacts as { first_name: string; last_name: string | null }).first_name} ${(j.contacts as { first_name: string; last_name: string | null }).last_name ?? ''}`.trim() : null,
     department_name: j.department ?? null,

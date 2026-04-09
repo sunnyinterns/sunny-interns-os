@@ -13,7 +13,13 @@ export async function GET(
   try {
     const { data, error } = await supabase
       .from('job_submissions')
-      .select('*, jobs(id, public_title, title, companies(id, name), contacts(id, first_name, last_name, email))')
+      .select(`
+        id, status, intern_interested, cv_revision_requested, notes_charly, created_at,
+        jobs(id, title, public_title, wished_duration_months, wished_start_date,
+          companies(id, name),
+          contacts(id, first_name, last_name, email, whatsapp)
+        )
+      `)
       .eq('case_id', id)
       .order('created_at', { ascending: false })
     if (error) throw error
