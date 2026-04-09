@@ -180,7 +180,7 @@ const TOUCHPOINTS: { value: string; fr: string; en: string }[] = [
   { value: 'Facebook', fr: 'Facebook', en: 'Facebook' },
   { value: 'Google', fr: 'Google', en: 'Google' },
   { value: 'Bouche \u00e0 oreille', fr: 'Bouche \u00e0 oreille', en: 'Word of mouth' },
-  { value: '\u00c9cole', fr: '\u00c9cole / Universit\u00e9', en: 'School / University' },
+  { value: 'École', fr: 'École', en: 'School' },
   { value: 'Ambassadeur Bali Interns', fr: 'Ambassadeur Bali Interns', en: 'Bali Interns Ambassador' },
 ]
 
@@ -233,7 +233,7 @@ function generateStaticSlots(): CalendarSlot[] {
         slots.push({
           start: slotDate.toISOString(),
           label: `${pad(hour)}h00`,
-          dayLabel: `${frLabel} / ${enLabel}`,
+          dayLabel: lang === 'fr' ? frLabel : enLabel,
         })
       }
       daysAdded++
