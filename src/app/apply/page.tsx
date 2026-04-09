@@ -366,7 +366,15 @@ export default function ApplyPage() {
   }, [phoneDropOpen])
 
   // ── Form state ──
-  const [form, setForm] = useState({
+  const [form, setForm] = useState(() => {
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('apply_form_v1') : null
+      if (saved) {
+        const parsed = JSON.parse(saved) as Record<string, unknown>
+        return { ...parsed, cv_en_file: null, cv_local_file: null, extra_docs_files: [] }
+      }
+    } catch { /* ignore */ }
+    return {
     // Step 1
     first_name: '',
     last_name: '',
@@ -411,6 +419,7 @@ export default function ApplyPage() {
     referred_by_code: '',
     // Step 6
     rdv_slot: '',
+    }
   })
 
   // ── Fetched data ──
@@ -460,13 +469,23 @@ export default function ApplyPage() {
     if (q.length < 2) { setSchoolResults([]); setIsSearchingSchool(false); return }
     setIsSearchingSchool(true)
     searchSchoolsTimeout.current = setTimeout(() => {
-      fetch(`/api/public/schools?q=${encodeURIComponent(q)}`)
+      const countryParam = form.school_country ? `&country=${encodeURIComponent(form.school_country)}` : ''
+      fetch(`/api/public/schools?q=${encodeURIComponent(q)}${countryParam}`)
         .then(r => r.ok ? r.json() : [])
         .then((data: School[]) => { setSchoolResults(Array.isArray(data) ? data : []); setIsSearchingSchool(false) })
         .catch(() => { setSchoolResults([]); setIsSearchingSchool(false) })
     }, 400)
   }, [])
 
+
+
+  // Sauvegarder le formulaire dans localStorage (hors fichiers)
+  useEffect(() => {
+    try {
+      const toSave = { ...form, cv_en_file: null, cv_local_file: null, extra_docs_files: [] }
+      localStorage.setItem('apply_form_v1', JSON.stringify(toSave))
+    } catch { /* ignore */ }
+  }, [form])
 
   // Fillout script loader + pré-remplissage URL params
   useEffect(() => {
@@ -821,13 +840,13 @@ export default function ApplyPage() {
             {/* Date de naissance */}
             <div>
               <label className={labelClass}>{lang==='fr'?'Date de naissance *':'Date of birth *'}</label>
-              <input type="text" value={form.birth_date} onChange={e => set('birth_date', e.target.value)} className={inputClass} placeholder={lang==='fr'?'jj/mm/aaaa':'dd/mm/yyyy'} />
+              <input type="date" value={form.birth_date} onChange={e => set('birth_date', e.target.value)} className={`${inputClass} ${!form.birth_date ? "text-zinc-400" : ""}`} />
             </div>
 
             {/* Passeport expiry */}
             <div>
               <label className={labelClass}>{lang==='fr'?"Date d\u2019expiration du passeport *":'Passport expiry date *'}</label>
-<input type="text" value={form.passport_expiry} onChange={e => set('passport_expiry', e.target.value)} className={inputClass} placeholder={lang==='fr'?'jj/mm/aaaa':'dd/mm/yyyy'} />
+<input type="date" value={form.passport_expiry} onChange={e => set('passport_expiry', e.target.value)} className={`${inputClass} ${!form.passport_expiry ? "text-zinc-400" : ""}`} />
               {passportWarning && (
                 <div className="mt-2 flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-300 rounded-lg px-3 py-2.5">
                   <span className="flex-shrink-0 font-bold">⚠️</span>
@@ -1130,7 +1149,7 @@ export default function ApplyPage() {
             {/* Date de début */}
             <div>
               <label className={labelClass}>{lang==='fr'?'Date de démarrage souhaitée *':'Desired start date *'}</label>
-              <input type="text" value={form.start_date} onChange={e => set('start_date', e.target.value)} className={inputClass} placeholder={lang==='fr'?'jj/mm/aaaa':'dd/mm/yyyy'} />
+              <input type="date" value={form.start_date} onChange={e => set('start_date', e.target.value)} min={new Date(Date.now() + 30*86400000).toISOString().split("T")[0]} className={`${inputClass} ${!form.start_date ? "text-zinc-400" : ""}`} />
               <p className={helperClass}>{lang==='fr'?"\u00c0 2-4 semaines pr\u00e8s, c\u2019est ok":"Give or take 2-4 weeks, that\u2019s fine"}</p>
             </div>
 
@@ -1138,8 +1157,7 @@ export default function ApplyPage() {
             <div>
               <label className={labelClass}>{lang==='fr'?'Date de fin maximum possible (optionnel)':'Latest possible end date (optional)'}</label>
               <input
-                type="text"
-                placeholder={lang==='fr'?'jj/mm/aaaa':'dd/mm/yyyy'}
+                type="date"
                 value={form.end_date ?? ''}
                 onChange={e => set('end_date', e.target.value)}
                 className={inputClass}
@@ -1410,7 +1428,7 @@ export default function ApplyPage() {
           {step > 0 && (
             <button
               type="button"
-              onClick={() => { setStep(s => s - 1); setError('') }}
+              onClick={() => { setStep(s => s - 1); setError(''); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
               className="px-6 py-3 rounded-xl text-sm font-medium bg-white text-[#8a7d6d] border border-zinc-200 hover:border-[#c8a96e] transition-all"
             >
               {lang==='fr'?'\u2190 Retour':'\u2190 Back'}
@@ -1420,7 +1438,7 @@ export default function ApplyPage() {
             <button
               type="button"
               disabled={!canNext()}
-              onClick={() => { setStep(s => s + 1); setError('') }}
+              onClick={() => { setStep(s => s + 1); setError(''); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
               className="flex-1 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a]"
             >
               {lang==='fr'?'Continuer \u2192':'Continue \u2192'}
