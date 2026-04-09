@@ -28,6 +28,7 @@ const ICONS: Record<string, string> = {
   welcome_kit_sent: '🎁',
   driver_booked: '🚗',
   case_created: '🆕',
+  rdv_cancelled: '❌',
 }
 
 const COLORS: Record<string, string> = {
@@ -57,6 +58,7 @@ const COLORS: Record<string, string> = {
   welcome_kit_sent: '#c8a96e',
   driver_booked: '#3b82f6',
   case_created: '#c8a96e',
+  rdv_cancelled: '#dc2626',
 }
 
 const TYPE_GROUPS: Record<string, string[]> = {

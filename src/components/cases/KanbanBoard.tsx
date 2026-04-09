@@ -68,6 +68,9 @@ export interface CaseData {
   visa_recu?: boolean | null
   convention_signee_check?: boolean | null
   chauffeur_reserve?: boolean | null
+  email?: string | null
+  main_desired_job?: string | null
+  created_at?: string | null
 }
 
 export type ViewMode = 'kanban' | 'list'
@@ -212,6 +215,11 @@ function CaseCard({ data, locale }: { data: CaseData; locale: string }) {
 
   const initials = `${(data.first_name?.[0] ?? '').toUpperCase()}${(data.last_name?.[0] ?? '').toUpperCase()}`
 
+  // Lead stale > 7 days
+  const leadStale = data.status === 'lead' && data.created_at
+    ? Math.floor((Date.now() - new Date(data.created_at).getTime()) / 86400000) > 7
+    : false
+
   return (
     <button
       onClick={() => router.push(`/${locale}/cases/${data.id}?tab=process`)}
@@ -240,12 +248,22 @@ function CaseCard({ data, locale }: { data: CaseData; locale: string }) {
               {jTag.label}
             </span>
           )}
+          {leadStale && (
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0 leading-none bg-[#fef2f2] text-[#dc2626]">
+              +7j
+            </span>
+          )}
         </div>
 
-        {/* Row 2: School/info + checklist dots */}
+        {/* Row 2: Email */}
+        {data.email && (
+          <p className="text-[10px] text-[#a1a1aa] truncate leading-tight mb-0.5">{data.email}</p>
+        )}
+
+        {/* Row 3: Desired job + checklist dots */}
         <div className="flex items-center justify-between gap-1">
           <span className="text-[11px] text-[#71717a] truncate flex-1 leading-tight">
-            {[data.school, data.internship_type].filter(Boolean).join(' · ') || '—'}
+            {data.main_desired_job || data.internship_type || data.school || '\u2014'}
           </span>
           <div className="flex gap-0.5 flex-shrink-0">
             {checklist.map((v, i) => (
@@ -257,7 +275,7 @@ function CaseCard({ data, locale }: { data: CaseData; locale: string }) {
           </div>
         </div>
 
-        {/* Row 3: Date */}
+        {/* Row 4: Date */}
         {dateLabel && (
           <p className={`text-[11px] mt-1 leading-tight ${dateLabel.urgent ? 'text-[#dc2626] font-semibold' : 'text-[#a1a1aa]'}`}>
             {dateLabel.text}

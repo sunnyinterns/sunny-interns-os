@@ -28,7 +28,10 @@ interface CaseData {
   scooter_reserve_check?: boolean | null
   convention_signee_check?: boolean | null
   chauffeur_reserve?: boolean | null
-  interns?: { first_name?: string; last_name?: string; passport_expiry?: string; school_country?: string; main_desired_job?: string } | null
+  interns?: { first_name?: string; last_name?: string; passport_expiry?: string; school_country?: string; main_desired_job?: string; email?: string } | null
+  email?: string | null
+  main_desired_job?: string | null
+  created_at?: string | null
   [key: string]: unknown
 }
 
@@ -77,6 +80,8 @@ export default function PipelinePage() {
         internship_type: c.internship_type ?? c.interns?.main_desired_job ?? null,
         passport_expiry: c.interns?.passport_expiry ?? null,
         desired_start_date: c.desired_start_date ?? c.actual_start_date ?? null,
+        email: c.email ?? c.interns?.email ?? null,
+        main_desired_job: c.main_desired_job ?? c.interns?.main_desired_job ?? null,
       }))
       setCases(data)
     } catch (err) {

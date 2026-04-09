@@ -181,7 +181,7 @@ export async function POST(request: Request) {
       metadata: { case_id: newCase.id, intern_id: intern.id },
     }).then(() => null, () => null)
 
-    // Email confirmation
+    // Email interne (Charly)
     try {
       const { sendNewLeadInternal } = await import('@/lib/email/resend')
       void sendNewLeadInternal({
@@ -195,6 +195,26 @@ export async function POST(request: Request) {
       })
     } catch {
       // Resend not configured — skip email
+    }
+
+    // Email de confirmation candidat
+    const resendKey = process.env.RESEND_API_KEY
+    if (resendKey) {
+      fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: 'Bali Interns <hello@bali-interns.com>',
+          to: [d.email],
+          subject: `Ta candidature Bali Interns est bien reçue, ${d.first_name} !`,
+          html: `
+            <h2>Félicitations ${d.first_name} !</h2>
+            <p>Ta candidature pour un stage à Bali a bien été reçue.</p>
+            <p>Notre équipe te contactera sous 24h sur WhatsApp (${d.whatsapp || 'numéro fourni'}) pour confirmer ton entretien de qualification.</p>
+            <p>À très vite,<br/>L'équipe Bali Interns</p>
+          `
+        })
+      }).catch(() => null)
     }
 
     return NextResponse.json({
