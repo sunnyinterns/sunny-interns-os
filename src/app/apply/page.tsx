@@ -721,6 +721,7 @@ export default function ApplyPage() {
       })
 
       if (res.status === 409) {
+        setStep(0)
         setError(T(
           'Cet email est d\u00e9j\u00e0 associ\u00e9 \u00e0 un dossier.',
           'This email is already linked to an application.',

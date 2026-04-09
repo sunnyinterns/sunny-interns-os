@@ -28,7 +28,7 @@ interface CaseData {
   scooter_reserve_check?: boolean | null
   convention_signee_check?: boolean | null
   chauffeur_reserve?: boolean | null
-  interns?: { first_name?: string; last_name?: string; passport_expiry?: string; school?: string } | null
+  interns?: { first_name?: string; last_name?: string; passport_expiry?: string; school_name?: string; main_desired_job?: string } | null
   [key: string]: unknown
 }
 
@@ -73,7 +73,8 @@ export default function PipelinePage() {
         ...c,
         first_name: c.first_name ?? c.interns?.first_name ?? '',
         last_name: c.last_name ?? c.interns?.last_name ?? '',
-        school: c.school ?? ((c as Record<string, any>).schools as any)?.name ?? c.interns?.school ?? null,
+        school: c.school ?? ((c as Record<string, any>).schools as any)?.name ?? c.interns?.school_name ?? null,
+        internship_type: c.internship_type ?? c.interns?.main_desired_job ?? null,
         passport_expiry: c.interns?.passport_expiry ?? null,
         desired_start_date: c.desired_start_date ?? c.actual_start_date ?? null,
       }))

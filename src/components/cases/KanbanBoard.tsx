@@ -245,7 +245,7 @@ function CaseCard({ data, locale }: { data: CaseData; locale: string }) {
         {/* Row 2: School/info + checklist dots */}
         <div className="flex items-center justify-between gap-1">
           <span className="text-[11px] text-[#71717a] truncate flex-1 leading-tight">
-            {data.school ?? data.internship_type ?? ''}
+            {[data.school, data.internship_type].filter(Boolean).join(' · ') || '—'}
           </span>
           <div className="flex gap-0.5 flex-shrink-0">
             {checklist.map((v, i) => (

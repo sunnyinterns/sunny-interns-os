@@ -87,7 +87,7 @@ export async function POST() {
         organizer_email: ev.organizer?.email ?? calId,
         synced_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'id' }).catch(() => null)
+      }, { onConflict: 'id' }).then(null, () => null)
       
       totalSynced++
     }
