@@ -15,17 +15,21 @@ const applicationSchema = z.object({
   last_name: z.string().min(1),
   email: z.string().email(),
   whatsapp: z.string().min(1),
-  nationality: z.string().optional(),
-  gender: z.string().optional(),
+  school_country: z.string().optional(),
+  nationalities: z.array(z.string()).optional(),
   birth_date: z.string().optional(),
   passport_expiry: z.string().optional(),
   linkedin_url: z.string().nullable().optional(),
   cv_url: z.string().optional(),
+  local_cv_url: z.string().nullable().optional(),
   spoken_languages: z.array(z.string()).optional(),
   desired_jobs: z.array(z.string()).optional(),
+  custom_jobs: z.array(z.string()).optional(),
   duration: z.string().optional(),
   start_date: z.string().optional(),
   stage_ideal: z.string().optional(),
+  school_name: z.string().optional(),
+  school_id: z.string().nullable().optional(),
   touchpoint: z.string().optional(),
   referred_by_code: z.string().nullable().optional(),
   commitment_price_accepted: z.boolean().optional(),
@@ -53,12 +57,14 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     if (existing) {
-      return NextResponse.json({ error: 'Cet email est déjà utilisé' }, { status: 409 })
+      return NextResponse.json({ error: 'Cet email est déjà utilisé / This email is already linked to an application.' }, { status: 409 })
     }
 
     // Parse duration months
-    const durationMatch = d.duration?.match(/^(\d+)/)
-    const durationMonths = durationMatch ? parseInt(durationMatch[1]) : null
+    const durationMonths = d.duration ? parseInt(d.duration) : null
+
+    // Merge desired_jobs + custom_jobs into desired_sectors
+    const allJobs = [...(d.desired_jobs ?? []), ...(d.custom_jobs ?? [])]
 
     // Get commitment IP
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null
@@ -71,14 +77,17 @@ export async function POST(request: Request) {
         last_name: d.last_name,
         email: d.email,
         whatsapp: d.whatsapp,
-        sexe: d.gender ?? null,
-        nationality: d.nationality ?? null,
+        nationality: d.nationalities?.[0] ?? null,
+        nationalities: d.nationalities ?? [],
+        school_country: d.school_country ?? null,
         birth_date: d.birth_date ?? null,
         passport_expiry: d.passport_expiry ?? null,
         linkedin_url: d.linkedin_url ?? null,
         cv_url: d.cv_url ?? null,
+        local_cv_url: d.local_cv_url ?? null,
         spoken_languages: d.spoken_languages ?? [],
-        main_desired_job: d.desired_jobs?.[0] ?? null,
+        main_desired_job: allJobs[0] ?? null,
+        desired_sectors: allJobs,
         stage_ideal: d.stage_ideal ?? null,
         touchpoint: d.touchpoint ?? null,
         referred_by_code: d.referred_by_code ?? null,
@@ -116,7 +125,8 @@ export async function POST(request: Request) {
         status: 'lead',
         desired_start_date: d.start_date ?? null,
         desired_duration_months: durationMonths,
-        desired_sectors: d.desired_jobs ?? [],
+        desired_sectors: allJobs,
+        school_id: d.school_id ?? null,
         portal_token: portalToken,
         assigned_manager_name: 'Charly Gestede',
         intern_first_meeting_date: d.rdv_slot ?? null,
@@ -135,11 +145,6 @@ export async function POST(request: Request) {
         .select('id')
         .eq('code', d.referred_by_code)
         .maybeSingle()
-        .then(({ data: aff }) => {
-          if (aff) {
-            // Update intern with affiliate reference — already stored via referred_by_code
-          }
-        })
     }
 
     // Log activity
@@ -151,7 +156,7 @@ export async function POST(request: Request) {
       source: 'candidature',
     })
 
-    // Email confirmation (log if Resend not configured)
+    // Email confirmation
     try {
       const { sendNewLeadInternal } = await import('@/lib/email/resend')
       void sendNewLeadInternal({

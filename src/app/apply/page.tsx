@@ -1,55 +1,220 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 
-const COUNTRY_CODES = [
-  { flag: '🇫🇷', code: '+33', label: 'France' },
-  { flag: '🇧🇪', code: '+32', label: 'Belgique' },
-  { flag: '🇨🇭', code: '+41', label: 'Suisse' },
-  { flag: '🇨🇦', code: '+1', label: 'Canada' },
-  { flag: '🇲🇦', code: '+212', label: 'Maroc' },
-  { flag: '🇩🇿', code: '+213', label: 'Algérie' },
-  { flag: '🇹🇳', code: '+216', label: 'Tunisie' },
-  { flag: '🇪🇸', code: '+34', label: 'Espagne' },
-  { flag: '🇩🇪', code: '+49', label: 'Allemagne' },
-  { flag: '🇬🇧', code: '+44', label: 'Royaume-Uni' },
-  { flag: '🇺🇸', code: '+1', label: 'États-Unis' },
+// ─────────────────────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────────────────────
+
+const ANGLOPHONE_COUNTRIES = [
+  'United Kingdom', 'United States', 'Canada', 'Australia',
+  'Ireland', 'New Zealand', 'Singapore', 'South Africa',
 ]
 
-const NATIONALITIES = ['Française', 'Belge', 'Suisse', 'Canadienne', 'Marocaine', 'Algérienne', 'Tunisienne', 'Espagnole', 'Autre']
-
-const JOB_TYPES = [
-  'Assistant marketing digital', 'Création de contenu', 'Community Manager',
-  'Stratégie social media', 'SEO/SEA', 'Email CRM', 'RP/Events',
-  'Études de marché', 'Prospection B2B', 'Négociation/Sales',
-  'Account manager', 'E-commerce', 'Autre',
+const COUNTRY_PHONE_CODES: { flag: string; code: string; name: string }[] = [
+  { flag: '🇫🇷', code: '+33', name: 'France' },
+  { flag: '🇬🇧', code: '+44', name: 'United Kingdom' },
+  { flag: '🇺🇸', code: '+1', name: 'United States' },
+  { flag: '🇩🇪', code: '+49', name: 'Germany' },
+  { flag: '🇪🇸', code: '+34', name: 'Spain' },
+  { flag: '🇮🇹', code: '+39', name: 'Italy' },
+  { flag: '🇵🇹', code: '+351', name: 'Portugal' },
+  { flag: '🇧🇪', code: '+32', name: 'Belgium' },
+  { flag: '🇨🇭', code: '+41', name: 'Switzerland' },
+  { flag: '🇳🇱', code: '+31', name: 'Netherlands' },
+  { flag: '🇦🇹', code: '+43', name: 'Austria' },
+  { flag: '🇵🇱', code: '+48', name: 'Poland' },
+  { flag: '🇷🇴', code: '+40', name: 'Romania' },
+  { flag: '🇨🇿', code: '+420', name: 'Czech Republic' },
+  { flag: '🇭🇺', code: '+36', name: 'Hungary' },
+  { flag: '🇸🇪', code: '+46', name: 'Sweden' },
+  { flag: '🇳🇴', code: '+47', name: 'Norway' },
+  { flag: '🇩🇰', code: '+45', name: 'Denmark' },
+  { flag: '🇫🇮', code: '+358', name: 'Finland' },
+  { flag: '🇮🇪', code: '+353', name: 'Ireland' },
+  { flag: '🇬🇷', code: '+30', name: 'Greece' },
+  { flag: '🇭🇷', code: '+385', name: 'Croatia' },
+  { flag: '🇧🇬', code: '+359', name: 'Bulgaria' },
+  { flag: '🇷🇸', code: '+381', name: 'Serbia' },
+  { flag: '🇸🇰', code: '+421', name: 'Slovakia' },
+  { flag: '🇸🇮', code: '+386', name: 'Slovenia' },
+  { flag: '🇱🇹', code: '+370', name: 'Lithuania' },
+  { flag: '🇱🇻', code: '+371', name: 'Latvia' },
+  { flag: '🇪🇪', code: '+372', name: 'Estonia' },
+  { flag: '🇨🇦', code: '+1', name: 'Canada' },
+  { flag: '🇲🇽', code: '+52', name: 'Mexico' },
+  { flag: '🇧🇷', code: '+55', name: 'Brazil' },
+  { flag: '🇦🇷', code: '+54', name: 'Argentina' },
+  { flag: '🇨🇴', code: '+57', name: 'Colombia' },
+  { flag: '🇨🇱', code: '+56', name: 'Chile' },
+  { flag: '🇵🇪', code: '+51', name: 'Peru' },
+  { flag: '🇻🇪', code: '+58', name: 'Venezuela' },
+  { flag: '🇪🇨', code: '+593', name: 'Ecuador' },
+  { flag: '🇧🇴', code: '+591', name: 'Bolivia' },
+  { flag: '🇺🇾', code: '+598', name: 'Uruguay' },
+  { flag: '🇵🇾', code: '+595', name: 'Paraguay' },
+  { flag: '🇦🇺', code: '+61', name: 'Australia' },
+  { flag: '🇳🇿', code: '+64', name: 'New Zealand' },
+  { flag: '🇯🇵', code: '+81', name: 'Japan' },
+  { flag: '🇰🇷', code: '+82', name: 'South Korea' },
+  { flag: '🇨🇳', code: '+86', name: 'China' },
+  { flag: '🇮🇳', code: '+91', name: 'India' },
+  { flag: '🇮🇩', code: '+62', name: 'Indonesia' },
+  { flag: '🇹🇭', code: '+66', name: 'Thailand' },
+  { flag: '🇻🇳', code: '+84', name: 'Vietnam' },
+  { flag: '🇵🇭', code: '+63', name: 'Philippines' },
+  { flag: '🇲🇾', code: '+60', name: 'Malaysia' },
+  { flag: '🇸🇬', code: '+65', name: 'Singapore' },
+  { flag: '🇹🇼', code: '+886', name: 'Taiwan' },
+  { flag: '🇭🇰', code: '+852', name: 'Hong Kong' },
+  { flag: '🇵🇰', code: '+92', name: 'Pakistan' },
+  { flag: '🇧🇩', code: '+880', name: 'Bangladesh' },
+  { flag: '🇱🇰', code: '+94', name: 'Sri Lanka' },
+  { flag: '🇳🇵', code: '+977', name: 'Nepal' },
+  { flag: '🇲🇲', code: '+95', name: 'Myanmar' },
+  { flag: '🇰🇭', code: '+855', name: 'Cambodia' },
+  { flag: '🇱🇦', code: '+856', name: 'Laos' },
+  { flag: '🇲🇳', code: '+976', name: 'Mongolia' },
+  { flag: '🇦🇪', code: '+971', name: 'UAE' },
+  { flag: '🇸🇦', code: '+966', name: 'Saudi Arabia' },
+  { flag: '🇶🇦', code: '+974', name: 'Qatar' },
+  { flag: '🇰🇼', code: '+965', name: 'Kuwait' },
+  { flag: '🇧🇭', code: '+973', name: 'Bahrain' },
+  { flag: '🇴🇲', code: '+968', name: 'Oman' },
+  { flag: '🇯🇴', code: '+962', name: 'Jordan' },
+  { flag: '🇱🇧', code: '+961', name: 'Lebanon' },
+  { flag: '🇮🇱', code: '+972', name: 'Israel' },
+  { flag: '🇹🇷', code: '+90', name: 'Turkey' },
+  { flag: '🇮🇷', code: '+98', name: 'Iran' },
+  { flag: '🇮🇶', code: '+964', name: 'Iraq' },
+  { flag: '🇪🇬', code: '+20', name: 'Egypt' },
+  { flag: '🇲🇦', code: '+212', name: 'Morocco' },
+  { flag: '🇩🇿', code: '+213', name: 'Algeria' },
+  { flag: '🇹🇳', code: '+216', name: 'Tunisia' },
+  { flag: '🇱🇾', code: '+218', name: 'Libya' },
+  { flag: '🇳🇬', code: '+234', name: 'Nigeria' },
+  { flag: '🇬🇭', code: '+233', name: 'Ghana' },
+  { flag: '🇰🇪', code: '+254', name: 'Kenya' },
+  { flag: '🇹🇿', code: '+255', name: 'Tanzania' },
+  { flag: '🇺🇬', code: '+256', name: 'Uganda' },
+  { flag: '🇪🇹', code: '+251', name: 'Ethiopia' },
+  { flag: '🇿🇦', code: '+27', name: 'South Africa' },
+  { flag: '🇸🇳', code: '+221', name: 'Senegal' },
+  { flag: '🇨🇮', code: '+225', name: "Côte d'Ivoire" },
+  { flag: '🇨🇲', code: '+237', name: 'Cameroon' },
+  { flag: '🇨🇩', code: '+243', name: 'Congo (DRC)' },
+  { flag: '🇲🇬', code: '+261', name: 'Madagascar' },
+  { flag: '🇲🇺', code: '+230', name: 'Mauritius' },
+  { flag: '🇷🇪', code: '+262', name: 'La Réunion' },
+  { flag: '🇬🇵', code: '+590', name: 'Guadeloupe' },
+  { flag: '🇲🇶', code: '+596', name: 'Martinique' },
+  { flag: '🇬🇫', code: '+594', name: 'French Guiana' },
+  { flag: '🇵🇫', code: '+689', name: 'French Polynesia' },
+  { flag: '🇳🇨', code: '+687', name: 'New Caledonia' },
+  { flag: '🇷🇺', code: '+7', name: 'Russia' },
+  { flag: '🇺🇦', code: '+380', name: 'Ukraine' },
+  { flag: '🇬🇪', code: '+995', name: 'Georgia' },
+  { flag: '🇦🇲', code: '+374', name: 'Armenia' },
+  { flag: '🇦🇿', code: '+994', name: 'Azerbaijan' },
+  { flag: '🇰🇿', code: '+7', name: 'Kazakhstan' },
+  { flag: '🇺🇿', code: '+998', name: 'Uzbekistan' },
 ]
 
-const DURATIONS = ['3 mois', '4 mois', '5 mois', '6 mois', 'Plus de 6 mois']
+const COUNTRIES = [
+  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua and Barbuda',
+  'Argentina', 'Armenia', 'Australia', 'Austria', 'Azerbaijan', 'Bahamas', 'Bahrain',
+  'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Benin', 'Bhutan',
+  'Bolivia', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Brunei', 'Bulgaria',
+  'Burkina Faso', 'Burundi', 'Cabo Verde', 'Cambodia', 'Cameroon', 'Canada',
+  'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros',
+  'Congo (DRC)', 'Congo (Republic)', 'Costa Rica', 'Croatia', "Côte d'Ivoire",
+  'Cuba', 'Cyprus', 'Czech Republic', 'Denmark', 'Djibouti', 'Dominica',
+  'Dominican Republic', 'East Timor', 'Ecuador', 'Egypt', 'El Salvador',
+  'Equatorial Guinea', 'Eritrea', 'Estonia', 'Eswatini', 'Ethiopia', 'Fiji',
+  'Finland', 'France', 'Gabon', 'Gambia', 'Georgia', 'Germany', 'Ghana', 'Greece',
+  'Grenada', 'Guatemala', 'Guinea', 'Guinea-Bissau', 'Guyana', 'Haiti', 'Honduras',
+  'Hungary', 'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland', 'Israel',
+  'Italy', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya', 'Kiribati', 'Kosovo',
+  'Kuwait', 'Kyrgyzstan', 'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya',
+  'Liechtenstein', 'Lithuania', 'Luxembourg', 'Madagascar', 'Malawi', 'Malaysia',
+  'Maldives', 'Mali', 'Malta', 'Marshall Islands', 'Mauritania', 'Mauritius', 'Mexico',
+  'Micronesia', 'Moldova', 'Monaco', 'Mongolia', 'Montenegro', 'Morocco', 'Mozambique',
+  'Myanmar', 'Namibia', 'Nauru', 'Nepal', 'Netherlands', 'New Zealand', 'Nicaragua',
+  'Niger', 'Nigeria', 'North Korea', 'North Macedonia', 'Norway', 'Oman', 'Pakistan',
+  'Palau', 'Palestine', 'Panama', 'Papua New Guinea', 'Paraguay', 'Peru', 'Philippines',
+  'Poland', 'Portugal', 'Qatar', 'Romania', 'Russia', 'Rwanda', 'Saint Kitts and Nevis',
+  'Saint Lucia', 'Saint Vincent and the Grenadines', 'Samoa', 'San Marino',
+  'Sao Tome and Principe', 'Saudi Arabia', 'Senegal', 'Serbia', 'Seychelles',
+  'Sierra Leone', 'Singapore', 'Slovakia', 'Slovenia', 'Solomon Islands', 'Somalia',
+  'South Africa', 'South Korea', 'South Sudan', 'Spain', 'Sri Lanka', 'Sudan',
+  'Suriname', 'Sweden', 'Switzerland', 'Syria', 'Taiwan', 'Tajikistan', 'Tanzania',
+  'Thailand', 'Togo', 'Tonga', 'Trinidad and Tobago', 'Tunisia', 'Turkey',
+  'Turkmenistan', 'Tuvalu', 'UAE', 'Uganda', 'Ukraine', 'United Kingdom',
+  'United States', 'Uruguay', 'Uzbekistan', 'Vanuatu', 'Vatican City', 'Venezuela',
+  'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe',
+  // French overseas
+  'La Réunion', 'Guadeloupe', 'Martinique', 'French Guiana', 'Mayotte',
+  'French Polynesia', 'New Caledonia',
+]
 
-const LANGUAGES = ['Français', 'Anglais', 'Espagnol', 'Allemand', 'Mandarin', 'Arabe', 'Autre']
+const LANGUAGES_LIST = [
+  'Français', 'English', 'Español', 'Deutsch', 'Mandarin', 'Arabic',
+  'Italian', 'Portuguese', 'Japanese', 'Korean', 'Dutch', 'Russian', 'Hindi', 'Autre/Other',
+]
 
-const TOUCHPOINTS = ['Instagram', 'TikTok', 'Facebook', 'Google', 'Bouche à oreille', 'École', 'Ambassadeur Bali Interns']
+const DURATIONS = [
+  { value: '3', label: '3 mois / 3 months' },
+  { value: '4', label: '4 mois / 4 months' },
+  { value: '5', label: '5 mois / 5 months' },
+  { value: '6', label: '6 mois / 6 months' },
+  { value: '7', label: '+6 mois / +6 months' },
+]
+
+const TOUCHPOINTS = [
+  'Instagram', 'TikTok', 'Facebook', 'Google',
+  'Bouche à oreille / Word of mouth',
+  'École / School',
+  'Ambassadeur Bali Interns / Bali Interns Ambassador',
+]
 
 const STEP_TITLES = [
-  'Commençons par faire connaissance 👋',
-  'Parle-nous de toi 🌍',
-  'Montre-nous ce que tu sais faire ✨',
-  'Dis-nous ce que tu cherches 🎯',
-  'Décris ton stage idéal à Bali 🌴',
-  'On est transparents ✅',
-  'Dernière étape ! Choisis un créneau 📅',
+  'Qui es-tu ? / Who are you?',
+  'Ton profil / Your profile',
+  'Ton stage / Your internship',
+  'Prix & engagement / Pricing & Commitment',
+  'Comment tu nous as trouvé ? / How did you find us?',
+  'Prends un RDV / Book your call',
 ]
 
-const STEP_SUBTITLES = [
-  'Dis-nous qui tu es pour qu\'on puisse personnaliser ton expérience.',
-  '', '', '', '', '', 'Un entretien de qualification de 20 minutes avec notre équipe.',
-]
+// ─────────────────────────────────────────────────────────────
+// TYPES
+// ─────────────────────────────────────────────────────────────
+
+interface JobType {
+  id: string
+  name: string
+  name_fr: string | null
+  name_en: string | null
+  category_fr: string | null
+  category_en: string | null
+}
+
+interface School {
+  id: string
+  name: string
+  city: string | null
+  country: string | null
+}
 
 interface CalendarSlot {
   start: string
   label: string
+  dayLabel?: string
 }
+
+// ─────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────
 
 function generateStaticSlots(): CalendarSlot[] {
   const slots: CalendarSlot[] = []
@@ -64,9 +229,13 @@ function generateStaticSlots(): CalendarSlot[] {
       for (const hour of [9, 10, 11, 14, 15, 16]) {
         const slotDate = new Date(date)
         slotDate.setHours(hour, 0, 0, 0)
+        const frLabel = slotDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+        const enLabel = slotDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+        const pad = (n: number) => String(n).padStart(2, '0')
         slots.push({
           start: slotDate.toISOString(),
-          label: slotDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' }) + ' à ' + hour + 'h',
+          label: `${frLabel} · ${pad(hour)}h00`,
+          dayLabel: `${frLabel} / ${enLabel}`,
         })
       }
       daysAdded++
@@ -76,78 +245,180 @@ function generateStaticSlots(): CalendarSlot[] {
   return slots
 }
 
-function getWorkingDays(count: number): Date[] {
-  const days: Date[] = []
-  const d = new Date()
-  d.setDate(d.getDate() + 1)
-  while (days.length < count) {
-    if (d.getDay() !== 0 && d.getDay() !== 6) days.push(new Date(d))
-    d.setDate(d.getDate() + 1)
-  }
-  return days
-}
-
-const SLOTS = ['9h00', '10h00', '11h00', '14h00', '15h00', '16h00']
-
-function addMonths(date: string, months: number): string {
-  const d = new Date(date)
+function addMonths(dateStr: string, months: number): string {
+  const d = new Date(dateStr)
   d.setMonth(d.getMonth() + months)
   return d.toISOString().slice(0, 10)
 }
 
-function parseDurationMonths(dur: string): number {
-  const m = dur.match(/^(\d+)/)
-  return m ? parseInt(m[1]) : 6
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
+
+// ─────────────────────────────────────────────────────────────
+// REUSABLE SUB-COMPONENTS
+// ─────────────────────────────────────────────────────────────
+
+const inputClass = 'w-full px-4 py-3 bg-[#2a2318] border border-[#3d3428] rounded-xl text-[#f5f0e6] placeholder-[#6b5d4d] focus:outline-none focus:ring-2 focus:ring-[#c8a96e] text-sm'
+const labelClass = 'block text-sm font-medium text-[#c8a96e] mb-1.5'
+const helperClass = 'text-xs text-[#6b5d4d] mt-1'
+const chipSelectedClass = 'bg-[#c8a96e] text-[#1a1410]'
+const chipUnselectedClass = 'bg-[#2a2318] text-[#8a7d6d] border border-[#3d3428] hover:border-[#c8a96e]'
+
+function Chip({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${selected ? chipSelectedClass : chipUnselectedClass}`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function FileUpload({
+  label,
+  helper,
+  fileName,
+  onFileSelect,
+  inputRef,
+  accept = '.pdf,.doc,.docx',
+}: {
+  label: string
+  helper?: string
+  fileName: string
+  onFileSelect: (file: File) => void
+  inputRef: React.RefObject<HTMLInputElement | null>
+  accept?: string
+}) {
+  return (
+    <div>
+      <label className={labelClass}>{label}</label>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={e => {
+          const f = e.target.files?.[0]
+          if (f) onFileSelect(f)
+        }}
+      />
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className={`w-full py-8 border-2 border-dashed rounded-xl text-center transition-all ${
+          fileName
+            ? 'border-[#c8a96e] bg-[#c8a96e]/10'
+            : 'border-[#3d3428] hover:border-[#c8a96e] bg-[#2a2318]'
+        }`}
+      >
+        {fileName ? (
+          <span className="text-sm text-[#c8a96e] font-medium">{fileName}</span>
+        ) : (
+          <span className="text-sm text-[#6b5d4d]">
+            Glisse ton fichier ici ou clique / Drag & drop or click to select
+          </span>
+        )}
+      </button>
+      {helper && <p className={helperClass}>{helper}</p>}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// MAIN COMPONENT
+// ─────────────────────────────────────────────────────────────
 
 export default function ApplyPage() {
   const [step, setStep] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [price, setPrice] = useState(990)
-  const fileRef = useRef<HTMLInputElement>(null)
 
+  const cvEnRef = useRef<HTMLInputElement>(null)
+  const cvLocalRef = useRef<HTMLInputElement>(null)
+  const docsRef = useRef<HTMLInputElement>(null)
+
+  // ── Form state ──
   const [form, setForm] = useState({
+    // Step 1
     first_name: '',
     last_name: '',
     email: '',
     whatsapp_code: '+33',
     whatsapp_number: '',
-    nationality: '',
-    gender: '',
+    nationalities: [] as string[],
     birth_date: '',
     passport_expiry: '',
+    school_country: '',
+    // Step 2
     linkedin_url: '',
-    cv_file: null as File | null,
-    cv_filename: '',
+    cv_en_file: null as File | null,
+    cv_en_filename: '',
+    cv_local_file: null as File | null,
+    cv_local_filename: '',
+    extra_docs_files: [] as File[],
+    extra_docs_names: [] as string[],
     spoken_languages: [] as string[],
+    // Step 3
+    school_search: '',
+    school_id: null as string | null,
+    school_name: '',
+    school_not_found: false,
+    school_custom_name: '',
     desired_jobs: [] as string[],
+    custom_jobs: [] as string[],
+    custom_job_input: '',
     duration: '',
     start_date: '',
     stage_ideal: '',
+    // Step 4
     commitment_price: false,
     commitment_budget: false,
     commitment_terms: false,
+    // Step 5
     touchpoint: '',
     referred_by_code: '',
-    rdv_date: '',
+    // Step 6
     rdv_slot: '',
   })
 
+  // ── Fetched data ──
+  const [jobTypes, setJobTypes] = useState<JobType[]>([])
+  const [schoolResults, setSchoolResults] = useState<School[]>([])
   const [calendarSlots, setCalendarSlots] = useState<CalendarSlot[]>([])
-  const [selectedCalendarSlot, setSelectedCalendarSlot] = useState<string>('')
+  const [nationalitySearch, setNationalitySearch] = useState('')
+  const [schoolCountrySearch, setSchoolCountrySearch] = useState('')
+  const [showSchoolCountryDropdown, setShowSchoolCountryDropdown] = useState(false)
+  const [showNationalityDropdown, setShowNationalityDropdown] = useState(false)
 
+  // ── Fetch on mount ──
   useEffect(() => {
-    fetch('/api/settings/form_price')
+    fetch('/api/public/form-price')
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.value) setPrice(Number(d.value)) })
+      .then((d: { price?: number } | null) => { if (d?.price) setPrice(Number(d.price)) })
+      .catch(() => {})
+
+    fetch('/api/public/job-types')
+      .then(r => r.ok ? r.json() : [])
+      .then((data: JobType[]) => { if (Array.isArray(data)) setJobTypes(data) })
       .catch(() => {})
 
     fetch('/api/calendar/slots')
-      .then(r => r.ok ? r.json() as Promise<CalendarSlot[]> : [])
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setCalendarSlots(data)
+      .then(r => r.ok ? r.json() : null)
+      .then((data: { slots?: { date: string; dayLabel: string; slots: { start: string; label: string }[] }[] } | CalendarSlot[] | null) => {
+        if (data && 'slots' in data && Array.isArray(data.slots) && data.slots.length > 0) {
+          const flat: CalendarSlot[] = []
+          for (const day of data.slots) {
+            for (const s of day.slots) {
+              flat.push({ start: s.start, label: s.label, dayLabel: day.dayLabel })
+            }
+          }
+          setCalendarSlots(flat)
+        } else if (Array.isArray(data) && data.length > 0) {
+          setCalendarSlots(data as CalendarSlot[])
         } else {
           setCalendarSlots(generateStaticSlots())
         }
@@ -155,23 +426,38 @@ export default function ApplyPage() {
       .catch(() => setCalendarSlots(generateStaticSlots()))
   }, [])
 
+  // ── School search ──
+  const searchSchoolsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const searchSchools = useCallback((q: string) => {
+    if (searchSchoolsTimeout.current) clearTimeout(searchSchoolsTimeout.current)
+    if (q.length < 2) { setSchoolResults([]); return }
+    searchSchoolsTimeout.current = setTimeout(() => {
+      fetch(`/api/public/schools?q=${encodeURIComponent(q)}`)
+        .then(r => r.ok ? r.json() : [])
+        .then((data: School[]) => setSchoolResults(Array.isArray(data) ? data : []))
+        .catch(() => setSchoolResults([]))
+    }, 300)
+  }, [])
+
+  // ── Setters ──
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm(f => ({ ...f, [key]: value }))
   }
 
-  function toggleArray(key: 'spoken_languages' | 'desired_jobs', value: string, max?: number) {
+  function toggleArrayField(key: 'spoken_languages' | 'desired_jobs' | 'nationalities', value: string, max?: number) {
     setForm(f => {
       const arr = f[key]
-      if (arr.includes(value)) return { ...f, [key]: arr.filter(v => v !== value) }
+      if (arr.includes(value)) return { ...f, [key]: arr.filter((v: string) => v !== value) }
       if (max && arr.length >= max) return f
       return { ...f, [key]: [...arr, value] }
     })
   }
 
-  const minStartDate = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10)
+  // ── Computed ──
+  const isAnglophone = ANGLOPHONE_COUNTRIES.includes(form.school_country)
 
   const computedEndDate = form.start_date && form.duration
-    ? addMonths(form.start_date, parseDurationMonths(form.duration))
+    ? addMonths(form.start_date, parseInt(form.duration))
     : ''
 
   const passportWarning = (() => {
@@ -181,58 +467,107 @@ export default function ApplyPage() {
     return new Date(form.passport_expiry) < startPlus6
   })()
 
+  // ── Validation ──
   function canNext(): boolean {
     switch (step) {
-      case 0: return !!(form.first_name && form.last_name && form.email && form.whatsapp_number)
-      case 1: return !!(form.nationality && form.gender && form.birth_date && form.passport_expiry)
-      case 2: return !!(form.cv_file && form.spoken_languages.length > 0)
-      case 3: return !!(form.desired_jobs.length > 0 && form.duration && form.start_date)
-      case 4: return form.stage_ideal.length >= 50
-      case 5: return !!(form.commitment_price && form.commitment_budget && form.commitment_terms && form.touchpoint)
-      case 6: return !!(selectedCalendarSlot || (form.rdv_date && form.rdv_slot))
-      default: return false
+      case 0:
+        return !!(
+          form.first_name.trim() && form.last_name.trim() &&
+          form.email.trim() && isValidEmail(form.email) &&
+          form.whatsapp_number.trim() &&
+          form.nationalities.length > 0 &&
+          form.birth_date && form.passport_expiry &&
+          form.school_country
+        )
+      case 1:
+        return !!(form.cv_en_file && form.spoken_languages.length > 0)
+      case 2:
+        return !!(
+          (form.school_id || form.school_custom_name.trim()) &&
+          form.duration &&
+          form.start_date &&
+          (form.desired_jobs.length > 0 || form.custom_jobs.length > 0) &&
+          form.stage_ideal.length >= 50
+        )
+      case 3:
+        return !!(form.commitment_price && form.commitment_budget && form.commitment_terms)
+      case 4:
+        return !!form.touchpoint
+      case 5:
+        return !!form.rdv_slot
+      default:
+        return false
     }
   }
 
+  // ── Submit ──
   async function handleSubmit() {
     if (!canNext()) return
     setSubmitting(true)
     setError('')
     try {
-      // Upload CV
+      // Upload CV EN
       let cv_url = ''
-      if (form.cv_file) {
+      if (form.cv_en_file) {
         const fd = new FormData()
-        fd.append('file', form.cv_file)
+        fd.append('file', form.cv_en_file)
         fd.append('bucket', 'intern-cvs')
-        const upRes = await fetch('/api/upload', { method: 'POST', body: fd })
-        if (!upRes.ok) throw new Error('Erreur upload CV')
-        const upData = await upRes.json() as { url: string }
-        cv_url = upData.url
+        const r = await fetch('/api/upload', { method: 'POST', body: fd })
+        if (!r.ok) throw new Error('Erreur upload CV / CV upload error')
+        const d = await r.json() as { url: string }
+        cv_url = d.url
+      }
+
+      // Upload CV local
+      let local_cv_url = ''
+      if (form.cv_local_file) {
+        const fd = new FormData()
+        fd.append('file', form.cv_local_file)
+        fd.append('bucket', 'intern-cvs')
+        const r = await fetch('/api/upload', { method: 'POST', body: fd })
+        if (!r.ok) throw new Error('Erreur upload CV local')
+        const d = await r.json() as { url: string }
+        local_cv_url = d.url
+      }
+
+      // If school not found → create pending
+      if (form.school_not_found && form.school_custom_name.trim()) {
+        await fetch('/api/schools-pending', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: form.school_custom_name,
+            submitted_by_email: form.email,
+          }),
+        })
       }
 
       const body = {
-        first_name: form.first_name,
-        last_name: form.last_name,
-        email: form.email,
-        whatsapp: `${form.whatsapp_code}${form.whatsapp_number}`,
-        nationality: form.nationality,
-        gender: form.gender,
+        first_name: form.first_name.trim(),
+        last_name: form.last_name.trim(),
+        email: form.email.trim().toLowerCase(),
+        whatsapp: `${form.whatsapp_code}${form.whatsapp_number.replace(/\s/g, '')}`,
+        school_country: form.school_country,
+        nationalities: form.nationalities,
         birth_date: form.birth_date,
         passport_expiry: form.passport_expiry,
         linkedin_url: form.linkedin_url || null,
         cv_url,
+        local_cv_url: local_cv_url || null,
         spoken_languages: form.spoken_languages,
         desired_jobs: form.desired_jobs,
+        custom_jobs: form.custom_jobs,
         duration: form.duration,
         start_date: form.start_date,
         stage_ideal: form.stage_ideal,
+        school_name: form.school_name || form.school_custom_name,
+        school_id: form.school_id,
+        commitment_price_accepted: true,
+        commitment_budget_accepted: true,
+        commitment_terms_accepted: true,
         touchpoint: form.touchpoint,
         referred_by_code: form.referred_by_code || null,
-        commitment_price_accepted: form.commitment_price,
-        commitment_budget_accepted: form.commitment_budget,
-        commitment_terms_accepted: form.commitment_terms,
-        rdv_slot: selectedCalendarSlot || `${form.rdv_date}T${form.rdv_slot.replace('h', ':')}:00`,
+        rdv_slot: form.rdv_slot,
       }
 
       const res = await fetch('/api/applications', {
@@ -241,342 +576,750 @@ export default function ApplyPage() {
         body: JSON.stringify(body),
       })
 
+      if (res.status === 409) {
+        setError('Cet email est déjà associé à un dossier. / This email is already linked to an application.')
+        return
+      }
       if (!res.ok) {
         const d = await res.json().catch(() => ({})) as { error?: string }
-        throw new Error(d.error ?? 'Erreur lors de la soumission')
+        throw new Error(d.error ?? 'Erreur lors de la soumission / Submission error')
       }
 
-      window.location.href = `/apply/confirmation?name=${encodeURIComponent(form.first_name)}&date=${encodeURIComponent(form.rdv_date)}&time=${encodeURIComponent(form.rdv_slot)}`
+      window.location.href = `/apply/confirmation?name=${encodeURIComponent(form.first_name)}`
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erreur inconnue')
+      setError(e instanceof Error ? e.message : 'Erreur inconnue / Unknown error')
     } finally {
       setSubmitting(false)
     }
   }
 
-  const workingDays = getWorkingDays(10)
+  // ── Group calendar slots by day ──
+  const slotsByDay: { dayLabel: string; slots: CalendarSlot[] }[] = []
+  for (const slot of calendarSlots) {
+    const dayKey = slot.dayLabel || slot.start.slice(0, 10)
+    const existing = slotsByDay.find(d => d.dayLabel === dayKey)
+    if (existing) {
+      existing.slots.push(slot)
+    } else {
+      slotsByDay.push({ dayLabel: dayKey, slots: [slot] })
+    }
+  }
 
-  const inputClass = 'w-full px-4 py-3 bg-[#2a2318] border border-[#3d3428] rounded-xl text-[#f5f0e6] placeholder-[#6b5d4d] focus:outline-none focus:ring-2 focus:ring-[#c8a96e] text-sm'
-  const labelClass = 'block text-sm font-medium text-[#c8a96e] mb-1.5'
+  // Filtered countries for nationality/school_country search
+  const filteredNationalities = nationalitySearch.length > 0
+    ? COUNTRIES.filter(c => c.toLowerCase().includes(nationalitySearch.toLowerCase()))
+    : COUNTRIES
+
+  const filteredSchoolCountries = schoolCountrySearch.length > 0
+    ? COUNTRIES.filter(c => c.toLowerCase().includes(schoolCountrySearch.toLowerCase()))
+    : COUNTRIES
 
   return (
     <div className="min-h-screen bg-[#1a1410] text-[#f5f0e6]">
-      {/* Progress bar */}
+      {/* ── Progress bar ── */}
       <div className="sticky top-0 z-50 bg-[#1a1410]/95 backdrop-blur border-b border-[#2a2318]">
         <div className="max-w-xl mx-auto px-4 py-3">
           <div className="flex items-center gap-1.5">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <div key={i} className="flex-1 flex items-center gap-1.5">
-                <div className={`h-1.5 flex-1 rounded-full transition-all ${i <= step ? 'bg-[#c8a96e]' : 'bg-[#2a2318]'}`} />
-              </div>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className={`h-1.5 flex-1 rounded-full transition-all ${i <= step ? 'bg-[#c8a96e]' : 'bg-[#2a2318]'}`} />
             ))}
           </div>
-          <p className="text-xs text-[#6b5d4d] mt-1.5 text-center">Étape {step + 1} / 7</p>
+          <p className="text-xs text-[#6b5d4d] mt-1.5 text-center">
+            {step + 1} / 6
+          </p>
         </div>
       </div>
 
       <div className="max-w-xl mx-auto px-4 py-8">
-        {/* Title */}
-        <h1 className="text-2xl font-bold text-[#f5f0e6] mb-1">{STEP_TITLES[step]}</h1>
-        {STEP_SUBTITLES[step] && <p className="text-sm text-[#8a7d6d] mb-6">{STEP_SUBTITLES[step]}</p>}
-        {!STEP_SUBTITLES[step] && <div className="mb-6" />}
+        <h1 className="text-2xl font-bold text-[#f5f0e6] mb-6">{STEP_TITLES[step]}</h1>
 
-        {/* ── STEP 1 ── */}
+        {/* ════════════════════════════════════════════════════════
+            ÉTAPE 1 — Qui es-tu ?
+            ════════════════════════════════════════════════════════ */}
         {step === 0 && (
           <div className="space-y-4">
+            {/* Prénom + Nom */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className={labelClass}>Prénom *</label>
-                <input type="text" value={form.first_name} onChange={e => set('first_name', e.target.value)} className={inputClass} placeholder="Prénom" />
+                <label className={labelClass}>Prénom* / First name*</label>
+                <input type="text" value={form.first_name} onChange={e => set('first_name', e.target.value)} className={inputClass} placeholder="Prénom / First name" />
               </div>
               <div>
-                <label className={labelClass}>Nom *</label>
-                <input type="text" value={form.last_name} onChange={e => set('last_name', e.target.value)} className={inputClass} placeholder="Nom" />
+                <label className={labelClass}>Nom* / Last name*</label>
+                <input type="text" value={form.last_name} onChange={e => set('last_name', e.target.value)} className={inputClass} placeholder="Nom / Last name" />
               </div>
             </div>
+
+            {/* Email */}
             <div>
-              <label className={labelClass}>Email *</label>
-              <input type="email" value={form.email} onChange={e => set('email', e.target.value)} className={inputClass} placeholder="ton@email.com" />
+              <label className={labelClass}>Email*</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={e => set('email', e.target.value)}
+                className={`${inputClass} ${form.email && !isValidEmail(form.email) ? 'ring-2 ring-red-500' : ''}`}
+                placeholder="your@email.com"
+              />
             </div>
+
+            {/* WhatsApp */}
             <div>
-              <label className={labelClass}>WhatsApp *</label>
+              <label className={labelClass}>WhatsApp*</label>
               <div className="flex gap-2">
-                <select value={form.whatsapp_code} onChange={e => set('whatsapp_code', e.target.value)} className={`${inputClass} w-32 flex-shrink-0`}>
-                  {COUNTRY_CODES.map(c => (
-                    <option key={`${c.label}-${c.code}`} value={c.code}>{c.flag} {c.code}</option>
+                <select
+                  value={form.whatsapp_code}
+                  onChange={e => set('whatsapp_code', e.target.value)}
+                  className={`${inputClass} w-36 flex-shrink-0`}
+                >
+                  {COUNTRY_PHONE_CODES.map((c, i) => (
+                    <option key={`${c.name}-${i}`} value={c.code}>
+                      {c.flag} {c.code} {c.name}
+                    </option>
                   ))}
                 </select>
-                <input type="tel" value={form.whatsapp_number} onChange={e => set('whatsapp_number', e.target.value)} className={inputClass} placeholder="6 12 34 56 78" />
+                <input
+                  type="tel"
+                  value={form.whatsapp_number}
+                  onChange={e => set('whatsapp_number', e.target.value)}
+                  className={inputClass}
+                  placeholder="6 12 34 56 78"
+                />
               </div>
+              <p className={helperClass}>
+                Tout le monde à Bali l&apos;utilise, mets un numéro joignable !
+                <br />
+                Everyone uses it in Bali, make sure the number is correct.
+              </p>
             </div>
-          </div>
-        )}
 
-        {/* ── STEP 2 ── */}
-        {step === 1 && (
-          <div className="space-y-4">
-            <div>
-              <label className={labelClass}>Nationalité *</label>
-              <select value={form.nationality} onChange={e => set('nationality', e.target.value)} className={inputClass}>
-                <option value="">— Choisir —</option>
-                {NATIONALITIES.map(n => <option key={n} value={n}>{n}</option>)}
-              </select>
+            {/* Nationalité(s) — multi-select with search */}
+            <div className="relative">
+              <label className={labelClass}>Nationalité(s)* / Nationality(ies)*</label>
+              {form.nationalities.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {form.nationalities.map(n => (
+                    <span key={n} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#c8a96e] text-[#1a1410]">
+                      {n}
+                      <button type="button" onClick={() => toggleArrayField('nationalities', n)} className="hover:text-red-800">&times;</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <input
+                type="text"
+                value={nationalitySearch}
+                onChange={e => { setNationalitySearch(e.target.value); setShowNationalityDropdown(true) }}
+                onFocus={() => setShowNationalityDropdown(true)}
+                className={inputClass}
+                placeholder="Rechercher un pays / Search country..."
+              />
+              {showNationalityDropdown && filteredNationalities.length > 0 && (
+                <div className="absolute z-40 w-full mt-1 max-h-48 overflow-y-auto bg-[#2a2318] border border-[#3d3428] rounded-xl shadow-lg">
+                  {filteredNationalities.slice(0, 20).map(c => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => {
+                        toggleArrayField('nationalities', c)
+                        setNationalitySearch('')
+                        setShowNationalityDropdown(false)
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-[#3d3428] ${form.nationalities.includes(c) ? 'text-[#c8a96e]' : 'text-[#f5f0e6]'}`}
+                    >
+                      {c} {form.nationalities.includes(c) ? '✓' : ''}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {/* Close dropdown on outside click */}
+              {showNationalityDropdown && (
+                <div className="fixed inset-0 z-30" onClick={() => setShowNationalityDropdown(false)} />
+              )}
             </div>
+
+            {/* Date de naissance */}
             <div>
-              <label className={labelClass}>Genre *</label>
-              <div className="flex gap-3">
-                {['Femme', 'Homme', 'Autre'].map(g => (
-                  <button key={g} type="button" onClick={() => set('gender', g)}
-                    className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all ${form.gender === g ? 'bg-[#c8a96e] text-[#1a1410]' : 'bg-[#2a2318] text-[#8a7d6d] border border-[#3d3428] hover:border-[#c8a96e]'}`}>
-                    {g}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className={labelClass}>Date de naissance *</label>
+              <label className={labelClass}>Date de naissance* / Date of birth*</label>
               <input type="date" value={form.birth_date} onChange={e => set('birth_date', e.target.value)} className={inputClass} />
             </div>
+
+            {/* Passeport expiry */}
             <div>
-              <label className={labelClass}>Date d&apos;expiration passeport *</label>
+              <label className={labelClass}>Date d&apos;expiration du passeport* / Passport expiry date*</label>
               <input type="date" value={form.passport_expiry} onChange={e => set('passport_expiry', e.target.value)} className={inputClass} />
               {passportWarning && (
-                <p className="mt-2 text-sm text-red-400 bg-red-900/20 border border-red-800/30 rounded-lg px-3 py-2">
-                  ⚠️ Ton passeport doit être valide au moins 6 mois après ton arrivée à Bali
+                <p className="mt-2 text-sm text-amber-400 bg-amber-900/20 border border-amber-800/30 rounded-lg px-3 py-2">
+                  Ton passeport doit être valide au moins 6 mois après ton arrivée à Bali
+                  <br />
+                  Your passport must be valid at least 6 months after your arrival in Bali
                 </p>
+              )}
+            </div>
+
+            {/* Pays d'études */}
+            <div className="relative">
+              <label className={labelClass}>Pays où les études sont réalisées* / Country of study*</label>
+              <input
+                type="text"
+                value={form.school_country || schoolCountrySearch}
+                onChange={e => {
+                  setSchoolCountrySearch(e.target.value)
+                  set('school_country', '')
+                  setShowSchoolCountryDropdown(true)
+                }}
+                onFocus={() => setShowSchoolCountryDropdown(true)}
+                className={inputClass}
+                placeholder="Rechercher un pays / Search country..."
+              />
+              <p className={helperClass}>
+                Pays dans lequel votre convention de stage sera établie (droit commun)
+                <br />
+                Country where your internship agreement will be issued (by law)
+              </p>
+              {showSchoolCountryDropdown && filteredSchoolCountries.length > 0 && (
+                <div className="absolute z-40 w-full mt-1 max-h-48 overflow-y-auto bg-[#2a2318] border border-[#3d3428] rounded-xl shadow-lg">
+                  {filteredSchoolCountries.slice(0, 20).map(c => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => {
+                        set('school_country', c)
+                        setSchoolCountrySearch('')
+                        setShowSchoolCountryDropdown(false)
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-[#f5f0e6] hover:bg-[#3d3428]"
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {showSchoolCountryDropdown && (
+                <div className="fixed inset-0 z-30" onClick={() => setShowSchoolCountryDropdown(false)} />
               )}
             </div>
           </div>
         )}
 
-        {/* ── STEP 3 ── */}
-        {step === 2 && (
+        {/* ════════════════════════════════════════════════════════
+            ÉTAPE 2 — Ton profil
+            ════════════════════════════════════════════════════════ */}
+        {step === 1 && (
           <div className="space-y-4">
+            {/* LinkedIn */}
             <div>
               <label className={labelClass}>LinkedIn URL</label>
               <input type="url" value={form.linkedin_url} onChange={e => set('linkedin_url', e.target.value)} className={inputClass} placeholder="https://linkedin.com/in/..." />
             </div>
-            <div>
-              <label className={labelClass}>CV * (PDF/DOC, max 5MB)</label>
-              <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={e => {
-                const f = e.target.files?.[0]
-                if (f) {
+
+            {/* CV anglais */}
+            <FileUpload
+              label="CV en anglais* / English CV* (PDF/DOC, max 5MB)"
+              helper="Even if matched with a French company, English is essential daily. / Même avec une entreprise francophone, l'anglais est indispensable au quotidien."
+              fileName={form.cv_en_filename}
+              onFileSelect={f => {
+                if (f.size > 5 * 1024 * 1024) { setError('Fichier trop volumineux (max 5MB) / File too large'); return }
+                set('cv_en_file', f)
+                set('cv_en_filename', f.name)
+                setError('')
+              }}
+              inputRef={cvEnRef}
+            />
+
+            {/* CV local (conditionnel) */}
+            {!isAnglophone && form.school_country && (
+              <FileUpload
+                label={`CV dans ta langue / Local language CV (PDF/DOC, max 5MB)`}
+                helper="Optionnel mais recommandé pour les entreprises locales / Optional but recommended for local companies"
+                fileName={form.cv_local_filename}
+                onFileSelect={f => {
                   if (f.size > 5 * 1024 * 1024) { setError('Fichier trop volumineux (max 5MB)'); return }
-                  set('cv_file', f)
-                  set('cv_filename', f.name)
+                  set('cv_local_file', f)
+                  set('cv_local_filename', f.name)
                   setError('')
-                }
-              }} />
-              <button type="button" onClick={() => fileRef.current?.click()}
-                className={`w-full py-8 border-2 border-dashed rounded-xl text-center transition-all ${form.cv_filename ? 'border-[#c8a96e] bg-[#c8a96e]/10' : 'border-[#3d3428] hover:border-[#c8a96e] bg-[#2a2318]'}`}>
-                {form.cv_filename ? (
-                  <span className="text-sm text-[#c8a96e] font-medium">📄 {form.cv_filename}</span>
-                ) : (
-                  <span className="text-sm text-[#6b5d4d]">Glisse ton CV ici ou clique pour sélectionner</span>
-                )}
-              </button>
-            </div>
+                }}
+                inputRef={cvLocalRef}
+              />
+            )}
+
+            {/* Documents supplémentaires */}
             <div>
-              <label className={labelClass}>Langues parlées *</label>
+              <label className={labelClass}>Documents supplémentaires / Additional documents</label>
+              <input
+                ref={docsRef}
+                type="file"
+                accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                multiple
+                className="hidden"
+                onChange={e => {
+                  const files = e.target.files
+                  if (files) {
+                    const arr = Array.from(files)
+                    set('extra_docs_files', [...form.extra_docs_files, ...arr])
+                    set('extra_docs_names', [...form.extra_docs_names, ...arr.map(f => f.name)])
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => docsRef.current?.click()}
+                className="w-full py-6 border-2 border-dashed border-[#3d3428] hover:border-[#c8a96e] bg-[#2a2318] rounded-xl text-center transition-all"
+              >
+                <span className="text-sm text-[#6b5d4d]">
+                  Portfolio, projets, réalisations / Portfolio, projects, achievements
+                </span>
+              </button>
+              {form.extra_docs_names.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {form.extra_docs_names.map((name, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs bg-[#2a2318] text-[#c8a96e] border border-[#3d3428]">
+                      {name}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          set('extra_docs_files', form.extra_docs_files.filter((_, idx) => idx !== i))
+                          set('extra_docs_names', form.extra_docs_names.filter((_, idx) => idx !== i))
+                        }}
+                        className="hover:text-red-400"
+                      >
+                        &times;
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Langues */}
+            <div>
+              <label className={labelClass}>Langues professionnelles* / Professional languages*</label>
               <div className="flex flex-wrap gap-2">
-                {LANGUAGES.map(l => (
-                  <button key={l} type="button" onClick={() => toggleArray('spoken_languages', l)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${form.spoken_languages.includes(l) ? 'bg-[#c8a96e] text-[#1a1410]' : 'bg-[#2a2318] text-[#8a7d6d] border border-[#3d3428] hover:border-[#c8a96e]'}`}>
+                {LANGUAGES_LIST.map(l => (
+                  <Chip key={l} selected={form.spoken_languages.includes(l)} onClick={() => toggleArrayField('spoken_languages', l)}>
                     {l}
-                  </button>
+                  </Chip>
                 ))}
               </div>
             </div>
           </div>
         )}
 
-        {/* ── STEP 4 ── */}
-        {step === 3 && (
+        {/* ════════════════════════════════════════════════════════
+            ÉTAPE 3 — Ton stage
+            ════════════════════════════════════════════════════════ */}
+        {step === 2 && (
           <div className="space-y-4">
+            {/* École / Université — autocomplete */}
+            <div className="relative">
+              <label className={labelClass}>École / université / School / university</label>
+              {!form.school_not_found ? (
+                <>
+                  <input
+                    type="text"
+                    value={form.school_name || form.school_search}
+                    onChange={e => {
+                      const v = e.target.value
+                      set('school_search', v)
+                      set('school_name', '')
+                      set('school_id', null)
+                      searchSchools(v)
+                    }}
+                    className={inputClass}
+                    placeholder="Rechercher ton école / Search your school..."
+                  />
+                  {schoolResults.length > 0 && form.school_search.length >= 2 && !form.school_name && (
+                    <div className="absolute z-40 w-full mt-1 max-h-48 overflow-y-auto bg-[#2a2318] border border-[#3d3428] rounded-xl shadow-lg">
+                      {schoolResults.map(s => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => {
+                            set('school_id', s.id)
+                            set('school_name', s.name)
+                            set('school_search', '')
+                            setSchoolResults([])
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-[#f5f0e6] hover:bg-[#3d3428]"
+                        >
+                          <span className="font-medium">{s.name}</span>
+                          {s.city && <span className="text-[#6b5d4d]"> — {s.city}{s.country ? `, ${s.country}` : ''}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => set('school_not_found', true)}
+                    className="mt-2 text-xs text-[#c8a96e] underline hover:text-[#b8945a]"
+                  >
+                    Mon école n&apos;est pas dans la liste / My school is not in the list
+                  </button>
+                </>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    value={form.school_custom_name}
+                    onChange={e => set('school_custom_name', e.target.value)}
+                    className={inputClass}
+                    placeholder="Nom de ton école / Your school name"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      set('school_not_found', false)
+                      set('school_custom_name', '')
+                    }}
+                    className="mt-2 text-xs text-[#c8a96e] underline hover:text-[#b8945a]"
+                  >
+                    Retour à la recherche / Back to search
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Durée */}
             <div>
-              <label className={labelClass}>Type de poste souhaité * (max 2)</label>
-              <div className="flex flex-wrap gap-2">
-                {JOB_TYPES.map(j => (
-                  <button key={j} type="button" onClick={() => toggleArray('desired_jobs', j, 2)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${form.desired_jobs.includes(j) ? 'bg-[#c8a96e] text-[#1a1410]' : 'bg-[#2a2318] text-[#8a7d6d] border border-[#3d3428] hover:border-[#c8a96e]'}`}>
-                    {j}
+              <label className={labelClass}>Durée souhaitée* / Desired duration*</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {DURATIONS.map(d => (
+                  <button
+                    key={d.value}
+                    type="button"
+                    onClick={() => set('duration', d.value)}
+                    className={`py-3 rounded-xl text-sm font-medium transition-all ${
+                      form.duration === d.value
+                        ? 'bg-[#c8a96e] text-[#1a1410]'
+                        : 'bg-[#2a2318] text-[#8a7d6d] border border-[#3d3428] hover:border-[#c8a96e]'
+                    }`}
+                  >
+                    {d.label}
                   </button>
                 ))}
               </div>
             </div>
+
+            {/* Date de début */}
             <div>
-              <label className={labelClass}>Durée souhaitée *</label>
-              <select value={form.duration} onChange={e => set('duration', e.target.value)} className={inputClass}>
-                <option value="">— Choisir —</option>
-                {DURATIONS.map(d => <option key={d} value={d}>{d}</option>)}
-              </select>
+              <label className={labelClass}>Date de démarrage souhaitée* / Desired start date*</label>
+              <input type="date" value={form.start_date} onChange={e => set('start_date', e.target.value)} className={inputClass} />
+              <p className={helperClass}>À 2-4 semaines près, c&apos;est ok / Give or take 2-4 weeks, that&apos;s fine</p>
             </div>
-            <div>
-              <label className={labelClass}>Date de début souhaitée *</label>
-              <input type="date" min={minStartDate} value={form.start_date} onChange={e => set('start_date', e.target.value)} className={inputClass} />
-            </div>
+
+            {/* Date de fin calculée */}
             {computedEndDate && (
               <div>
-                <label className={labelClass}>Date de fin estimée</label>
+                <label className={labelClass}>Date de fin estimée / Estimated end date</label>
                 <p className="text-sm text-[#6b5d4d] bg-[#2a2318] rounded-xl px-4 py-3">
                   {new Date(computedEndDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  {' / '}
+                  {new Date(computedEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                 </p>
               </div>
             )}
-          </div>
-        )}
 
-        {/* ── STEP 5 ── */}
-        {step === 4 && (
-          <div className="space-y-4">
+            {/* Métiers souhaités (max 3) */}
             <div>
-              <label className={labelClass}>En quelques lignes, décris ton stage idéal...</label>
+              <label className={labelClass}>Métiers souhaités* / Desired positions* (max 3)</label>
+              <div className="flex flex-wrap gap-2">
+                {jobTypes.map(j => {
+                  const label = j.name_fr ? `${j.name_fr} / ${j.name_en || j.name}` : j.name
+                  return (
+                    <Chip
+                      key={j.id}
+                      selected={form.desired_jobs.includes(j.name)}
+                      onClick={() => toggleArrayField('desired_jobs', j.name, 3)}
+                    >
+                      {label}
+                    </Chip>
+                  )
+                })}
+              </div>
+              {/* Custom job input */}
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="text"
+                  value={form.custom_job_input}
+                  onChange={e => set('custom_job_input', e.target.value)}
+                  className={`${inputClass} flex-1`}
+                  placeholder="Autre métier / Other position..."
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && form.custom_job_input.trim() && form.custom_jobs.length < 3) {
+                      e.preventDefault()
+                      set('custom_jobs', [...form.custom_jobs, form.custom_job_input.trim()])
+                      set('custom_job_input', '')
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  disabled={!form.custom_job_input.trim() || form.custom_jobs.length >= 3}
+                  onClick={() => {
+                    if (form.custom_job_input.trim() && form.custom_jobs.length < 3) {
+                      set('custom_jobs', [...form.custom_jobs, form.custom_job_input.trim()])
+                      set('custom_job_input', '')
+                    }
+                  }}
+                  className="px-4 py-2 rounded-xl text-sm font-medium bg-[#c8a96e] text-[#1a1410] disabled:opacity-40"
+                >
+                  +
+                </button>
+              </div>
+              {form.custom_jobs.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {form.custom_jobs.map((j, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#c8a96e] text-[#1a1410]">
+                      {j}
+                      <button
+                        type="button"
+                        onClick={() => set('custom_jobs', form.custom_jobs.filter((_, idx) => idx !== i))}
+                        className="hover:text-red-800"
+                      >
+                        &times;
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <p className={helperClass}>
+                {form.desired_jobs.length + form.custom_jobs.length}/3 sélectionnés / selected
+              </p>
+            </div>
+
+            {/* Stage idéal */}
+            <div>
+              <label className={labelClass}>Ton stage idéal en 5 lignes* / Your ideal internship in 5 lines*</label>
               <textarea
                 value={form.stage_ideal}
                 onChange={e => set('stage_ideal', e.target.value)}
                 rows={6}
                 maxLength={1000}
-                placeholder="Je souhaite travailler dans une agence créative à Canggu, gérer les réseaux sociaux d'une marque lifestyle, dans une équipe internationale..."
+                placeholder={"🇫🇷 Objectifs, compétences, types d'entreprises, contraintes (dates / remote / horaires), et ce que tu veux apprendre. Pas besoin d'être parfait, on clarifie ensemble en appel.\n🇬🇧 Goals, skills, company types, constraints (dates / remote / hours), and what you want to learn. No need to be perfect, we'll clarify together on the call."}
                 className={`${inputClass} resize-none`}
               />
               <p className={`text-xs mt-1 ${form.stage_ideal.length < 50 ? 'text-red-400' : 'text-[#6b5d4d]'}`}>
-                {form.stage_ideal.length}/1000 caractères (min 50)
+                {form.stage_ideal.length}/1000 (min 50)
               </p>
             </div>
           </div>
         )}
 
-        {/* ── STEP 6 ── */}
-        {step === 5 && (
-          <div className="space-y-4">
-            <div className="bg-[#2a2318] border border-[#3d3428] rounded-xl p-5 space-y-4">
-              <p className="text-sm font-semibold text-[#c8a96e] mb-2">Avant de continuer, quelques points importants</p>
+        {/* ════════════════════════════════════════════════════════
+            ÉTAPE 4 — Prix & engagement
+            ════════════════════════════════════════════════════════ */}
+        {step === 3 && (
+          <div className="space-y-5">
+            {/* Price card */}
+            <div className="bg-[#2a2318] border border-[#3d3428] rounded-2xl p-6">
+              <div className="text-center mb-5">
+                <p className="text-4xl font-bold text-[#c8a96e]">{price}€</p>
+                <p className="text-xs text-[#6b5d4d] mt-1">TTC / Tax included</p>
+              </div>
+              <p className="text-sm text-[#d4cfc5] leading-relaxed">
+                Le service Bali Interns coûte {price}€ TTC. Paiement uniquement après signature de la convention de stage — avant ça, 0€ à régler. Pour éviter les mauvaises surprises, on s&apos;assure que tout est clair avant de continuer.
+              </p>
+              <p className="text-sm text-[#8a7d6d] leading-relaxed mt-3">
+                Bali Interns service costs €{price} (tax included). Payment only after the internship agreement is signed — before that, €0 to pay. No surprises: everything is clear before moving forward.
+              </p>
+            </div>
+
+            {/* 3 checkboxes */}
+            <div className="space-y-4">
               <label className="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" checked={form.commitment_price} onChange={e => set('commitment_price', e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded accent-[#c8a96e] flex-shrink-0" />
-                <span className="text-sm text-[#d4cfc5]">
-                  J&apos;ai bien compris que le programme Bali Interns est un service payant d&apos;accompagnement de stage d&apos;un montant de {price}€ HT
+                <input
+                  type="checkbox"
+                  checked={form.commitment_price}
+                  onChange={e => set('commitment_price', e.target.checked)}
+                  className="mt-0.5 w-5 h-5 rounded accent-[#c8a96e] flex-shrink-0"
+                />
+                <span className="text-sm text-[#d4cfc5] leading-relaxed">
+                  Je confirme avoir compris le prix ({price}€ TTC) et que le paiement intervient uniquement après signature de la convention par l&apos;étudiant(e), l&apos;employeur et l&apos;école/université.
+                  <br />
+                  <span className="text-[#8a7d6d]">I confirm I understand the price (€{price} incl. tax) and that payment happens only after the internship agreement is signed by the student, the employer, and the school/university.</span>
                 </span>
               </label>
+
               <label className="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" checked={form.commitment_budget} onChange={e => set('commitment_budget', e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded accent-[#c8a96e] flex-shrink-0" />
-                <span className="text-sm text-[#d4cfc5]">
-                  J&apos;ai bien compris que je dois prévoir un budget de vie à Bali de 900€/mois minimum (logement, nourriture, transport)
+                <input
+                  type="checkbox"
+                  checked={form.commitment_budget}
+                  onChange={e => set('commitment_budget', e.target.checked)}
+                  className="mt-0.5 w-5 h-5 rounded accent-[#c8a96e] flex-shrink-0"
+                />
+                <span className="text-sm text-[#d4cfc5] leading-relaxed">
+                  Je confirme disposer du budget (ou d&apos;une solution de financement) pour régler {price}€ TTC une fois la convention signée.
+                  <br />
+                  <span className="text-[#8a7d6d]">I confirm I have the budget (or a financing solution) to pay €{price} incl. tax once the agreement is signed.</span>
                 </span>
               </label>
+
               <label className="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" checked={form.commitment_terms} onChange={e => set('commitment_terms', e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded accent-[#c8a96e] flex-shrink-0" />
-                <span className="text-sm text-[#d4cfc5]">
-                  J&apos;accepte les conditions générales de vente de Bali Interns
+                <input
+                  type="checkbox"
+                  checked={form.commitment_terms}
+                  onChange={e => set('commitment_terms', e.target.checked)}
+                  className="mt-0.5 w-5 h-5 rounded accent-[#c8a96e] flex-shrink-0"
+                />
+                <span className="text-sm text-[#d4cfc5] leading-relaxed">
+                  Je confirme avoir pris connaissance des éléments contractuels.
+                  <br />
+                  <span className="text-[#8a7d6d]">I confirm I have read and understood the contractual terms.</span>
                 </span>
               </label>
             </div>
 
-            <div className="border-t border-[#2a2318] pt-4">
-              <label className={labelClass}>Comment tu nous as trouvé ? *</label>
-              <select value={form.touchpoint} onChange={e => set('touchpoint', e.target.value)} className={inputClass}>
-                <option value="">— Choisir —</option>
-                {TOUCHPOINTS.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-            {form.touchpoint === 'Ambassadeur Bali Interns' && (
-              <div>
-                <label className={labelClass}>Code de parrainage</label>
-                <input type="text" value={form.referred_by_code} onChange={e => set('referred_by_code', e.target.value)} className={inputClass} placeholder="CODE123" />
-              </div>
-            )}
+            {/* Legal text */}
+            <p className="text-[11px] text-[#5a5347] leading-relaxed">
+              En validant ce formulaire : (1) Tu autorises Bali Interns à partager les informations nécessaires de ton dossier avec nos entreprises partenaires et nos prestataires administratifs (ex : visa), uniquement pour traiter ta candidature. (2) Tu t&apos;engages à ne pas signer de convention de stage avec une entreprise présentée par Bali Interns en dehors de notre processus. (3) Tu confirmes que la suite du processus passe par la prise de rendez-vous avec un conseiller.
+              <br /><br />
+              By submitting this form: (1) You authorize Bali Interns to share necessary information with partner companies and administrative providers. (2) You agree not to sign an agreement with a company introduced by Bali Interns outside our process. (3) You confirm the next step is booking a call.
+            </p>
           </div>
         )}
 
-        {/* ── STEP 7 ── */}
-        {step === 6 && (
+        {/* ════════════════════════════════════════════════════════
+            ÉTAPE 5 — Comment tu nous as trouvé ?
+            ════════════════════════════════════════════════════════ */}
+        {step === 4 && (
           <div className="space-y-4">
-            {/* Calendar slots grid (from API or static fallback) */}
-            {calendarSlots.length > 0 ? (
-              <div className="grid grid-cols-2 gap-2">
-                {calendarSlots.map(slot => (
+            <div>
+              <label className={labelClass}>Source*</label>
+              <div className="grid grid-cols-1 gap-2">
+                {TOUCHPOINTS.map(t => (
                   <button
-                    key={slot.start}
+                    key={t}
                     type="button"
                     onClick={() => {
-                      setSelectedCalendarSlot(slot.start)
-                      set('rdv_date', slot.start.slice(0, 10))
-                      set('rdv_slot', new Date(slot.start).getHours() + 'h00')
+                      set('touchpoint', t)
+                      if (!t.includes('Ambassadeur')) set('referred_by_code', '')
                     }}
-                    className={`py-3 px-3 rounded-xl text-sm font-medium transition-all text-left ${
-                      selectedCalendarSlot === slot.start
-                        ? 'bg-[#c8a96e] text-white'
-                        : 'bg-white text-[#1a1410] border border-zinc-200 hover:border-[#c8a96e]'
+                    className={`py-3 px-4 rounded-xl text-sm font-medium text-left transition-all ${
+                      form.touchpoint === t
+                        ? 'bg-[#c8a96e] text-[#1a1410]'
+                        : 'bg-[#2a2318] text-[#8a7d6d] border border-[#3d3428] hover:border-[#c8a96e]'
                     }`}
                   >
-                    {slot.label}
+                    {t}
                   </button>
                 ))}
               </div>
-            ) : (
-              <>
-                {/* Fallback: date picker + time slots */}
-                <div className="flex gap-2 overflow-x-auto pb-2">
-                  {workingDays.map(d => {
-                    const iso = d.toISOString().slice(0, 10)
-                    const dayName = d.toLocaleDateString('fr-FR', { weekday: 'short' })
-                    const dayNum = d.getDate()
-                    const monthName = d.toLocaleDateString('fr-FR', { month: 'short' })
-                    return (
-                      <button key={iso} type="button" onClick={() => { set('rdv_date', iso); set('rdv_slot', '') }}
-                        className={`flex-shrink-0 w-16 py-3 rounded-xl text-center transition-all ${form.rdv_date === iso ? 'bg-[#c8a96e] text-[#1a1410]' : 'bg-[#2a2318] text-[#8a7d6d] border border-[#3d3428] hover:border-[#c8a96e]'}`}>
-                        <p className="text-[10px] uppercase font-medium">{dayName}</p>
-                        <p className="text-lg font-bold">{dayNum}</p>
-                        <p className="text-[10px]">{monthName}</p>
-                      </button>
-                    )
-                  })}
-                </div>
-                {form.rdv_date && (
-                  <div className="grid grid-cols-3 gap-2">
-                    {SLOTS.map(s => (
-                      <button key={s} type="button" onClick={() => set('rdv_slot', s)}
-                        className={`py-3 rounded-xl text-sm font-medium transition-all ${form.rdv_slot === s ? 'bg-[#c8a96e] text-[#1a1410]' : 'bg-[#2a2318] text-[#8a7d6d] border border-[#3d3428] hover:border-[#c8a96e]'}`}>
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </>
+            </div>
+
+            {/* Referral code — conditional */}
+            {form.touchpoint.includes('Ambassadeur') && (
+              <div className="animate-[fadeIn_0.3s_ease-in-out]">
+                <label className={labelClass}>Code de parrainage / Referral code</label>
+                <input
+                  type="text"
+                  value={form.referred_by_code}
+                  onChange={e => set('referred_by_code', e.target.value)}
+                  className={inputClass}
+                  placeholder="CODE123"
+                />
+                <p className={helperClass}>Si tu as un code, saisis-le ici / If you have a code, enter it here</p>
+              </div>
             )}
           </div>
         )}
 
-        {/* Error */}
+        {/* ════════════════════════════════════════════════════════
+            ÉTAPE 6 — Prends un RDV
+            ════════════════════════════════════════════════════════ */}
+        {step === 5 && (
+          <div className="space-y-4">
+            <p className="text-sm text-[#8a7d6d]">
+              Entretien de qualification de 45 minutes avec notre équipe, sur Google Meet
+              <br />
+              45-minute qualification interview with our team, on Google Meet
+            </p>
+            <p className="text-xs text-[#6b5d4d] bg-[#2a2318] inline-block px-3 py-1.5 rounded-lg">
+              Manila (GMT+8)
+            </p>
+
+            {/* Calendar slots grouped by day */}
+            {slotsByDay.length > 0 ? (
+              <div className="space-y-4">
+                {slotsByDay.slice(0, 5).map(day => (
+                  <div key={day.dayLabel}>
+                    <p className="text-sm font-medium text-[#c8a96e] mb-2 capitalize">{day.dayLabel}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {day.slots.map(slot => (
+                        <button
+                          key={slot.start}
+                          type="button"
+                          onClick={() => set('rdv_slot', slot.start)}
+                          className={`py-3 px-3 rounded-xl text-sm font-medium transition-all text-left ${
+                            form.rdv_slot === slot.start
+                              ? 'bg-[#c8a96e] text-white'
+                              : 'bg-white text-[#1a1410] border border-zinc-200 hover:border-[#c8a96e]'
+                          }`}
+                        >
+                          {slot.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-[#6b5d4d]">Chargement des créneaux... / Loading slots...</p>
+            )}
+
+            <p className="text-xs text-amber-400/80 bg-amber-900/10 border border-amber-800/20 rounded-lg px-3 py-2 leading-relaxed">
+              Si tu ne peux pas honorer ton rendez-vous, tu pourras le reprogrammer via le lien dans l&apos;email de confirmation. En raison du fort volume de demandes, une seule reprogrammation sera accordée.
+              <br /><br />
+              If you can&apos;t make it, you can reschedule via the link in your confirmation email. Due to high demand, only one reschedule is allowed.
+            </p>
+          </div>
+        )}
+
+        {/* ── Error ── */}
         {error && (
           <div className="mt-4 px-4 py-3 bg-red-900/20 border border-red-800/30 rounded-xl text-sm text-red-400">
             {error}
           </div>
         )}
 
-        {/* Navigation */}
+        {/* ── Navigation ── */}
         <div className="flex gap-3 mt-8">
           {step > 0 && (
-            <button type="button" onClick={() => setStep(s => s - 1)}
-              className="px-6 py-3 rounded-xl text-sm font-medium bg-[#2a2318] text-[#8a7d6d] border border-[#3d3428] hover:border-[#c8a96e] transition-all">
-              Retour
+            <button
+              type="button"
+              onClick={() => { setStep(s => s - 1); setError('') }}
+              className="px-6 py-3 rounded-xl text-sm font-medium bg-[#2a2318] text-[#8a7d6d] border border-[#3d3428] hover:border-[#c8a96e] transition-all"
+            >
+              Retour / Back
             </button>
           )}
-          {step < 6 ? (
-            <button type="button" disabled={!canNext()} onClick={() => { setStep(s => s + 1); setError('') }}
-              className="flex-1 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a]">
-              Continuer
+          {step < 5 ? (
+            <button
+              type="button"
+              disabled={!canNext()}
+              onClick={() => { setStep(s => s + 1); setError('') }}
+              className="flex-1 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a]"
+            >
+              Continuer / Continue
             </button>
           ) : (
-            <button type="button" disabled={!canNext() || submitting} onClick={() => { void handleSubmit() }}
-              className="flex-1 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a]">
-              {submitting ? 'Envoi en cours...' : 'Confirmer ma candidature 🚀'}
+            <button
+              type="button"
+              disabled={!canNext() || submitting}
+              onClick={() => { void handleSubmit() }}
+              className="flex-1 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a]"
+            >
+              {submitting ? 'Envoi en cours... / Submitting...' : 'Confirmer ma candidature / Submit my application'}
             </button>
           )}
         </div>
       </div>
+
+      {/* Fade-in animation */}
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   )
 }
