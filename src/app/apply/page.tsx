@@ -1035,9 +1035,9 @@ export default function ApplyPage() {
                     className={inputClass}
                     placeholder={lang==='fr' ? 'Rechercher un pays...' : 'Search country...'}
                   />
-                  {showSchoolCountryDropdown && schoolCountrySearch.length >= 1 && (
+                  {showSchoolCountryDropdown && (
                     <div className="absolute z-40 w-full mt-1 max-h-52 overflow-y-auto bg-white border border-zinc-200 rounded-xl shadow-lg">
-                      {COUNTRIES.filter(c => c.toLowerCase().includes(schoolCountrySearch.toLowerCase())).slice(0, 15).map(country => (
+                      {(schoolCountrySearch.length === 0 ? COUNTRIES.slice(0, 20) : COUNTRIES.filter(c => c.toLowerCase().includes(schoolCountrySearch.toLowerCase())).slice(0, 15)).map(country => (
                         <button
                           key={country}
                           type="button"
@@ -1047,7 +1047,7 @@ export default function ApplyPage() {
                           {country}
                         </button>
                       ))}
-                      {COUNTRIES.filter(c => c.toLowerCase().includes(schoolCountrySearch.toLowerCase())).length === 0 && (
+                      {schoolCountrySearch.length > 0 && COUNTRIES.filter(c => c.toLowerCase().includes(schoolCountrySearch.toLowerCase())).length === 0 && (
                         <p className="px-4 py-3 text-sm text-zinc-400">{lang==='fr' ? 'Aucun résultat' : 'No results'}</p>
                       )}
                     </div>
