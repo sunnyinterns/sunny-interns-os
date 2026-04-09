@@ -466,9 +466,16 @@ export default function ApplyPage() {
   }, [])
 
 
-  // Fillout script loader
+  // Fillout script loader + pré-remplissage URL params
   useEffect(() => {
     if (step !== 4) return
+    const params = new URLSearchParams()
+    const fullName = `${form.first_name} ${form.last_name}`.trim()
+    if (fullName) params.set('name', fullName)
+    if (form.email) params.set('email', form.email)
+    if (form.first_name) params.set('firstName', form.first_name)
+    if (form.last_name) params.set('lastName', form.last_name)
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`)
     const existing = document.getElementById('fillout-script')
     if (existing) existing.remove()
     const script = document.createElement('script')
@@ -476,8 +483,12 @@ export default function ApplyPage() {
     script.src = 'https://server.fillout.com/embed/v1/'
     script.async = true
     document.head.appendChild(script)
-    return () => { const s = document.getElementById('fillout-script'); if (s) s.remove() }
-  }, [step])
+    return () => {
+      const s = document.getElementById('fillout-script')
+      if (s) s.remove()
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [step, form.first_name, form.last_name, form.email])
 
   // ── Setters ──
   function setStepError(step: number, msg: string) {
@@ -1365,7 +1376,7 @@ export default function ApplyPage() {
                   ? "Choisis un créneau pour ton entretien de qualification (45 min, Google Meet)."
                   : "Choose a time slot for your qualification interview (45 min, Google Meet)."}
               </p>
-              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+              <p className="text-xs text-zinc-600 bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 mb-4">
                 {lang === 'fr'
                   ? "⚠️ Si tu ne peux pas honorer ton rendez-vous, un lien de reprogrammation sera disponible dans l'email de confirmation. En raison du fort volume, une seule reprogrammation sera accordée."
                   : "⚠️ If you can't make it, a reschedule link will be in your confirmation email. Due to high demand, only one reschedule is allowed."}
