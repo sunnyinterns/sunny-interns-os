@@ -643,7 +643,7 @@ export default function ApplyPage() {
         <div className="max-w-xl mx-auto px-4 py-3">
           <div className="flex items-center gap-1.5">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className={`h-1.5 flex-1 rounded-full transition-all ${i <= step ? 'bg-[#c8a96e]' : 'bg-white'}`} />
+              <div key={i} className={`h-1.5 flex-1 rounded-full transition-all ${i <= step ? 'bg-[#c8a96e]' : 'bg-zinc-200'}`} />
             ))}
           </div>
           <p className="text-xs text-zinc-500 mt-1.5 text-center">
@@ -681,11 +681,11 @@ export default function ApplyPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>{lang==='fr'?'Pr\u00e9nom *':'First name *'}</label>
-                <input type="text" value={form.first_name} onChange={e => set('first_name', e.target.value)} className={inputClass} placeholder={lang==='fr'?'Pr\u00e9nom':'First name'} />
+                <input type="text" value={form.first_name} onChange={e => set('first_name', e.target.value)} className={inputClass} placeholder={lang==='fr'?'Jean':'John'} />
               </div>
               <div>
                 <label className={labelClass}>{lang==='fr'?'Nom *':'Last name *'}</label>
-                <input type="text" value={form.last_name} onChange={e => set('last_name', e.target.value)} className={inputClass} placeholder={lang==='fr'?'Nom':'Last name'} />
+                <input type="text" value={form.last_name} onChange={e => set('last_name', e.target.value)} className={inputClass} placeholder={lang==='fr'?'Dupont':'Smith'} />
               </div>
             </div>
 
@@ -704,6 +704,9 @@ export default function ApplyPage() {
             {/* WhatsApp */}
             <div>
               <label className={labelClass}>WhatsApp *</label>
+              <p className={helperClass + " mb-2"}>
+                {lang === 'fr' ? "Tout le monde à Bali l'utilise, mets un numéro joignable !" : "Everyone uses it in Bali, make sure the number is correct."}
+              </p>
               <div className="flex gap-2">
                 {/* Indicatif custom dropdown */}
                 <div className="relative flex-shrink-0" ref={phoneDropRef}>
@@ -744,11 +747,6 @@ export default function ApplyPage() {
                   placeholder="6 12 34 56 78"
                 />
               </div>
-              <p className={helperClass}>
-                {lang === 'fr'
-                  ? "\u{1F4F1} Tout le monde \u00e0 Bali l\u2019utilise, mets un num\u00e9ro joignable !"
-                  : "\u{1F4F1} Everyone uses it in Bali, make sure the number is correct."}
-              </p>
             </div>
 
             {/* Nationalité(s) — multi-select with search */}
@@ -817,11 +815,14 @@ export default function ApplyPage() {
 
             {/* Pays d'études — select */}
             <div>
-              <label className={labelClass}>{lang==='fr'?'Pays o\u00f9 tu \u00e9tudies *':'Country where you study *'}</label>
+              <label className={labelClass}>{lang==='fr'?'Pays où tu étudies *':'Country where you study *'}</label>
+              <p className={helperClass + " mb-2"}>
+                {lang === 'fr' ? "Pays dans lequel ta convention de stage sera établie de droit commun." : "Country where your internship agreement will be issued by law."}
+              </p>
               <select
                 value={form.school_country}
                 onChange={e => set('school_country', e.target.value)}
-                className={inputClass}
+                className="w-full px-4 py-3 border border-zinc-200 rounded-xl text-[#1a1918] bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e] text-sm cursor-pointer"
               >
                 <option value="">{lang==='fr'?'S\u00e9lectionner un pays...':'Select a country...'}</option>
                 {COUNTRIES.map(country => (
