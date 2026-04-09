@@ -336,6 +336,48 @@ function FileUpload({
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────────────────
 
+const FORM_DEFAULTS = {
+  first_name: '',
+  last_name: '',
+  email: '',
+  whatsapp_code: '+33',
+  whatsapp_number: '',
+  nationalities: [] as string[],
+  birth_date: '',
+  passport_expiry: '',
+  school_country: '',
+  linkedin_url: '',
+  cv_en_file: null as File | null,
+  cv_en_filename: '',
+  cv_local_file: null as File | null,
+  cv_local_filename: '',
+  cv_url: '',
+  local_cv_url: '',
+  extra_docs_files: [] as File[],
+  extra_docs_names: [] as string[],
+  spoken_languages: [] as string[],
+  school_search: '',
+  school_id: null as string | null,
+  school_name: '',
+  school_not_found: false,
+  school_custom_name: '',
+  end_date: '',
+  desired_jobs: [] as string[],
+  custom_jobs: [] as string[],
+  custom_job_input: '',
+  duration: '',
+  start_date: '',
+  stage_ideal: '',
+  commitment_price: false,
+  commitment_budget: false,
+  commitment_terms: false,
+  touchpoints: [] as string[],
+  touchpoint: '',
+  referred_by_code: '',
+  rdv_slot: '',
+}
+type FormData = typeof FORM_DEFAULTS
+
 export default function ApplyPage() {
   const router = useRouter()
   const [step, setStep] = useState(0)
@@ -366,60 +408,21 @@ export default function ApplyPage() {
   }, [phoneDropOpen])
 
   // ── Form state ──
-  const [form, setForm] = useState(() => {
+  const [form, setForm] = useState<FormData>(() => {
     try {
       const saved = typeof window !== 'undefined' ? localStorage.getItem('apply_form_v1') : null
       if (saved) {
-        const parsed = JSON.parse(saved) as Record<string, unknown>
-        return { ...parsed, cv_en_file: null, cv_local_file: null, extra_docs_files: [] }
+        const parsed = JSON.parse(saved) as Partial<FormData>
+        return {
+          ...FORM_DEFAULTS,
+          ...parsed,
+          cv_en_file: null,
+          cv_local_file: null,
+          extra_docs_files: [],
+        }
       }
     } catch { /* ignore */ }
-    return {
-    // Step 1
-    first_name: '',
-    last_name: '',
-    email: '',
-    whatsapp_code: '+33',
-    whatsapp_number: '',
-    nationalities: [] as string[],
-    birth_date: '',
-    passport_expiry: '',
-    school_country: '',
-    // Step 2
-    linkedin_url: '',
-    cv_en_file: null as File | null,
-    cv_en_filename: '',
-    cv_local_file: null as File | null,
-    cv_local_filename: '',
-    cv_url: '',
-    local_cv_url: '',
-    extra_docs_files: [] as File[],
-    extra_docs_names: [] as string[],
-    spoken_languages: [] as string[],
-    // Step 3
-    school_search: '',
-    school_id: null as string | null,
-    school_name: '',
-    school_not_found: false,
-    school_custom_name: '',
-    end_date: '' as string,
-    desired_jobs: [] as string[],
-    custom_jobs: [] as string[],
-    custom_job_input: '',
-    duration: '',
-    start_date: '',
-    stage_ideal: '',
-    // Step 4
-    commitment_price: false,
-    commitment_budget: false,
-    commitment_terms: false,
-    // Step 5
-    touchpoints: [] as string[],
-    touchpoint: '',
-    referred_by_code: '',
-    // Step 6
-    rdv_slot: '',
-    }
+    return FORM_DEFAULTS
   })
 
   // ── Fetched data ──
@@ -482,7 +485,7 @@ export default function ApplyPage() {
   // Sauvegarder le formulaire dans localStorage (hors fichiers)
   useEffect(() => {
     try {
-      const toSave = { ...form, cv_en_file: null, cv_local_file: null, extra_docs_files: [] }
+      const { cv_en_file, cv_local_file, extra_docs_files, ...toSave } = form
       localStorage.setItem('apply_form_v1', JSON.stringify(toSave))
     } catch { /* ignore */ }
   }, [form])
@@ -523,7 +526,7 @@ export default function ApplyPage() {
     setForm(f => ({ ...f, [key]: value }))
   }
 
-  function toggleArrayField(key: 'spoken_languages' | 'desired_jobs' | 'nationalities', value: string, max?: number) {
+  function toggleArrayField(key: keyof Pick<FormData, 'spoken_languages' | 'desired_jobs' | 'nationalities' | 'touchpoints'>, value: string, max?: number) {
     setForm(f => {
       const arr = (f[key] as string[]) ?? []
       if (arr.includes(value)) return { ...f, [key]: arr.filter((v: string) => v !== value) }
@@ -533,9 +536,9 @@ export default function ApplyPage() {
   }
 
   // ── Computed ──
-  const isAnglophone = ANGLOPHONE_COUNTRIES.includes(form.school_country)
+  const isAnglophone = ANGLOPHONE_COUNTRIES.includes(form.school_country ?? '')
 
-  const selectedPhone = COUNTRY_PHONE_CODES.find(c => c.code === form.whatsapp_code) ?? COUNTRY_PHONE_CODES[0]
+  const selectedPhone = COUNTRY_PHONE_CODES.find(c => c.code === (form.whatsapp_code ?? '+33')) ?? COUNTRY_PHONE_CODES[0]
 
   const computedEndDate = form.start_date && form.duration
     ? addMonths(form.start_date, parseInt(form.duration))
