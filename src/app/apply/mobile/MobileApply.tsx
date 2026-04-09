@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 
 // ─── Types ─────────────────────────────────────────────────────
-// Re-use the same FormData shape from the parent page
 type FormData = {
   first_name: string
   last_name: string
@@ -78,6 +77,8 @@ interface Question {
   hintEn?: string
   maxSelect?: number
   accept?: string
+  section: string
+  sectionEn: string
 }
 
 interface MobileApplyProps {
@@ -197,6 +198,28 @@ const COUNTRY_PHONE_CODES: { flag: string; code: string; name: string }[] = [
   { flag: '\u{1F1E6}\u{1F1FA}', code: '+61', name: 'Australia' },
 ]
 
+// Expected phone number lengths (digits only, without country code) by country code
+const PHONE_EXPECTED_LENGTHS: Record<string, number[]> = {
+  '+33': [9],       // France: 6XXXXXXXX
+  '+44': [10],      // UK: 7XXXXXXXXX
+  '+1': [10],       // US/Canada
+  '+49': [10, 11],  // Germany
+  '+34': [9],       // Spain
+  '+39': [9, 10],   // Italy
+  '+351': [9],      // Portugal
+  '+32': [8, 9],    // Belgium
+  '+41': [9],       // Switzerland
+  '+31': [9],       // Netherlands
+  '+212': [9],      // Morocco
+  '+213': [9],      // Algeria
+  '+216': [8],      // Tunisia
+  '+221': [9],      // Senegal
+  '+62': [9, 10, 11, 12], // Indonesia
+  '+91': [10],      // India
+  '+61': [9],       // Australia
+  '+55': [10, 11],  // Brazil
+}
+
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
@@ -207,59 +230,103 @@ export function MobileApply({
   form, setForm, lang, setLang, onSubmit, submitting, error,
   price, jobTypes, cvUploading, cvLocalUploading, onCvUpload, onCvLocalUpload,
 }: MobileApplyProps) {
-  const [currentQ, setCurrentQ] = useState(0)
+  const [currentQ, setCurrentQ] = useState(() => {
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('apply_mobile_step_v1') : null
+      return saved ? Math.max(0, parseInt(saved, 10) || 0) : 0
+    } catch { return 0 }
+  })
   const [fieldError, setFieldError] = useState('')
   const [searchText, setSearchText] = useState('')
   const [phoneDropOpen, setPhoneDropOpen] = useState(false)
   const [schoolResults, setSchoolResults] = useState<School[]>([])
   const [isSearchingSchool, setIsSearchingSchool] = useState(false)
+  const [emailExists, setEmailExists] = useState(false)
+  const [emailChecking, setEmailChecking] = useState(false)
+  const [animDir, setAnimDir] = useState<'forward' | 'back'>('forward')
+  const [visible, setVisible] = useState(true)
   const inputRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const searchSchoolsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const emailCheckTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // ── Save step to localStorage ──
+  useEffect(() => {
+    try { localStorage.setItem('apply_mobile_step_v1', String(currentQ)) } catch {}
+  }, [currentQ])
 
   // ── Question list ──
+  const SEC_ID = { fr: 'Identité', en: 'Identity' }
+  const SEC_PR = { fr: 'Profil', en: 'Profile' }
+  const SEC_ST = { fr: 'Stage', en: 'Internship' }
+  const SEC_EN = { fr: 'Engagement', en: 'Commitment' }
+  const SEC_RD = { fr: 'RDV', en: 'Booking' }
+
   const questions: Question[] = [
-    { id: 'first_name', type: 'text', label: 'Quel est ton prénom ?', labelEn: 'What is your first name?', field: 'first_name', required: true, hint: 'ex: Jean', hintEn: 'e.g. John' },
-    { id: 'last_name', type: 'text', label: 'Et ton nom ?', labelEn: 'And your last name?', field: 'last_name', required: true },
-    { id: 'email', type: 'email', label: 'Ton adresse email ?', labelEn: 'Your email address?', field: 'email', required: true, helper: "On t'enverra la confirmation ici", helperEn: 'We\'ll send your confirmation here' },
-    { id: 'whatsapp', type: 'tel_whatsapp', label: 'Ton numéro WhatsApp ?', labelEn: 'Your WhatsApp number?', field: 'whatsapp_number', required: true, helper: "Tout le monde à Bali l'utilise !", helperEn: 'Everyone uses it in Bali!' },
-    { id: 'nationalities', type: 'chips', label: 'Ta ou tes nationalités ?', labelEn: 'Your nationality(ies)?', field: 'nationalities', required: true, options: COUNTRIES },
-    { id: 'birth_date', type: 'date', label: 'Ta date de naissance ?', labelEn: 'Your date of birth?', field: 'birth_date', required: true },
-    { id: 'passport_expiry', type: 'date', label: 'Expiration de ton passeport ?', labelEn: 'Your passport expiry date?', field: 'passport_expiry', required: true, helper: 'Doit être valide 6 mois après ton arrivée', helperEn: 'Must be valid 6 months after arrival' },
-    { id: 'school_country', type: 'select', label: 'Pays où tu fais tes études ?', labelEn: 'Country where you study?', field: 'school_country', required: true, options: COUNTRIES, helper: 'Détermine le type de convention de stage', helperEn: 'Determines your internship agreement type' },
-    { id: 'linkedin_url', type: 'text', label: 'Ton profil LinkedIn ?', labelEn: 'Your LinkedIn profile?', field: 'linkedin_url', required: false, hint: 'https://linkedin.com/in/...', hintEn: 'Optionnel / Optional' },
-    { id: 'cv_en', type: 'file', label: 'Ton CV en anglais', labelEn: 'Your CV in English', field: 'cv_en_file', required: true, helper: 'PDF, DOC ou DOCX - Max 20MB', helperEn: 'PDF, DOC or DOCX - Max 20MB', accept: '.pdf,.doc,.docx,.jpg,.jpeg,.png,.odt,.rtf' },
-    { id: 'cv_local', type: 'file', label: 'Ton CV en français (ou langue locale)', labelEn: 'Your CV in French (or local language)', field: 'cv_local_file', required: false, skip: (f) => ANGLOPHONE_COUNTRIES.includes(f.school_country), accept: '.pdf,.doc,.docx,.jpg,.jpeg,.png,.odt,.rtf' },
-    { id: 'spoken_languages', type: 'chips', label: 'Tes langues professionnelles ?', labelEn: 'Your professional languages?', field: 'spoken_languages', required: true },
-    { id: 'school_name', type: 'text', label: 'Ton école ou université ?', labelEn: 'Your school or university?', field: 'school_name', required: false, helper: 'Commence à taper pour chercher', helperEn: 'Start typing to search' },
-    { id: 'duration', type: 'chips', label: 'Durée souhaitée du stage ?', labelEn: 'Desired internship duration?', field: 'duration', required: true },
-    { id: 'start_date', type: 'date', label: 'Date de démarrage souhaitée ?', labelEn: 'Desired start date?', field: 'start_date', required: true, helper: 'À 2-4 semaines près, c\'est ok', helperEn: 'Give or take 2-4 weeks, that\'s fine' },
-    { id: 'desired_jobs', type: 'chips', label: 'Métiers souhaités ? (max 3)', labelEn: 'Desired positions? (max 3)', field: 'desired_jobs', required: false, maxSelect: 3 },
-    { id: 'stage_ideal', type: 'textarea', label: 'Ton stage idéal en quelques lignes', labelEn: 'Your ideal internship in a few lines', field: 'stage_ideal', required: true },
-    { id: 'touchpoints', type: 'chips', label: 'Comment tu nous as trouvé ?', labelEn: 'How did you find us?', field: 'touchpoints', required: false },
-    { id: 'referral_code', type: 'text', label: 'Tu as un code parrain ?', labelEn: 'Do you have a referral code?', field: 'referred_by_code', required: false, skip: (f) => !f.touchpoints.includes('Ambassadeur Bali Interns') },
-    { id: 'commitment', type: 'checkbox_group', label: 'Avant de continuer', labelEn: 'Before continuing', field: 'commitment_price', required: true },
-    { id: 'schedule', type: 'schedule', label: 'Réserve ton appel de qualification gratuit', labelEn: 'Book your free qualification call', field: 'rdv_slot', required: false },
+    { id: 'first_name', type: 'text', label: 'Quel est ton prénom ?', labelEn: 'What is your first name?', field: 'first_name', required: true, hint: 'ex: Jean', hintEn: 'e.g. John', section: SEC_ID.fr, sectionEn: SEC_ID.en },
+    { id: 'last_name', type: 'text', label: 'Et ton nom ?', labelEn: 'And your last name?', field: 'last_name', required: true, section: SEC_ID.fr, sectionEn: SEC_ID.en },
+    { id: 'email', type: 'email', label: 'Ton adresse email ?', labelEn: 'Your email address?', field: 'email', required: true, helper: "On t'enverra la confirmation ici", helperEn: 'We\'ll send your confirmation here', section: SEC_ID.fr, sectionEn: SEC_ID.en },
+    { id: 'whatsapp', type: 'tel_whatsapp', label: 'Ton numéro WhatsApp ?', labelEn: 'Your WhatsApp number?', field: 'whatsapp_number', required: true, helper: "Tout le monde à Bali l'utilise !", helperEn: 'Everyone uses it in Bali!', section: SEC_ID.fr, sectionEn: SEC_ID.en },
+    { id: 'nationalities', type: 'chips', label: 'Ta ou tes nationalités ?', labelEn: 'Your nationality(ies)?', field: 'nationalities', required: true, options: COUNTRIES, section: SEC_ID.fr, sectionEn: SEC_ID.en },
+    { id: 'birth_date', type: 'date', label: 'Ta date de naissance ?', labelEn: 'Your date of birth?', field: 'birth_date', required: true, section: SEC_ID.fr, sectionEn: SEC_ID.en },
+    { id: 'passport_expiry', type: 'date', label: 'Expiration de ton passeport ?', labelEn: 'Your passport expiry date?', field: 'passport_expiry', required: true, helper: 'Doit être valide 6 mois après ton arrivée', helperEn: 'Must be valid 6 months after arrival', section: SEC_ID.fr, sectionEn: SEC_ID.en },
+    { id: 'school_country', type: 'select', label: 'Pays où tu fais tes études ?', labelEn: 'Country where you study?', field: 'school_country', required: true, options: COUNTRIES, helper: 'Détermine le type de convention de stage', helperEn: 'Determines your internship agreement type', section: SEC_PR.fr, sectionEn: SEC_PR.en },
+    { id: 'linkedin_url', type: 'text', label: 'Ton profil LinkedIn ?', labelEn: 'Your LinkedIn profile?', field: 'linkedin_url', required: false, hint: 'https://linkedin.com/in/...', hintEn: 'Optionnel / Optional', section: SEC_PR.fr, sectionEn: SEC_PR.en },
+    { id: 'cv_en', type: 'file', label: 'Ton CV en anglais', labelEn: 'Your CV in English', field: 'cv_en_file', required: true, helper: 'PDF, DOC ou DOCX - Max 20MB', helperEn: 'PDF, DOC or DOCX - Max 20MB', accept: '.pdf,.doc,.docx,.jpg,.jpeg,.png,.odt,.rtf', section: SEC_PR.fr, sectionEn: SEC_PR.en },
+    { id: 'cv_local', type: 'file', label: 'Ton CV en français (ou langue locale)', labelEn: 'Your CV in French (or local language)', field: 'cv_local_file', required: false, skip: (f) => ANGLOPHONE_COUNTRIES.includes(f.school_country), accept: '.pdf,.doc,.docx,.jpg,.jpeg,.png,.odt,.rtf', section: SEC_PR.fr, sectionEn: SEC_PR.en },
+    { id: 'spoken_languages', type: 'chips', label: 'Tes langues professionnelles ?', labelEn: 'Your professional languages?', field: 'spoken_languages', required: true, section: SEC_PR.fr, sectionEn: SEC_PR.en },
+    { id: 'school_name', type: 'text', label: 'Ton école ou université ?', labelEn: 'Your school or university?', field: 'school_name', required: false, helper: 'Commence à taper pour chercher', helperEn: 'Start typing to search', section: SEC_PR.fr, sectionEn: SEC_PR.en },
+    { id: 'duration', type: 'chips', label: 'Durée souhaitée du stage ?', labelEn: 'Desired internship duration?', field: 'duration', required: true, section: SEC_ST.fr, sectionEn: SEC_ST.en },
+    { id: 'start_date', type: 'date', label: 'Date de démarrage souhaitée ?', labelEn: 'Desired start date?', field: 'start_date', required: true, helper: 'À 2-4 semaines près, c\'est ok', helperEn: 'Give or take 2-4 weeks, that\'s fine', section: SEC_ST.fr, sectionEn: SEC_ST.en },
+    { id: 'desired_jobs', type: 'chips', label: 'Métiers souhaités ? (max 3)', labelEn: 'Desired positions? (max 3)', field: 'desired_jobs', required: false, maxSelect: 3, section: SEC_ST.fr, sectionEn: SEC_ST.en },
+    { id: 'stage_ideal', type: 'textarea', label: 'Ton stage idéal en quelques lignes', labelEn: 'Your ideal internship in a few lines', field: 'stage_ideal', required: true, section: SEC_ST.fr, sectionEn: SEC_ST.en },
+    { id: 'touchpoints', type: 'chips', label: 'Comment tu nous as trouvé ?', labelEn: 'How did you find us?', field: 'touchpoints', required: false, section: SEC_ST.fr, sectionEn: SEC_ST.en },
+    { id: 'referral_code', type: 'text', label: 'Tu as un code parrain ?', labelEn: 'Do you have a referral code?', field: 'referred_by_code', required: false, skip: (f) => !f.touchpoints.includes('Ambassadeur Bali Interns'), section: SEC_ST.fr, sectionEn: SEC_ST.en },
+    { id: 'commitment', type: 'checkbox_group', label: 'Avant de continuer', labelEn: 'Before continuing', field: 'commitment_price', required: true, section: SEC_EN.fr, sectionEn: SEC_EN.en },
+    { id: 'schedule', type: 'schedule', label: 'Réserve ton appel de qualification gratuit', labelEn: 'Book your free qualification call', field: 'rdv_slot', required: false, section: SEC_RD.fr, sectionEn: SEC_RD.en },
   ]
 
   // Filter out skipped questions
   const activeQuestions = questions.filter(q => !q.skip || !q.skip(form))
   const totalQ = activeQuestions.length
-  const question = activeQuestions[currentQ] || activeQuestions[activeQuestions.length - 1]
+  const safeIdx = Math.min(currentQ, totalQ - 1)
+  const question = activeQuestions[safeIdx] || activeQuestions[activeQuestions.length - 1]
 
-  // Autofocus on question change
+  // ── Autofocus on question change ──
   useEffect(() => {
     setFieldError('')
     setSearchText('')
     const timer = setTimeout(() => {
-      if (question.type === 'text' || question.type === 'email' || question.type === 'textarea') {
-        inputRef.current?.focus()
-      }
-    }, 300)
+      const el = document.querySelector<HTMLElement>(
+        'input:not([type="file"]):not([type="checkbox"]):not([type="hidden"]), textarea'
+      )
+      el?.focus()
+    }, 250)
     return () => clearTimeout(timer)
-  }, [currentQ, question.type])
+  }, [currentQ])
 
-  // Fillout script for schedule step
+  // ── Email check debounced ──
+  useEffect(() => {
+    if (emailCheckTimeout.current) clearTimeout(emailCheckTimeout.current)
+    if (!form.email || !isValidEmail(form.email)) {
+      setEmailExists(false)
+      setEmailChecking(false)
+      return
+    }
+    setEmailChecking(true)
+    emailCheckTimeout.current = setTimeout(() => {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => { controller.abort(); setEmailChecking(false) }, 3000)
+      fetch('/api/check-email?email=' + encodeURIComponent(form.email), { signal: controller.signal })
+        .then(r => r.ok ? r.json() : { exists: false })
+        .then((d: { exists: boolean }) => { setEmailExists(!!d.exists); setEmailChecking(false) })
+        .catch(() => { setEmailExists(false); setEmailChecking(false) })
+        .finally(() => clearTimeout(timeout))
+    }, 600)
+    return () => { if (emailCheckTimeout.current) clearTimeout(emailCheckTimeout.current) }
+  }, [form.email])
+
+  // ── Fillout script for schedule step ──
   useEffect(() => {
     if (question.type !== 'schedule') return
     const params = new URLSearchParams()
@@ -310,6 +377,23 @@ export function MobileApply({
     }, 400)
   }, [form.school_country])
 
+  // ── WhatsApp validation ──
+  function getPhoneValidation(): { valid: boolean; message: string } | null {
+    const digits = form.whatsapp_number.replace(/\D/g, '')
+    if (!digits) return null
+    const expected = PHONE_EXPECTED_LENGTHS[form.whatsapp_code]
+    if (!expected) return digits.length >= 6 ? { valid: true, message: '' } : null
+    const isValid = expected.includes(digits.length)
+    if (isValid) return { valid: true, message: lang === 'fr' ? 'Numéro valide' : 'Valid number' }
+    const expectedStr = expected.join(' ou ')
+    return {
+      valid: false,
+      message: lang === 'fr'
+        ? `${expectedStr} chiffres attendus (actuellement ${digits.length})`
+        : `${expectedStr} digits expected (currently ${digits.length})`,
+    }
+  }
+
   // ── Can advance? ──
   function canGoNext(): boolean {
     const q = question
@@ -324,6 +408,7 @@ export function MobileApply({
       case 'textarea':
         if (!(val as string)?.trim()) return false
         if (q.type === 'email' && !isValidEmail(val as string)) return false
+        if (q.type === 'email' && emailExists) return false
         return true
       case 'tel_whatsapp':
         return !!(form.whatsapp_number?.trim())
@@ -349,21 +434,37 @@ export function MobileApply({
   function goNext() {
     setFieldError('')
     if (question.id === 'commitment') {
-      // Submit then go to schedule
+      setAnimDir('forward')
+      setVisible(false)
       void onSubmit().then(() => {
-        if (currentQ < totalQ - 1) setCurrentQ(currentQ + 1)
+        setTimeout(() => {
+          if (safeIdx < totalQ - 1) setCurrentQ(safeIdx + 1)
+          setVisible(true)
+        }, 150)
       })
       return
     }
-    if (currentQ < totalQ - 1) {
-      setCurrentQ(currentQ + 1)
+    if (!canGoNext() && question.required) {
+      setFieldError(lang === 'fr' ? 'Ce champ est requis' : 'This field is required')
+      return
     }
+    setAnimDir('forward')
+    setVisible(false)
+    setTimeout(() => {
+      if (safeIdx < totalQ - 1) setCurrentQ(safeIdx + 1)
+      setVisible(true)
+    }, 150)
   }
 
   function goPrev() {
-    if (currentQ > 0) {
+    if (safeIdx > 0) {
       setFieldError('')
-      setCurrentQ(currentQ - 1)
+      setAnimDir('back')
+      setVisible(false)
+      setTimeout(() => {
+        setCurrentQ(safeIdx - 1)
+        setVisible(true)
+      }, 150)
     }
   }
 
@@ -371,6 +472,10 @@ export function MobileApply({
   const isSchedule = question.type === 'schedule'
 
   const selectedPhone = COUNTRY_PHONE_CODES.find(c => c.code === form.whatsapp_code) ?? COUNTRY_PHONE_CODES[0]
+  const phoneValidation = getPhoneValidation()
+
+  // ── Input base style (border-bottom) ──
+  const inputBaseClass = 'w-full px-1 py-4 bg-transparent border-0 border-b-2 border-zinc-200 text-[16px] text-[#1a1918] placeholder-zinc-400 focus:outline-none focus:border-[#c8a96e] transition-colors'
 
   // ── Render field by type ──
   function renderField() {
@@ -392,12 +497,12 @@ export function MobileApply({
                   set('school_id', null)
                   searchSchools(v)
                 }}
-                className="w-full px-4 py-4 bg-white border border-zinc-200 rounded-2xl text-[16px] text-[#1a1918] placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+                className={inputBaseClass}
                 placeholder={lang === 'fr' ? 'Rechercher ton école...' : 'Search your school...'}
-                onKeyDown={e => { if (e.key === 'Enter' && canGoNext()) goNext() }}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); goNext() } }}
               />
               {isSearchingSchool && (
-                <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                <div className="absolute right-2 top-1/2 -translate-y-1/2">
                   <svg className="animate-spin w-4 h-4 text-[#c8a96e]" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
@@ -416,7 +521,7 @@ export function MobileApply({
                         set('school_search', '')
                         setSchoolResults([])
                       }}
-                      className="w-full text-left px-4 py-3 text-sm text-[#1a1918] hover:bg-zinc-50 border-b border-zinc-50 last:border-0"
+                      className="w-full text-left px-4 py-3 text-sm text-[#1a1918] hover:bg-zinc-50 border-b border-zinc-50 last:border-0 min-h-[48px]"
                     >
                       <span className="font-medium">{s.name}</span>
                       {s.city && <span className="text-zinc-500"> — {s.city}{s.country ? `, ${s.country}` : ''}</span>}
@@ -433,70 +538,93 @@ export function MobileApply({
             type="text"
             value={(form[q.field] as string) ?? ''}
             onChange={e => set(q.field, e.target.value as never)}
-            className="w-full px-4 py-4 bg-white border border-zinc-200 rounded-2xl text-[16px] text-[#1a1918] placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+            className={inputBaseClass}
             placeholder={lang === 'fr' ? (q.hint || '') : (q.hintEn || '')}
-            onKeyDown={e => { if (e.key === 'Enter' && canGoNext()) goNext() }}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); goNext() } }}
           />
         )
 
       case 'email':
         return (
-          <input
-            ref={inputRef}
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            value={(form[q.field] as string) ?? ''}
-            onChange={e => set(q.field, e.target.value as never)}
-            className="w-full px-4 py-4 bg-white border border-zinc-200 rounded-2xl text-[16px] text-[#1a1918] placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-            placeholder="your@email.com"
-            onKeyDown={e => { if (e.key === 'Enter' && canGoNext()) goNext() }}
-          />
+          <div>
+            <input
+              ref={inputRef}
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              value={(form[q.field] as string) ?? ''}
+              onChange={e => set(q.field, e.target.value as never)}
+              className={`${inputBaseClass} ${form.email && emailExists ? 'border-red-500' : form.email && isValidEmail(form.email) && !emailExists && !emailChecking ? 'border-green-500' : ''}`}
+              placeholder="your@email.com"
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); goNext() } }}
+            />
+            {emailChecking && (
+              <p className="text-xs text-zinc-400 mt-2 flex items-center gap-1">
+                <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                {lang === 'fr' ? 'Vérification...' : 'Checking...'}
+              </p>
+            )}
+            {emailExists && !emailChecking && (
+              <p className="text-xs text-red-600 mt-2 font-medium">
+                {lang === 'fr' ? 'Cet email est déjà associé à un dossier.' : 'This email is already linked to an application.'}
+              </p>
+            )}
+            {form.email && isValidEmail(form.email) && !emailExists && !emailChecking && (
+              <p className="text-xs text-green-600 mt-2">{'\u2713'} {lang === 'fr' ? 'Email disponible' : 'Email available'}</p>
+            )}
+          </div>
         )
 
       case 'tel_whatsapp':
         return (
-          <div className="flex gap-2">
-            <div className="relative flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => setPhoneDropOpen(o => !o)}
-                className="flex items-center gap-1 px-3 py-4 bg-white border border-zinc-200 rounded-2xl text-sm font-medium text-[#1a1918] whitespace-nowrap"
-              >
-                <span>{selectedPhone.flag}</span>
-                <span>{selectedPhone.code}</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M19 9l-7 7-7-7"/></svg>
-              </button>
-              {phoneDropOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setPhoneDropOpen(false)} />
-                  <div className="absolute z-50 top-full left-0 mt-1 w-64 max-h-64 overflow-y-auto bg-white border border-zinc-200 rounded-2xl shadow-lg">
-                    {COUNTRY_PHONE_CODES.map((c, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => { set('whatsapp_code', c.code); setPhoneDropOpen(false) }}
-                        className={`w-full flex items-center gap-2 px-3 py-3 text-sm hover:bg-zinc-50 text-left min-h-[48px] ${c.code === form.whatsapp_code ? 'text-[#c8a96e] font-medium' : 'text-[#1a1918]'}`}
-                      >
-                        <span>{c.flag}</span>
-                        <span className="text-zinc-500">{c.code}</span>
-                        <span className="truncate">{c.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
+          <div>
+            <div className="flex gap-2">
+              <div className="relative flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setPhoneDropOpen(o => !o)}
+                  className="flex items-center gap-1 px-3 py-4 bg-white border border-zinc-200 rounded-2xl text-sm font-medium text-[#1a1918] whitespace-nowrap min-h-[48px]"
+                >
+                  <span>{selectedPhone.flag}</span>
+                  <span>{selectedPhone.code}</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                {phoneDropOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setPhoneDropOpen(false)} />
+                    <div className="absolute z-50 top-full left-0 mt-1 w-64 max-h-64 overflow-y-auto bg-white border border-zinc-200 rounded-2xl shadow-lg">
+                      {COUNTRY_PHONE_CODES.map((c, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => { set('whatsapp_code', c.code); setPhoneDropOpen(false) }}
+                          className={`w-full flex items-center gap-2 px-3 py-3 text-sm hover:bg-zinc-50 text-left min-h-[48px] ${c.code === form.whatsapp_code ? 'text-[#c8a96e] font-medium' : 'text-[#1a1918]'}`}
+                        >
+                          <span>{c.flag}</span>
+                          <span className="text-zinc-500">{c.code}</span>
+                          <span className="truncate">{c.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+              <input
+                ref={inputRef}
+                type="tel"
+                inputMode="tel"
+                value={form.whatsapp_number}
+                onChange={e => set('whatsapp_number', e.target.value)}
+                className={`flex-1 ${inputBaseClass}`}
+                placeholder="6 12 34 56 78"
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); goNext() } }}
+              />
             </div>
-            <input
-              ref={inputRef}
-              type="tel"
-              inputMode="tel"
-              value={form.whatsapp_number}
-              onChange={e => set('whatsapp_number', e.target.value)}
-              className="flex-1 px-4 py-4 bg-white border border-zinc-200 rounded-2xl text-[16px] text-[#1a1918] placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-              placeholder="6 12 34 56 78"
-              onKeyDown={e => { if (e.key === 'Enter' && canGoNext()) goNext() }}
-            />
+            {phoneValidation && (
+              <p className={`text-xs mt-2 ${phoneValidation.valid ? 'text-green-600' : 'text-amber-600'}`}>
+                {phoneValidation.valid ? '\u2713' : '\u26A0\uFE0F'} {phoneValidation.message || (lang === 'fr' ? 'Numéro valide' : 'Valid number')}
+              </p>
+            )}
           </div>
         )
 
@@ -506,7 +634,7 @@ export function MobileApply({
             type="date"
             value={(form[q.field] as string) ?? ''}
             onChange={e => set(q.field, e.target.value as never)}
-            className={`w-full px-4 py-4 bg-white border border-zinc-200 rounded-2xl text-[16px] text-[#1a1918] focus:outline-none focus:ring-2 focus:ring-[#c8a96e] ${!(form[q.field] as string) ? 'text-zinc-400' : ''}`}
+            className={`${inputBaseClass} ${!(form[q.field] as string) ? 'text-zinc-400' : ''}`}
             min={q.id === 'start_date' ? new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0] : undefined}
           />
         )
@@ -514,7 +642,6 @@ export function MobileApply({
       case 'select':
         return (
           <div>
-            {/* Selected chip */}
             {(form[q.field] as string) && (
               <div className="mb-3">
                 <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-[#c8a96e] text-white">
@@ -530,7 +657,7 @@ export function MobileApply({
                   type="text"
                   value={searchText}
                   onChange={e => setSearchText(e.target.value)}
-                  className="w-full px-4 py-4 bg-white border border-zinc-200 rounded-2xl text-[16px] text-[#1a1918] placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c8a96e] mb-3"
+                  className={`${inputBaseClass} mb-3`}
                   placeholder={lang === 'fr' ? 'Rechercher...' : 'Search...'}
                 />
                 <div className="max-h-56 overflow-y-auto space-y-1.5">
@@ -578,7 +705,7 @@ export function MobileApply({
                 type="text"
                 value={searchText}
                 onChange={e => setSearchText(e.target.value)}
-                className="w-full px-4 py-4 bg-white border border-zinc-200 rounded-2xl text-[16px] text-[#1a1918] placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c8a96e] mb-3"
+                className={`${inputBaseClass} mb-3`}
                 placeholder={lang === 'fr' ? 'Rechercher un pays...' : 'Search a country...'}
               />
               <div className="max-h-48 overflow-y-auto space-y-1.5">
@@ -729,7 +856,7 @@ export function MobileApply({
                 const f = e.target.files?.[0]
                 if (f) {
                   if (f.size > 20 * 1024 * 1024) {
-                    setFieldError(lang === 'fr' ? `Fichier trop volumineux (max 20MB)` : 'File too large (max 20MB)')
+                    setFieldError(lang === 'fr' ? 'Fichier trop volumineux (max 20MB)' : 'File too large (max 20MB)')
                     return
                   }
                   if (q.id === 'cv_en') {
@@ -792,7 +919,7 @@ export function MobileApply({
             placeholder={lang === 'fr'
               ? 'Objectifs, compétences, types d\'entreprises...'
               : 'Goals, skills, company types...'}
-            className="w-full px-4 py-4 bg-white border border-zinc-200 rounded-2xl text-[16px] text-[#1a1918] placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c8a96e] resize-none"
+            className="w-full px-1 py-4 bg-transparent border-0 border-b-2 border-zinc-200 text-[16px] text-[#1a1918] placeholder-zinc-400 focus:outline-none focus:border-[#c8a96e] transition-colors resize-none"
           />
         )
 
@@ -885,19 +1012,41 @@ export function MobileApply({
     }
   }
 
+  // ── Animation style ──
+  const transitionStyle: React.CSSProperties = {
+    opacity: visible ? 1 : 0,
+    transform: visible
+      ? 'translateX(0)'
+      : animDir === 'forward'
+        ? 'translateX(-20px)'
+        : 'translateX(20px)',
+    transition: 'opacity 150ms ease, transform 150ms ease',
+  }
+
   // ── Main render ──
   return (
-    <div className="min-h-screen bg-[#fafaf9] flex flex-col">
+    <div className="min-h-screen bg-[#fafaf9] flex flex-col" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', paddingBottom: 'env(safe-area-inset-bottom)' }}>
       {/* Progress bar */}
-      <div className="h-1 bg-zinc-100 flex-shrink-0">
-        <div
-          className="h-full bg-[#c8a96e] transition-all duration-500"
-          style={{ width: `${((currentQ + 1) / totalQ) * 100}%` }}
-        />
+      <div className="flex-shrink-0">
+        <div className="h-1 bg-zinc-100">
+          <div
+            className="h-full bg-[#c8a96e] transition-all duration-500"
+            style={{ width: `${((safeIdx + 1) / totalQ) * 100}%` }}
+          />
+        </div>
+        {/* Section name + counter */}
+        <div className="flex items-center justify-between px-6 pt-2">
+          <p className="text-xs font-semibold text-[#c8a96e] uppercase tracking-wider">
+            {lang === 'fr' ? question.section : question.sectionEn}
+          </p>
+          <p className="text-xs text-zinc-400">
+            {safeIdx + 1}/{totalQ}
+          </p>
+        </div>
       </div>
 
       {/* Language toggle */}
-      <div className="flex justify-end px-4 pt-3">
+      <div className="flex justify-end px-4 pt-2">
         <div className="inline-flex rounded-lg border border-zinc-200 bg-white overflow-hidden text-xs font-medium">
           <button
             onClick={() => setLang('fr')}
@@ -914,13 +1063,8 @@ export function MobileApply({
         </div>
       </div>
 
-      {/* Question area */}
-      <div className="flex-1 flex flex-col justify-start px-6 py-6 overflow-y-auto">
-        {/* Counter */}
-        <p className="text-xs font-medium text-[#c8a96e] mb-2 uppercase tracking-wider">
-          {currentQ + 1} / {totalQ}
-        </p>
-
+      {/* Question area with animation */}
+      <div className="flex-1 flex flex-col justify-start px-6 py-6 overflow-y-auto" style={transitionStyle}>
         {/* Question label */}
         <h2 className="text-2xl font-bold text-[#1a1918] mb-2 leading-tight">
           {lang === 'fr' ? question.label : question.labelEn}
@@ -941,18 +1085,18 @@ export function MobileApply({
         {/* Error */}
         {(fieldError || error) && (
           <p className="mt-3 text-sm text-red-600 flex items-center gap-1">
-            <span>&#9888;&#65039;</span> {fieldError || error}
+            <span>{'\u26A0\uFE0F'}</span> {fieldError || error}
           </p>
         )}
       </div>
 
       {/* Bottom navigation */}
       {!isSchedule && (
-        <div className="px-6 pb-8 pt-4 bg-[#fafaf9] border-t border-zinc-100 flex-shrink-0">
+        <div className="px-6 pt-4 flex-shrink-0 border-t border-zinc-100 bg-[#fafaf9]" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
           <button
             onClick={goNext}
-            disabled={question.required !== false && !canGoNext()}
-            className="w-full py-4 rounded-2xl text-base font-bold bg-[#c8a96e] text-white disabled:opacity-40 transition-all active:scale-[0.98]"
+            disabled={(question.required !== false && !canGoNext()) || submitting}
+            className="w-full py-4 rounded-2xl text-base font-bold bg-[#c8a96e] text-white disabled:opacity-40 transition-all active:scale-[0.98] min-h-[52px]"
           >
             {submitting
               ? (lang === 'fr' ? 'Envoi en cours...' : 'Submitting...')
@@ -963,7 +1107,7 @@ export function MobileApply({
                   : (lang === 'fr' ? 'Continuer \u2192' : 'Continue \u2192')}
           </button>
 
-          {currentQ > 0 && (
+          {safeIdx > 0 && (
             <button onClick={goPrev} className="w-full py-3 text-sm text-zinc-500 mt-2 min-h-[48px]">
               {'\u2190'} {lang === 'fr' ? 'Retour' : 'Back'}
             </button>
