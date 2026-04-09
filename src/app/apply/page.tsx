@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 
 
 // ─── Lang helper ────────────────────────────────────────────────────────────
@@ -336,6 +337,7 @@ function FileUpload({
 // ─────────────────────────────────────────────────────────────
 
 export default function ApplyPage() {
+  const router = useRouter()
   const [step, setStep] = useState(0)
   const [lang, setLang] = useState<'fr'|'en'>('fr')
   const [submitting, setSubmitting] = useState(false)
@@ -558,9 +560,7 @@ export default function ApplyPage() {
       case 3:
         return !!(form.commitment_price && form.commitment_budget && form.commitment_terms)
       case 4:
-        return !!form.rdv_slot
-      case 5:
-        return !!form.rdv_slot
+        return true
       default:
         return false
     }
@@ -635,7 +635,7 @@ export default function ApplyPage() {
         throw new Error(d.error ?? T('Erreur lors de la soumission', 'Submission error', lang))
       }
 
-      window.location.href = `/apply/confirmation?name=${encodeURIComponent(form.first_name)}`
+      router.push(`/apply/confirmation?name=${encodeURIComponent(form.first_name)}&lang=${lang}`)
     } catch (e) {
       setError(e instanceof Error ? e.message : T('Erreur inconnue', 'Unknown error', lang))
     } finally {
@@ -1413,25 +1413,20 @@ export default function ApplyPage() {
               onClick={() => { setStep(s => s - 1); setError('') }}
               className="px-6 py-3 rounded-xl text-sm font-medium bg-white text-[#8a7d6d] border border-zinc-200 hover:border-[#c8a96e] transition-all"
             >
-              {lang==='fr'?'Retour':'Back'}
+              {lang==='fr'?'\u2190 Retour':'\u2190 Back'}
             </button>
           )}
-          {step < 4 ? (
+          {step < 3 && (
             <button
               type="button"
               disabled={!canNext()}
               onClick={() => { setStep(s => s + 1); setError('') }}
               className="flex-1 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a]"
             >
-              {lang==='fr'?'Continuer →':'Continue →'}
+              {lang==='fr'?'Continuer \u2192':'Continue \u2192'}
             </button>
-          ) : step === 4 ? (
-            <p className="flex-1 text-center text-sm text-zinc-400 py-3">
-              {lang==='fr'
-                ? '👆 Choisis ton créneau ci-dessus pour confirmer ton RDV'
-                : '👆 Choose your slot above to confirm your booking'}
-            </p>
-          ) : (
+          )}
+          {step === 3 && (
             <button
               type="button"
               disabled={!canNext() || submitting}

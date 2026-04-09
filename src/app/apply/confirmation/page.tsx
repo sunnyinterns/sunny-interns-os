@@ -6,59 +6,89 @@ import { Suspense } from 'react'
 function ConfirmationContent() {
   const params = useSearchParams()
   const name = params.get('name') ?? ''
+  const rdv = params.get('rdv')
+  const langParam = params.get('lang')
+  const isFr = langParam !== 'en'
 
   return (
-    <div className="min-h-screen bg-[#1a1410] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center px-4 py-12">
       <div className="max-w-md w-full text-center">
         {/* Animated check */}
-        <div className="relative w-24 h-24 mx-auto mb-8">
-          <div className="absolute inset-0 rounded-full bg-[#0d9e75]/20 animate-ping" />
-          <div className="relative w-24 h-24 rounded-full bg-[#0d9e75] flex items-center justify-center">
+        <div className="relative w-24 h-24 mx-auto mb-8 animate-[scaleIn_0.5s_ease-out]">
+          <div className="absolute inset-0 rounded-full bg-[#0d9e75]/15 animate-ping" />
+          <div className="relative w-24 h-24 rounded-full bg-[#0d9e75] flex items-center justify-center animate-[fadeScale_0.6s_ease-out]">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
         </div>
 
-        <h1 className="text-3xl font-bold text-[#f5f0e6] mb-2">
-          Félicitations {name} !
+        <h1 className="text-3xl font-bold text-[#1a1918] mb-2">
+          {isFr
+            ? <>F&eacute;licitations {name} ! {'\uD83C\uDF89'}</>
+            : <>Congratulations {name}! {'\uD83C\uDF89'}</>}
         </h1>
-        <h2 className="text-xl text-[#c8a96e] mb-2">
-          Congratulations {name}!
-        </h2>
 
         <p className="text-lg text-[#c8a96e] mb-1">
-          Ta candidature a bien été reçue !
-        </p>
-        <p className="text-sm text-[#8a7d6d] mb-2">
-          Your application has been received!
+          {isFr ? 'Ta candidature a bien \u00e9t\u00e9 re\u00e7ue !' : 'Your application has been received!'}
         </p>
 
-        <p className="text-sm text-[#8a7d6d] mb-2">
-          Tu vas recevoir un email de confirmation dans quelques minutes.
-          <br />
-          You will receive a confirmation email shortly.
-        </p>
+        {rdv && (
+          <p className="text-sm text-[#0d9e75] font-medium mb-4">
+            {isFr
+              ? 'Ton RDV est confirm\u00e9. Tu recevras un email de confirmation.'
+              : 'Your call is confirmed. You will receive a confirmation email.'}
+          </p>
+        )}
 
-        <p className="text-sm text-[#c8a96e]/80 mb-8">
-          Nous te contactons dans les 24h.
-          <br />
-          We&apos;ll get back to you within 24 hours.
-        </p>
+        {/* Info cards */}
+        <div className="space-y-3 mt-6 mb-8 text-left">
+          <div className="flex items-start gap-3 bg-white border border-zinc-200 rounded-xl p-4">
+            <span className="text-xl flex-shrink-0">{'\uD83D\uDCE7'}</span>
+            <div>
+              <p className="text-sm font-medium text-[#1a1918]">
+                {isFr ? 'Email de confirmation' : 'Confirmation email'}
+              </p>
+              <p className="text-xs text-zinc-500">
+                {isFr
+                  ? 'Tu recevras un email dans quelques minutes.'
+                  : 'You will receive an email in a few minutes.'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3 bg-white border border-zinc-200 rounded-xl p-4">
+            <span className="text-xl flex-shrink-0">{'\uD83D\uDCF1'}</span>
+            <div>
+              <p className="text-sm font-medium text-[#1a1918]">
+                {isFr ? 'WhatsApp sous 24h' : 'WhatsApp within 24h'}
+              </p>
+              <p className="text-xs text-zinc-500">
+                {isFr
+                  ? "L'\u00e9quipe te contactera sous 24h sur WhatsApp."
+                  : 'The team will contact you within 24h on WhatsApp.'}
+              </p>
+            </div>
+          </div>
+        </div>
 
         <a
-          href="/portal"
-          className="inline-flex items-center justify-center w-full py-3 rounded-xl text-sm font-bold bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a] transition-all mb-3"
+          href="https://bali-interns.com"
+          className="inline-flex items-center justify-center w-full py-3 rounded-xl text-sm font-bold bg-[#c8a96e] text-white hover:bg-[#b8945a] transition-all"
         >
-          Accéder à ton espace / Access your space
-        </a>
-        <a
-          href="/"
-          className="inline-flex items-center justify-center w-full py-3 rounded-xl text-sm font-medium border border-[#c8a96e]/30 text-[#c8a96e] hover:bg-[#c8a96e]/10 transition-all"
-        >
-          Retour à l&apos;accueil / Back to homepage
+          {isFr ? "Retour \u00e0 l'accueil" : 'Back to homepage'}
         </a>
       </div>
+
+      <style jsx global>{`
+        @keyframes scaleIn {
+          from { transform: scale(0.5); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+        @keyframes fadeScale {
+          from { transform: scale(0.8); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
     </div>
   )
 }
@@ -66,7 +96,7 @@ function ConfirmationContent() {
 export default function ConfirmationPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#1a1410] flex items-center justify-center">
+      <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[#c8a96e] border-t-transparent rounded-full animate-spin" />
       </div>
     }>
