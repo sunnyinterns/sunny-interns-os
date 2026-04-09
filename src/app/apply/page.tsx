@@ -692,8 +692,8 @@ export default function ApplyPage() {
         whatsapp: `${form.whatsapp_code}${form.whatsapp_number.replace(/\s/g, '')}`,
         school_country: form.school_country,
         nationalities: form.nationalities,
-        birth_date: form.birth_date,
-        passport_expiry: form.passport_expiry,
+        birth_date: form.birth_date || null,
+        passport_expiry: form.passport_expiry || null,
         linkedin_url: form.linkedin_url || null,
         cv_url,
         local_cv_url: local_cv_url || null,
@@ -701,7 +701,7 @@ export default function ApplyPage() {
         desired_jobs: form.desired_jobs,
         custom_jobs: form.custom_jobs,
         duration: form.duration,
-        start_date: form.start_date,
+        start_date: form.start_date || null,
         stage_ideal: form.stage_ideal,
         school_name: form.school_name || form.school_custom_name,
         school_id: form.school_id,
@@ -875,7 +875,7 @@ export default function ApplyPage() {
                   ⚠️ {lang === 'fr' ? 'Cet email est déjà associé à un dossier. Contacte-nous sur WhatsApp.' : 'This email is already linked to an application. Contact us on WhatsApp.'}
                 </p>
               )}
-              {form.email && isValidEmail(form.email) && !emailExists && !emailChecking && (
+              {form.email && isValidEmail(form.email) && !emailExists && (
                 <p className="text-xs text-green-600 mt-1">✓ {lang === 'fr' ? 'Email disponible' : 'Email available'}</p>
               )}
             </div>
@@ -921,11 +921,26 @@ export default function ApplyPage() {
                 <input
                   type="tel"
                   value={form.whatsapp_number}
-                  onChange={e => set('whatsapp_number', e.target.value)}
-                  className={`${inputClass} flex-1`}
+                  onChange={e => {
+                    set('whatsapp_number', e.target.value)
+                    const err = validatePhone(form.whatsapp_code ?? '+33', e.target.value)
+                    setPhoneError(err ?? '')
+                  }}
+                  className={`${inputClass} flex-1 ${phoneError && form.whatsapp_number ? 'ring-2 ring-red-500' : !phoneError && form.whatsapp_number && form.whatsapp_number.replace(/\D/g,'').length >= 8 ? 'ring-2 ring-green-400' : ''}`}
                   placeholder="6 12 34 56 78"
                 />
               </div>
+              {/* Feedback WhatsApp */}
+              {phoneError && form.whatsapp_number && (
+                <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                  ⚠️ {phoneError}
+                </p>
+              )}
+              {!phoneError && form.whatsapp_number && form.whatsapp_number.replace(/\D/g,'').length >= 7 && (
+                <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                  ✓ {lang === 'fr' ? 'Numéro valide' : 'Valid number'}
+                </p>
+              )}
             </div>
 
             {/* Nationalité(s) — multi-select with search */}
