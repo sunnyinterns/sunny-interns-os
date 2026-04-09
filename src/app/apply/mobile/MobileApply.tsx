@@ -66,7 +66,7 @@ interface Question {
   labelEn: string
   helper?: string
   helperEn?: string
-  type: 'text' | 'email' | 'tel_whatsapp' | 'date' | 'select' | 'multi_select' | 'file' | 'textarea' | 'chips' | 'checkbox_group' | 'schedule'
+  type: 'text' | 'email' | 'tel_whatsapp' | 'date' | 'select' | 'multi_select' | 'file' | 'textarea' | 'chips' | 'checkbox_group' | 'schedule' | 'name_pair' | 'date_pair' | 'cv_pair' | 'linkedin_school'
   field: keyof FormData
   required?: boolean
   options?: string[]
@@ -240,6 +240,8 @@ export function MobileApply({
   const [searchText, setSearchText] = useState('')
   const [phoneDropOpen, setPhoneDropOpen] = useState(false)
   const [schoolResults, setSchoolResults] = useState<School[]>([])
+  const [cvEnUploadingLocal, setCvEnUploadingLocal] = useState(false)
+  const [cvLocalUploadingLocal, setCvLocalUploadingLocal] = useState(false)
   const [isSearchingSchool, setIsSearchingSchool] = useState(false)
   const [emailExists, setEmailExists] = useState(false)
   const [emailChecking, setEmailChecking] = useState(false)
@@ -247,6 +249,8 @@ export function MobileApply({
   const [visible, setVisible] = useState(true)
   const inputRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const cvEnRef = useRef<HTMLInputElement>(null)
+  const cvLocalRef = useRef<HTMLInputElement>(null)
   const searchSchoolsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const emailCheckTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -263,26 +267,23 @@ export function MobileApply({
   const SEC_RD = { fr: 'RDV', en: 'Booking' }
 
   const questions: Question[] = [
-    { id: 'first_name', type: 'text', label: 'Quel est ton prénom ?', labelEn: 'What is your first name?', field: 'first_name', required: true, hint: 'ex: Jean', hintEn: 'e.g. John', section: SEC_ID.fr, sectionEn: SEC_ID.en },
-    { id: 'last_name', type: 'text', label: 'Et ton nom ?', labelEn: 'And your last name?', field: 'last_name', required: true, section: SEC_ID.fr, sectionEn: SEC_ID.en },
+    { id: 'name_pair', type: 'name_pair', label: 'Prénom & Nom', labelEn: 'First & Last name', field: 'first_name', required: true, section: SEC_ID.fr, sectionEn: SEC_ID.en },
     { id: 'email', type: 'email', label: 'Ton adresse email ?', labelEn: 'Your email address?', field: 'email', required: true, helper: "On t'enverra la confirmation ici", helperEn: 'We\'ll send your confirmation here', section: SEC_ID.fr, sectionEn: SEC_ID.en },
     { id: 'whatsapp', type: 'tel_whatsapp', label: 'Ton numéro WhatsApp ?', labelEn: 'Your WhatsApp number?', field: 'whatsapp_number', required: true, helper: "Tout le monde à Bali l'utilise !", helperEn: 'Everyone uses it in Bali!', section: SEC_ID.fr, sectionEn: SEC_ID.en },
     { id: 'nationalities', type: 'chips', label: 'Ta ou tes nationalités ?', labelEn: 'Your nationality(ies)?', field: 'nationalities', required: true, options: COUNTRIES, section: SEC_ID.fr, sectionEn: SEC_ID.en },
-    { id: 'birth_date', type: 'date', label: 'Ta date de naissance ?', labelEn: 'Your date of birth?', field: 'birth_date', required: true, section: SEC_ID.fr, sectionEn: SEC_ID.en },
-    { id: 'passport_expiry', type: 'date', label: 'Expiration de ton passeport ?', labelEn: 'Your passport expiry date?', field: 'passport_expiry', required: true, helper: 'Doit être valide 6 mois après ton arrivée', helperEn: 'Must be valid 6 months after arrival', section: SEC_ID.fr, sectionEn: SEC_ID.en },
+    { id: 'dates_identity', type: 'date_pair', label: 'Dates importantes', labelEn: 'Important dates', field: 'birth_date', required: true, section: SEC_ID.fr, sectionEn: SEC_ID.en },
     { id: 'school_country', type: 'select', label: 'Pays où tu fais tes études ?', labelEn: 'Country where you study?', field: 'school_country', required: true, options: COUNTRIES, helper: 'Détermine le type de convention de stage', helperEn: 'Determines your internship agreement type', section: SEC_PR.fr, sectionEn: SEC_PR.en },
-    { id: 'linkedin_url', type: 'text', label: 'Ton profil LinkedIn ?', labelEn: 'Your LinkedIn profile?', field: 'linkedin_url', required: false, hint: 'https://linkedin.com/in/...', hintEn: 'Optionnel / Optional', section: SEC_PR.fr, sectionEn: SEC_PR.en },
-    { id: 'cv_en', type: 'file', label: 'Ton CV en anglais', labelEn: 'Your CV in English', field: 'cv_en_file', required: true, helper: 'PDF, DOC ou DOCX - Max 20MB', helperEn: 'PDF, DOC or DOCX - Max 20MB', accept: '.pdf,.doc,.docx,.jpg,.jpeg,.png,.odt,.rtf', section: SEC_PR.fr, sectionEn: SEC_PR.en },
-    { id: 'cv_local', type: 'file', label: 'Ton CV en français (ou langue locale)', labelEn: 'Your CV in French (or local language)', field: 'cv_local_file', required: false, skip: (f) => ANGLOPHONE_COUNTRIES.includes(f.school_country), accept: '.pdf,.doc,.docx,.jpg,.jpeg,.png,.odt,.rtf', section: SEC_PR.fr, sectionEn: SEC_PR.en },
-    { id: 'spoken_languages', type: 'chips', label: 'Tes langues professionnelles ?', labelEn: 'Your professional languages?', field: 'spoken_languages', required: true, section: SEC_PR.fr, sectionEn: SEC_PR.en },
-    { id: 'school_name', type: 'text', label: 'Ton école ou université ?', labelEn: 'Your school or university?', field: 'school_name', required: false, helper: 'Commence à taper pour chercher', helperEn: 'Start typing to search', section: SEC_PR.fr, sectionEn: SEC_PR.en },
+    { id: 'linkedin_school', type: 'linkedin_school', label: 'École & LinkedIn', labelEn: 'School & LinkedIn', field: 'school_name', required: false, section: SEC_PR.fr, sectionEn: SEC_PR.en },
+    { id: 'cv_pair', type: 'cv_pair', label: 'Tes CV', labelEn: 'Your CVs', field: 'cv_en_file', required: true, helper: 'PDF, DOC, JPG - Max 20MB', helperEn: 'PDF, DOC, JPG - Max 20MB', section: SEC_PR.fr, sectionEn: SEC_PR.en },
+    { id: 'spoken_languages', type: 'chips', label: 'Tes langues de travail ?', labelEn: 'Your working languages?', field: 'spoken_languages', required: true, section: SEC_PR.fr, sectionEn: SEC_PR.en },
+    
     { id: 'duration', type: 'chips', label: 'Durée souhaitée du stage ?', labelEn: 'Desired internship duration?', field: 'duration', required: true, section: SEC_ST.fr, sectionEn: SEC_ST.en },
     { id: 'start_date', type: 'date', label: 'Date de démarrage souhaitée ?', labelEn: 'Desired start date?', field: 'start_date', required: true, helper: 'À 2-4 semaines près, c\'est ok', helperEn: 'Give or take 2-4 weeks, that\'s fine', section: SEC_ST.fr, sectionEn: SEC_ST.en },
     { id: 'desired_jobs', type: 'chips', label: 'Métiers souhaités ? (max 3)', labelEn: 'Desired positions? (max 3)', field: 'desired_jobs', required: false, maxSelect: 3, section: SEC_ST.fr, sectionEn: SEC_ST.en },
     { id: 'stage_ideal', type: 'textarea', label: 'Ton stage idéal en quelques lignes', labelEn: 'Your ideal internship in a few lines', field: 'stage_ideal', required: true, section: SEC_ST.fr, sectionEn: SEC_ST.en },
-    { id: 'touchpoints', type: 'chips', label: 'Comment tu nous as trouvé ?', labelEn: 'How did you find us?', field: 'touchpoints', required: false, section: SEC_ST.fr, sectionEn: SEC_ST.en },
+    { id: 'touchpoints', type: 'chips', label: 'Comment tu as connu Bali Interns ?', labelEn: 'How did you hear about us?', field: 'touchpoints', required: false, section: SEC_ST.fr, sectionEn: SEC_ST.en },
     { id: 'referral_code', type: 'text', label: 'Tu as un code parrain ?', labelEn: 'Do you have a referral code?', field: 'referred_by_code', required: false, skip: (f) => !f.touchpoints.includes('Ambassadeur Bali Interns'), section: SEC_ST.fr, sectionEn: SEC_ST.en },
-    { id: 'commitment', type: 'checkbox_group', label: 'Avant de continuer', labelEn: 'Before continuing', field: 'commitment_price', required: true, section: SEC_EN.fr, sectionEn: SEC_EN.en },
+    { id: 'commitment', type: 'checkbox_group', label: 'Engagement & tarif', labelEn: 'Commitment & pricing', field: 'commitment_price', required: true, section: SEC_EN.fr, sectionEn: SEC_EN.en },
     { id: 'schedule', type: 'schedule', label: 'Réserve ton appel de qualification gratuit', labelEn: 'Book your free qualification call', field: 'rdv_slot', required: false, section: SEC_RD.fr, sectionEn: SEC_RD.en },
   ]
 
@@ -338,11 +339,14 @@ export function MobileApply({
     window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`)
     const existing = document.getElementById('fillout-script')
     if (existing) existing.remove()
-    const script = document.createElement('script')
-    script.id = 'fillout-script'
-    script.src = 'https://server.fillout.com/embed/v1/'
-    script.async = true
-    document.head.appendChild(script)
+    // Attendre que le div Fillout soit dans le DOM avant de charger le script
+    setTimeout(() => {
+      const script = document.createElement('script')
+      script.id = 'fillout-script'
+      script.src = 'https://server.fillout.com/embed/v1/'
+      script.async = true
+      document.head.appendChild(script)
+    }, 100)
     return () => {
       const s = document.getElementById('fillout-script')
       if (s) s.remove()
@@ -353,6 +357,36 @@ export function MobileApply({
   // ── Helpers ──
   function set<K extends keyof FormData>(key: K, value: FormData[K]) {
     setForm(f => ({ ...f, [key]: value }))
+  }
+
+  function setSchoolQ(q: string) {
+    if (q.length < 2) { setSchoolResults([]); return }
+    if (searchSchoolsTimeout.current) clearTimeout(searchSchoolsTimeout.current)
+    const country = form.school_country ? `&country=${encodeURIComponent(form.school_country)}` : ''
+    searchSchoolsTimeout.current = setTimeout(() => {
+      fetch(`/api/public/schools?q=${encodeURIComponent(q)}${country}`)
+        .then(r => r.ok ? r.json() : [])
+        .then((data: School[]) => setSchoolResults(Array.isArray(data) ? data : []))
+        .catch(() => setSchoolResults([]))
+    }, 400)
+  }
+
+  async function handleFileUpload(file: File, type: 'cv_en' | 'cv_local') {
+    if (file.size > 20 * 1024 * 1024) { return }
+    const isEn = type === 'cv_en'
+    if (isEn) { set('cv_en_file', file); set('cv_en_filename', file.name); setCvEnUploadingLocal(true) }
+    else { set('cv_local_file', file); set('cv_local_filename', file.name); setCvLocalUploadingLocal(true) }
+    try {
+      const fd = new FormData(); fd.append('file', file)
+      const r = await fetch('/api/upload', { method: 'POST', body: fd })
+      if (!r.ok) throw new Error('Upload failed')
+      const d = await r.json() as { url: string }
+      if (isEn) set('cv_url', d.url)
+      else set('local_cv_url', d.url)
+    } catch { /* ignore */ } finally {
+      if (isEn) setCvEnUploadingLocal(false)
+      else setCvLocalUploadingLocal(false)
+    }
   }
 
   function toggleArray(key: 'nationalities' | 'spoken_languages' | 'desired_jobs' | 'touchpoints', value: string, max?: number) {
@@ -398,6 +432,12 @@ export function MobileApply({
   function canGoNext(): boolean {
     const q = question
     const val = form[q.field]
+
+    // Nouveaux types groupés
+    if (q.type === 'name_pair') return !!(form.first_name.trim() && form.last_name.trim())
+    if (q.type === 'date_pair') return !!(form.birth_date && form.passport_expiry)
+    if (q.type === 'cv_pair') return !!(form.cv_en_file || form.cv_url)
+    if (q.type === 'linkedin_school') return true
 
     if (q.type === 'schedule') return true
     if (!q.required) return true
@@ -480,6 +520,114 @@ export function MobileApply({
   // ── Render field by type ──
   function renderField() {
     const q = question
+    const inputCls = 'w-full px-0 py-3 border-b-2 border-zinc-200 focus:border-[#c8a96e] bg-transparent text-xl text-[#1a1918] outline-none placeholder-zinc-300 transition-colors'
+
+    // ── Nouveaux types groupés ──
+
+    if (q.type === 'name_pair') {
+      return (
+        <div className="space-y-5">
+          <div>
+            <label className="block text-sm text-zinc-400 mb-1">{lang === 'fr' ? 'Prénom *' : 'First name *'}</label>
+            <input autoFocus type="text" value={form.first_name}
+              onChange={e => set('first_name', e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && (document.getElementById('mobile-last-name') as HTMLInputElement)?.focus()}
+              className={inputCls} placeholder={lang === 'fr' ? 'ex: Jean' : 'e.g. John'} />
+          </div>
+          <div>
+            <label className="block text-sm text-zinc-400 mb-1">{lang === 'fr' ? 'Nom *' : 'Last name *'}</label>
+            <input id="mobile-last-name" type="text" value={form.last_name}
+              onChange={e => set('last_name', e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && goNext()}
+              className={inputCls} placeholder={lang === 'fr' ? 'ex: Dupont' : 'e.g. Smith'} />
+          </div>
+        </div>
+      )
+    }
+
+    if (q.type === 'date_pair') {
+      return (
+        <div className="space-y-5">
+          <div>
+            <label className="block text-sm text-zinc-400 mb-1">{lang === 'fr' ? 'Date de naissance *' : 'Date of birth *'}</label>
+            <input autoFocus type="date" value={form.birth_date}
+              onChange={e => set('birth_date', e.target.value)}
+              className={`${inputCls} text-lg`} />
+          </div>
+          <div>
+            <label className="block text-sm text-zinc-400 mb-1">{lang === 'fr' ? 'Expiration passeport *' : 'Passport expiry *'}</label>
+            <input type="date" value={form.passport_expiry}
+              onChange={e => set('passport_expiry', e.target.value)}
+              className={`${inputCls} text-lg`} />
+            <p className="text-xs text-amber-600 mt-2">⚠️ {lang === 'fr' ? 'Doit être valide 6 mois après ton arrivée à Bali' : 'Must be valid 6+ months after arrival in Bali'}</p>
+          </div>
+        </div>
+      )
+    }
+
+    if (q.type === 'cv_pair') {
+      const isAnglophone = ['Royaume-Uni','Irlande','États-Unis','Canada','Australie','Nouvelle-Zélande','Singapour','United Kingdom','United States','Australia','Ireland','New Zealand','Singapore'].some(a => form.school_country === a)
+      return (
+        <div className="space-y-5">
+          <div>
+            <label className="block text-sm text-zinc-400 mb-2">{lang === 'fr' ? 'CV en anglais *' : 'English CV *'} <span className="text-zinc-300">PDF, DOC, JPG · max 20MB</span></label>
+            <input ref={cvEnRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.odt,.rtf" className="hidden"
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f, 'cv_en') }} />
+            <button type="button" onClick={() => cvEnRef.current?.click()}
+              className={`w-full py-5 rounded-2xl border-2 border-dashed text-center ${(form.cv_en_filename || form.cv_url) ? 'border-[#c8a96e] bg-amber-50' : 'border-zinc-200 bg-zinc-50'}`}>
+              {cvEnUploadingLocal
+                ? <span className="text-sm text-[#c8a96e]">⏳ Upload...</span>
+                : (form.cv_en_filename || form.cv_url)
+                  ? <span className="text-sm text-[#c8a96e] font-medium">✓ {form.cv_en_filename || 'CV uploadé'}</span>
+                  : <span className="text-sm text-zinc-400">{lang === 'fr' ? '📄 Appuie pour sélectionner' : '📄 Tap to select'}</span>}
+            </button>
+          </div>
+          {!isAnglophone && (
+            <div>
+              <label className="block text-sm text-zinc-400 mb-2">{lang === 'fr' ? 'CV en français (optionnel)' : 'Local language CV (optional)'}</label>
+              <input ref={cvLocalRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.odt,.rtf" className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f, 'cv_local') }} />
+              <button type="button" onClick={() => cvLocalRef.current?.click()}
+                className={`w-full py-5 rounded-2xl border-2 border-dashed text-center ${(form.cv_local_filename || form.local_cv_url) ? 'border-[#c8a96e] bg-amber-50' : 'border-zinc-200 bg-zinc-50'}`}>
+                {cvLocalUploadingLocal
+                  ? <span className="text-sm text-[#c8a96e]">⏳ Upload...</span>
+                  : (form.cv_local_filename || form.local_cv_url)
+                    ? <span className="text-sm text-[#c8a96e] font-medium">✓ {form.cv_local_filename || 'CV uploadé'}</span>
+                    : <span className="text-sm text-zinc-400">{lang === 'fr' ? '📄 Appuie pour sélectionner' : '📄 Tap to select'}</span>}
+              </button>
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    if (q.type === 'linkedin_school') {
+      return (
+        <div className="space-y-5">
+          <div>
+            <label className="block text-sm text-zinc-400 mb-1">{lang === 'fr' ? 'Profil LinkedIn (optionnel)' : 'LinkedIn profile (optional)'}</label>
+            <input autoFocus type="url" value={form.linkedin_url || ''}
+              onChange={e => set('linkedin_url', e.target.value)}
+              className={inputCls} placeholder="https://linkedin.com/in/..." />
+          </div>
+          <div>
+            <label className="block text-sm text-zinc-400 mb-1">{lang === 'fr' ? 'École / Université (optionnel)' : 'School / University (optional)'}</label>
+            <input type="text" value={form.school_search || form.school_name || ''}
+              onChange={e => { set('school_search', e.target.value); set('school_name', e.target.value); setSchoolQ(e.target.value) }}
+              className={inputCls} placeholder={lang === 'fr' ? 'Commence à taper...' : 'Start typing...'} />
+            {schoolResults.length > 0 && (
+              <div className="mt-1 bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-lg max-h-40 overflow-y-auto">
+                {schoolResults.map((s: {id:string;name:string}) => (
+                  <button key={s.id} type="button"
+                    onClick={() => { set('school_name', s.name); set('school_search', s.name); set('school_id', s.id as unknown as null); setSchoolResults([]) }}
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-zinc-50 border-b border-zinc-50 last:border-0">{s.name}</button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )
+    }
 
     switch (q.type) {
       case 'text':
@@ -1003,6 +1151,8 @@ export function MobileApply({
               data-fillout-embed-type="standard"
               data-fillout-inherit-parameters
               data-fillout-dynamic-resize
+              data-fillout-name={`${form.first_name} ${form.last_name}`.trim()}
+              data-fillout-email={form.email}
             />
           </div>
         )
