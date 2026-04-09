@@ -804,11 +804,14 @@ export default function ApplyPage() {
               <label className={labelClass}>{lang==='fr'?"Date d\u2019expiration du passeport *":'Passport expiry date *'}</label>
               <input type="date" value={form.passport_expiry} onChange={e => set('passport_expiry', e.target.value)} className={inputClass} />
               {passportWarning && (
-                <p className="mt-2 text-sm text-amber-400 bg-amber-900/20 border border-amber-800/30 rounded-lg px-3 py-2">
-                  {lang==='fr'
-                    ? 'Ton passeport doit \u00eatre valide au moins 6 mois apr\u00e8s ton arriv\u00e9e \u00e0 Bali'
-                    : 'Your passport must be valid at least 6 months after your arrival in Bali'}
-                </p>
+                <div className="mt-2 flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-300 rounded-lg px-3 py-2.5">
+                  <span className="flex-shrink-0 font-bold">⚠️</span>
+                  <span>
+                    {lang==='fr'
+                      ? "Ton passeport doit être valide au moins 6 mois après ton arrivée à Bali. Tu pourras le mettre à jour plus tard."
+                      : "Your passport must be valid at least 6 months after your arrival in Bali. You can update it later."}
+                  </span>
+                </div>
               )}
             </div>
 
@@ -1124,7 +1127,7 @@ export default function ApplyPage() {
             <div>
               <label className={labelClass}>{lang==='fr'?'M\u00e9tiers souhait\u00e9s * (max 3)':'Desired positions * (max 3)'}</label>
               <div className="flex flex-wrap gap-2">
-                {jobTypes.map(j => {
+                {jobTypes.filter(j => j.name_fr !== 'Autre' && j.name_en !== 'Other').map(j => {
                   const jLabel = lang==='fr' ? (j.name_fr || j.name) : (j.name_en || j.name)
                   return (
                     <Chip
@@ -1341,12 +1344,11 @@ export default function ApplyPage() {
                   : "⚠️ If you can't make it, a reschedule link will be in your confirmation email. Due to high demand, only one reschedule is allowed."}
               </p>
             </div>
-            {/* Fillout scheduling embed */}
+            {/* Fillout scheduling embed — fullscreen */}
             <div
-              className="w-full rounded-xl overflow-hidden border border-zinc-200"
-              style={{ minHeight: 500 }}
+              style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, background: 'white' }}
               dangerouslySetInnerHTML={{
-                __html: `<div style="width:100%;height:500px;" data-fillout-id="iqn73wjLFeus" data-fillout-embed-type="standard" data-fillout-inherit-parameters data-fillout-dynamic-resize></div><script src="https://server.fillout.com/embed/v1/"></script>`
+                __html: `<div data-fillout-id="iqn73wjLFeus" data-fillout-embed-type="fullscreen" style="width:100%;height:100%;" data-fillout-inherit-parameters></div><script src="https://server.fillout.com/embed/v1/"></script>`
               }}
             />
             <p className="text-xs text-zinc-400 text-center">
