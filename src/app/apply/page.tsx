@@ -618,10 +618,12 @@ export default function ApplyPage() {
     : ''
 
   const passportWarning = (() => {
-    if (!form.passport_expiry || !form.start_date) return false
-    const startPlus6 = new Date(form.start_date)
-    startPlus6.setMonth(startPlus6.getMonth() + 6)
-    return new Date(form.passport_expiry) < startPlus6
+    if (!form.passport_expiry) return false
+    // Si pas de date de départ, vérifier 18 mois depuis aujourd'hui (marge conservative)
+    const refDate = form.start_date ? new Date(form.start_date) : new Date()
+    const refPlus6 = new Date(refDate)
+    refPlus6.setMonth(refPlus6.getMonth() + 6)
+    return new Date(form.passport_expiry) < refPlus6
   })()
 
   const stepTitles = [
