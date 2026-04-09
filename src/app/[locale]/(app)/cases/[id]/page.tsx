@@ -369,14 +369,8 @@ export default function CaseDetailPage() {
           <TabArrivee caseData={{
             id: caseData.id,
             flight_number: caseData.flight_number,
-            flight_arrival_datetime: caseData.flight_arrival_datetime,
             flight_departure_city: caseData.flight_departure_city,
-            dropoff_address: caseData.dropoff_address,
-            last_stopover_city: caseData.last_stopover_city,
-            intern_bali_phone: caseData.intern_bali_phone,
-            first_name: firstName,
-            last_name: lastName,
-            arrival_date: caseData.actual_start_date ?? caseData.desired_start_date,
+            flight_arrival_time_local: caseData.flight_arrival_time_local,
             actual_start_date: caseData.actual_start_date,
             actual_end_date: caseData.actual_end_date,
             driver_booked: caseData.driver_booked ?? caseData.chauffeur_reserve,
@@ -384,7 +378,8 @@ export default function CaseDetailPage() {
             whatsapp_ambassador_bali_msg: caseData.whatsapp_ambassador_bali_msg,
             whatsapp_ambassador_done_msg: caseData.whatsapp_ambassador_done_msg,
             interns: caseData.interns ? {
-              phone: caseData.interns.phone,
+              first_name: caseData.interns.first_name,
+              last_name: caseData.interns.last_name,
               return_plane_ticket_url: caseData.interns.return_plane_ticket_url,
             } : null,
           }} />
