@@ -218,7 +218,7 @@ interface CalendarSlot {
 // HELPERS
 // ─────────────────────────────────────────────────────────────
 
-function generateStaticSlots(): CalendarSlot[] {
+function generateStaticSlots(lang: 'fr' | 'en' = 'fr'): CalendarSlot[] {
   const slots: CalendarSlot[] = []
   const now = new Date()
   const date = new Date(now)
@@ -439,10 +439,10 @@ export default function ApplyPage() {
         } else if (Array.isArray(data) && data.length > 0) {
           setCalendarSlots(data as CalendarSlot[])
         } else {
-          setCalendarSlots(generateStaticSlots())
+          setCalendarSlots(generateStaticSlots(lang))
         }
       })
-      .catch(() => setCalendarSlots(generateStaticSlots()))
+      .catch(() => setCalendarSlots(generateStaticSlots(lang)))
   }, [])
 
   // ── School search ──
