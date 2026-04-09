@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { logActivity } from '@/lib/activity-logger'
 
 function getServiceClient() {
   return createClient(
@@ -148,14 +147,40 @@ export async function POST(request: Request) {
         .maybeSingle()
     }
 
-    // Log activity
-    await logActivity({
-      caseId: newCase.id,
-      type: 'case_created' as 'status_changed',
-      title: `Nouveau dossier créé — ${d.first_name} ${d.last_name}`,
-      description: `${d.first_name} ${d.last_name} a soumis sa candidature via /apply`,
+    // Log activity_feed (using service client — no auth on public endpoint)
+    await supabase.from('activity_feed').insert({
+      case_id: newCase.id,
+      type: 'case_created',
+      title: `${d.first_name} ${d.last_name} a candidaté`,
+      description: `Nouvelle candidature de ${d.first_name} ${d.last_name} - ${d.email}`,
+      priority: 'normal',
+      status: 'done',
       source: 'candidature',
-    })
+      metadata: {
+        email: d.email,
+        school: d.school_name,
+        desired_jobs: allJobs,
+        touchpoint: d.touchpoints?.join(', ') ?? d.touchpoint,
+      },
+    }).then(() => null, () => null)
+
+    // Log case_logs
+    await supabase.from('case_logs').insert({
+      case_id: newCase.id,
+      author_name: `${d.first_name} ${d.last_name}`,
+      action: 'created',
+      description: `Dossier créé via formulaire de candidature`,
+      metadata: { source: 'apply_form', touchpoint: d.touchpoint },
+    }).then(() => null, () => null)
+
+    // Notification admin
+    await supabase.from('admin_notifications').insert({
+      type: 'new_application',
+      title: `Nouvelle candidature — ${d.first_name} ${d.last_name}`,
+      message: `${d.first_name} ${d.last_name} (${d.email}) vient de candidater`,
+      link: `/fr/cases/${newCase.id}`,
+      metadata: { case_id: newCase.id, intern_id: intern.id },
+    }).then(() => null, () => null)
 
     // Email confirmation
     try {

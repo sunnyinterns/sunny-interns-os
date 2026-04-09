@@ -99,27 +99,67 @@ export async function POST(request: Request) {
 
     await supabase.from('cases').update(updateData).eq('id', caseRow.id)
 
+    // Format la date du RDV
+    const rdvDate = rdvStart ? new Date(rdvStart) : null
+    const rdvLabel = rdvDate
+      ? rdvDate.toLocaleDateString('fr-FR', {
+          weekday: 'long', day: 'numeric', month: 'long',
+          hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta',
+        })
+      : 'date non précisée'
+
     // Log dans case_logs
     await supabase.from('case_logs').insert({
       case_id: caseRow.id,
       author_name: nameParam || email,
       action: 'rdv_booked',
-      description: `RDV de qualification planifié via Fillout${rdvStart ? ` : ${new Date(rdvStart).toLocaleString('fr-FR')}` : ''}`,
-      metadata: { 
+      description: `RDV planifié → ${rdvLabel}`,
+      metadata: {
         fillout_submission_id: payload.submissionId,
         rdv_start: rdvStart,
-        meet_link: meetLink 
+        meet_link: meetLink
       }
     })
+
+    // Log dans activity_feed
+    await supabase.from('activity_feed').insert({
+      case_id: caseRow.id,
+      type: 'rdv_booked',
+      title: `RDV planifié → ${rdvLabel}`,
+      description: `${nameParam || email} a planifié son entretien de qualification`,
+      priority: 'normal',
+      status: 'done',
+      source: 'fillout_webhook',
+      metadata: { rdv_start: rdvStart, meet_link: meetLink },
+    }).then(() => null, () => null)
 
     // Notification admin
     await supabase.from('admin_notifications').insert({
       type: 'rdv_booked',
-      title: `🗓️ RDV planifié — ${nameParam || email}`,
-      message: `${nameParam || email} a planifié son RDV de qualification${rdvStart ? ` pour le ${new Date(rdvStart).toLocaleString('fr-FR')}` : ''}`,
+      title: `RDV planifié — ${nameParam || email}`,
+      message: `${nameParam || email} a planifié son RDV → ${rdvLabel}`,
       link: `/fr/cases/${caseRow.id}?tab=process`,
       metadata: { case_id: caseRow.id, rdv_start: rdvStart, meet_link: meetLink }
     })
+
+    // Sync l'event dans notre table calendar_events
+    const internName = nameParam || email
+    if (rdvStart && internName) {
+      await supabase.from('calendar_events').upsert({
+        id: payload.submissionId,
+        google_calendar_id: 'team@bali-interns.com',
+        summary: `Team Bali Interns and ${internName}`,
+        status: 'confirmed',
+        start_datetime: rdvStart,
+        end_datetime: rdvEnd ?? new Date(new Date(rdvStart).getTime() + 45 * 60000).toISOString(),
+        meet_link: meetLink ?? null,
+        intern_name: internName,
+        intern_email: email,
+        case_id: caseRow.id,
+        my_response_status: 'accepted',
+        organizer_email: 'team@bali-interns.com',
+      }, { onConflict: 'id' }).then(() => null, () => null)
+    }
 
     return NextResponse.json({ ok: true, case_id: caseRow.id })
   } catch (err) {

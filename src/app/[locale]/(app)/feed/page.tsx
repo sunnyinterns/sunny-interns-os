@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { NewCaseModal } from '@/components/cases/NewCaseModal'
 import { Toast } from '@/components/ui/Toast'
+import { CalendarWidget } from '@/components/dashboard/CalendarWidget'
 import type { FeedResponse, FeedItem } from '@/lib/types'
 
 interface CaseLog {
@@ -373,6 +374,11 @@ export default function FeedPage() {
               label="Ce mois"
             />
           </div>
+
+          {/* CALENDRIER RDV */}
+          <section className="mb-6">
+            <CalendarWidget />
+          </section>
 
           {/* SECTION Activité récente */}
           {caseLogs.length > 0 && (
