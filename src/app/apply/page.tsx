@@ -465,6 +465,20 @@ export default function ApplyPage() {
     }, 400)
   }, [])
 
+
+  // Fillout script loader
+  useEffect(() => {
+    if (step !== 4) return
+    const existing = document.getElementById('fillout-script')
+    if (existing) existing.remove()
+    const script = document.createElement('script')
+    script.id = 'fillout-script'
+    script.src = 'https://server.fillout.com/embed/v1/'
+    script.async = true
+    document.head.appendChild(script)
+    return () => { const s = document.getElementById('fillout-script'); if (s) s.remove() }
+  }, [step])
+
   // ── Setters ──
   function setStepError(step: number, msg: string) {
     setStepErrors(e => ({ ...e, [step]: msg }))
@@ -1359,12 +1373,13 @@ export default function ApplyPage() {
                   : "⚠️ If you can't make it, a reschedule link will be in your confirmation email. Due to high demand, only one reschedule is allowed."}
               </p>
             </div>
-            {/* Fillout scheduling embed — fullscreen */}
+            {/* Fillout scheduling embed — standard */}
             <div
-              style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, background: 'white' }}
-              dangerouslySetInnerHTML={{
-                __html: `<div data-fillout-id="iqn73wjLFeus" data-fillout-embed-type="fullscreen" style="width:100%;height:100%;" data-fillout-inherit-parameters></div><script src="https://server.fillout.com/embed/v1/"></script>`
-              }}
+              style={{ width: '100%', height: '500px' }}
+              data-fillout-id="iqn73wjLFeus"
+              data-fillout-embed-type="standard"
+              data-fillout-inherit-parameters
+              data-fillout-dynamic-resize
             />
             <p className="text-xs text-zinc-400 text-center">
               {lang === 'fr'
