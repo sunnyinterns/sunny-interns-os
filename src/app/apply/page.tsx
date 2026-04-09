@@ -416,7 +416,7 @@ const FORM_DEFAULTS = {
   referred_by_code: '',
   rdv_slot: '',
 }
-type FormData = typeof FORM_DEFAULTS
+export type FormData = typeof FORM_DEFAULTS
 
 export default function ApplyPage() {
   const router = useRouter()
@@ -647,7 +647,7 @@ export default function ApplyPage() {
         )
       }
       case 1:
-        return !!(form.cv_en_file && form.spoken_languages.length > 0 && !cvUploading)
+        return !!((form.cv_en_file || form.cv_url) && form.spoken_languages.length > 0 && !cvUploading)
       case 2:
         return !!(
           form.duration &&

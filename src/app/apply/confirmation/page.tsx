@@ -13,6 +13,7 @@ function ConfirmationContent() {
   // Clear form data on mount
   useEffect(() => {
     try { localStorage.removeItem('apply_form_v1') } catch {}
+    try { localStorage.removeItem('apply_mobile_step_v1') } catch {}
   }, [])
 
   return (
