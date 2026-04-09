@@ -81,7 +81,7 @@ export async function GET(request: Request) {
 
   let query = supabase
     .from('activity_feed')
-    .select('*, cases!inner(id, status, interns(first_name, last_name))')
+    .select('*, cases(id, status, interns(first_name, last_name))')
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
@@ -97,7 +97,7 @@ export async function GET(request: Request) {
 
   const { data, error } = await query
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) { console.error('[activity-feed]', error.message); return NextResponse.json([], { status: 200 }) }
 
   const items = (data ?? []).map(item => {
     const caseData = item.cases as { id: string; status: string; interns: { first_name: string; last_name: string } | null } | null
