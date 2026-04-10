@@ -1,5 +1,6 @@
 'use client'
 import { DateSelectPicker } from '@/components/ui/DateSelectPicker'
+import { FilloutStandardEmbed } from '@fillout/react'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
@@ -574,34 +575,14 @@ export default function ApplyPage() {
     try { localStorage.setItem('apply_desktop_step_v1', String(step)) } catch {}
   }, [step])
 
-  // Fillout script loader + pré-remplissage URL params
+  // Fillout est géré par @fillout/react — pas besoin de script manuel
+
+  // Scroll to top automatique à chaque changement d'étape
   useEffect(() => {
-    if (step !== 4) return
-    const params = new URLSearchParams()
-    const fullName = `${form.first_name} ${form.last_name}`.trim()
-    if (fullName) params.set('name', fullName)
-    if (form.email) params.set('email', form.email)
-    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`)
-    // Délai court pour que le DOM soit mis à jour avec les data-attributes
-    const timer = setTimeout(() => {
-      const existing = document.getElementById('fillout-script')
-      if (existing) existing.remove()
-      // Nettoyer les anciens embeds fillout
-      document.querySelectorAll('[data-fillout-widget]').forEach(el => el.remove())
-      const script = document.createElement('script')
-      script.id = 'fillout-script'
-      script.src = 'https://server.fillout.com/embed/v1/'
-      script.async = true
-      document.head.appendChild(script)
-    }, 100)
-    return () => {
-      clearTimeout(timer)
-      const s = document.getElementById('fillout-script')
-      if (s) s.remove()
-      document.querySelectorAll('[class*="fillout"], [id*="fillout"], iframe[src*="fillout"]').forEach(el => el.remove())
-      window.history.replaceState({}, '', window.location.pathname)
-    }
-  }, [step, form.first_name, form.last_name, form.email])
+    window.scrollTo({ top: 0, behavior: 'instant' })
+    document.documentElement.scrollTop = 0
+    document.body.scrollTop = 0
+  }, [step])
 
   // ── Setters ──
   function setStepError(step: number, msg: string) {
@@ -824,8 +805,8 @@ export default function ApplyPage() {
 
   return (
     <div className="min-h-screen bg-[#fafaf9] text-[#1a1918]">
-      {/* ── Progress bar ── */}
-      <div className="sticky top-0 z-50 bg-[#fafaf9]/95 backdrop-blur border-b border-zinc-200">
+      {/* ── Progress bar — cachée à l'étape RDV (step 4) ── */}
+      {step !== 4 && <div className="sticky top-0 z-50 bg-[#fafaf9]/95 backdrop-blur border-b border-zinc-200">
         <div className="max-w-xl mx-auto px-4 py-3">
           <div className="flex items-center gap-1.5">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -836,11 +817,12 @@ export default function ApplyPage() {
             {step + 1} / 5
           </p>
         </div>
-      </div>
+      </div>}
+
 
       <div className="max-w-xl mx-auto px-4 py-8">
-        {/* Toggle langue */}
-        <div className="flex justify-end mb-4">
+        {/* Toggle langue — caché à step 4 */}
+        {step !== 4 && <div className="flex justify-end mb-4">
           <div className="inline-flex rounded-lg border border-zinc-200 bg-white overflow-hidden text-xs font-medium">
             <button
               onClick={() => setLang('fr')}
@@ -855,8 +837,8 @@ export default function ApplyPage() {
               {'\u{1F1EC}\u{1F1E7}'} EN
             </button>
           </div>
-        </div>
-        <h1 className="text-2xl font-bold text-[#1a1918] mb-6">{stepTitles[step]}</h1>
+        </div>}
+        {step !== 4 && <h1 className="text-2xl font-bold text-[#1a1918] mb-6">{stepTitles[step]}</h1>}
 
         {/* ════════════════════════════════════════════════════════
             ÉTAPE 1 — Qui es-tu ?
@@ -1627,30 +1609,23 @@ export default function ApplyPage() {
                   : "⚠️ If you can't make it, a reschedule link will be in your confirmation email. Due to high demand, only one reschedule is allowed."}
               </p>
             </div>
-            {/* Fillout scheduling embed — standard */}
-            <div
-              key={`fillout-${form.first_name}-${form.email}`}
-              style={{ width: '100%', height: '500px' }}
-              data-fillout-id="iqn73wjLFeus"
-              data-fillout-embed-type="standard"
-              data-fillout-inherit-parameters
-              data-fillout-dynamic-resize
-              {...(form.first_name ? { 'data-name': `${form.first_name} ${form.last_name}`.trim() } : {})}
-              {...(form.email ? { 'data-email': form.email } : {})}
+            {/* Fillout scheduling embed — @fillout/react: prefill natif + onSubmit auto-redirect */}
+            <FilloutStandardEmbed
+              filloutId="gn4Zg9eydFus"
+              dynamicResize
+              parameters={{
+                name: `${form.first_name} ${form.last_name}`.trim(),
+                email: form.email,
+              }}
+              onSubmit={() => {
+                router.push(`/apply/confirmation?name=${encodeURIComponent(form.first_name)}&lang=${lang}&rdv=1`)
+              }}
             />
-            <p className="text-xs text-zinc-400 text-center">
+            <p className="text-xs text-zinc-400 text-center mt-3">
               {lang === 'fr'
                 ? "Le créneau sera confirmé par email • Manila (GMT+8)"
                 : "The slot will be confirmed by email • Manila (GMT+8)"}
             </p>
-            <div className="mt-6 p-4 bg-[#0d9e75]/10 rounded-xl text-center">
-              <p className="text-sm text-[#0d9e75] font-medium mb-3">
-                {lang === 'fr' ? 'RDV réservé ? 🎉' : 'Slot booked? 🎉'}
-              </p>
-              <button type="button" onClick={() => router.push(`/apply/confirmation?name=${encodeURIComponent(form.first_name)}&lang=${lang}&rdv=1`)} className="px-6 py-2.5 rounded-xl text-sm font-bold bg-[#0d9e75] text-white hover:bg-[#0a8a65] transition-all">
-                {lang === 'fr' ? 'Terminer ✓' : 'Done ✓'}
-              </button>
-            </div>
           </div>
         )}
 
