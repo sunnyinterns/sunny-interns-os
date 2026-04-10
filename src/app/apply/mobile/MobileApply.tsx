@@ -587,8 +587,6 @@ export function MobileApply({
               onChange={v => set('birth_date', v)}
               lang={lang}
               defaultYear={2007}
-              defaultMonth={1}
-              defaultDay={1}
               minYear={1940}
               maxYear={new Date().getFullYear() - 16}
             />

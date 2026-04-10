@@ -1043,8 +1043,6 @@ export default function ApplyPage() {
                 onBlur={() => touch('birth_date')}
                 lang={lang}
                 defaultYear={2007}
-                defaultMonth={1}
-                defaultDay={1}
                 minYear={1940}
                 maxYear={new Date().getFullYear() - 16}
               />

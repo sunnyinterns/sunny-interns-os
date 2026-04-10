@@ -58,14 +58,18 @@ export async function POST(req: Request) {
       .single()
 
     if (calEv?.case_id) {
-      await supabase.from('activity_feed').insert({
-        case_id: calEv.case_id,
-        type: 'email_sent',
-        title: `Email envoyé : ${emailSubject}`,
-        description: `Destinataire : ${to}`,
-        source: 'manual',
-        status: 'completed',
-      }).catch(() => null)
+      try {
+        await supabase.from('activity_feed').insert({
+          case_id: calEv.case_id,
+          type: 'email_sent',
+          title: `Email envoyé : ${emailSubject}`,
+          description: `Destinataire : ${to}`,
+          source: 'manual',
+          status: 'completed',
+        })
+      } catch {
+        // ignore
+      }
     }
   }
 

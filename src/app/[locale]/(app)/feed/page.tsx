@@ -8,28 +8,8 @@ import { Toast } from '@/components/ui/Toast'
 import { CalendarWidget } from '@/components/dashboard/CalendarWidget'
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed'
 import { FunnelKPIs } from '@/components/dashboard/FunnelKPIs'
-import type { FeedResponse } from '@/lib/types'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-
-interface CaseLog {
-  id: string
-  author_name: string
-  action: string
-  field_label?: string | null
-  old_value?: string | null
-  new_value?: string | null
-  description: string
-  created_at: string
-  cases?: { id: string; interns?: { first_name: string; last_name: string } | null } | null
-}
-
-interface KpiData {
-  candidats_month: number
-  rdv_month: number
-  active_bali: number
-  payments_month: number
-}
 
 interface TodoItem {
   id: string
@@ -45,27 +25,7 @@ interface TodoItem {
   status: string
 }
 
-interface ActiveClient {
-  id: string
-  status: string
-  interns: { first_name: string; last_name: string; main_desired_job?: string | null } | null
-}
-
 type Tab = 'dashboard' | 'todo'
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function relativeDate(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return "à l'instant"
-  if (mins < 60) return `il y a ${mins}min`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `il y a ${hrs}h`
-  const days = Math.floor(hrs / 24)
-  if (days < 30) return `il y a ${days}j`
-  return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
-}
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
@@ -87,25 +47,6 @@ function FeedSkeleton() {
           </div>
         </div>
       ))}
-    </div>
-  )
-}
-
-function KpiCard({ icon, label, value, sub, color }: {
-  icon: string
-  label: string
-  value: number
-  sub: string
-  color?: 'emerald'
-}) {
-  return (
-    <div className={`rounded-xl border px-4 py-3 ${color === 'emerald' ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-zinc-200'}`}>
-      <div className="flex items-center gap-2 mb-1">
-        <span className="text-lg">{icon}</span>
-        <span className="text-xs text-zinc-500">{label}</span>
-      </div>
-      <p className={`text-2xl font-bold ${color === 'emerald' ? 'text-emerald-700' : 'text-[#1a1918]'}`}>{value}</p>
-      <p className="text-[11px] text-zinc-400">{sub}</p>
     </div>
   )
 }
@@ -156,19 +97,12 @@ function TodoCard({ item, locale }: { item: TodoItem; locale: string }) {
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function FeedPage() {
-  const router = useRouter()
   const locale = 'fr'
 
   const [activeTab, setActiveTab] = useState<Tab>('dashboard')
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
-
-  // Dashboard state
-  const [kpis, setKpis] = useState<KpiData | null>(null)
-  const [activeClients, setActiveClients] = useState<ActiveClient[]>([])
-  const [caseLogs, setCaseLogs] = useState<CaseLog[]>([])
-  const [feedData, setFeedData] = useState<FeedResponse | null>(null)
 
   // Todo state
   const [todos, setTodos] = useState<TodoItem[]>([])
@@ -177,23 +111,16 @@ export default function FeedPage() {
   const fetchAll = useCallback(() => {
     setLoading(true)
 
-    Promise.all([
-      fetch('/api/dashboard/kpis').then(r => r.ok ? r.json() as Promise<KpiData> : null),
-      fetch('/api/cases?status=active&limit=10').then(r => r.ok ? r.json() as Promise<ActiveClient[]> : []),
-      fetch('/api/case-logs').then(r => r.ok ? r.json() as Promise<CaseLog[]> : []),
-      fetch('/api/todo').then(r => r.ok ? r.json() as Promise<{ todos: TodoItem[]; count: number }> : { todos: [], count: 0 }),
-      fetch('/api/feed').then(r => r.ok ? r.json() as Promise<FeedResponse> : null),
-    ]).then(([kpiData, clients, logs, todoData, feed]) => {
-      if (kpiData) setKpis(kpiData)
-      setActiveClients(Array.isArray(clients) ? clients.slice(0, 10) : [])
-      setCaseLogs(Array.isArray(logs) ? logs.slice(0, 5) : [])
-      setTodos(todoData.todos)
-      setTodoCount(todoData.count)
-      setFeedData(feed)
-      setLoading(false)
-    }).catch(() => {
-      setLoading(false)
-    })
+    fetch('/api/todo')
+      .then(r => r.ok ? r.json() as Promise<{ todos: TodoItem[]; count: number }> : { todos: [], count: 0 })
+      .then(todoData => {
+        setTodos(todoData.todos)
+        setTodoCount(todoData.count)
+        setLoading(false)
+      })
+      .catch(() => {
+        setLoading(false)
+      })
   }, [])
 
   useEffect(() => { fetchAll() }, [fetchAll])
