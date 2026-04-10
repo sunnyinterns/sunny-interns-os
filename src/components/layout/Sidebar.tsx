@@ -34,7 +34,9 @@ export function Sidebar() {
 
     fetch('/api/todo')
       .then(r => r.ok ? r.json() : null)
-      .then((d: { count?: number } | null) => { if (d) setTodoCount(d.count ?? 0) })
+      .then((d: { count?: number; todos?: unknown[] } | null) => {
+        if (d) setTodoCount(d.count ?? d.todos?.length ?? 0)
+      })
       .catch(() => {})
 
     fetch('/api/jobs?status=open')

@@ -74,13 +74,13 @@ export default function PipelinePage() {
       const raw = await res.json() as CaseData[]
       const data = raw.map((c) => ({
         ...c,
-        first_name: c.first_name ?? c.interns?.first_name ?? '',
-        last_name: c.last_name ?? c.interns?.last_name ?? '',
+        first_name: c.first_name ?? (c as any).firstName ?? c.interns?.first_name ?? '',
+        last_name: c.last_name ?? (c as any).lastName ?? c.interns?.last_name ?? '',
         school: c.school ?? ((c as Record<string, any>).schools as any)?.name ?? c.interns?.school_country ?? null,
         internship_type: c.internship_type ?? c.interns?.main_desired_job ?? null,
         passport_expiry: c.interns?.passport_expiry ?? null,
         desired_start_date: c.desired_start_date ?? c.actual_start_date ?? null,
-        email: c.email ?? c.interns?.email ?? null,
+        email: c.email ?? (c as any).email ?? c.interns?.email ?? null,
         main_desired_job: c.main_desired_job ?? c.interns?.main_desired_job ?? null,
       }))
       setCases(data)

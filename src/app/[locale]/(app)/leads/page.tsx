@@ -69,9 +69,40 @@ export default function LeadsPage() {
 
   async function load() {
     setLoading(true)
-    const res = await fetch('/api/leads')
-    const data = res.ok ? await res.json() as Lead[] : []
-    // Trier par score desc
+    // Try leads table first, fallback to cases?status=lead
+    let res = await fetch('/api/leads')
+    if (!res.ok) {
+      res = await fetch('/api/cases?status=lead')
+      if (res.ok) {
+        const raw = await res.json() as Record<string, unknown>[]
+        const mapped: Lead[] = raw.map(c => ({
+          id: (c.id as string) ?? '',
+          email: (c.email as string) ?? (c.interns as Record<string, unknown>)?.email as string ?? '',
+          first_name: (c.first_name as string) ?? (c.firstName as string) ?? (c.interns as Record<string, unknown>)?.first_name as string ?? null,
+          last_name: (c.last_name as string) ?? (c.lastName as string) ?? (c.interns as Record<string, unknown>)?.last_name as string ?? null,
+          source: null,
+          status: 'lead',
+          score: 0,
+          verdict: null,
+          months_selected: null,
+          domains_selected: null,
+          deadline_to_apply: null,
+          applied: false,
+          applied_at: null,
+          reminder_step: 0,
+          notes: null,
+          created_at: (c.created_at as string) ?? new Date().toISOString(),
+          case_id: (c.id as string) ?? null,
+        }))
+        setLeads(mapped)
+        setLoading(false)
+        return
+      }
+      setLeads([])
+      setLoading(false)
+      return
+    }
+    const data = await res.json() as Lead[]
     setLeads(data.sort((a, b) => b.score - a.score))
     setLoading(false)
   }
@@ -138,6 +169,12 @@ export default function LeadsPage() {
           <h1 className="text-xl font-bold text-[#1a1918]">Leads</h1>
           <p className="text-sm text-zinc-500 mt-0.5">{counts.total} leads · {counts.active} actifs · {counts.applied} candidatés</p>
         </div>
+        <button
+          onClick={() => router.push(`/${locale}/cases/new`)}
+          className="px-4 py-2 text-sm font-medium bg-[#c8a96e] hover:bg-[#b8994e] text-white rounded-lg transition-colors"
+        >
+          + Nouveau lead
+        </button>
       </div>
 
       {/* Stats */}
