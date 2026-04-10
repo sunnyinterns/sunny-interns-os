@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/Button'
 import { NewCaseModal } from '@/components/cases/NewCaseModal'
 import { Toast } from '@/components/ui/Toast'
 import { CalendarWidget } from '@/components/dashboard/CalendarWidget'
+import { ActivityFeed } from '@/components/dashboard/ActivityFeed'
+import { FunnelKPIs } from '@/components/dashboard/FunnelKPIs'
 import type { FeedResponse } from '@/lib/types'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -256,111 +258,20 @@ export default function FeedPage() {
 
         {!loading && activeTab === 'dashboard' && (
           <>
-            {/* BLOC A — KPIs du mois */}
-            {kpis && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-                <KpiCard icon="🆕" label="Candidatures" value={kpis.candidats_month} sub="ce mois" />
-                <KpiCard icon="📅" label="RDVs planifiés" value={kpis.rdv_month} sub="ce mois" />
-                <KpiCard icon="🌴" label="En stage" value={kpis.active_bali} sub="actuellement" color="emerald" />
-                <KpiCard icon="💶" label="Paiements reçus" value={kpis.payments_month} sub="ce mois" />
-              </div>
-            )}
+            {/* Funnel KPIs cliquables — 13 étapes */}
+            <FunnelKPIs locale={locale} />
 
-            {/* BLOC B — Calendrier RDV */}
+            {/* Activité récente */}
+            <section className="mb-8">
+              <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-4">⚡ Activité récente</h2>
+              <ActivityFeed locale={locale} showFilters={true} initialLimit={20} />
+            </section>
+
+            {/* Calendrier RDV */}
             <section className="mb-6">
               <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-3">📅 Prochains entretiens</h2>
               <CalendarWidget />
             </section>
-
-            {/* BLOC C — Clients en stage */}
-            <section className="mb-6">
-              <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-3">🌴 En stage à Bali</h2>
-              {activeClients.length === 0 ? (
-                <p className="text-sm text-zinc-400 text-center py-4">Aucun stagiaire en cours</p>
-              ) : (
-                <div className="space-y-2">
-                  {activeClients.map(c => (
-                    <div
-                      key={c.id}
-                      onClick={() => router.push(`/${locale}/cases/${c.id}`)}
-                      className="bg-white border border-zinc-200 rounded-xl px-4 py-3 flex items-center justify-between cursor-pointer hover:border-[#c8a96e] transition-all"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-xs font-bold text-emerald-700">
-                          {c.interns?.first_name?.[0]}{c.interns?.last_name?.[0]}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-[#1a1918]">{c.interns?.first_name} {c.interns?.last_name}</p>
-                          <p className="text-xs text-zinc-500">{c.interns?.main_desired_job || '—'}</p>
-                        </div>
-                      </div>
-                      <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full font-medium">En stage</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            {/* BLOC D — Activité récente (5 items max) */}
-            {caseLogs.length > 0 && (
-              <section className="mb-6">
-                <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-3">⚡ Activité récente</h2>
-                <div className="bg-white rounded-xl border border-[#e4e4e7] p-5">
-                  <div className="relative">
-                    <div className="absolute left-3.5 top-0 bottom-0 w-px bg-zinc-100" />
-                    <div className="space-y-4">
-                      {caseLogs.map((log) => (
-                        <div key={log.id} className="flex items-start gap-4 pl-1">
-                          <div className={[
-                            'w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5',
-                            log.action === 'status_changed' ? 'bg-blue-50 text-blue-600' :
-                            log.action === 'field_edited' ? 'bg-amber-50 text-amber-600' :
-                            log.action === 'email_sent' ? 'bg-green-50 text-green-600' :
-                            log.action === 'note_added' ? 'bg-purple-50 text-purple-600' :
-                            'bg-zinc-50 text-zinc-400'
-                          ].join(' ')}>
-                            <span className="text-xs">
-                              {log.action === 'status_changed' ? '🔄' :
-                               log.action === 'field_edited' ? '✏️' :
-                               log.action === 'email_sent' ? '📧' :
-                               log.action === 'note_added' ? '💬' :
-                               log.action === 'doc_uploaded' ? '📎' :
-                               '•'}
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm text-[#1a1918]">{log.description}</p>
-                            {log.field_label && log.old_value && log.new_value && log.action !== 'status_changed' && (
-                              <p className="text-xs text-zinc-400 mt-0.5">
-                                <span className="line-through">{log.old_value}</span>
-                                {' → '}
-                                <span className="text-zinc-600">{String(log.new_value).substring(0, 50)}{String(log.new_value).length > 50 ? '…' : ''}</span>
-                              </p>
-                            )}
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-xs font-medium text-zinc-400">{log.author_name}</span>
-                              <span className="text-zinc-200">·</span>
-                              <span className="text-xs text-zinc-400">{relativeDate(log.created_at)}</span>
-                              {log.cases?.id && (
-                                <>
-                                  <span className="text-zinc-200">·</span>
-                                  <a
-                                    href={`/fr/cases/${log.cases.id}?tab=process`}
-                                    className="text-xs text-[#c8a96e] hover:underline"
-                                  >
-                                    Voir le dossier →
-                                  </a>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </section>
-            )}
           </>
         )}
 
