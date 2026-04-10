@@ -16,6 +16,9 @@ interface ActivityItem {
   created_at: string
   icon: string
   color: string
+  desired_jobs?: string[] | null
+  desired_start_date?: string | null
+  rdv_date?: string | null
 }
 
 type FilterKey = 'all' | 'emails' | 'payments' | 'visa' | 'statuts' | 'notes'
@@ -66,6 +69,21 @@ function groupByDay(items: ActivityItem[]): { label: string; count: number; item
   }
 
   return Array.from(groups.entries()).map(([label, items]) => ({ label, count: items.length, items }))
+}
+
+
+function formatDate(iso: string | null | undefined): string | null {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return null
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function formatMonth(iso: string | null | undefined): string | null {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return null
+  return d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
 }
 
 interface Props {
@@ -178,6 +196,26 @@ export function ActivityFeed({ locale = 'fr', showFilters = true, initialLimit =
                       <p className="text-sm font-medium text-[#1a1918] leading-snug">{item.title}</p>
                       {item.description && item.description !== item.title && (
                         <p className="text-xs text-zinc-400 mt-0.5 line-clamp-1">{item.description}</p>
+                      )}
+                      {/* Infos enrichies pour case_created */}
+                      {item.type === 'case_created' && (item.desired_jobs?.length || item.desired_start_date || item.rdv_date) && (
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                          {item.rdv_date && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-medium rounded-full">
+                              📅 RDV {formatDate(item.rdv_date)}
+                            </span>
+                          )}
+                          {item.desired_jobs?.slice(0, 3).map((job, i) => (
+                            <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#c8a96e]/10 text-[#8a6a2a] text-[10px] font-medium rounded-full">
+                              {job}
+                            </span>
+                          ))}
+                          {item.desired_start_date && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-zinc-100 text-zinc-600 text-[10px] font-medium rounded-full">
+                              🛫 {formatMonth(item.desired_start_date)}
+                            </span>
+                          )}
+                        </div>
                       )}
                       <div className="flex items-center gap-1.5 mt-0.5">
                         {item.intern_name && (

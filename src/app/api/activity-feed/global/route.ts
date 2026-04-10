@@ -83,7 +83,7 @@ export async function GET(request: Request) {
 
   let query = supabase
     .from('activity_feed')
-    .select('*, cases(id, status, interns(first_name, last_name))')
+    .select('*, cases(id, status, desired_sectors, desired_start_date, intern_first_meeting_date, interns(first_name, last_name))')
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
@@ -102,7 +102,7 @@ export async function GET(request: Request) {
   if (error) { console.error('[activity-feed]', error.message); return NextResponse.json([], { status: 200 }) }
 
   const items = (data ?? []).map(item => {
-    const caseData = item.cases as { id: string; status: string; interns: { first_name: string; last_name: string } | null } | null
+    const caseData = item.cases as { id: string; status: string; desired_sectors: string[] | null; desired_start_date: string | null; intern_first_meeting_date: string | null; interns: { first_name: string; last_name: string } | null } | null
     const actType = item.type ?? 'status_changed'
     return {
       id: item.id,
@@ -117,6 +117,9 @@ export async function GET(request: Request) {
       created_at: item.created_at,
       icon: ICONS[actType] ?? '•',
       color: COLORS[actType] ?? '#71717a',
+      desired_jobs: caseData?.desired_sectors?.slice(0, 3) ?? (item.metadata as Record<string,unknown>)?.desired_jobs as string[] | null ?? null,
+      desired_start_date: caseData?.desired_start_date ?? null,
+      rdv_date: caseData?.intern_first_meeting_date ?? null,
     }
   })
 
