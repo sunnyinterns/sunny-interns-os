@@ -908,7 +908,17 @@ export default function ApplyPage() {
                 onChange={e => set('email', e.target.value)}
                 className={`${inputClass} ${touched.email && form.email && (!isValidEmail(form.email) || emailExists) ? 'ring-2 ring-red-500' : touched.email && form.email && isValidEmail(form.email) && !emailExists && !emailChecking ? 'ring-2 ring-green-400' : ''}`}
                 placeholder="your@email.com"
-                onBlur={() => touch('email')}
+                onBlur={() => {
+                  touch('email')
+                  const v = form.email.trim()
+                  if (v && isValidEmail(v) && !emailExists) {
+                    fetch('/api/applications/capture-email', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ email: v, source: 'website_form_unfinished' }),
+                    }).catch(() => null)
+                  }
+                }}
               />
               {emailChecking && (
                 <p className="text-xs text-zinc-400 mt-1 flex items-center gap-1">

@@ -80,7 +80,7 @@ export function CalendarWidget() {
               {tab === 'upcoming' ? 'Aucun RDV à venir dans les 30 jours' : 'Aucun RDV annulé récemment'}
             </p>
           </div>
-        ) : events.map(ev => (
+        ) : events.slice(0, 3).map(ev => (
           <div key={ev.id} className={`px-5 py-3.5 hover:bg-zinc-50 transition-colors ${ev.status === 'cancelled' ? 'opacity-60' : ''}`}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
@@ -124,12 +124,12 @@ export function CalendarWidget() {
 
       {/* Footer */}
       <div className="px-5 py-3 border-t border-zinc-100 bg-zinc-50 flex items-center justify-between">
-        <p className="text-xs text-zinc-400">
-          Synchro depuis charly@ et team@bali-interns.com
-        </p>
+        <Link href="/fr/calendar" className="text-xs text-[#c8a96e] hover:underline font-medium">
+          Voir tous les RDVs →
+        </Link>
         <a href="https://calendar.google.com/calendar/u/0/r/week" target="_blank" rel="noopener noreferrer"
-           className="text-xs text-[#c8a96e] hover:underline font-medium">
-          Ouvrir Google Calendar →
+           className="text-xs text-zinc-400 hover:text-zinc-600 font-medium">
+          Google Calendar ↗
         </a>
       </div>
     </div>

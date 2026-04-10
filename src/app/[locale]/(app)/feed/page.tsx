@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/Button'
 import { NewCaseModal } from '@/components/cases/NewCaseModal'
 import { Toast } from '@/components/ui/Toast'
 import { CalendarWidget } from '@/components/dashboard/CalendarWidget'
-import { ActivityFeed } from '@/components/dashboard/ActivityFeed'
 import { FunnelKPIs } from '@/components/dashboard/FunnelKPIs'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -187,12 +186,6 @@ export default function FeedPage() {
           <>
             {/* Funnel KPIs cliquables — 13 étapes */}
             <FunnelKPIs locale={locale} />
-
-            {/* Activité récente */}
-            <section className="mb-8">
-              <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-4">⚡ Activité récente</h2>
-              <ActivityFeed locale={locale} showFilters={true} initialLimit={20} />
-            </section>
 
             {/* Calendrier RDV */}
             <section className="mb-6">

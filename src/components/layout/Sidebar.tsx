@@ -135,7 +135,7 @@ export function Sidebar() {
         <NavLink href="/fr/activity" label="Activité" icon={icons.activity} />
         <NavLink href="/fr/todo" label="To Do" icon={icons.todo} badge={todoCount} urgent={todoCount > 0} />
         <NavLink href="/fr/calendar" label="Calendrier" icon={icons.calendar} />
-        <NavLink href="/fr/pipeline" label="Kanban" icon={icons.kanban} />
+        <NavLink href="/fr/pipeline" label="Pipeline" icon={icons.kanban} />
         <NavLink href="/fr/leads" label="Leads" icon={icons.leads} badge={newLeadsCount} urgent={(newLeadsCount ?? 0) > 0} />
         <NavLink href="/fr/cases" label="Candidats" icon={icons.candidats} badge={candidatsCount} />
         <NavLink href="/fr/clients" label="Clients" icon={icons.clients} badge={activeClientsCount} />
