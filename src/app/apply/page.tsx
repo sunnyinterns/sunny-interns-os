@@ -1,6 +1,5 @@
 'use client'
 import { DatePickerInput } from '@/components/ui/DatePickerInput'
-import { FilloutStandardEmbed } from '@fillout/react'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
@@ -575,7 +574,50 @@ export default function ApplyPage() {
     try { localStorage.setItem('apply_desktop_step_v1', String(step)) } catch {}
   }, [step])
 
-  // Fillout est géré par @fillout/react — pas besoin de script manuel
+  // Fillout: URL params FIRST, then script, then postMessage listener for auto-redirect
+  useEffect(() => {
+    if (step !== 4) return
+
+    // STEP 1: Set URL params AVANT de charger Fillout (inherit-parameters les lit au init)
+    const params = new URLSearchParams()
+    const fullName = `${form.first_name} ${form.last_name}`.trim()
+    if (fullName) params.set('name', fullName)
+    if (form.email) params.set('email', form.email)
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`)
+
+    // STEP 2: Écouter le postMessage de Fillout pour rediriger automatiquement
+    function handleMessage(e: MessageEvent) {
+      // Fillout émet différents types selon la version
+      if (
+        e.data?.type === 'fillout:formSubmitted' ||
+        e.data?.type === 'fillout_form_submitted' ||
+        e.data?.name === 'formSubmitted' ||
+        (typeof e.data === 'string' && e.data.includes('submitted'))
+      ) {
+        router.push(`/apply/confirmation?name=${encodeURIComponent(form.first_name)}&lang=${lang}&rdv=1`)
+      }
+    }
+    window.addEventListener('message', handleMessage)
+
+    // STEP 3: Charger le script Fillout (après avoir set les URL params)
+    const timer = setTimeout(() => {
+      document.querySelectorAll('[id="fillout-script"]').forEach(el => el.remove())
+      document.querySelectorAll('iframe[src*="fillout"]').forEach(el => el.remove())
+      const script = document.createElement('script')
+      script.id = 'fillout-script'
+      script.src = 'https://server.fillout.com/embed/v1/'
+      script.async = true
+      document.head.appendChild(script)
+    }, 50)
+
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('message', handleMessage)
+      document.querySelectorAll('[id="fillout-script"]').forEach(el => el.remove())
+      document.querySelectorAll('iframe[src*="fillout"]').forEach(el => el.remove())
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [step, form.first_name, form.last_name, form.email, lang, router])
 
   // Scroll to top automatique à chaque changement d'étape
   useEffect(() => {
@@ -1609,17 +1651,13 @@ export default function ApplyPage() {
                   : "⚠️ If you can't make it, a reschedule link will be in your confirmation email. Due to high demand, only one reschedule is allowed."}
               </p>
             </div>
-            {/* Fillout scheduling embed — @fillout/react: prefill natif + onSubmit auto-redirect */}
-            <FilloutStandardEmbed
-              filloutId="gn4Zg9eydFus"
-              dynamicResize
-              parameters={{
-                name: `${form.first_name} ${form.last_name}`.trim(),
-                email: form.email,
-              }}
-              onSubmit={() => {
-                router.push(`/apply/confirmation?name=${encodeURIComponent(form.first_name)}&lang=${lang}&rdv=1`)
-              }}
+            {/* Fillout embed natif — URL params injectés AVANT le script, inherit-parameters lit ?name=&email= */}
+            <div
+              style={{ width: '100%', height: '500px' }}
+              data-fillout-id="gn4Zg9eydFus"
+              data-fillout-embed-type="standard"
+              data-fillout-inherit-parameters
+              data-fillout-dynamic-resize
             />
             <p className="text-xs text-zinc-400 text-center mt-3">
               {lang === 'fr'
