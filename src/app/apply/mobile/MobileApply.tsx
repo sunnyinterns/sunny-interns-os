@@ -1,4 +1,5 @@
 'use client'
+import { DateSelectPicker } from '@/components/ui/DateSelectPicker'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 
@@ -581,15 +582,27 @@ export function MobileApply({
         <div className="space-y-5">
           <div>
             <label className="block text-sm text-zinc-400 mb-1">{lang === 'fr' ? 'Date de naissance *' : 'Date of birth *'}</label>
-            <input autoFocus type="date" value={form.birth_date}
-              onChange={e => set('birth_date', e.target.value)}
-              className={`${inputCls} text-lg`} />
+            <DateSelectPicker
+              value={form.birth_date}
+              onChange={v => set('birth_date', v)}
+              lang={lang}
+              defaultYear={2007}
+              defaultMonth={1}
+              defaultDay={1}
+              minYear={1940}
+              maxYear={new Date().getFullYear() - 16}
+            />
           </div>
           <div>
             <label className="block text-sm text-zinc-400 mb-1">{lang === 'fr' ? 'Expiration passeport *' : 'Passport expiry *'}</label>
-            <input type="date" value={form.passport_expiry}
-              onChange={e => set('passport_expiry', e.target.value)}
-              className={`${inputCls} text-lg`} />
+            <DateSelectPicker
+              value={form.passport_expiry}
+              onChange={v => set('passport_expiry', v)}
+              lang={lang}
+              defaultYear={new Date().getFullYear()}
+              minYear={new Date().getFullYear()}
+              maxYear={new Date().getFullYear() + 15}
+            />
             <p className="text-xs text-amber-600 mt-2">⚠️ {lang === 'fr' ? 'Doit être valide 6 mois après ton arrivée à Bali' : 'Must be valid 6+ months after arrival in Bali'}</p>
           </div>
         </div>
@@ -809,12 +822,13 @@ export function MobileApply({
 
       case 'date':
         return (
-          <input
-            type="date"
+          <DateSelectPicker
             value={(form[q.field] as string) ?? ''}
-            onChange={e => set(q.field, e.target.value as never)}
-            className={`${inputBaseClass} ${!(form[q.field] as string) ? 'text-zinc-400' : ''}`}
-            min={q.id === 'start_date' ? new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0] : undefined}
+            onChange={v => set(q.field, v as never)}
+            lang={lang}
+            defaultYear={new Date().getFullYear()}
+            minYear={new Date().getFullYear()}
+            maxYear={new Date().getFullYear() + 3}
           />
         )
 

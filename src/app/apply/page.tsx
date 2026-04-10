@@ -1,4 +1,5 @@
 'use client'
+import { DateSelectPicker } from '@/components/ui/DateSelectPicker'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
@@ -1012,13 +1013,31 @@ export default function ApplyPage() {
             {/* Date de naissance */}
             <div>
               <label className={labelClass}>{lang==='fr'?'Date de naissance *':'Date of birth *'}</label>
-              <input type="date" value={form.birth_date} onChange={e => set('birth_date', e.target.value)} className={`${inputClass} ${!form.birth_date ? "text-zinc-400" : ""}`} />
+              <DateSelectPicker
+                value={form.birth_date}
+                onChange={v => set('birth_date', v)}
+                onBlur={() => touch('birth_date')}
+                lang={lang}
+                defaultYear={2007}
+                defaultMonth={1}
+                defaultDay={1}
+                minYear={1940}
+                maxYear={new Date().getFullYear() - 16}
+              />
             </div>
 
             {/* Passeport expiry */}
             <div>
               <label className={labelClass}>{lang==='fr'?"Date d\u2019expiration du passeport *":'Passport expiry date *'}</label>
-<input type="date" value={form.passport_expiry} onChange={e => set('passport_expiry', e.target.value)} onBlur={() => touch('passport_expiry')} className={`${inputClass} ${!form.passport_expiry ? "text-zinc-400" : ""}`} />
+<DateSelectPicker
+                value={form.passport_expiry}
+                onChange={v => set('passport_expiry', v)}
+                onBlur={() => touch('passport_expiry')}
+                lang={lang}
+                defaultYear={new Date().getFullYear()}
+                minYear={new Date().getFullYear()}
+                maxYear={new Date().getFullYear() + 15}
+              />
               {touched.passport_expiry && passportWarning && (
                 <div className="mt-2 flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-300 rounded-lg px-3 py-2.5">
                   <span className="flex-shrink-0 font-bold">⚠️</span>
@@ -1350,7 +1369,15 @@ export default function ApplyPage() {
             {/* Date de début */}
             <div>
               <label className={labelClass}>{lang==='fr'?'Date de démarrage souhaitée *':'Desired start date *'}</label>
-              <input type="date" value={form.start_date} onChange={e => set('start_date', e.target.value)} min={new Date(Date.now() + 30*86400000).toISOString().split("T")[0]} className={`${inputClass} ${!form.start_date ? "text-zinc-400" : ""}`} />
+              <DateSelectPicker
+              value={form.start_date}
+              onChange={v => set('start_date', v)}
+              onBlur={() => touch('start_date')}
+              lang={lang}
+              defaultYear={new Date().getFullYear()}
+              minYear={new Date().getFullYear()}
+              maxYear={new Date().getFullYear() + 3}
+            />
               <p className={helperClass}>{lang==='fr'?"\u00c0 2-4 semaines pr\u00e8s, c\u2019est ok":"Give or take 2-4 weeks, that\u2019s fine"}</p>
             </div>
 
