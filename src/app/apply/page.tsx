@@ -670,7 +670,6 @@ export default function ApplyPage() {
     T('Ton profil', 'Your profile', lang),
     T('Ton stage', 'Your internship', lang),
     T('Prix & engagement', 'Pricing & Commitment', lang),
-    T('Comment tu nous as trouv\u00e9 ?', 'How did you find us?', lang),
     T('Prends ton RDV', 'Book your call', lang),
   ]
 

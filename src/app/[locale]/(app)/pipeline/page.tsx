@@ -67,6 +67,7 @@ export default function PipelinePage() {
     setError(null)
     try {
       const qs = new URLSearchParams()
+      qs.set('statuses', 'lead,rdv_booked,qualification_done,job_submitted,job_retained,convention_signed,payment_pending,payment_received')
       if (assignedTo) qs.set('assigned_to', assignedTo)
       if (month) qs.set('month', month)
       const res = await fetch(`/api/cases?${qs.toString()}`)

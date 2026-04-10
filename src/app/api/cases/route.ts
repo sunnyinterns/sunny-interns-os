@@ -85,6 +85,7 @@ export async function GET(request: Request) {
   const month = searchParams.get('month') // YYYY-MM
   const email = searchParams.get('email')
   const statusFilter = searchParams.get('status')
+  const statusesParam = searchParams.get('statuses')
 
   // Email duplicate check
   if (email) {
@@ -116,8 +117,11 @@ export async function GET(request: Request) {
       `)
       .order('created_at', { ascending: false })
 
-    // Filter by specific status or exclude terminated statuses by default
-    if (statusFilter) {
+    // Filter by specific status(es) or exclude terminated statuses by default
+    if (statusesParam) {
+      const list = statusesParam.split(',').map(s => s.trim()).filter(Boolean)
+      if (list.length > 0) query = query.in('status', list)
+    } else if (statusFilter) {
       query = query.eq('status', statusFilter)
     } else if (view !== 'all') {
       query = query.not('status', 'in', '(alumni,not_interested,no_job_found,lost)')

@@ -159,6 +159,58 @@ export async function GET() {
     })
   })
 
+  // 6. RDV planifié mais qualification non faite (> 3j)
+  const { data: rdvOld } = await adminClient
+    .from('cases')
+    .select('id, status, updated_at, interns(first_name, last_name)')
+    .eq('status', 'rdv_booked')
+    .lt('updated_at', new Date(Date.now() - 3 * 86400000).toISOString())
+    .limit(20)
+
+  rdvOld?.forEach(c => {
+    const intern = (Array.isArray(c.interns) ? c.interns[0] : c.interns) as unknown as { first_name: string; last_name: string } | null
+    const days = Math.floor((now.getTime() - new Date(c.updated_at).getTime()) / 86400000)
+    todos.push({
+      id: `rdv-${c.id}`,
+      type: 'relance',
+      priority: days > 7 ? 'urgent' : 'normal',
+      case_id: c.id,
+      intern_name: `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim(),
+      title: 'RDV planifié mais qualification non faite',
+      description: `RDV il y a ${days}j — qualifier ou replanifier`,
+      cta_label: 'Voir le dossier',
+      cta_url: `/fr/cases/${c.id}`,
+      days_waiting: days,
+      status: c.status,
+    })
+  })
+
+  // 7. Convention signée mais paiement non reçu (> 7j)
+  const { data: convOld } = await adminClient
+    .from('cases')
+    .select('id, status, updated_at, interns(first_name, last_name)')
+    .eq('status', 'convention_signed')
+    .lt('updated_at', new Date(Date.now() - 7 * 86400000).toISOString())
+    .limit(20)
+
+  convOld?.forEach(c => {
+    const intern = (Array.isArray(c.interns) ? c.interns[0] : c.interns) as unknown as { first_name: string; last_name: string } | null
+    const days = Math.floor((now.getTime() - new Date(c.updated_at).getTime()) / 86400000)
+    todos.push({
+      id: `conv-${c.id}`,
+      type: 'relance',
+      priority: days > 14 ? 'urgent' : 'high',
+      case_id: c.id,
+      intern_name: `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim(),
+      title: 'Convention signée — paiement non reçu',
+      description: `Convention depuis ${days}j — relancer pour le paiement`,
+      cta_label: 'Voir le dossier',
+      cta_url: `/fr/cases/${c.id}`,
+      days_waiting: days,
+      status: c.status,
+    })
+  })
+
   // Trier par priorité puis jours d'attente
   const priorityOrder = { urgent: 0, high: 1, normal: 2 }
   todos.sort((a, b) => {
