@@ -1185,10 +1185,10 @@ export function MobileApply({
       case 'schedule':
         return (
           <div>
-            <p className="text-sm text-zinc-500 mb-4">
+            <p className="text-xl font-bold text-[#1a1918] mb-4 leading-snug">
               {lang === 'fr'
-                ? 'Choisis un créneau pour ton entretien de qualification (45 min, Google Meet).'
-                : 'Choose a time slot for your qualification interview (45 min, Google Meet).'}
+                ? 'Réserve un Google Meet de 45 min avec nous pour confirmer ta candidature'
+                : 'Book a 45-min Google Meet with us to confirm your application'}
             </p>
             <div
               style={{ width: '100%', height: '500px' }}

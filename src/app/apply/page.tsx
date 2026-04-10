@@ -1132,7 +1132,7 @@ export default function ApplyPage() {
               label={lang==='fr'?'CV en anglais * (PDF/DOC/JPG, max 20MB)':'English CV * (PDF/DOC/JPG, max 20MB)'}
               helper={lang==='fr'
                 ? "M\u00eame avec une entreprise francophone, l\u2019anglais est indispensable au quotidien."
-                : "Even at a French-speaking company, English is essential daily."}
+                : ""}
               fileName={form.cv_en_filename}
               onFileSelect={f => {
                 // Vérif taille
@@ -1162,7 +1162,7 @@ export default function ApplyPage() {
                 label={lang==='fr'?'CV dans ta langue (PDF/DOC, max 5MB)':'Local language CV (PDF/DOC, max 5MB)'}
                 helper={lang==='fr'
                   ? "Optionnel mais recommand\u00e9 pour les entreprises locales"
-                  : "Optional but recommended for local companies"}
+                  : ""}
                 fileName={form.cv_local_filename}
                 onFileSelect={f => {
                   if (f.size > 20 * 1024 * 1024) {
@@ -1616,12 +1616,12 @@ export default function ApplyPage() {
         {step === 4 && (
           <div className="space-y-6">
             <div>
-              <p className={helperClass + " text-sm mb-4"}>
+              <p className="text-lg font-semibold text-[#1a1918] mb-4">
                 {lang === 'fr'
-                  ? "Choisis un créneau pour ton entretien de qualification (45 min, Google Meet)."
-                  : "Choose a time slot for your qualification interview (45 min, Google Meet)."}
+                  ? "Réserve un Google Meet de 45 min avec nous pour confirmer ta candidature"
+                  : "Book a 45-min Google Meet with us to confirm your application"}
               </p>
-              <p className="text-xs text-zinc-600 bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 mb-4">
+              <p className="text-sm text-zinc-700 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 mb-4 leading-relaxed">
                 {lang === 'fr'
                   ? "⚠️ Si tu ne peux pas honorer ton rendez-vous, un lien de reprogrammation sera disponible dans l'email de confirmation. En raison du fort volume, une seule reprogrammation sera accordée."
                   : "⚠️ If you can't make it, a reschedule link will be in your confirmation email. Due to high demand, only one reschedule is allowed."}
