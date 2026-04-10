@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 
-const CLIENT_STATUSES = ['visa_docs_sent', 'visa_submitted', 'visa_in_progress', 'visa_received', 'arrival_prep', 'active']
+const CLIENT_STATUSES = ['visa_docs_sent', 'visa_submitted', 'visa_in_progress', 'visa_received', 'arrival_prep', 'active', 'alumni']
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   visa_docs_sent: { label: 'Docs visa', className: 'bg-amber-100 text-amber-800' },
@@ -13,6 +13,7 @@ const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   visa_received: { label: 'Visa OK', className: 'bg-green-100 text-green-800' },
   arrival_prep: { label: 'Depart imminent', className: 'bg-red-100 text-red-800' },
   active: { label: 'En stage', className: 'bg-emerald-100 text-emerald-800' },
+  alumni: { label: '🎓 Alumni', className: 'bg-zinc-100 text-zinc-600' },
 }
 
 interface ClientRow {
@@ -64,9 +65,8 @@ export default function ClientsPage() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json() as ClientRow[]
       const active = data.filter((c) => CLIENT_STATUSES.includes(c.status))
-      const alumniList = data.filter((c) => c.status === 'alumni')
       setClients(active)
-      setAlumni(alumniList)
+      setAlumni([])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue')
     } finally {

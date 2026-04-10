@@ -186,120 +186,151 @@ export default function CaseDetailPage() {
   }
 
   const tabs: { key: TabKey; label: string }[] = [
-    { key: 'process', label: 'Processus' },
-    { key: 'profil', label: 'Profil' },
-    ...(!isVisaOnly ? [{ key: 'jobs' as TabKey, label: 'Jobs' }] : []),
-    { key: 'visa', label: 'Visa' },
-    ...(!isVisaOnly ? [{ key: 'arrivee' as TabKey, label: 'Arrivee' }] : []),
-    { key: 'facturation', label: 'Facturation' },
+    { key: 'process', label: '⚡ Processus' },
+    { key: 'profil', label: '👤 Profil' },
+    ...(!isVisaOnly ? [{ key: 'jobs' as TabKey, label: '💼 Jobs' }] : []),
+    { key: 'visa', label: '🛂 Visa' },
+    ...(!isVisaOnly ? [{ key: 'arrivee' as TabKey, label: '🛫 Arrivée' }] : []),
+    { key: 'facturation', label: '💶 Facturation' },
   ]
 
   return (
     <div className="flex flex-col h-full bg-[#fafaf9]">
-      {/* ── HEADER ── */}
-      <div className="bg-white border-b border-zinc-200 px-6 py-4">
-        {/* Row 1: Back + Status badge + Actions */}
-        <div className="flex items-center justify-between mb-3">
-          <button
-            onClick={() => router.back()}
-            className="text-sm text-zinc-500 hover:text-zinc-900 flex items-center gap-1 transition-colors"
-          >
-            &larr; Retour
-          </button>
-          <div className="flex items-center gap-2">
-            <span
-              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
-              style={{ backgroundColor: badge.bg, color: badge.text }}
+      {/* ── HEADER STICKY ── */}
+      <div className="sticky top-0 z-20 bg-white border-b border-zinc-200">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          {/* Ligne nav */}
+          <div className="flex items-center justify-between py-3">
+            <button
+              onClick={() => router.back()}
+              className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 transition-colors"
             >
-              {badge.label}
-            </span>
-            {isVisaOnly && (
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
-                Visa Only
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              Retour
+            </button>
+            <div className="flex items-center gap-2">
+              <span
+                className="px-3 py-1 rounded-full text-xs font-semibold"
+                style={{ backgroundColor: badge.bg, color: badge.text }}
+              >
+                {badge.label}
+              </span>
+              {isVisaOnly && (
+                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
+                  Visa Only
+                </span>
+              )}
+              {caseData.portal_token && (
+                <a
+                  href={`/portal/${caseData.portal_token}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs px-3 py-1.5 rounded-lg border border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition-colors"
+                >
+                  Portail candidat
+                </a>
+              )}
+              {caseData.status === 'active' && (
+                <button
+                  onClick={() => setShowInternCard(true)}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-[#c8a96e] text-white hover:opacity-90 transition-opacity"
+                >
+                  Carte stagiaire
+                </button>
+              )}
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="px-3 py-1.5 text-xs font-medium bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors"
+              >
+                Modifier
+              </button>
+            </div>
+          </div>
+
+          {/* Identité */}
+          <div className="flex items-center gap-4 pb-4">
+            <div className="w-11 h-11 rounded-full bg-[#c8a96e]/20 flex items-center justify-center text-base font-bold text-[#c8a96e] flex-shrink-0">
+              {getInitials(firstName, lastName)}
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-[#1a1918] leading-tight">
+                {firstName} {lastName}
+              </h1>
+              <p className="text-sm text-zinc-500">
+                {email}
+                {whatsapp && <span className="ml-2">· {whatsapp}</span>}
+              </p>
+            </div>
+          </div>
+
+          {/* Chips infos clés */}
+          <div className="flex flex-wrap gap-2 pb-3 text-xs">
+            {mainJob && (
+              <span className="flex items-center gap-1 px-2.5 py-1 bg-zinc-100 rounded-full text-zinc-700">
+                💼 {mainJob}
               </span>
             )}
-            {caseData.portal_token && (
-              <a
-                href={`/portal/${caseData.portal_token}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs px-3 py-1.5 rounded-lg border border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition-colors"
-              >
-                Portail candidat
-              </a>
+            {schoolName && (
+              <span className="flex items-center gap-1 px-2.5 py-1 bg-zinc-100 rounded-full text-zinc-700">
+                🎓 {schoolName}
+              </span>
             )}
-            {caseData.status === 'active' && (
+            {dateDepart && (
+              <span className="flex items-center gap-1 px-2.5 py-1 bg-zinc-100 rounded-full text-zinc-700">
+                📅 Départ: {dateDepart}
+              </span>
+            )}
+            {durationMonths && (
+              <span className="flex items-center gap-1 px-2.5 py-1 bg-zinc-100 rounded-full text-zinc-700">
+                ⏱ {durationMonths} mois
+              </span>
+            )}
+            {touchpoint && (
+              <span className="flex items-center gap-1 px-2.5 py-1 bg-zinc-100 rounded-full text-zinc-700">
+                🔗 {touchpoint}
+              </span>
+            )}
+          </div>
+
+          {/* Next action card */}
+          {actionInfo && (
+            <div className="mb-3 px-4 py-3 bg-[#0d9e75]/10 border border-[#0d9e75]/20 rounded-xl flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-[#0d9e75] uppercase tracking-wide mb-0.5">Prochaine étape</p>
+                <p className="text-sm font-medium text-[#1a1918]">{actionInfo.text}</p>
+              </div>
+              {actionInfo.cta && (
+                <button
+                  onClick={handleCtaClick}
+                  className="flex-shrink-0 px-3 py-1.5 bg-[#0d9e75] text-white text-xs font-semibold rounded-lg hover:bg-[#0a8a65] transition-colors"
+                >
+                  {actionInfo.cta}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Onglets */}
+          <div className="flex gap-0 -mb-px overflow-x-auto">
+            {tabs.map((tab) => (
               <button
-                onClick={() => setShowInternCard(true)}
-                className="text-xs px-3 py-1.5 rounded-lg bg-[#c8a96e] text-white hover:opacity-90 transition-opacity"
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  activeTab === tab.key
+                    ? 'border-[#c8a96e] text-[#c8a96e]'
+                    : 'border-transparent text-zinc-500 hover:text-zinc-800'
+                }`}
               >
-                Carte stagiaire
+                {tab.label}
               </button>
-            )}
+            ))}
           </div>
         </div>
-
-        {/* Row 2: Avatar + Identity */}
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-[#c8a96e]/20 flex items-center justify-center flex-shrink-0">
-            <span className="text-lg font-bold text-[#c8a96e]">{getInitials(firstName, lastName)}</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold text-[#1a1918]">{firstName} {lastName}</h1>
-            <p className="text-sm text-zinc-500">
-              {[email, whatsapp].filter(Boolean).join(' \u00b7 ')}
-            </p>
-          </div>
-        </div>
-
-        {/* Row 3: Key info pills */}
-        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-sm text-zinc-600">
-          {schoolName && <span>🎓 {schoolName}</span>}
-          {mainJob && <span>💼 {mainJob}</span>}
-          {dateDepart && <span>📅 Depart: {dateDepart}</span>}
-          {durationMonths && <span>⏱ {durationMonths} mois</span>}
-          {touchpoint && <span>🔗 Via {touchpoint}</span>}
-        </div>
-      </div>
-
-      {/* ── NEXT ACTION ── */}
-      {actionInfo && (
-        <div className="px-6 py-3">
-          <div className="bg-[#0d9e75]/10 border border-[#0d9e75]/30 rounded-xl p-4">
-            <p className="text-sm text-[#0d9e75] font-medium">Prochaine etape</p>
-            <p className="text-base font-semibold text-[#1a1918] mt-1">{actionInfo.text}</p>
-            {actionInfo.cta && (
-              <button
-                onClick={handleCtaClick}
-                className="mt-2 px-4 py-2 bg-[#0d9e75] text-white text-sm rounded-lg font-medium hover:bg-[#0b8a66] transition-colors"
-              >
-                {actionInfo.cta} &rarr;
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── TABS ── */}
-      <div className="flex border-b border-zinc-200 bg-white px-4 overflow-x-auto flex-shrink-0">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={[
-              'px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
-              activeTab === tab.key
-                ? 'border-[#c8a96e] text-[#c8a96e]'
-                : 'border-transparent text-zinc-500 hover:text-[#1a1918]',
-            ].join(' ')}
-          >
-            {tab.label}
-          </button>
-        ))}
       </div>
 
       {/* ── TAB CONTENT ── */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 flex-1 overflow-y-auto w-full">
         {activeTab === 'process' && (
           <TabProcess
             caseId={caseData.id}
