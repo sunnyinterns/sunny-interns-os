@@ -1,5 +1,5 @@
 'use client'
-import { DateSelectPicker } from '@/components/ui/DateSelectPicker'
+import { DatePickerInput } from '@/components/ui/DatePickerInput'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 
@@ -582,7 +582,7 @@ export function MobileApply({
         <div className="space-y-5">
           <div>
             <label className="block text-sm text-zinc-400 mb-1">{lang === 'fr' ? 'Date de naissance *' : 'Date of birth *'}</label>
-            <DateSelectPicker
+            <DatePickerInput
               value={form.birth_date}
               onChange={v => set('birth_date', v)}
               lang={lang}
@@ -595,7 +595,7 @@ export function MobileApply({
           </div>
           <div>
             <label className="block text-sm text-zinc-400 mb-1">{lang === 'fr' ? 'Expiration passeport *' : 'Passport expiry *'}</label>
-            <DateSelectPicker
+            <DatePickerInput
               value={form.passport_expiry}
               onChange={v => set('passport_expiry', v)}
               lang={lang}
@@ -822,7 +822,7 @@ export function MobileApply({
 
       case 'date':
         return (
-          <DateSelectPicker
+          <DatePickerInput
             value={(form[q.field] as string) ?? ''}
             onChange={v => set(q.field, v as never)}
             lang={lang}

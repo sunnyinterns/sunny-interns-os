@@ -1,5 +1,5 @@
 'use client'
-import { DateSelectPicker } from '@/components/ui/DateSelectPicker'
+import { DatePickerInput } from '@/components/ui/DatePickerInput'
 import { FilloutStandardEmbed } from '@fillout/react'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
@@ -995,7 +995,7 @@ export default function ApplyPage() {
             {/* Date de naissance */}
             <div>
               <label className={labelClass}>{lang==='fr'?'Date de naissance *':'Date of birth *'}</label>
-              <DateSelectPicker
+              <DatePickerInput
                 value={form.birth_date}
                 onChange={v => set('birth_date', v)}
                 onBlur={() => touch('birth_date')}
@@ -1011,7 +1011,7 @@ export default function ApplyPage() {
             {/* Passeport expiry */}
             <div>
               <label className={labelClass}>{lang==='fr'?"Date d\u2019expiration du passeport *":'Passport expiry date *'}</label>
-<DateSelectPicker
+<DatePickerInput
                 value={form.passport_expiry}
                 onChange={v => set('passport_expiry', v)}
                 onBlur={() => touch('passport_expiry')}
@@ -1351,7 +1351,7 @@ export default function ApplyPage() {
             {/* Date de début */}
             <div>
               <label className={labelClass}>{lang==='fr'?'Date de démarrage souhaitée *':'Desired start date *'}</label>
-              <DateSelectPicker
+              <DatePickerInput
               value={form.start_date}
               onChange={v => set('start_date', v)}
               onBlur={() => touch('start_date')}
