@@ -12,7 +12,23 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
     .from('cases')
     .select(`
       *,
-      interns (*)
+      interns (*),
+      job_submissions (
+        id,
+        status,
+        jobs (
+          id,
+          public_title,
+          title,
+          companies (
+            id,
+            name,
+            website,
+            registration_number,
+            address
+          )
+        )
+      )
     `)
     .eq('portal_token', token)
     .single()

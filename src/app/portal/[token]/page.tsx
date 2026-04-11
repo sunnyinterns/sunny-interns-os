@@ -42,6 +42,9 @@ interface PortalData {
   flight_last_stopover?: string | null
   desired_start_date?: string | null
   visa_submitted_to_agent_at?: string | null
+  payment_amount?: number | null
+  invoice_number?: string | null
+  discount_percentage?: number | null
   interns?: {
     first_name?: string | null
     last_name?: string | null
@@ -55,8 +58,26 @@ interface PortalData {
   job_submissions?: Array<{
     id: string
     status: string
-    jobs?: { public_title?: string | null; title?: string | null } | null
+    jobs?: {
+      public_title?: string | null
+      title?: string | null
+      companies?: {
+        id?: string | null
+        name?: string | null
+        website?: string | null
+        registration_number?: string | null
+        address?: string | null
+      } | null
+    } | null
   }> | null
+}
+
+const PAYMENT_STATUSES = new Set(['payment_pending', 'convention_signed', 'job_retained'])
+const PAYMENT_INFO = {
+  company: 'C.G Company International',
+  iban: 'GB76REVO00996903517949',
+  bic: 'REVOGB21',
+  bank: 'Revolut Ltd',
 }
 
 function formatDate(d: string) {
@@ -93,6 +114,13 @@ export default function PortalPage() {
   const prenom = data.interns?.first_name ?? 'Stagiaire'
   const currentStep = STATUS_TO_STEP[data.status] ?? 1
   const retainedSub = (data.job_submissions ?? []).find(s => s.status === 'retained')
+  const retainedCompany = retainedSub?.jobs?.companies ?? null
+  const showPayment = PAYMENT_STATUSES.has(data.status)
+  const paymentAmount = data.payment_amount ?? 990
+  const paymentTotal = data.discount_percentage && data.discount_percentage > 0
+    ? paymentAmount * (1 - data.discount_percentage / 100)
+    : paymentAmount
+  const isPaid = ['payment_received', 'visa_docs_sent', 'visa_submitted', 'visa_received', 'arrival_prep', 'active', 'alumni'].includes(data.status)
 
   // Pending actions
   const actions: { label: string; href: string; done: boolean; urgent?: boolean }[] = []
@@ -220,12 +248,86 @@ export default function PortalPage() {
           <p style={{ fontSize: 16, fontWeight: 700, color: '#c8a96e', marginBottom: 6 }}>
             {retainedSub.jobs?.public_title ?? retainedSub.jobs?.title ?? 'Stage trouvé !'}
           </p>
+          {retainedCompany?.name && (
+            <p style={{ fontSize: 13, color: '#1a1918', fontWeight: 600 }}>{retainedCompany.name}</p>
+          )}
           {data.actual_start_date && data.actual_end_date && (
             <>
               <p style={{ fontSize: 13, color: '#6b7280' }}>Du {formatDate(data.actual_start_date)} au {formatDate(data.actual_end_date)}</p>
               <p style={{ fontSize: 13, color: '#6b7280' }}>Durée : {monthsDiff(data.actual_start_date, data.actual_end_date)} mois</p>
             </>
           )}
+        </div>
+      )}
+
+      {/* Infos entreprise pour convention */}
+      {retainedCompany && (data.status === 'job_retained' || data.status === 'convention_signed' || data.status === 'payment_pending') && (
+        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 4 }}>📋 Informations pour ta convention</h2>
+          <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 12 }}>Utilise ces informations pour faire rédiger ta convention de stage par ton école.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <span style={{ fontSize: 12, color: '#9ca3af', width: 120, flexShrink: 0 }}>Entreprise</span>
+              <span style={{ fontSize: 13, color: '#1a1918', fontWeight: 500 }}>{retainedCompany.name ?? '—'}</span>
+            </div>
+            {retainedCompany.address && (
+              <div style={{ display: 'flex', gap: 12 }}>
+                <span style={{ fontSize: 12, color: '#9ca3af', width: 120, flexShrink: 0 }}>Adresse</span>
+                <span style={{ fontSize: 13, color: '#1a1918' }}>{retainedCompany.address}</span>
+              </div>
+            )}
+            {retainedCompany.registration_number && (
+              <div style={{ display: 'flex', gap: 12 }}>
+                <span style={{ fontSize: 12, color: '#9ca3af', width: 120, flexShrink: 0 }}>N° registre</span>
+                <span style={{ fontSize: 13, color: '#1a1918', fontFamily: 'monospace' }}>{retainedCompany.registration_number}</span>
+              </div>
+            )}
+            {retainedCompany.website && (
+              <div style={{ display: 'flex', gap: 12 }}>
+                <span style={{ fontSize: 12, color: '#9ca3af', width: 120, flexShrink: 0 }}>Site web</span>
+                <a href={retainedCompany.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#c8a96e' }}>{retainedCompany.website}</a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Paiement */}
+      {showPayment && !isPaid && (
+        <div style={{ background: '#fef9ee', border: '1px solid #fde68a', borderRadius: 12, padding: 16, marginBottom: 24 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>💶 Paiement</h2>
+          <div style={{ background: 'white', borderRadius: 8, padding: 12, marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 12, color: '#9ca3af' }}>Montant à régler</span>
+              <span style={{ fontSize: 22, fontWeight: 700, color: '#1a1918' }}>{paymentTotal.toFixed(0)} €</span>
+            </div>
+            {data.invoice_number && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                <span style={{ fontSize: 12, color: '#9ca3af' }}>Référence</span>
+                <span style={{ fontSize: 13, color: '#1a1918', fontWeight: 600, fontFamily: 'monospace' }}>{data.invoice_number}</span>
+              </div>
+            )}
+          </div>
+          <p style={{ fontSize: 12, color: '#92400e', fontWeight: 600, marginBottom: 8 }}>Coordonnées bancaires</p>
+          <div style={{ background: 'white', borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+              <span style={{ fontSize: 12, color: '#9ca3af' }}>Société</span>
+              <span style={{ fontSize: 12, color: '#1a1918' }}>{PAYMENT_INFO.company}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+              <span style={{ fontSize: 12, color: '#9ca3af' }}>IBAN</span>
+              <span style={{ fontSize: 12, color: '#1a1918', fontFamily: 'monospace' }}>{PAYMENT_INFO.iban}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+              <span style={{ fontSize: 12, color: '#9ca3af' }}>BIC</span>
+              <span style={{ fontSize: 12, color: '#1a1918', fontFamily: 'monospace' }}>{PAYMENT_INFO.bic}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+              <span style={{ fontSize: 12, color: '#9ca3af' }}>Banque</span>
+              <span style={{ fontSize: 12, color: '#1a1918' }}>{PAYMENT_INFO.bank}</span>
+            </div>
+          </div>
+          <p style={{ fontSize: 11, color: '#a16207', marginTop: 10, fontStyle: 'italic' }}>Paiement par carte (Stripe) disponible prochainement.</p>
         </div>
       )}
 
