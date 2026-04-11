@@ -1585,7 +1585,7 @@ export default function ApplyPage() {
             <div className="bg-white border border-zinc-200 rounded-2xl p-6">
               <div className="text-center mb-5">
                 <p className="text-4xl font-bold text-[#c8a96e]">{price}{'\u20ac'}</p>
-                <p className="text-xs text-zinc-500 mt-1">{lang==='fr'?'TTC':'Tax included'}</p>
+                <p className="text-xs text-zinc-500 mt-1">{lang==='fr'?'TTC — tarif unique, quelle que soit la durée':'Tax included — flat fee regardless of duration'}</p>
               </div>
 
               {/* Alerte paiement — très visible */}
