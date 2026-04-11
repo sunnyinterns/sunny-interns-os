@@ -75,7 +75,7 @@ export default function CaseDetailPage() {
   const [caseData, setCaseData] = useState<CaseDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<TabKey>(tabFromUrl ?? 'process')
+  const [activeTab, setActiveTab] = useState<TabKey>(tabFromUrl ?? 'profil')
   const [showEditModal, setShowEditModal] = useState(false)
   const [showInternCard, setShowInternCard] = useState(false)
   const [sendingRecap, setSendingRecap] = useState(false)
@@ -296,6 +296,32 @@ export default function CaseDetailPage() {
               </p>
             </div>
           </div>
+
+          {/* RDV 1er entretien */}
+          {caseData.intern_first_meeting_date && (
+            <div className="mb-3 flex flex-wrap items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
+              <span>📅</span>
+              <span className="font-medium">
+                1er entretien : {new Date(caseData.intern_first_meeting_date).toLocaleDateString('fr-FR', {
+                  weekday: 'short', day: 'numeric', month: 'short'
+                })} à {new Date(caseData.intern_first_meeting_date).toLocaleTimeString('fr-FR', {
+                  hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta'
+                })} WITA
+              </span>
+              {caseData.google_meet_link && (
+                <a href={caseData.google_meet_link} target="_blank" rel="noopener noreferrer"
+                  className="ml-1 px-2 py-0.5 bg-[#1a73e8] text-white rounded text-[10px] font-semibold hover:bg-[#1557b0]">
+                  Meet
+                </a>
+              )}
+              {caseData.google_meet_cancel_link && (
+                <a href={caseData.google_meet_cancel_link} target="_blank" rel="noopener noreferrer"
+                  className="ml-1 text-[10px] text-blue-400 hover:underline">
+                  Annuler/Reprog
+                </a>
+              )}
+            </div>
+          )}
 
           {/* Chips infos clés */}
           <div className="flex flex-wrap gap-2 pb-3 text-xs">
