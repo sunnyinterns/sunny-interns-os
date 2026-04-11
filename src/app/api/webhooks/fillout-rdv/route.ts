@@ -57,8 +57,9 @@ export async function POST(request: Request) {
     }
 
     // 3. Top-level email
-    if (!email && typeof (payload as Record<string, unknown>).email === 'string') {
-      email = (payload as Record<string, unknown>).email as string
+    const payloadAny = payload as unknown as Record<string, unknown>
+    if (!email && typeof payloadAny.email === 'string') {
+      email = payloadAny.email
     }
 
     const nameParam = urlParams?.find(p => p.id === 'name' || p.name === 'name')?.value
