@@ -682,7 +682,7 @@ export default function ApplyPage() {
     switch (step) {
       case 0: {
         return !!(
-          form.email.trim() && isValidEmail(form.email) && !emailExists &&
+          form.email.trim() && isValidEmail(form.email) && !emailExists && !emailChecking &&
           (form.desired_jobs.length > 0 || form.custom_jobs.length > 0) &&
           form.duration
         )
