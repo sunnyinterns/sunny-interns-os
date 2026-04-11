@@ -27,7 +27,15 @@ export async function PATCH(
   }
 
   try {
-    const body = await request.json() as { status?: string; intern_interested?: boolean }
+    const body = await request.json() as {
+      status?: string
+      intern_interested?: boolean
+      intern_priority?: number
+      cv_revision_requested?: boolean
+      cv_revision_done?: boolean
+      employer_response?: string
+      notes_charly?: string
+    }
 
     const { data: sub, error: fetchError } = await supabase
       .from('job_submissions')
@@ -46,6 +54,14 @@ export async function PATCH(
 
     if (body.status && !isPortal) {
       updatePayload.status = body.status
+    }
+
+    if (!isPortal) {
+      if (body.intern_priority !== undefined) updatePayload.intern_priority = body.intern_priority
+      if (body.cv_revision_requested !== undefined) updatePayload.cv_revision_requested = body.cv_revision_requested
+      if (body.cv_revision_done !== undefined) updatePayload.cv_revision_done = body.cv_revision_done
+      if (body.employer_response !== undefined) updatePayload.employer_response = body.employer_response
+      if (body.notes_charly !== undefined) updatePayload.notes_charly = body.notes_charly
     }
 
     const { error } = await supabase

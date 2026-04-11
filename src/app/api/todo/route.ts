@@ -185,6 +185,35 @@ export async function GET() {
     })
   })
 
+  // 6b. Visa urgent — départ dans <30j et visa pas reçu
+  const cutoff = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]
+  const { data: visaUrgent } = await adminClient
+    .from('cases')
+    .select('id, status, desired_start_date, updated_at, interns(first_name, last_name)')
+    .in('status', ['visa_submitted', 'visa_docs_sent', 'visa_in_progress', 'payment_received'])
+    .not('desired_start_date', 'is', null)
+    .lt('desired_start_date', cutoff)
+    .limit(20)
+
+  visaUrgent?.forEach(c => {
+    const intern = (Array.isArray(c.interns) ? c.interns[0] : c.interns) as unknown as { first_name: string; last_name: string } | null
+    const daysLeft = Math.floor((new Date(c.desired_start_date as string).getTime() - now.getTime()) / 86400000)
+    if (daysLeft < 0) return
+    todos.push({
+      id: `visa-urgent-${c.id}`,
+      type: 'alerte',
+      priority: daysLeft < 15 ? 'urgent' : 'high',
+      case_id: c.id,
+      intern_name: `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim(),
+      title: `⚠️ Visa en cours — départ dans ${daysLeft}j`,
+      description: `Départ prévu le ${new Date(c.desired_start_date as string).toLocaleDateString('fr-FR')} — visa pas encore reçu`,
+      cta_label: 'Voir le dossier',
+      cta_url: `/fr/cases/${c.id}?tab=visa`,
+      days_waiting: daysLeft,
+      status: c.status,
+    })
+  })
+
   // 7. Convention signée mais paiement non reçu (> 7j)
   const { data: convOld } = await adminClient
     .from('cases')

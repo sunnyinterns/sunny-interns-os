@@ -457,6 +457,37 @@ export function TabProfil({ intern, arrivalDate, internId, caseId, schoolName, d
         <EditableField label="Compagnie assurance" value={intern.insurance_company} fieldKey="insurance_company" internId={iid} caseId={caseId} />
       </Section>
 
+      {/* SECTION — CV & Commentaire employeur */}
+      <Section title="CV & Commentaire employeur">
+        {(intern.cv_url || (intern as { local_cv_url?: string }).local_cv_url) && (
+          <div className="flex flex-wrap gap-2 py-3 border-b border-zinc-50">
+            {(intern as { local_cv_url?: string }).local_cv_url && (
+              <a href={(intern as { local_cv_url?: string }).local_cv_url!} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
+                <span>📄</span>
+                <span className="text-xs font-medium text-blue-700">CV local (validé)</span>
+              </a>
+            )}
+            {intern.cv_url && (
+              <a href={intern.cv_url} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2 px-3 py-2 bg-[#c8a96e]/10 border border-[#c8a96e]/30 rounded-lg hover:bg-[#c8a96e]/20 transition-colors">
+                <span>📄</span>
+                <span className="text-xs font-medium text-[#8a6a2a]">CV candidat</span>
+              </a>
+            )}
+          </div>
+        )}
+        <EditableField
+          label="Commentaire pour l'employeur"
+          value={(intern as { private_comment_for_employer?: string }).private_comment_for_employer}
+          fieldKey="private_comment_for_employer"
+          internId={iid}
+          caseId={caseId}
+          type="textarea"
+        />
+        <p className="text-[10px] text-zinc-400 pb-2 italic">Ce texte sera joint à l&apos;envoi du profil à l&apos;employeur</p>
+      </Section>
+
       {/* SECTION 7 — Mère (pour le visa) */}
       <Section title="Mère (pour le visa)">
         <EditableField label="Prénom mère" value={intern.mother_first_name} fieldKey="mother_first_name" internId={iid} caseId={caseId} />
