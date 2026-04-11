@@ -67,7 +67,7 @@ export async function POST(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Bali Interns <hello@bali-interns.com>',
+        from: 'Charly de Bali Interns <team@bali-interns.com>',
         to: [contactEmail],
         subject: `Candidature : ${intern.first_name} ${intern.last_name} — ${job.public_title ?? job.title}`,
         html,

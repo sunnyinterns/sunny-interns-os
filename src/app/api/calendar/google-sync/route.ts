@@ -66,8 +66,12 @@ export async function POST() {
     const events = await fetchCalendarEvents(accessToken, calId)
     
     for (const ev of events) {
-      const internAttendee = ev.attendees?.find(a => !a.email.includes('bali-interns.com') && !a.self)
-      const internNameMatch = ev.summary?.match(/Team Bali Interns and (.+)/i)
+      const candidateAttendee = ev.attendees?.find(
+        a => !['charly@bali-interns.com', 'team@bali-interns.com', 'bali-interns.com'].some(
+          domain => a.email?.includes(domain)
+        ) && !a.self
+      )
+      const summaryNameMatch = ev.summary?.match(/Team Bali Interns and (.+)/i)
       const rescheduleMatch = ev.description?.match(/Cancel or reschedule: (https:\/\/\S+)/i)
 
       await supabase.from('calendar_events').upsert({
@@ -80,8 +84,8 @@ export async function POST() {
         end_datetime: ev.end?.dateTime ?? ev.end?.date ?? null,
         meet_link: ev.hangoutLink ?? null,
         cancel_reschedule_link: rescheduleMatch?.[1] ?? null,
-        intern_email: internAttendee?.email ?? null,
-        intern_name: internNameMatch?.[1]?.trim() ?? null,
+        intern_email: candidateAttendee?.email ?? null,
+        intern_name: candidateAttendee?.displayName?.trim() ?? summaryNameMatch?.[1]?.trim() ?? null,
         my_response_status: ev.attendees?.find(a => a.self)?.responseStatus ?? null,
         html_link: ev.htmlLink ?? null,
         organizer_email: ev.organizer?.email ?? calId,

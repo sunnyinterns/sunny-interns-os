@@ -230,7 +230,7 @@ export async function POST(request: Request) {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          from: 'Bali Interns <hello@bali-interns.com>',
+          from: 'Charly de Bali Interns <team@bali-interns.com>',
           to: [d.email],
           subject: `Ta candidature Bali Interns est bien reçue, ${d.first_name} ! 🌴`,
           html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px"><h2>Félicitations ${d.first_name} ! 🎉</h2><p>Ta candidature pour un stage à Bali a bien été reçue.</p><p>Tu recevras très bientôt un email de confirmation pour ton entretien de qualification.</p><p style="color:#888;font-size:13px">Questions ? <a href="mailto:team@bali-interns.com" style="color:#c8a96e">team@bali-interns.com</a></p><p>À très vite,<br/><strong>L'équipe Bali Interns 🌴</strong></p></div>`,

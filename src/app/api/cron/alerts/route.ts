@@ -81,7 +81,7 @@ export async function GET(request: Request) {
       if (resend && recipients.length > 0) {
         try {
           await resend.emails.send({
-            from: process.env.RESEND_FROM_EMAIL ?? 'noreply@bali-interns.com',
+            from: process.env.RESEND_FROM_EMAIL ?? 'team@bali-interns.com',
             to: recipients,
             subject: `⚠ Alerte : ${config.label} — ${internName}`,
             html: `

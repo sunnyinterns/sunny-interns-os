@@ -97,7 +97,7 @@ export async function POST(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Bali Interns <hello@bali-interns.com>',
+        from: 'Charly de Bali Interns <team@bali-interns.com>',
         to: [intern.email],
         subject: isFr
           ? `Informations de paiement — ${total.toFixed(0)} €`

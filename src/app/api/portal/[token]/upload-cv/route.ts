@@ -65,7 +65,7 @@ export async function POST(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Bali Interns <hello@bali-interns.com>',
+        from: 'Charly de Bali Interns <team@bali-interns.com>',
         to: ['team@bali-interns.com'],
         subject: `📄 Nouveau CV — ${intern.first_name ?? ''} ${intern.last_name ?? ''}`,
         html: `<p>${intern.first_name ?? ''} ${intern.last_name ?? ''} vient de déposer une nouvelle version de son CV.</p><p><a href="${publicUrl}">Voir le CV</a></p><p><a href="${appUrl}/fr/cases/${caseRow.id}">Ouvrir le dossier</a></p>`,
