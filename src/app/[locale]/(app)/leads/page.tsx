@@ -259,6 +259,58 @@ export default function LeadsPage() {
           })}
         </div>
       )}
+
+      {selectedLead && (
+        <div className="fixed inset-0 z-50 flex" onClick={() => setSelectedLead(null)}>
+          <div className="flex-1 bg-black/30" />
+          <div
+            className="w-full max-w-md bg-white h-full overflow-y-auto p-6 shadow-xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-semibold text-[#1a1918]">
+                  {[selectedLead.first_name, selectedLead.last_name].filter(Boolean).join(' ') || selectedLead.email}
+                </h2>
+                <p className="text-sm text-zinc-500">{selectedLead.email}</p>
+              </div>
+              <button
+                onClick={() => setSelectedLead(null)}
+                className="text-zinc-400 hover:text-zinc-600 text-xl leading-none"
+                aria-label="Fermer"
+              >
+                ×
+              </button>
+            </div>
+
+            {selectedLead.converted_case_id && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4">
+                <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">✅ Converti en candidat</p>
+                <p className="text-sm text-emerald-700">Ce lead a complété sa candidature et pris un RDV.</p>
+                <a
+                  href={`/${locale}/cases/${selectedLead.converted_case_id}`}
+                  className="inline-flex items-center gap-2 mt-2 px-3 py-1.5 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 transition-colors"
+                >
+                  Voir le dossier →
+                </a>
+              </div>
+            )}
+
+            <div className="space-y-3 text-sm">
+              {selectedLead.phone && <div><span className="text-zinc-500">Téléphone : </span>{selectedLead.phone}</div>}
+              {selectedLead.whatsapp && <div><span className="text-zinc-500">WhatsApp : </span>{selectedLead.whatsapp}</div>}
+              {selectedLead.desired_jobs && selectedLead.desired_jobs.length > 0 && (
+                <div><span className="text-zinc-500">Métiers : </span>{selectedLead.desired_jobs.join(', ')}</div>
+              )}
+              {selectedLead.desired_start_date && <div><span className="text-zinc-500">Démarrage : </span>{selectedLead.desired_start_date}</div>}
+              {selectedLead.school_country && <div><span className="text-zinc-500">Pays d'études : </span>{selectedLead.school_country}</div>}
+              {selectedLead.form_step !== null && <div><span className="text-zinc-500">Étape atteinte : </span>{selectedLead.form_step}</div>}
+              {selectedLead.notes && <div><span className="text-zinc-500">Notes : </span>{selectedLead.notes}</div>}
+              <div><span className="text-zinc-500">Créé le : </span>{new Date(selectedLead.created_at).toLocaleString('fr-FR')}</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
