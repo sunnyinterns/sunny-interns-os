@@ -11,6 +11,9 @@ interface Profile {
   status: string
   date: string
   start_date: string | null
+  duration_months: number | null
+  rdv_date: string | null
+  desired_sectors: string[] | null
 }
 
 interface FunnelStage {
@@ -60,10 +63,6 @@ function convColor(rate: string) {
   if (n >= 70) return 'text-emerald-600 font-bold'
   if (n >= 40) return 'text-amber-600'
   return 'text-red-500'
-}
-
-function relDate(iso: string) {
-  return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
 }
 
 interface Props { locale?: string }
@@ -178,22 +177,31 @@ export function FunnelKPIs({ locale = 'fr' }: Props) {
                         onClick={() => router.push(`/${locale}/cases/${p.case_id}`)}
                         className="bg-white border border-zinc-200 rounded-lg px-3 py-2 flex items-center justify-between cursor-pointer hover:border-[#c8a96e] hover:shadow-sm transition-all"
                       >
-                        <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
                           <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 ${COLOR[openStage.color]?.badge}`}>
                             {p.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}
                           </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-[#1a1918] truncate">{p.name}</p>
-                            <p className="text-xs text-zinc-400 truncate">{p.job ?? p.email ?? '—'}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-[#1a1918] truncate">{p.name}</p>
+                            {p.job && <p className="text-xs text-zinc-500 truncate">{p.job}</p>}
+                            <div className="flex gap-2 mt-0.5 flex-wrap">
+                              {p.duration_months && (
+                                <span className="text-[10px] text-zinc-400">⏱ {p.duration_months} mois</span>
+                              )}
+                              {p.start_date && (
+                                <span className="text-[10px] text-zinc-400">
+                                  🛫 {new Date(p.start_date).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+                                </span>
+                              )}
+                              {p.rdv_date && (
+                                <span className="text-[10px] text-blue-500">
+                                  📅 {new Date(p.rdv_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} {new Date(p.rdv_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                          {p.start_date && (
-                            <span className="text-[10px] text-zinc-400 hidden sm:block">🛫 {relDate(p.start_date)}</span>
-                          )}
-                          <span className="text-[10px] text-zinc-400">{relDate(p.date)}</span>
-                          <span className="text-[#c8a96e] text-xs">→</span>
-                        </div>
+                        <span className="text-[#c8a96e] text-xs flex-shrink-0 ml-2">→</span>
                       </div>
                     ))}
                   </div>

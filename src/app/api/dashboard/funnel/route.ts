@@ -3,7 +3,17 @@ import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
 interface InternRow { id: string; first_name: string; last_name: string; email: string; main_desired_job: string | null }
-interface CaseRow { id: string; status: string; created_at: string; updated_at: string; desired_start_date: string | null; interns: InternRow | InternRow[] | null }
+interface CaseRow {
+  id: string
+  status: string
+  created_at: string
+  updated_at: string
+  desired_start_date: string | null
+  desired_duration_months: number | null
+  desired_sectors: string[] | null
+  intern_first_meeting_date: string | null
+  interns: InternRow | InternRow[] | null
+}
 
 function getIntern(row: CaseRow): InternRow | null {
   if (!row.interns) return null
@@ -21,6 +31,9 @@ function toProfile(row: CaseRow) {
     status: row.status,
     date: row.updated_at ?? row.created_at,
     start_date: row.desired_start_date ?? null,
+    duration_months: row.desired_duration_months ?? null,
+    rdv_date: row.intern_first_meeting_date ? String(row.intern_first_meeting_date) : null,
+    desired_sectors: row.desired_sectors ?? null,
   }
 }
 
@@ -56,7 +69,7 @@ export async function GET() {
 
   const { data: allCases } = await admin
     .from('cases')
-    .select('id, status, created_at, updated_at, desired_start_date, interns(id, first_name, last_name, email, main_desired_job)')
+    .select('id, status, created_at, updated_at, desired_start_date, desired_duration_months, desired_sectors, intern_first_meeting_date, interns(id, first_name, last_name, email, main_desired_job)')
     .not('status', 'in', '(archived,completed)')
     .order('created_at', { ascending: false })
     .limit(2000) as { data: CaseRow[] | null }
