@@ -34,7 +34,9 @@ function StatusBadge({ status, myResponse }: { status: string; myResponse: strin
   return <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-500 font-medium">En attente</span>
 }
 
-export function CalendarWidget() {
+interface CalendarWidgetProps { locale?: string }
+
+export function CalendarWidget({ locale = 'fr' }: CalendarWidgetProps) {
   const [events, setEvents] = useState<CalEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'upcoming' | 'cancelled'>('upcoming')
@@ -111,7 +113,7 @@ export function CalendarWidget() {
                   </a>
                 )}
                 {ev.case_id && (
-                  <Link href={`/fr/cases/${ev.case_id}`}
+                  <Link href={`/${locale}/cases/${ev.case_id}`}
                      className="text-xs px-2 py-1 bg-zinc-100 text-zinc-600 rounded-lg hover:bg-zinc-200 font-medium">
                     Dossier
                   </Link>
@@ -124,7 +126,7 @@ export function CalendarWidget() {
 
       {/* Footer */}
       <div className="px-5 py-3 border-t border-zinc-100 bg-zinc-50 flex items-center justify-between">
-        <Link href="/fr/calendar" className="text-xs text-[#c8a96e] hover:underline font-medium">
+        <Link href={`/${locale}/calendar`} className="text-xs text-[#c8a96e] hover:underline font-medium">
           Voir tous les RDVs →
         </Link>
         <a href="https://calendar.google.com/calendar/u/0/r/week" target="_blank" rel="noopener noreferrer"
