@@ -122,7 +122,7 @@ function CancelPopup({ event, onClose }: { event: CalEvent; onClose: () => void 
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="px-6 py-5 border-b border-zinc-100">
           <h2 className="text-lg font-bold text-[#1a1918]">❌ Annuler le RDV</h2>
-          <p className="text-sm text-zinc-500 mt-0.5">{event.intern_name} · {timeOnly(event.start_datetime)} WITA</p>
+          <p className="text-sm text-zinc-500 mt-0.5">{event.intern_name ?? event.intern_email ?? 'Candidat inconnu'} · {timeOnly(event.start_datetime)} WITA</p>
         </div>
 
         <div className="px-6 py-4 space-y-4">
@@ -214,7 +214,7 @@ function ReschedulePopup({ event, onClose }: { event: CalEvent; onClose: () => v
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="px-6 py-5 border-b border-zinc-100">
           <h2 className="text-lg font-bold text-[#1a1918]">🔄 Reprogrammer le RDV</h2>
-          <p className="text-sm text-zinc-500 mt-0.5">{event.intern_name} · {timeOnly(event.start_datetime)} WITA</p>
+          <p className="text-sm text-zinc-500 mt-0.5">{event.intern_name ?? event.intern_email ?? 'Candidat inconnu'} · {timeOnly(event.start_datetime)} WITA</p>
         </div>
 
         <div className="px-6 py-4 space-y-4">
@@ -289,8 +289,8 @@ function EventCard({ event, locale }: { event: CalEvent; locale: string }) {
             {internInitials}
           </div>
           <div className="min-w-0">
-            <p className="font-semibold text-[#1a1918] text-sm">{event.intern_name ?? '—'}</p>
-            <p className="text-xs text-zinc-400 truncate">{event.intern_email ?? ''}</p>
+            <p className="font-semibold text-[#1a1918] text-sm">{event.intern_name ?? event.intern_email ?? 'Candidat inconnu'}</p>
+            <p className="text-xs text-zinc-400 truncate">{event.intern_name ? (event.intern_email ?? '') : ''}</p>
           </div>
           {event.case_id && (
             <a href={`/${locale}/cases/${event.case_id}`} className="ml-auto text-xs text-[#c8a96e] hover:underline flex-shrink-0">
