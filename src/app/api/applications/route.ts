@@ -48,78 +48,127 @@ export async function POST(request: Request) {
 
     const d = parsed.data
     const supabase = getServiceClient()
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null
+    const durationMonths = d.duration ? parseInt(d.duration) : null
+    const allJobs = [...(d.desired_jobs ?? []), ...(d.custom_jobs ?? [])]
 
-    // Check email uniqueness
-    const { data: existing } = await supabase
+    // School pending si introuvable
+    const dExt = d as unknown as Record<string,unknown>
+    if (dExt.school_not_found && dExt.school_custom_name) {
+      await supabase.from('schools_pending').insert({
+        name: String(dExt.school_custom_name ?? ''),
+        submitted_by_email: d.email,
+      }).then(() => null, () => null)
+    }
+
+    const internFields = {
+      first_name: d.first_name,
+      last_name: d.last_name,
+      email: d.email,
+      whatsapp: d.whatsapp,
+      nationality: d.nationalities?.[0] ?? null,
+      nationalities: d.nationalities ?? [],
+      school_country: d.school_country ?? null,
+      birth_date: d.birth_date || null,
+      passport_expiry: d.passport_expiry || null,
+      linkedin_url: d.linkedin_url ?? null,
+      cv_url: d.cv_url ?? null,
+      local_cv_url: d.local_cv_url ?? null,
+      spoken_languages: d.spoken_languages ?? [],
+      main_desired_job: allJobs[0] ?? null,
+      stage_ideal: d.stage_ideal ?? null,
+      touchpoint: d.touchpoints?.join(', ') ?? d.touchpoint ?? null,
+      touchpoints: d.touchpoints ?? [],
+      referred_by_code: d.referred_by_code ?? null,
+      commitment_price_accepted: d.commitment_price_accepted ?? true,
+      commitment_budget_accepted: d.commitment_budget_accepted ?? true,
+      commitment_terms_accepted: d.commitment_terms_accepted ?? true,
+      commitment_accepted_at: new Date().toISOString(),
+      commitment_ip: ip,
+      preferred_language: 'fr',
+      source: 'apply_form',
+      updated_at: new Date().toISOString(),
+    }
+
+    // Vérifier si email existe (lead incomplet via capture-email)
+    const { data: existingIntern } = await supabase
       .from('interns')
-      .select('id')
+      .select('id, first_name')
       .eq('email', d.email)
       .maybeSingle()
 
-    if (existing) {
-      return NextResponse.json({ error: 'Cet email est déjà utilisé / This email is already linked to an application.' }, { status: 409 })
-    }
+    let internId: string
+    let caseId: string
+    let portalToken: string
 
-    // Parse duration months
-    const durationMonths = d.duration ? parseInt(d.duration) : null
+    if (existingIntern) {
+      // Si dossier complet (first_name rempli) → 409
+      if (existingIntern.first_name && existingIntern.first_name.trim() !== '') {
+        return NextResponse.json({ error: 'Cet email est déjà utilisé / This email is already linked to an application.' }, { status: 409 })
+      }
 
-    // Merge desired_jobs + custom_jobs into desired_sectors
-    const allJobs = [...(d.desired_jobs ?? []), ...(d.custom_jobs ?? [])]
+      // Lead incomplet → UPDATE intern avec toutes les données
+      const { data: updated, error: upErr } = await supabase
+        .from('interns')
+        .update(internFields)
+        .eq('id', existingIntern.id)
+        .select('id')
+        .single()
+      if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 })
+      internId = updated.id
 
-    // Get commitment IP
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null
+      // Mettre à jour le case existant
+      const { data: existingCase } = await supabase
+        .from('cases')
+        .select('id, portal_token')
+        .eq('intern_id', internId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
-    // Create intern
-    const { data: intern, error: internError } = await supabase
-      .from('interns')
-      .insert({
-        first_name: d.first_name,
-        last_name: d.last_name,
-        email: d.email,
-        whatsapp: d.whatsapp,
-        nationality: d.nationalities?.[0] ?? null,
-        nationalities: d.nationalities ?? [],
-        school_country: d.school_country ?? null,
-        birth_date: d.birth_date || null,
-        passport_expiry: d.passport_expiry || null,
-        linkedin_url: d.linkedin_url ?? null,
-        cv_url: d.cv_url ?? null,
-        local_cv_url: d.local_cv_url ?? null,
-        spoken_languages: d.spoken_languages ?? [],
-        main_desired_job: allJobs[0] ?? null,
-        stage_ideal: d.stage_ideal ?? null,
-        touchpoint: d.touchpoints?.join(', ') ?? d.touchpoint ?? null,
-        referred_by_code: d.referred_by_code ?? null,
-        commitment_price_accepted: d.commitment_price_accepted ?? false,
-        commitment_budget_accepted: d.commitment_budget_accepted ?? false,
-        commitment_terms_accepted: d.commitment_terms_accepted ?? false,
-        commitment_accepted_at: new Date().toISOString(),
-        commitment_ip: ip,
-        preferred_language: 'fr',
-      })
-      .select('id')
-      .single()
+      if (existingCase) {
+        await supabase.from('cases').update({
+          desired_start_date: d.start_date || null,
+          desired_duration_months: durationMonths,
+          desired_sectors: allJobs,
+          school_id: d.school_id ?? null,
+          updated_at: new Date().toISOString(),
+        }).eq('id', existingCase.id)
+        caseId = existingCase.id
+        portalToken = existingCase.portal_token ?? crypto.randomUUID()
+      } else {
+        // Créer un case si pas encore
+        const { data: dest } = await supabase.from('destinations').select('id').eq('is_active', true).limit(1).maybeSingle()
+        portalToken = crypto.randomUUID()
+        const { data: nc, error: ncErr } = await supabase.from('cases').insert({
+          intern_id: internId,
+          destination_id: dest?.id ?? 'fc9ece85-e5d5-41d2-9142-79054244bbce',
+          status: 'lead',
+          desired_start_date: d.start_date || null,
+          desired_duration_months: durationMonths,
+          desired_sectors: allJobs,
+          school_id: d.school_id ?? null,
+          portal_token: portalToken,
+          assigned_manager_name: 'Charly Gestede',
+        }).select('id').single()
+        if (ncErr) return NextResponse.json({ error: ncErr.message }, { status: 500 })
+        caseId = nc.id
+      }
+    } else {
+      // Nouveau candidat → INSERT intern
+      const { data: newIntern, error: internErr } = await supabase
+        .from('interns')
+        .insert({ ...internFields })
+        .select('id')
+        .single()
+      if (internErr) return NextResponse.json({ error: internErr.message }, { status: 500 })
+      internId = newIntern.id
 
-    if (internError) {
-      return NextResponse.json({ error: internError.message }, { status: 500 })
-    }
-
-    // Get default destination (Bali)
-    const { data: dest } = await supabase
-      .from('destinations')
-      .select('id')
-      .eq('is_active', true)
-      .limit(1)
-      .maybeSingle()
-
-    // Generate portal token
-    const portalToken = crypto.randomUUID()
-
-    // Create case
-    const { data: newCase, error: caseError } = await supabase
-      .from('cases')
-      .insert({
-        intern_id: intern.id,
+      // Créer le case
+      const { data: dest } = await supabase.from('destinations').select('id').eq('is_active', true).limit(1).maybeSingle()
+      portalToken = crypto.randomUUID()
+      const { data: nc, error: ncErr } = await supabase.from('cases').insert({
+        intern_id: internId,
         destination_id: dest?.id ?? 'fc9ece85-e5d5-41d2-9142-79054244bbce',
         status: 'lead',
         desired_start_date: d.start_date || null,
@@ -129,26 +178,14 @@ export async function POST(request: Request) {
         portal_token: portalToken,
         assigned_manager_name: 'Charly Gestede',
         intern_first_meeting_date: d.rdv_slot ?? null,
-      })
-      .select('id')
-      .single()
-
-    if (caseError) {
-      return NextResponse.json({ error: caseError.message }, { status: 500 })
+      }).select('id').single()
+      if (ncErr) return NextResponse.json({ error: ncErr.message }, { status: 500 })
+      caseId = nc.id
     }
 
-    // If referred_by_code, verify affiliate code exists
-    if (d.referred_by_code) {
-      await supabase
-        .from('affiliate_codes')
-        .select('id')
-        .eq('code', d.referred_by_code)
-        .maybeSingle()
-    }
-
-    // Log activity_feed (using service client — no auth on public endpoint)
+    // Log activity_feed
     await supabase.from('activity_feed').insert({
-      case_id: newCase.id,
+      case_id: caseId,
       type: 'case_created',
       title: `${d.first_name} ${d.last_name} a candidaté`,
       description: `Nouvelle candidature de ${d.first_name} ${d.last_name} - ${d.email}`,
@@ -157,19 +194,10 @@ export async function POST(request: Request) {
       source: 'automation',
       metadata: {
         email: d.email,
-        school: d.school_name,
+        school: d.school_country,
         desired_jobs: allJobs,
         touchpoint: d.touchpoints?.join(', ') ?? d.touchpoint,
       },
-    }).then(() => null, () => null)
-
-    // Log case_logs
-    await supabase.from('case_logs').insert({
-      case_id: newCase.id,
-      author_name: `${d.first_name} ${d.last_name}`,
-      action: 'created',
-      description: `Dossier créé via formulaire de candidature`,
-      metadata: { source: 'apply_form', touchpoint: d.touchpoint },
     }).then(() => null, () => null)
 
     // Notification admin
@@ -177,11 +205,11 @@ export async function POST(request: Request) {
       type: 'new_application',
       title: `Nouvelle candidature — ${d.first_name} ${d.last_name}`,
       message: `${d.first_name} ${d.last_name} (${d.email}) vient de candidater`,
-      link: `/fr/cases/${newCase.id}`,
-      metadata: { case_id: newCase.id, intern_id: intern.id },
+      link: `/fr/cases/${caseId}`,
+      metadata: { case_id: caseId, intern_id: internId },
     }).then(() => null, () => null)
 
-    // Email interne (Charly)
+    // Email interne Charly
     try {
       const { sendNewLeadInternal } = await import('@/lib/email/resend')
       void sendNewLeadInternal({
@@ -191,13 +219,11 @@ export async function POST(request: Request) {
         startDate: d.start_date ? new Date(d.start_date).toLocaleDateString('fr-FR') : null,
         passportExpiry: d.passport_expiry ?? null,
         startDateValue: d.start_date ?? null,
-        caseId: newCase.id,
+        caseId,
       })
-    } catch {
-      // Resend not configured — skip email
-    }
+    } catch { /* Resend not configured */ }
 
-    // Email de confirmation candidat
+    // Email confirmation candidat
     const resendKey = process.env.RESEND_API_KEY
     if (resendKey) {
       fetch('https://api.resend.com/emails', {
@@ -206,13 +232,8 @@ export async function POST(request: Request) {
         body: JSON.stringify({
           from: 'Bali Interns <hello@bali-interns.com>',
           to: [d.email],
-          subject: `Ta candidature Bali Interns est bien reçue, ${d.first_name} !`,
-          html: `
-            <h2>Félicitations ${d.first_name} !</h2>
-            <p>Ta candidature pour un stage à Bali a bien été reçue.</p>
-            <p>Notre équipe te contactera sous 24h sur WhatsApp (${d.whatsapp || 'numéro fourni'}) pour confirmer ton entretien de qualification.</p>
-            <p>À très vite,<br/>L'équipe Bali Interns</p>
-          `
+          subject: `Ta candidature Bali Interns est bien reçue, ${d.first_name} ! 🌴`,
+          html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px"><h2>Félicitations ${d.first_name} ! 🎉</h2><p>Ta candidature pour un stage à Bali a bien été reçue.</p><p>Tu recevras très bientôt un email de confirmation pour ton entretien de qualification.</p><p style="color:#888;font-size:13px">Questions ? <a href="mailto:team@bali-interns.com" style="color:#c8a96e">team@bali-interns.com</a></p><p>À très vite,<br/><strong>L'équipe Bali Interns 🌴</strong></p></div>`,
         })
       }).catch(() => null)
     }
@@ -220,10 +241,11 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       portal_token: portalToken,
-      case_id: newCase.id,
-      intern_id: intern.id,
+      case_id: caseId,
+      intern_id: internId,
     }, { status: 201 })
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Erreur inconnue' }, { status: 500 })
   }
 }
+
