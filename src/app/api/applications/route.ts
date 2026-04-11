@@ -183,6 +183,15 @@ export async function POST(request: Request) {
       caseId = nc.id
     }
 
+    // Marquer le lead comme converti si existe
+    await supabase.from('leads').update({
+      status: 'converted',
+      converted_case_id: caseId,
+      converted_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }).eq('email', d.email.toLowerCase().trim())
+    .then(() => null, () => null)
+
     // Log activity_feed
     await supabase.from('activity_feed').insert({
       case_id: caseId,

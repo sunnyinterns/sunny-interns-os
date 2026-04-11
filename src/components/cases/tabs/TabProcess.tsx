@@ -158,6 +158,14 @@ export function TabProcess({
     cta?: string; ctaColor?: string
     action?: () => void
   }> = {
+    lead: {
+      bg: 'bg-blue-50', border: 'border-blue-200', color: 'text-blue-800',
+      title: 'Prendre un RDV de qualification',
+      desc: 'Le candidat a soumis sa candidature — inviter à prendre un RDV via le formulaire',
+      cta: '📅 Voir le formulaire RDV',
+      ctaColor: 'bg-blue-600 hover:bg-blue-700',
+      action: () => window.open('https://bali-interns.fillout.com/t/gn4Zg9eydFus', '_blank'),
+    },
     rdv_booked: {
       bg: 'bg-emerald-50', border: 'border-emerald-200', color: 'text-emerald-800',
       title: "Mener l'entretien de qualification",
