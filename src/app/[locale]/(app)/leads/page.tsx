@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 
 interface Lead {
@@ -85,37 +85,49 @@ export default function LeadsPage() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [sourceFilter, setSourceFilter] = useState<string>('all')
 
-  useEffect(() => {
-    let cancelled = false
-    async function load() {
-      setLoading(true)
-      const res = await fetch('/api/leads')
-      if (!res.ok) {
-        if (!cancelled) { setLeads([]); setLoading(false) }
-        return
-      }
-      const data = (await res.json()) as Lead[]
-      if (!cancelled) { setLeads(Array.isArray(data) ? data : []); setLoading(false) }
-    }
-    void load()
-    return () => { cancelled = true }
+  const fetchLeads = useCallback(async () => {
+    const res = await fetch('/api/leads')
+    if (!res.ok) { setLeads([]); return }
+    const data = (await res.json()) as Lead[]
+    setLeads(Array.isArray(data) ? data : [])
   }, [])
+
+  useEffect(() => {
+    setLoading(true)
+    void fetchLeads().finally(() => setLoading(false))
+  }, [fetchLeads])
+
+  useEffect(() => {
+    const interval = setInterval(() => { void fetchLeads() }, 30000)
+    return () => clearInterval(interval)
+  }, [fetchLeads])
+
+  const MAIN_SOURCES = useMemo(() => new Set(['website_form_unfinished', 'linkedin', 'facebook', 'facebook_group']), [])
 
   const filtered = useMemo(() => {
     if (sourceFilter === 'all') return leads
-    if (sourceFilter === 'other') {
-      const main = new Set(['website_form_unfinished', 'linkedin', 'facebook', 'facebook_group'])
-      return leads.filter(l => !main.has(l.source))
-    }
+    if (sourceFilter === 'in_progress') return leads.filter(l => getFormLeadStatus(l) === 'in_progress')
+    if (sourceFilter === 'other') return leads.filter(l => !MAIN_SOURCES.has(l.source))
+    if (sourceFilter === 'facebook') return leads.filter(l => ['facebook', 'facebook_group'].includes(l.source))
     return leads.filter(l => l.source === sourceFilter)
-  }, [leads, sourceFilter])
+  }, [leads, sourceFilter, MAIN_SOURCES])
 
-  const filters: { key: string; label: string }[] = [
-    { key: 'all', label: 'Tous' },
-    { key: 'website_form_unfinished', label: 'Formulaire abandonné' },
-    { key: 'linkedin', label: 'LinkedIn' },
-    { key: 'facebook', label: 'Facebook' },
-    { key: 'other', label: 'Autre' },
+  const counts = useMemo(() => ({
+    all: leads.length,
+    website: leads.filter(l => l.source === 'website_form_unfinished').length,
+    linkedin: leads.filter(l => l.source === 'linkedin').length,
+    facebook: leads.filter(l => ['facebook', 'facebook_group'].includes(l.source)).length,
+    other: leads.filter(l => !MAIN_SOURCES.has(l.source)).length,
+    in_progress: leads.filter(l => getFormLeadStatus(l) === 'in_progress').length,
+  }), [leads, MAIN_SOURCES])
+
+  const filters: { key: string; label: string; count: number }[] = [
+    { key: 'all', label: 'Tous', count: counts.all },
+    { key: 'in_progress', label: '⏳ En cours', count: counts.in_progress },
+    { key: 'website_form_unfinished', label: 'Formulaire abandonné', count: counts.website },
+    { key: 'linkedin', label: 'LinkedIn', count: counts.linkedin },
+    { key: 'facebook', label: 'Facebook', count: counts.facebook },
+    { key: 'other', label: 'Autre', count: counts.other },
   ]
 
   function relaunch(lead: Lead) {
@@ -136,12 +148,23 @@ export default function LeadsPage() {
             {leads.length} lead{leads.length > 1 ? 's' : ''} · {filtered.length} affiché{filtered.length > 1 ? 's' : ''}
           </p>
         </div>
-        <button
-          onClick={() => router.push(`/${locale}/leads/new`)}
-          className="px-4 py-2 text-sm font-medium bg-[#c8a96e] hover:bg-[#b8994e] text-white rounded-lg transition-colors"
-        >
-          + Ajouter un lead
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => void fetchLeads()}
+            className="p-2 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-lg transition-colors"
+            title="Actualiser"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+          <button
+            onClick={() => router.push(`/${locale}/leads/new`)}
+            className="px-4 py-2 text-sm font-medium bg-[#c8a96e] hover:bg-[#b8994e] text-white rounded-lg transition-colors"
+          >
+            + Ajouter un lead
+          </button>
+        </div>
       </div>
 
       {/* Filtres */}
@@ -157,7 +180,7 @@ export default function LeadsPage() {
                 : 'text-zinc-500 hover:text-zinc-700',
             ].join(' ')}
           >
-            {f.label}
+            {f.label} ({f.count})
           </button>
         ))}
       </div>
