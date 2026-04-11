@@ -1414,15 +1414,23 @@ export default function ApplyPage() {
 
             {/* Date de fin — champ libre optionnel */}
             <div>
-              <label className={labelClass}>{lang==='fr'?'Date de fin maximum possible (optionnel)':'Latest possible end date (optional)'}</label>
-              <input
-                type="date"
+              <label className={labelClass}>
+                {lang === 'fr'
+                  ? 'Date limite de fin de stage (optionnel)'
+                  : 'Latest date by which your internship must end (optional)'}
+              </label>
+              <DatePickerInput
                 value={form.end_date ?? ''}
-                onChange={e => set('end_date', e.target.value)}
-                className={inputClass}
+                onChange={v => set('end_date', v)}
+                lang={lang}
+                defaultYear={new Date().getFullYear() + 1}
+                minYear={new Date().getFullYear()}
+                maxYear={new Date().getFullYear() + 4}
               />
               <p className={helperClass}>
-                {lang==='fr' ? "Laisse vide si tu n'as pas de contrainte précise." : "Leave empty if you have no specific constraint."}
+                {lang === 'fr'
+                  ? "Laisse vide si tu n'as pas de contrainte précise."
+                  : "Leave empty if you have no specific date constraint."}
               </p>
             </div>
 
@@ -1578,10 +1586,21 @@ export default function ApplyPage() {
                 <p className="text-4xl font-bold text-[#c8a96e]">{price}{'\u20ac'}</p>
                 <p className="text-xs text-zinc-500 mt-1">{lang==='fr'?'TTC':'Tax included'}</p>
               </div>
-              <p className="text-sm text-[#8a7d6d] leading-relaxed">
-                {lang==='fr'
-                  ? `Le service Bali Interns co\u00fbte ${price}\u20ac TTC. Paiement uniquement apr\u00e8s signature de la convention de stage \u2014 avant \u00e7a, 0\u20ac \u00e0 r\u00e9gler. Pour \u00e9viter les mauvaises surprises, on s\u2019assure que tout est clair avant de continuer.`
-                  : `Bali Interns service costs \u20ac${price} (tax included). Payment only after the internship agreement is signed \u2014 before that, \u20ac0 to pay. No surprises: everything is clear before moving forward.`}
+
+              {/* Alerte paiement — très visible */}
+              <div className="flex items-start gap-3 bg-[#0d9e75]/10 border-2 border-[#0d9e75]/30 rounded-xl px-4 py-3 mb-4">
+                <span className="text-xl flex-shrink-0">⚠️</span>
+                <p className="text-sm font-bold text-[#0a7a5a] leading-snug">
+                  {lang === 'fr'
+                    ? `Paiement uniquement après signature de la convention de stage — avant ça, 0€ à régler.`
+                    : `Payment only after the internship agreement is signed — before that, €0 to pay.`}
+                </p>
+              </div>
+
+              <p className="text-xs text-zinc-500 leading-relaxed">
+                {lang === 'fr'
+                  ? `Le service Bali Interns coûte ${price}€ TTC. Pour éviter les mauvaises surprises, on s'assure que tout est clair avant de continuer.`
+                  : `Bali Interns service costs €${price} (tax included). No surprises: everything is clear before moving forward.`}
               </p>
             </div>
 
