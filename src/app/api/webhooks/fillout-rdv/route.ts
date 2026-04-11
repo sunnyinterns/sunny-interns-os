@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     // Trouver le case associé à cet email
     const { data: intern } = await supabase
       .from('interns')
-      .select('id')
+      .select('id, first_name, last_name, preferred_language')
       .eq('email', email)
       .maybeSingle()
 
@@ -124,14 +124,33 @@ export async function POST(request: Request) {
       .limit(1)
       .maybeSingle()
 
+    let cancelLink: string | null = null
+    let finalMeetLink: string | null = meetLink ?? null
     if (calEvent) {
-      if (calEvent.meet_link) updateData.google_meet_link = calEvent.meet_link
-      if (calEvent.cancel_reschedule_link) updateData.google_meet_cancel_link = calEvent.cancel_reschedule_link
+      if (calEvent.meet_link) {
+        updateData.google_meet_link = calEvent.meet_link
+        finalMeetLink = calEvent.meet_link
+      }
+      if (calEvent.cancel_reschedule_link) {
+        updateData.google_meet_cancel_link = calEvent.cancel_reschedule_link
+        cancelLink = calEvent.cancel_reschedule_link
+      }
       if (calEvent.id) updateData.google_calendar_event_id = calEvent.id
       if (calEvent.start_datetime) updateData.intern_first_meeting_date = calEvent.start_datetime
     }
 
     await supabase.from('cases').update(updateData).eq('id', caseRow.id)
+
+    // Marquer le lead comme converti s'il existe
+    await supabase.from('leads')
+      .update({
+        status: 'converted' as never,
+        converted_case_id: caseRow.id,
+        converted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('email', email.toLowerCase().trim())
+      .neq('status', 'converted')
 
     // Format la date du RDV
     const rdvDate = rdvStart ? new Date(rdvStart) : null
