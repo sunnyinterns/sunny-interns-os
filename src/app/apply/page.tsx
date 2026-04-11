@@ -1051,27 +1051,25 @@ export default function ApplyPage() {
               </p>
             </div>
 
-            {/* Comment tu nous as trouvé — multi-select */}
+            {/* Comment tu nous as trouvé — single-select */}
             <div>
               <label className={labelClass}>
                 {lang==='fr' ? 'Comment tu nous as trouvé ?' : 'How did you find us?'}
               </label>
               <p className={helperClass + ' mb-2'}>
-                {lang==='fr' ? 'Tu peux sélectionner plusieurs options.' : 'You can select multiple options.'}
+                {lang==='fr' ? 'Sélectionne une option.' : 'Select one option.'}
               </p>
               <div className="grid grid-cols-2 gap-2">
                 {TOUCHPOINTS.map(t => {
-                  const selected = form.touchpoints.includes(t.value)
+                  const selected = form.touchpoint === t.value
                   return (
                     <button
                       key={t.value}
                       type="button"
                       onClick={() => {
-                        const cur = form.touchpoints
-                        const next = selected ? cur.filter(x => x !== t.value) : [...cur, t.value]
-                        set('touchpoints', next)
-                        set('touchpoint', next.join(', '))
-                        if (!next.includes('Ambassadeur Bali Interns')) set('referred_by_code', '')
+                        set('touchpoint', t.value)
+                        set('touchpoints', [t.value])
+                        if (t.value !== 'Ambassadeur Bali Interns') set('referred_by_code', '')
                       }}
                       className={`py-2.5 px-3 rounded-xl text-sm font-medium text-left transition-all flex items-center gap-2 ${
                         selected
@@ -1091,7 +1089,7 @@ export default function ApplyPage() {
               </div>
 
               {/* Referral code conditionnel */}
-              {form.touchpoints.includes('Ambassadeur Bali Interns') && (
+              {form.touchpoint === 'Ambassadeur Bali Interns' && (
                 <div className="mt-3">
                   <label className={labelClass}>{lang==='fr'?'Code de parrainage (optionnel)':'Referral code (optional)'}</label>
                   <input
@@ -1737,7 +1735,7 @@ export default function ApplyPage() {
                     const jobs = [...form.desired_jobs, ...form.custom_jobs]
                     if (jobs.length > 0) base.desired_jobs = jobs
                     if (form.start_date) base.desired_start_date = form.start_date
-                    if (form.touchpoints.length > 0) base.touchpoint = form.touchpoints.join(', ')
+                    if (form.touchpoint) base.touchpoint = form.touchpoint
                   } else if (step === 1) {
                     if (form.first_name) base.first_name = form.first_name
                     if (form.last_name) base.last_name = form.last_name
