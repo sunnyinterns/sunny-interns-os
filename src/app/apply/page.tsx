@@ -1605,6 +1605,27 @@ export default function ApplyPage() {
               </p>
             </div>
 
+            {/* What's included */}
+            <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 mb-5">
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">
+                {lang === 'fr' ? 'Ce qui est inclus' : "What's included"}
+              </p>
+              <ul className="space-y-1.5">
+                {[
+                  lang === 'fr' ? '🎯 Matching personnalisé avec nos entreprises partenaires' : '🎯 Personalized matching with our partner companies',
+                  lang === 'fr' ? '📄 Rédaction et gestion de la convention de stage' : '📄 Internship agreement drafting and management',
+                  lang === 'fr' ? '🛂 Accompagnement pour le visa étudiant (VOA)' : '🛂 Student visa support (VOA)',
+                  lang === 'fr' ? "🚗 Chauffeur à l'aéroport à l'arrivée" : '🚗 Airport pickup on arrival',
+                  lang === 'fr' ? '💬 Support WhatsApp tout au long du stage' : '💬 WhatsApp support throughout the internship',
+                ].map((item, i) => (
+                  <li key={i} className="text-sm text-zinc-700 flex items-start gap-2">
+                    <span className="flex-shrink-0">{item.split(' ')[0]}</span>
+                    <span>{item.split(' ').slice(1).join(' ')}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
             {/* 3 checkboxes */}
             <div className="space-y-4">
               <label className="flex items-start gap-3 cursor-pointer">
