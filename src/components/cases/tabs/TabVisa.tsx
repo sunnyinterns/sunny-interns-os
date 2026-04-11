@@ -49,10 +49,15 @@ interface TabVisaProps {
       photo_id_url?: string | null
       bank_statement_url?: string | null
       return_plane_ticket_url?: string | null
+      passport_number?: string | null
+      passport_expiry?: string | null
+      emergency_contact_name?: string | null
+      emergency_contact_phone?: string | null
       mother_first_name?: string | null
       mother_last_name?: string | null
       [key: string]: unknown
     } | null
+    desired_start_date?: string | null
     visa_agents?: { id: string; company_name: string; email?: string | null; whatsapp?: string | null } | null
     packages?: { id: string; name: string; price_eur: number; visa_cost_idr?: number | null; package_type?: string | null; processing_days?: number | null; validity_label?: string | null } | null
   }
@@ -90,9 +95,23 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
   const [copied, setCopied] = useState(false)
   const [loadingPkgs, setLoadingPkgs] = useState(true)
 
-  // Mother fields
-  const [motherFirst, setMotherFirst] = useState(caseData.interns?.mother_first_name as string ?? '')
-  const [motherLast, setMotherLast] = useState(caseData.interns?.mother_last_name as string ?? '')
+  // Infos personnelles visa
+  const [passportNumber, setPassportNumber] = useState((caseData.interns?.passport_number as string) ?? '')
+  const [passportExpiry, setPassportExpiry] = useState((caseData.interns?.passport_expiry as string) ?? '')
+  const [emergencyName, setEmergencyName] = useState((caseData.interns?.emergency_contact_name as string) ?? '')
+  const [emergencyPhone, setEmergencyPhone] = useState((caseData.interns?.emergency_contact_phone as string) ?? '')
+  const [motherFirst, setMotherFirst] = useState((caseData.interns?.mother_first_name as string) ?? '')
+  const [motherLast, setMotherLast] = useState((caseData.interns?.mother_last_name as string) ?? '')
+
+  // Alerte passeport : expire avant (date démarrage + 6 mois) ou avant (today + 6 mois) en fallback
+  const passportWarning = (() => {
+    if (!passportExpiry) return false
+    const expiry = new Date(passportExpiry)
+    const refDate = caseData.desired_start_date ? new Date(caseData.desired_start_date) : new Date()
+    const limit = new Date(refDate)
+    limit.setMonth(limit.getMonth() + 6)
+    return expiry < limit
+  })()
 
   // FAZZA transfer
   const [fazzaSent, setFazzaSent] = useState(!!caseData.fazza_transfer_sent)
@@ -142,7 +161,7 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
     }
   }, [caseData.id, noteForAgent])
 
-  async function handleMotherSave(field: string, value: string) {
+  async function handleInternSave(field: string, value: string) {
     const internId = caseData.interns?.id as string | undefined
     if (!internId) return
     await fetch(`/api/interns/${internId}`, {
@@ -191,6 +210,77 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
 
   return (
     <div className="space-y-5">
+      {/* Section 0: Infos personnelles visa */}
+      <SectionCard title="🛂 Informations personnelles">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-[11px] text-zinc-400 mb-1">N° passeport</label>
+            <input
+              type="text"
+              value={passportNumber}
+              onChange={(e) => setPassportNumber(e.target.value)}
+              onBlur={() => { void handleInternSave('passport_number', passportNumber) }}
+              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] text-zinc-400 mb-1">Expiration passeport</label>
+            <input
+              type="date"
+              value={passportExpiry}
+              onChange={(e) => setPassportExpiry(e.target.value)}
+              onBlur={() => { void handleInternSave('passport_expiry', passportExpiry) }}
+              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+            />
+          </div>
+          {passportWarning && (
+            <div className="sm:col-span-2 text-xs text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-lg">
+              ⚠️ Passeport expire trop tôt par rapport à la date de démarrage (marge &lt; 6 mois).
+            </div>
+          )}
+          <div>
+            <label className="block text-[11px] text-zinc-400 mb-1">Contact urgence (nom)</label>
+            <input
+              type="text"
+              value={emergencyName}
+              onChange={(e) => setEmergencyName(e.target.value)}
+              onBlur={() => { void handleInternSave('emergency_contact_name', emergencyName) }}
+              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] text-zinc-400 mb-1">Contact urgence (tél)</label>
+            <input
+              type="tel"
+              value={emergencyPhone}
+              onChange={(e) => setEmergencyPhone(e.target.value)}
+              onBlur={() => { void handleInternSave('emergency_contact_phone', emergencyPhone) }}
+              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] text-zinc-400 mb-1">Prénom mère</label>
+            <input
+              type="text"
+              value={motherFirst}
+              onChange={(e) => setMotherFirst(e.target.value)}
+              onBlur={() => { void handleInternSave('mother_first_name', motherFirst) }}
+              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] text-zinc-400 mb-1">Nom mère (naissance)</label>
+            <input
+              type="text"
+              value={motherLast}
+              onChange={(e) => setMotherLast(e.target.value)}
+              onBlur={() => { void handleInternSave('mother_last_name', motherLast) }}
+              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+            />
+          </div>
+        </div>
+      </SectionCard>
+
       {/* Section 1: Package */}
       <SectionCard title="Package visa">
         {loadingPkgs ? (
@@ -267,32 +357,6 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
               </div>
             )
           })}
-        </div>
-        {/* Mother fields for visa */}
-        <div className="px-4 py-3 border-t border-zinc-50 space-y-3">
-          <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Infos mère (requis visa)</p>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[11px] text-zinc-400 mb-1">Prénom mère</label>
-              <input
-                type="text"
-                value={motherFirst}
-                onChange={(e) => setMotherFirst(e.target.value)}
-                onBlur={() => { void handleMotherSave('mother_first_name', motherFirst) }}
-                className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] text-zinc-400 mb-1">Nom mère</label>
-              <input
-                type="text"
-                value={motherLast}
-                onChange={(e) => setMotherLast(e.target.value)}
-                onBlur={() => { void handleMotherSave('mother_last_name', motherLast) }}
-                className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-              />
-            </div>
-          </div>
         </div>
       </div>
 

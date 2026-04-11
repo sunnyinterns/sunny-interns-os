@@ -452,6 +452,7 @@ export default function CaseDetailPage() {
             interns: caseData.interns as Parameters<typeof TabVisa>[0]['caseData']['interns'],
             visa_agents: caseData.visa_agents ?? null,
             packages: caseData.packages ?? null,
+            desired_start_date: caseData.desired_start_date ?? null,
           }} />
         )}
         {activeTab === 'arrivee' && (
