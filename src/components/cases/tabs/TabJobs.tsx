@@ -51,9 +51,10 @@ interface TabJobsProps {
   caseId: string
   firstName?: string | null
   lastName?: string | null
+  desiredSectors?: string[] | null
 }
 
-export function TabJobs({ caseId, firstName, lastName }: TabJobsProps) {
+export function TabJobs({ caseId, firstName, lastName, desiredSectors }: TabJobsProps) {
   const [submissions, setSubmissions] = useState<JobSubmission[]>([])
   const [allJobs, setAllJobs] = useState<Job[]>([])
   const [search, setSearch] = useState('')
@@ -151,6 +152,20 @@ export function TabJobs({ caseId, firstName, lastName }: TabJobsProps) {
 
   return (
     <div className="space-y-5">
+
+      {/* Secteurs désirés */}
+      {desiredSectors && desiredSectors.length > 0 && (
+        <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4">
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Métiers recherchés par le candidat</p>
+          <div className="flex flex-wrap gap-2">
+            {desiredSectors.map((s, i) => (
+              <span key={i} className="px-3 py-1 bg-[#c8a96e]/10 text-[#8a6a2a] text-xs font-medium rounded-full border border-[#c8a96e]/20">
+                {s}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Toast */}
       {toast && (

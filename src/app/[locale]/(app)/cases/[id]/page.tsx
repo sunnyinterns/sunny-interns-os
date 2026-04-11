@@ -431,6 +431,7 @@ export default function CaseDetailPage() {
             caseId={caseData.id}
             firstName={firstName}
             lastName={lastName}
+            desiredSectors={(caseData as any).desired_sectors ?? null}
           />
         )}
         {activeTab === 'visa' && (
