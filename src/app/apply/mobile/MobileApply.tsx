@@ -358,7 +358,21 @@ export function MobileApply({
       const timeout = setTimeout(() => { controller.abort(); setEmailChecking(false) }, 3000)
       fetch('/api/check-email?email=' + encodeURIComponent(form.email), { signal: controller.signal })
         .then(r => r.ok ? r.json() : { exists: false })
-        .then((d: { exists: boolean }) => { setEmailExists(!!d.exists); setEmailChecking(false) })
+        .then((d: { exists: boolean }) => {
+          setEmailExists(!!d.exists)
+          setEmailChecking(false)
+          if (!d.exists) {
+            fetch('/api/applications/capture-email', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: form.email.toLowerCase().trim(),
+                source: 'website_form_unfinished',
+                form_step: 0,
+              }),
+            }).catch(() => null)
+          }
+        })
         .catch(() => { setEmailExists(false); setEmailChecking(false) })
         .finally(() => clearTimeout(timeout))
     }, 600)
@@ -528,6 +542,24 @@ export function MobileApply({
     }
     setAnimDir('forward')
     setVisible(false)
+    if (form.email && isValidEmail(form.email) && !emailExists) {
+      fetch('/api/applications/capture-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: form.email.toLowerCase().trim(),
+          source: 'website_form_unfinished',
+          form_step: safeIdx + 1,
+          first_name: form.first_name || undefined,
+          last_name: form.last_name || undefined,
+          desired_jobs: form.desired_jobs?.length ? form.desired_jobs : undefined,
+          desired_start_date: form.start_date || undefined,
+          school_country: form.school_country || undefined,
+          spoken_languages: form.spoken_languages?.length ? form.spoken_languages : undefined,
+          touchpoint: form.touchpoints?.[0] || undefined,
+        }),
+      }).catch(() => null)
+    }
     setTimeout(() => {
       if (safeIdx < totalQ - 1) setCurrentQ(safeIdx + 1)
       setVisible(true)
