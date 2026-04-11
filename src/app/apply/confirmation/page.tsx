@@ -53,12 +53,12 @@ function ConfirmationContent() {
             <span className="text-xl flex-shrink-0">{'\uD83D\uDCE7'}</span>
             <div>
               <p className="text-sm font-medium text-[#1a1918]">
-                {isFr ? 'Email de confirmation' : 'Confirmation email'}
+                {isFr ? 'Vérifie tes emails' : 'Check your emails'}
               </p>
               <p className="text-xs text-zinc-500">
                 {isFr
-                  ? 'Tu recevras un email dans quelques minutes.'
-                  : 'You will receive an email in a few minutes.'}
+                  ? 'Tu recevras la confirmation de ton entretien dans quelques minutes (pense à regarder tes spams).'
+                  : 'You will receive your interview confirmation in a few minutes (check your spam folder).'}
               </p>
             </div>
           </div>
