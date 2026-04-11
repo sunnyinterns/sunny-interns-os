@@ -43,7 +43,7 @@ export async function POST(req: Request) {
     // Lead existant ? update
     const { data: existingLead } = await supabase
       .from('leads')
-      .select('id, form_step_abandoned')
+      .select('id, form_step')
       .eq('email', normalized)
       .maybeSingle()
 
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
       await supabase
         .from('leads')
         .update({
-          form_step_abandoned: form_step ?? existingLead.form_step_abandoned,
+          form_step: form_step ?? existingLead.form_step,
           ...rest,
           updated_at: new Date().toISOString(),
         })
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
       .insert({
         email: normalized,
         source,
-        form_step_abandoned: form_step ?? 0,
+        form_step: form_step ?? 0,
         abandon_reason: 'form_abandoned',
         status: 'new',
         ...rest,
