@@ -917,7 +917,7 @@ export default function ApplyPage() {
                     fetch('/api/applications/capture-email', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ email: v, source: 'website_form_unfinished' }),
+                      body: JSON.stringify({ email: v, source: 'website_form_unfinished', form_step: 0 }),
                     }).catch(() => null)
                   }
                 }}
@@ -1725,7 +1725,25 @@ export default function ApplyPage() {
             <button
               type="button"
               disabled={!canNext()}
-              onClick={() => { setStep(s => s + 1); setError(''); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; window.scrollTo(0, 0) }}
+              onClick={() => {
+                // Persiste l'avancement du lead dans la table leads
+                if (form.email && isValidEmail(form.email)) {
+                  fetch('/api/applications/capture-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      email: form.email,
+                      source: 'website_form_unfinished',
+                      form_step: step + 1,
+                      first_name: form.first_name || undefined,
+                      last_name: form.last_name || undefined,
+                      desired_jobs: form.desired_jobs.length > 0 ? form.desired_jobs : undefined,
+                      school_country: form.school_country || undefined,
+                    }),
+                  }).catch(() => null)
+                }
+                setStep(s => s + 1); setError(''); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; window.scrollTo(0, 0)
+              }}
               className="flex-1 py-3 min-h-[48px] rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a]"
             >
               {lang==='fr'?'Continuer \u2192':'Continue \u2192'}

@@ -1,34 +1,48 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient as serverClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
-  const supabase = await createClient()
+  const supabase = await serverClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json([], { status: 401 })
+
+  const admin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
   const { searchParams } = new URL(request.url)
+  const source = searchParams.get('source')
   const status = searchParams.get('status')
-  const schoolId = searchParams.get('school_id')
 
-  let query = supabase.from('leads').select('*').order('created_at', { ascending: false })
+  let query = admin.from('leads').select('*').order('created_at', { ascending: false }).limit(200)
+  if (source) query = query.eq('source', source)
   if (status) query = query.eq('status', status)
 
   const { data, error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json([], { status: 500 })
   return NextResponse.json(data ?? [])
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const body = await request.json() as Record<string, unknown>
+  const supabase = await serverClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // Email uniqueness check
-  const { data: existing } = await supabase.from('leads').select('id').eq('email', body.email as string).limit(1)
-  if (existing && existing.length > 0) {
-    return NextResponse.json({ error: 'EMAIL_ALREADY_EXISTS' }, { status: 409 })
-  }
+  const admin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
-  const { data, error } = await supabase.from('leads').insert(body).select().single()
+  const body = (await request.json()) as Record<string, unknown>
+  const email = typeof body.email === 'string' ? body.email.toLowerCase().trim() : null
+  if (!email) return NextResponse.json({ error: 'EMAIL_REQUIRED' }, { status: 400 })
+
+  const { data: existing } = await admin.from('leads').select('id').eq('email', email).maybeSingle()
+  if (existing) return NextResponse.json({ error: 'EMAIL_ALREADY_EXISTS' }, { status: 409 })
+
+  const { data, error } = await admin.from('leads').insert({ ...body, email }).select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data, { status: 201 })
 }

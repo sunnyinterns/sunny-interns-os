@@ -1,58 +1,67 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 
 interface Lead {
   id: string
   email: string
-  first_name?: string | null
-  last_name?: string | null
-  source: string | null
+  first_name: string | null
+  last_name: string | null
+  phone: string | null
+  whatsapp: string | null
+  source: string
+  sub_source: string | null
   status: string
-  score: number
-  verdict: string | null
-  months_selected: string[] | null
-  domains_selected: string[] | null
-  deadline_to_apply: string | null
-  applied: boolean
-  applied_at: string | null
-  reminder_step: number
+  abandon_reason: string | null
+  form_step_abandoned: number | null
+  desired_jobs: string[] | null
+  desired_start_date: string | null
+  school_country: string | null
+  spoken_languages: string[] | null
+  touchpoint: string | null
   notes: string | null
+  converted_case_id: string | null
+  converted_at: string | null
+  last_contacted_at: string | null
   created_at: string
-  case_id?: string | null
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  lead: 'bg-zinc-100 text-zinc-600',
-  contacted: 'bg-blue-100 text-blue-700',
-  applied: 'bg-green-100 text-[#0d9e75]',
-  closed: 'bg-red-100 text-red-700',
-  on_hold: 'bg-amber-100 text-amber-700',
+const SOURCE_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
+  website_form_unfinished: { label: 'Formulaire abandonné', emoji: '🔶', color: 'bg-amber-100 text-amber-700' },
+  linkedin: { label: 'LinkedIn', emoji: '💼', color: 'bg-blue-100 text-blue-700' },
+  facebook: { label: 'Facebook', emoji: '📘', color: 'bg-indigo-100 text-indigo-700' },
+  facebook_group: { label: 'Groupe Facebook', emoji: '👥', color: 'bg-indigo-100 text-indigo-700' },
+  jobboard: { label: 'Jobboard', emoji: '🗂️', color: 'bg-violet-100 text-violet-700' },
+  landing_page: { label: 'Landing page', emoji: '🌐', color: 'bg-teal-100 text-teal-700' },
+  instagram: { label: 'Instagram', emoji: '📸', color: 'bg-pink-100 text-pink-700' },
+  whatsapp_inbound: { label: 'WhatsApp entrant', emoji: '💬', color: 'bg-green-100 text-green-700' },
+  referral: { label: 'Parrainage', emoji: '🤝', color: 'bg-orange-100 text-orange-700' },
+  manual: { label: 'Manuel', emoji: '✏️', color: 'bg-zinc-100 text-zinc-600' },
+  newsletter: { label: 'Newsletter', emoji: '📧', color: 'bg-sky-100 text-sky-700' },
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  lead: 'Lead',
+  new: 'Nouveau',
   contacted: 'Contacté',
-  applied: 'Candidaté',
-  closed: 'Fermé',
-  on_hold: 'En attente',
+  nurturing: 'En nurturing',
+  converted: 'Converti',
+  dead: 'Mort',
 }
 
-function scoreColor(score: number): string {
-  if (score >= 70) return 'bg-green-100 text-[#0d9e75]'
-  if (score >= 40) return 'bg-amber-100 text-[#d97706]'
-  return 'bg-red-100 text-[#dc2626]'
+const STATUS_COLORS: Record<string, string> = {
+  new: 'bg-zinc-100 text-zinc-700',
+  contacted: 'bg-blue-100 text-blue-700',
+  nurturing: 'bg-violet-100 text-violet-700',
+  converted: 'bg-green-100 text-[#0d9e75]',
+  dead: 'bg-red-50 text-red-600',
 }
 
-function daysUntil(date: string | null): { label: string; color: string } | null {
-  if (!date) return null
-  const diff = Math.ceil((new Date(date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-  if (diff < 0) return { label: 'Expiré', color: 'bg-red-100 text-red-700' }
-  if (diff <= 7) return { label: `J-${diff}`, color: 'bg-red-100 text-[#dc2626] font-bold' }
-  if (diff <= 14) return { label: `J-${diff}`, color: 'bg-amber-100 text-[#d97706]' }
-  if (diff <= 30) return { label: `J-${diff}`, color: 'bg-yellow-100 text-yellow-700' }
-  return { label: `J-${diff}`, color: 'bg-zinc-100 text-zinc-500' }
+function initials(first: string | null, last: string | null, email: string): string {
+  if (first || last) {
+    return `${(first ?? '')[0] ?? ''}${(last ?? '')[0] ?? ''}`.toUpperCase() || email[0].toUpperCase()
+  }
+  return email[0].toUpperCase()
 }
 
 export default function LeadsPage() {
@@ -62,103 +71,47 @@ export default function LeadsPage() {
 
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
-  const [filterStatus, setFilterStatus] = useState('all')
-  const [filterScoreMin, setFilterScoreMin] = useState(0)
-  const [filterMonth, setFilterMonth] = useState('')
-  const [qualifying, setQualifying] = useState<string | null>(null)
+  const [sourceFilter, setSourceFilter] = useState<string>('all')
 
-  async function load() {
-    setLoading(true)
-    // Try leads table first, fallback to cases?status=lead
-    let res = await fetch('/api/leads')
-    if (!res.ok) {
-      res = await fetch('/api/cases?status=lead')
-      if (res.ok) {
-        const raw = await res.json() as Record<string, unknown>[]
-        const mapped: Lead[] = raw.map(c => ({
-          id: (c.id as string) ?? '',
-          email: (c.email as string) ?? (c.interns as Record<string, unknown>)?.email as string ?? '',
-          first_name: (c.first_name as string) ?? (c.firstName as string) ?? (c.interns as Record<string, unknown>)?.first_name as string ?? null,
-          last_name: (c.last_name as string) ?? (c.lastName as string) ?? (c.interns as Record<string, unknown>)?.last_name as string ?? null,
-          source: null,
-          status: 'lead',
-          score: 0,
-          verdict: null,
-          months_selected: null,
-          domains_selected: null,
-          deadline_to_apply: null,
-          applied: false,
-          applied_at: null,
-          reminder_step: 0,
-          notes: null,
-          created_at: (c.created_at as string) ?? new Date().toISOString(),
-          case_id: (c.id as string) ?? null,
-        }))
-        setLeads(mapped)
-        setLoading(false)
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      setLoading(true)
+      const res = await fetch('/api/leads')
+      if (!res.ok) {
+        if (!cancelled) { setLeads([]); setLoading(false) }
         return
       }
-      setLeads([])
-      setLoading(false)
-      return
+      const data = (await res.json()) as Lead[]
+      if (!cancelled) { setLeads(Array.isArray(data) ? data : []); setLoading(false) }
     }
-    const data = await res.json() as Lead[]
-    setLeads(data.sort((a, b) => b.score - a.score))
-    setLoading(false)
-  }
+    void load()
+    return () => { cancelled = true }
+  }, [])
 
-  useEffect(() => { void load() }, [])
-
-  async function updateLead(id: string, patch: Record<string, unknown>) {
-    setLeads(prev => prev.map(l => l.id === id ? { ...l, ...patch } : l))
-    await fetch(`/api/leads/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) })
-  }
-
-  async function closeLead(id: string) {
-    await updateLead(id, { status: 'closed' })
-  }
-
-  async function qualify(lead: Lead) {
-    if (lead.case_id) {
-      router.push(`/${locale}/cases/${lead.case_id}`)
-      return
+  const filtered = useMemo(() => {
+    if (sourceFilter === 'all') return leads
+    if (sourceFilter === 'other') {
+      const main = new Set(['website_form_unfinished', 'linkedin', 'facebook', 'facebook_group'])
+      return leads.filter(l => !main.has(l.source))
     }
-    setQualifying(lead.id)
-    try {
-      const res = await fetch('/api/cases', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: lead.email, status: 'lead' }),
-      })
-      if (res.ok) {
-        const newCase = await res.json() as { id: string }
-        await fetch(`/api/leads/${lead.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'applied', applied: true, applied_at: new Date().toISOString(), case_id: newCase.id }),
-        })
-        router.push(`/${locale}/cases/${newCase.id}`)
-      }
-    } finally {
-      setQualifying(null)
-    }
-  }
+    return leads.filter(l => l.source === sourceFilter)
+  }, [leads, sourceFilter])
 
-  // Mois uniques pour filtre
-  const allMonths = Array.from(new Set(leads.flatMap(l => l.months_selected ?? []))).sort()
+  const filters: { key: string; label: string }[] = [
+    { key: 'all', label: 'Tous' },
+    { key: 'website_form_unfinished', label: 'Formulaire abandonné' },
+    { key: 'linkedin', label: 'LinkedIn' },
+    { key: 'facebook', label: 'Facebook' },
+    { key: 'other', label: 'Autre' },
+  ]
 
-  const filtered = leads.filter(l => {
-    const matchStatus = filterStatus === 'all' || l.status === filterStatus
-    const matchScore = l.score >= filterScoreMin
-    const matchMonth = !filterMonth || (l.months_selected ?? []).includes(filterMonth)
-    return matchStatus && matchScore && matchMonth
-  })
-
-  const counts = {
-    total: leads.length,
-    applied: leads.filter(l => l.applied).length,
-    active: leads.filter(l => !['closed', 'applied'].includes(l.status)).length,
-    closed: leads.filter(l => l.status === 'closed').length,
+  function relaunch(lead: Lead) {
+    const subject = encodeURIComponent('On continue ta candidature Bali Interns ?')
+    const body = encodeURIComponent(
+      `Salut${lead.first_name ? ` ${lead.first_name}` : ''},\n\nTu as commencé ta candidature Bali Interns mais tu ne l'as pas terminée. Un coup de main ?\n\nReprends ici : https://app.bali-interns.com/apply\n\nCharly`
+    )
+    window.open(`mailto:${lead.email}?subject=${subject}&body=${body}`, '_blank')
   }
 
   return (
@@ -167,166 +120,94 @@ export default function LeadsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-[#1a1918]">Leads</h1>
-          <p className="text-sm text-zinc-500 mt-0.5">{counts.total} leads · {counts.active} actifs · {counts.applied} candidatés</p>
+          <p className="text-sm text-zinc-500 mt-0.5">
+            {leads.length} lead{leads.length > 1 ? 's' : ''} · {filtered.length} affiché{filtered.length > 1 ? 's' : ''}
+          </p>
         </div>
         <button
-          onClick={() => router.push(`/${locale}/cases/new`)}
+          onClick={() => router.push(`/${locale}/leads/new`)}
           className="px-4 py-2 text-sm font-medium bg-[#c8a96e] hover:bg-[#b8994e] text-white rounded-lg transition-colors"
         >
-          + Nouveau lead
+          + Ajouter un lead
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        {[
-          { label: 'Total', value: counts.total, color: 'text-[#1a1918]' },
-          { label: 'Actifs', value: counts.active, color: 'text-[#1a1918]' },
-          { label: 'Candidatés', value: counts.applied, color: 'text-[#0d9e75]' },
-          { label: 'Fermés', value: counts.closed, color: 'text-zinc-400' },
-        ].map(stat => (
-          <div key={stat.label} className="bg-white border border-zinc-100 rounded-xl p-3 text-center">
-            <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
-            <p className="text-xs text-zinc-500 mt-0.5">{stat.label}</p>
-          </div>
+      {/* Filtres */}
+      <div className="flex gap-1 bg-zinc-100 rounded-xl p-1 mb-5 w-fit">
+        {filters.map(f => (
+          <button
+            key={f.key}
+            onClick={() => setSourceFilter(f.key)}
+            className={[
+              'px-3 py-1.5 text-xs rounded-lg transition-colors',
+              sourceFilter === f.key
+                ? 'bg-white shadow-sm font-medium text-[#1a1918]'
+                : 'text-zinc-500 hover:text-zinc-700',
+            ].join(' ')}
+          >
+            {f.label}
+          </button>
         ))}
       </div>
 
-      {/* Filtres */}
-      <div className="flex gap-3 mb-5 flex-wrap items-center">
-        <div className="flex gap-1 bg-zinc-100 rounded-xl p-1">
-          {['all', 'lead', 'contacted', 'applied', 'on_hold', 'closed'].map(s => (
-            <button
-              key={s}
-              onClick={() => setFilterStatus(s)}
-              className={['px-3 py-1.5 text-xs rounded-lg transition-colors', filterStatus === s ? 'bg-white shadow-sm font-medium text-[#1a1918]' : 'text-zinc-500 hover:text-zinc-700'].join(' ')}
-            >
-              {s === 'all' ? 'Tous' : STATUS_LABELS[s] ?? s}
-            </button>
-          ))}
-        </div>
-        <select
-          value={filterScoreMin}
-          onChange={e => setFilterScoreMin(Number(e.target.value))}
-          className="px-3 py-2 text-xs border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-        >
-          <option value={0}>Score min: tous</option>
-          <option value={40}>Score ≥ 40</option>
-          <option value={70}>Score ≥ 70</option>
-        </select>
-        {allMonths.length > 0 && (
-          <select
-            value={filterMonth}
-            onChange={e => setFilterMonth(e.target.value)}
-            className="px-3 py-2 text-xs border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-          >
-            <option value="">Tous les mois</option>
-            {allMonths.map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
-        )}
-      </div>
-
-      {/* Tableau */}
+      {/* Cards */}
       {loading ? (
-        <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-12 bg-zinc-100 rounded-xl animate-pulse" />)}</div>
+        <div className="space-y-2">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-20 bg-zinc-100 rounded-xl animate-pulse" />)}
+        </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-zinc-400">
           <p className="text-lg font-medium text-[#1a1918] mb-1">Aucun lead</p>
-          <p className="text-sm">Les leads arrivent via le formulaire de candidature public</p>
+          <p className="text-sm">Les leads arrivent via le formulaire de candidature ou les imports externes</p>
         </div>
       ) : (
-        <div className="bg-white border border-zinc-100 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-zinc-100 bg-zinc-50">
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500">Score</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500">Prénom Nom</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500">Email</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500">Mois</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500">Domaines</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500">Statut</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500">Deadline</th>
-                <th className="text-right px-4 py-3 text-xs font-medium text-zinc-500">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-50">
-              {filtered.map(lead => {
-                const urg = daysUntil(lead.deadline_to_apply)
-                const displayName = lead.first_name
-                  ? `${lead.first_name} ${lead.last_name ?? ''}`.trim()
-                  : '—'
-                return (
-                  <tr key={lead.id} className="hover:bg-zinc-50/50 transition-colors">
-                    <td className="px-4 py-3">
-                      {lead.score > 0 ? (
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${scoreColor(lead.score)}`}>
-                          {lead.score}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-zinc-300">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[#1a1918] font-medium">{displayName}</td>
-                    <td className="px-4 py-3 text-xs text-zinc-500">{lead.email}</td>
-                    <td className="px-4 py-3 text-xs text-zinc-500">
-                      {lead.months_selected && lead.months_selected.length > 0
-                        ? lead.months_selected.slice(0, 2).join(', ') + (lead.months_selected.length > 2 ? '…' : '')
-                        : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-zinc-500">
-                      {lead.domains_selected && lead.domains_selected.length > 0
-                        ? lead.domains_selected.slice(0, 2).join(', ') + (lead.domains_selected.length > 2 ? '…' : '')
-                        : '—'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${STATUS_COLORS[lead.status] ?? 'bg-zinc-100 text-zinc-600'}`}>
-                        {STATUS_LABELS[lead.status] ?? lead.status}
+        <div className="space-y-2">
+          {filtered.map(lead => {
+            const src = SOURCE_LABELS[lead.source] ?? { label: lead.source, emoji: '•', color: 'bg-zinc-100 text-zinc-600' }
+            const name = [lead.first_name, lead.last_name].filter(Boolean).join(' ')
+            return (
+              <div
+                key={lead.id}
+                className="bg-white border border-zinc-100 rounded-xl p-4 flex items-center gap-4 hover:border-zinc-200 transition-colors"
+              >
+                <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center text-sm font-semibold text-zinc-600 flex-shrink-0">
+                  {initials(lead.first_name, lead.last_name, lead.email)}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-medium text-[#1a1918] truncate">
+                      {name || lead.email}
+                    </p>
+                    {name && <p className="text-xs text-zinc-500 truncate">{lead.email}</p>}
+                  </div>
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${src.color}`}>
+                      <span>{src.emoji}</span> {src.label}
+                    </span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[lead.status] ?? 'bg-zinc-100 text-zinc-600'}`}>
+                      {STATUS_LABELS[lead.status] ?? lead.status}
+                    </span>
+                    {lead.source === 'website_form_unfinished' && lead.form_step_abandoned !== null && (
+                      <span className="text-xs text-zinc-500">
+                        Abandonné à l&apos;étape {lead.form_step_abandoned}
                       </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {urg ? (
-                        <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${urg.color}`}>{urg.label}</span>
-                      ) : <span className="text-xs text-zinc-300">—</span>}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1.5">
-                        {lead.status !== 'closed' && (
-                          <>
-                            {lead.status !== 'applied' && (
-                              <button
-                                onClick={() => void qualify(lead)}
-                                disabled={qualifying === lead.id}
-                                className="text-xs px-2 py-1 rounded-lg bg-[#c8a96e]/10 text-[#c8a96e] hover:bg-[#c8a96e]/20 transition-colors font-medium disabled:opacity-50"
-                              >
-                                {qualifying === lead.id ? '…' : 'Qualifier'}
-                              </button>
-                            )}
-                            {lead.case_id && (
-                              <button
-                                onClick={() => router.push(`/${locale}/cases/${lead.case_id}`)}
-                                className="text-xs px-2 py-1 rounded-lg bg-green-50 text-[#0d9e75] hover:bg-green-100 transition-colors"
-                              >
-                                Dossier →
-                              </button>
-                            )}
-                            <button
-                              onClick={() => void closeLead(lead.id)}
-                              className="text-xs px-2 py-1 rounded-lg bg-zinc-100 text-zinc-500 hover:bg-zinc-200 transition-colors"
-                            >
-                              Fermer
-                            </button>
-                          </>
-                        )}
-                        {lead.status === 'closed' && lead.applied_at && (
-                          <span className="text-xs text-zinc-400">{new Date(lead.applied_at).toLocaleDateString('fr-FR')}</span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                    )}
+                    <span className="text-xs text-zinc-400">
+                      {new Date(lead.created_at).toLocaleDateString('fr-FR')}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => relaunch(lead)}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-[#c8a96e]/10 text-[#c8a96e] hover:bg-[#c8a96e]/20 transition-colors font-medium flex-shrink-0"
+                >
+                  Relancer
+                </button>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
