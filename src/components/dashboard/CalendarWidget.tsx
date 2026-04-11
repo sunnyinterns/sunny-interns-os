@@ -88,7 +88,7 @@ export function CalendarWidget({ locale = 'fr' }: CalendarWidgetProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
                   <p className="text-sm font-medium text-[#1a1918] truncate">
-                    {ev.intern_name ?? ev.summary ?? 'RDV Bali Interns'}
+                    {ev.intern_name || ev.intern_email || ev.summary || 'RDV Bali Interns'}
                   </p>
                   <StatusBadge status={ev.status} myResponse={ev.my_response_status} />
                 </div>
