@@ -214,6 +214,21 @@ export async function POST(request: Request) {
       }, { onConflict: 'id' }).then(() => null, () => null)
     }
 
+    // Envoyer email de confirmation (sera actif dès que Resend est vérifié)
+    try {
+      const { sendRdvConfirmation } = await import('@/lib/email/resend')
+      await sendRdvConfirmation({
+        internEmail: email,
+        internFirstName: intern?.first_name ?? '',
+        rdvDate: rdvStart ?? (updateData.intern_first_meeting_date as string | undefined) ?? new Date().toISOString(),
+        meetLink: finalMeetLink,
+        cancelLink,
+        lang: intern?.preferred_language ?? 'fr',
+      })
+    } catch (e) {
+      console.error('[webhook] sendRdvConfirmation failed:', e)
+    }
+
     return NextResponse.json({ ok: true, case_id: caseRow.id })
   } catch (err) {
     console.error('[Fillout webhook] Error:', err)
