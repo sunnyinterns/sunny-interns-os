@@ -18,15 +18,19 @@ async function send(opts: {
     return
   }
   try {
-    await resend.emails.send({
+    const { error } = await resend.emails.send({
       from: FROM,
       to: Array.isArray(opts.to) ? opts.to : [opts.to],
       ...(opts.cc ? { cc: Array.isArray(opts.cc) ? opts.cc : [opts.cc] } : {}),
       subject: opts.subject,
       html: opts.html,
     })
+    if (error) {
+      // Log error (ex: domain not verified) mais ne bloque pas le flow applicatif
+      console.error('[email] Send failed:', error)
+    }
   } catch (e) {
-    console.error('[email] Send failed:', e)
+    console.error('[email] Send exception:', e)
   }
 }
 
