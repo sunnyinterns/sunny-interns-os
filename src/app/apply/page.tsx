@@ -1726,22 +1726,29 @@ export default function ApplyPage() {
               type="button"
               disabled={!canNext()}
               onClick={() => {
-                // Persiste l'avancement du lead dans la table leads
+                // Persiste l'avancement du lead — enrichi selon l'étape courante
                 if (form.email && isValidEmail(form.email)) {
+                  const base: Record<string, unknown> = {
+                    email: form.email,
+                    source: 'website_form_unfinished',
+                    form_step: step + 1,
+                  }
+                  if (step === 0) {
+                    const jobs = [...form.desired_jobs, ...form.custom_jobs]
+                    if (jobs.length > 0) base.desired_jobs = jobs
+                    if (form.start_date) base.desired_start_date = form.start_date
+                    if (form.touchpoints.length > 0) base.touchpoint = form.touchpoints.join(', ')
+                  } else if (step === 1) {
+                    if (form.first_name) base.first_name = form.first_name
+                    if (form.last_name) base.last_name = form.last_name
+                  } else if (step === 2) {
+                    if (form.school_country) base.school_country = form.school_country
+                    if (form.spoken_languages.length > 0) base.spoken_languages = form.spoken_languages
+                  }
                   fetch('/api/applications/capture-email', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      email: form.email,
-                      source: 'website_form_unfinished',
-                      form_step: step + 1,
-                      first_name: form.first_name || undefined,
-                      last_name: form.last_name || undefined,
-                      desired_jobs: [...form.desired_jobs, ...form.custom_jobs].length > 0 ? [...form.desired_jobs, ...form.custom_jobs] : undefined,
-                      desired_start_date: form.start_date || undefined,
-                      touchpoint: form.touchpoints.join(', ') || undefined,
-                      school_country: form.school_country || undefined,
-                    }),
+                    body: JSON.stringify(base),
                   }).catch(() => null)
                 }
                 setStep(s => s + 1); setError(''); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; window.scrollTo(0, 0)
