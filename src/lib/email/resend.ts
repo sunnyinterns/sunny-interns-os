@@ -195,6 +195,66 @@ export async function sendAlerteArrivee(p: { prenom: string; nom: string; jours:
   await send({ to: CHARLY, subject: subjects[p.jours] ?? `La Machine: ${p.prenom} ${p.nom} arrive bientôt !`, html: `<p>Il est temps de s'assurer que le driver sera disponible et que tout est en ordre pour son logement.</p><p>Date d'arrivée: <strong>${p.startDate}</strong></p>${p.billetUrl ? `<p>Billet: <a href="${p.billetUrl}">Voir</a></p>` : ''}<p><a href="${p.caseUrl}">Voir le dossier</a></p>` })
 }
 
+export async function sendRdvConfirmation(params: {
+  internEmail: string
+  internFirstName: string
+  rdvDate: string
+  meetLink?: string | null
+  cancelLink?: string | null
+  lang?: string
+}) {
+  const { internEmail, internFirstName, rdvDate, meetLink, cancelLink, lang = 'fr' } = params
+  const isFr = lang !== 'en'
+
+  const dateLabel = new Date(rdvDate).toLocaleDateString(isFr ? 'fr-FR' : 'en-GB', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    timeZone: 'Asia/Jakarta',
+  })
+  const timeLabel = new Date(rdvDate).toLocaleTimeString(isFr ? 'fr-FR' : 'en-GB', {
+    hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta',
+  }) + ' WITA'
+
+  await send({
+    to: internEmail,
+    subject: isFr
+      ? `✅ Ton entretien Bali Interns est confirmé — ${dateLabel}`
+      : `✅ Your Bali Interns interview is confirmed — ${dateLabel}`,
+    html: `
+<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 24px">
+  <p style="color:#c8a96e;font-weight:600;margin-bottom:4px">Bali Interns 🌴</p>
+  <h2 style="color:#1a1918;margin:0 0 24px">
+    ${isFr ? `🎉 Ton entretien est confirmé${internFirstName ? ', ' + internFirstName : ''} !` : `🎉 Your interview is confirmed${internFirstName ? ', ' + internFirstName : ''}!`}
+  </h2>
+  <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin:20px 0">
+    <p style="margin:0 0 8px;font-weight:600">📅 ${dateLabel}</p>
+    <p style="margin:0 0 8px;color:#555">🕐 ${timeLabel}</p>
+    <p style="margin:0;color:#555">📍 Google Meet</p>
+  </div>
+  ${meetLink ? `<p style="text-align:center;margin:20px 0">
+    <a href="${meetLink}" style="display:inline-block;background:#1a73e8;color:white;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600">
+      🎥 ${isFr ? 'Rejoindre le Meet' : 'Join Google Meet'}
+    </a>
+  </p>` : ''}
+  <div style="background:#fef9ee;border-left:4px solid #c8a96e;padding:12px 16px;border-radius:0 8px 8px 0;margin:16px 0">
+    <p style="margin:0;font-size:14px"><strong>${isFr ? 'Pour préparer cet entretien :' : 'To prepare:'}</strong></p>
+    <ul style="margin:8px 0 0;padding-left:20px;font-size:14px;color:#555">
+      <li>${isFr ? 'Aie ton CV sous la main' : 'Have your CV ready'}</li>
+      <li>${isFr ? 'Note les métiers qui t\'intéressent à Bali' : 'Think about positions you\'re interested in'}</li>
+      <li>${isFr ? 'Prépare tes questions sur le visa et le logement' : 'Prepare questions about visa and accommodation'}</li>
+    </ul>
+  </div>
+  ${cancelLink ? `<p style="font-size:12px;color:#999;margin-top:20px;text-align:center">
+    <a href="${cancelLink}" style="color:#999">${isFr ? 'Annuler ou reprogrammer' : 'Cancel or reschedule'}</a>
+  </p>` : ''}
+  <p style="margin-top:24px">
+    ${isFr ? `À très vite,` : `See you soon,`}<br/>
+    <strong>Charly</strong> — Bali Interns<br/>
+    <span style="color:#999;font-size:12px"><a href="mailto:team@bali-interns.com" style="color:#c8a96e">team@bali-interns.com</a></span>
+  </p>
+</div>`,
+  })
+}
+
 export async function sendWelcomeKitShort(p: { internEmail: string; prenom: string }) {
   await send({ to: p.internEmail, cc: CHARLY, subject: `Welcome Kit Bali Interns`, html: `<p>Hey <strong>${p.prenom}</strong>, ton départ approche ! Nous t'envoyons toutes les infos pratiques très vite. Charly</p>` })
 }
