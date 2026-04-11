@@ -115,6 +115,22 @@ export async function POST(request: Request) {
     if (meetLink) updateData.google_meet_link = meetLink
     if (gcalEventId) updateData.google_calendar_event_id = gcalEventId
 
+    // Chercher un event GCal correspondant pour récupérer meet/cancel links enrichis
+    const { data: calEvent } = await supabase
+      .from('calendar_events')
+      .select('id, meet_link, cancel_reschedule_link, start_datetime')
+      .eq('intern_email', email.toLowerCase().trim())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (calEvent) {
+      if (calEvent.meet_link) updateData.google_meet_link = calEvent.meet_link
+      if (calEvent.cancel_reschedule_link) updateData.google_meet_cancel_link = calEvent.cancel_reschedule_link
+      if (calEvent.id) updateData.google_calendar_event_id = calEvent.id
+      if (calEvent.start_datetime) updateData.intern_first_meeting_date = calEvent.start_datetime
+    }
+
     await supabase.from('cases').update(updateData).eq('id', caseRow.id)
 
     // Format la date du RDV
