@@ -1,7 +1,7 @@
 'use client'
 import { DatePickerInput } from '@/components/ui/DatePickerInput'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { MobileApply } from './mobile/MobileApply'
 
@@ -574,19 +574,27 @@ export default function ApplyPage() {
     try { localStorage.setItem('apply_desktop_step_v1', String(step)) } catch {}
   }, [step])
 
-  // Fillout: URL params FIRST, then script, then postMessage listener for auto-redirect
-  useEffect(() => {
-    if (step !== 5) return
-
-    // STEP 1: Set URL params AVANT de charger Fillout (inherit-parameters les lit au init)
-    const params = new URLSearchParams()
+  // Fillout: génère l'URL iframe avec params inclus DANS le src (méthode la plus fiable)
+  // Fillout Scheduling pré-remplit Name et Email depuis les URL params du formulaire embedded
+  const filloutIframeSrc = useMemo(() => {
+    if (step !== 5) return ''
     const fullName = `${form.first_name} ${form.last_name}`.trim()
-    // Fillout inherit-parameters lit EXACTEMENT le nom du champ dans l'éditeur Fillout
-    // Les champs s'appellent "Email" et "Name" dans le form Fillout (avec majuscule)
+    const params = new URLSearchParams()
     if (form.email) { params.set('Email', form.email); params.set('email', form.email) }
     if (fullName) { params.set('Name', fullName); params.set('name', fullName) }
     if (form.first_name) params.set('firstName', form.first_name)
     if (form.last_name) params.set('lastName', form.last_name)
+    return `https://form.fillout.com/t/gn4Zg9eydFus?${params.toString()}`
+  }, [step, form.first_name, form.last_name, form.email])
+
+  useEffect(() => {
+    if (step !== 5) return
+
+    // Pour compatibilité postMessage redirect
+    const params = new URLSearchParams()
+    const fullName = `${form.first_name} ${form.last_name}`.trim()
+    if (form.email) { params.set('Email', form.email); params.set('email', form.email) }
+    if (fullName) { params.set('Name', fullName); params.set('name', fullName) }
     window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`)
 
     // STEP 2: Écouter le postMessage de Fillout pour rediriger automatiquement
@@ -603,22 +611,8 @@ export default function ApplyPage() {
     }
     window.addEventListener('message', handleMessage)
 
-    // STEP 3: Charger le script Fillout (après avoir set les URL params)
-    const timer = setTimeout(() => {
-      document.querySelectorAll('[id="fillout-script"]').forEach(el => el.remove())
-      document.querySelectorAll('iframe[src*="fillout"]').forEach(el => el.remove())
-      const script = document.createElement('script')
-      script.id = 'fillout-script'
-      script.src = 'https://server.fillout.com/embed/v1/'
-      script.async = true
-      document.head.appendChild(script)
-    }, 200)
-
     return () => {
-      clearTimeout(timer)
       window.removeEventListener('message', handleMessage)
-      document.querySelectorAll('[id="fillout-script"]').forEach(el => el.remove())
-      document.querySelectorAll('iframe[src*="fillout"]').forEach(el => el.remove())
       window.history.replaceState({}, '', window.location.pathname)
     }
   }, [step, form.first_name, form.last_name, form.email, lang, router])
@@ -1684,14 +1678,15 @@ export default function ApplyPage() {
                   : "⚠️ If you can't make it, a reschedule link will be in your confirmation email. Due to high demand, only one reschedule is allowed."}
               </p>
             </div>
-            {/* Fillout embed natif — URL params injectés AVANT le script, inherit-parameters lit ?name=&email= */}
-            <div
-              style={{ width: '100%', height: '500px' }}
-              data-fillout-id="gn4Zg9eydFus"
-              data-fillout-embed-type="standard"
-              data-fillout-inherit-parameters
-              data-fillout-dynamic-resize
-/>
+            {/* Fillout iframe direct — params Name et Email inclus dans le src */}
+            {filloutIframeSrc && (
+              <iframe
+                src={filloutIframeSrc}
+                style={{ width: '100%', height: '700px', border: 'none', borderRadius: '12px' }}
+                title="Prendre un rendez-vous"
+                allow="camera; microphone; fullscreen"
+              />
+            )}
             <p className="text-xs text-zinc-400 text-center mt-3">
               {lang === 'fr'
                 ? "Le créneau sera confirmé par email • Manila (GMT+8)"

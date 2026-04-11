@@ -297,24 +297,30 @@ export function MobileApply({
   const SEC_EN = { fr: 'Engagement', en: 'Commitment' }
   const SEC_RD = { fr: 'RDV', en: 'Booking' }
 
+  // ORDRE = Desktop: ce que tu cherches FIRST (pour capture lead), puis identité, profil, stage, prix, RDV
   const questions: Question[] = [
+    // ── BLOC 1: Ce que tu cherches (lead capture prioritaire) ──
+    { id: 'email', type: 'email', label: 'Ton adresse email ?', labelEn: 'Your email address?', field: 'email', required: true, helper: "On t'enverra la confirmation ici", helperEn: "We'll send your confirmation here", section: 'Ce que tu cherches', sectionEn: 'What you are looking for' },
+    { id: 'desired_jobs', type: 'chips', label: 'Métiers souhaités ? (max 3)', labelEn: 'Desired positions? (max 3)', field: 'desired_jobs', required: true, maxSelect: 3, section: 'Ce que tu cherches', sectionEn: 'What you are looking for' },
+    { id: 'duration', type: 'chips', label: 'Durée souhaitée du stage ?', labelEn: 'Desired internship duration?', field: 'duration', required: true, section: 'Ce que tu cherches', sectionEn: 'What you are looking for' },
+    { id: 'start_date', type: 'date', label: 'Date de démarrage souhaitée ?', labelEn: 'Desired start date?', field: 'start_date', required: false, helper: "À 2-4 semaines près, c'est ok", helperEn: 'Give or take 2-4 weeks, that\'s fine', section: 'Ce que tu cherches', sectionEn: 'What you are looking for' },
+    { id: 'touchpoints', type: 'chips', label: 'Comment tu as connu Bali Interns ?', labelEn: 'How did you hear about us?', field: 'touchpoints', required: false, section: 'Ce que tu cherches', sectionEn: 'What you are looking for' },
+    { id: 'referral_code', type: 'text', label: 'Tu as un code parrain ?', labelEn: 'Do you have a referral code?', field: 'referred_by_code', required: false, skip: (f) => !f.touchpoints.includes('Ambassadeur Bali Interns'), section: 'Ce que tu cherches', sectionEn: 'What you are looking for' },
+    // ── BLOC 2: Qui es-tu (identité) ──
     { id: 'name_pair', type: 'name_pair', label: 'Prénom & Nom', labelEn: 'First & Last name', field: 'first_name', required: true, section: SEC_ID.fr, sectionEn: SEC_ID.en },
-    { id: 'email', type: 'email', label: 'Ton adresse email ?', labelEn: 'Your email address?', field: 'email', required: true, helper: "On t'enverra la confirmation ici", helperEn: 'We\'ll send your confirmation here', section: SEC_ID.fr, sectionEn: SEC_ID.en },
     { id: 'whatsapp', type: 'tel_whatsapp', label: 'Ton numéro WhatsApp ?', labelEn: 'Your WhatsApp number?', field: 'whatsapp_number', required: true, helper: "Tout le monde à Bali l'utilise !", helperEn: 'Everyone uses it in Bali!', section: SEC_ID.fr, sectionEn: SEC_ID.en },
     { id: 'nationalities', type: 'chips', label: 'Ta ou tes nationalités ?', labelEn: 'Your nationality(ies)?', field: 'nationalities', required: true, options: COUNTRIES, section: SEC_ID.fr, sectionEn: SEC_ID.en },
     { id: 'dates_identity', type: 'date_pair', label: 'Dates importantes', labelEn: 'Important dates', field: 'birth_date', required: true, section: SEC_ID.fr, sectionEn: SEC_ID.en },
-    { id: 'school_country', type: 'select', label: 'Pays où tu fais tes études ?', labelEn: 'Country where you study?', field: 'school_country', required: true, options: COUNTRIES, helper: 'Détermine le type de convention de stage', helperEn: 'Determines your internship agreement type', section: SEC_PR.fr, sectionEn: SEC_PR.en },
+    { id: 'school_country', type: 'select', label: 'Pays où tu fais tes études ?', labelEn: 'Country where you study?', field: 'school_country', required: true, options: COUNTRIES, helper: 'Détermine le type de convention de stage', helperEn: 'Determines your internship agreement type', section: SEC_ID.fr, sectionEn: SEC_ID.en },
+    // ── BLOC 3: Ton profil ──
     { id: 'linkedin_school', type: 'linkedin_school', label: 'École & LinkedIn', labelEn: 'School & LinkedIn', field: 'school_name', required: false, section: SEC_PR.fr, sectionEn: SEC_PR.en },
     { id: 'cv_pair', type: 'cv_pair', label: 'Tes CV', labelEn: 'Your CVs', field: 'cv_en_file', required: true, helper: 'PDF, DOC, JPG - Max 20MB', helperEn: 'PDF, DOC, JPG - Max 20MB', section: SEC_PR.fr, sectionEn: SEC_PR.en },
     { id: 'spoken_languages', type: 'chips', label: 'Tes langues de travail ?', labelEn: 'Your working languages?', field: 'spoken_languages', required: true, section: SEC_PR.fr, sectionEn: SEC_PR.en },
-    
-    { id: 'duration', type: 'chips', label: 'Durée souhaitée du stage ?', labelEn: 'Desired internship duration?', field: 'duration', required: true, section: SEC_ST.fr, sectionEn: SEC_ST.en },
-    { id: 'start_date', type: 'date', label: 'Date de démarrage souhaitée ?', labelEn: 'Desired start date?', field: 'start_date', required: true, helper: 'À 2-4 semaines près, c\'est ok', helperEn: 'Give or take 2-4 weeks, that\'s fine', section: SEC_ST.fr, sectionEn: SEC_ST.en },
-    { id: 'desired_jobs', type: 'chips', label: 'Métiers souhaités ? (max 3)', labelEn: 'Desired positions? (max 3)', field: 'desired_jobs', required: false, maxSelect: 3, section: SEC_ST.fr, sectionEn: SEC_ST.en },
+    // ── BLOC 4: Ton stage idéal ──
     { id: 'stage_ideal', type: 'textarea', label: 'Ton stage idéal en quelques lignes', labelEn: 'Your ideal internship in a few lines', field: 'stage_ideal', required: true, section: SEC_ST.fr, sectionEn: SEC_ST.en },
-    { id: 'touchpoints', type: 'chips', label: 'Comment tu as connu Bali Interns ?', labelEn: 'How did you hear about us?', field: 'touchpoints', required: false, section: SEC_ST.fr, sectionEn: SEC_ST.en },
-    { id: 'referral_code', type: 'text', label: 'Tu as un code parrain ?', labelEn: 'Do you have a referral code?', field: 'referred_by_code', required: false, skip: (f) => !f.touchpoints.includes('Ambassadeur Bali Interns'), section: SEC_ST.fr, sectionEn: SEC_ST.en },
+    // ── BLOC 5: Engagement & prix ──
     { id: 'commitment', type: 'checkbox_group', label: 'Engagement & tarif', labelEn: 'Commitment & pricing', field: 'commitment_price', required: true, section: SEC_EN.fr, sectionEn: SEC_EN.en },
+    // ── BLOC 6: RDV ──
     { id: 'schedule', type: 'schedule', label: 'Réserve ton appel de qualification gratuit', labelEn: 'Book your free qualification call', field: 'rdv_slot', required: false, section: SEC_RD.fr, sectionEn: SEC_RD.en },
   ]
 
