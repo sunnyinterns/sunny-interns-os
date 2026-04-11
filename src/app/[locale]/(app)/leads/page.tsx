@@ -14,7 +14,7 @@ interface Lead {
   sub_source: string | null
   status: string
   abandon_reason: string | null
-  form_step_abandoned: number | null
+  form_step: number | null
   desired_jobs: string[] | null
   desired_start_date: string | null
   school_country: string | null
@@ -25,10 +25,11 @@ interface Lead {
   converted_at: string | null
   last_contacted_at: string | null
   created_at: string
+  updated_at: string | null
 }
 
 const SOURCE_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
-  website_form_unfinished: { label: 'Formulaire abandonné', emoji: '🔶', color: 'bg-amber-100 text-amber-700' },
+  website_form_unfinished: { label: 'Formulaire', emoji: '📋', color: 'bg-zinc-100 text-zinc-600' },
   linkedin: { label: 'LinkedIn', emoji: '💼', color: 'bg-blue-100 text-blue-700' },
   facebook: { label: 'Facebook', emoji: '📘', color: 'bg-indigo-100 text-indigo-700' },
   facebook_group: { label: 'Groupe Facebook', emoji: '👥', color: 'bg-indigo-100 text-indigo-700' },
@@ -39,6 +40,16 @@ const SOURCE_LABELS: Record<string, { label: string; emoji: string; color: strin
   referral: { label: 'Parrainage', emoji: '🤝', color: 'bg-orange-100 text-orange-700' },
   manual: { label: 'Manuel', emoji: '✏️', color: 'bg-zinc-100 text-zinc-600' },
   newsletter: { label: 'Newsletter', emoji: '📧', color: 'bg-sky-100 text-sky-700' },
+}
+
+
+// Statut dérivé pour les leads formulaire — basé sur l'activité récente
+function getFormLeadStatus(lead: Lead): 'in_progress' | 'abandoned' | 'converted' {
+  if (lead.converted_case_id || lead.status === 'converted') return 'converted'
+  if (lead.source !== 'website_form_unfinished') return 'abandoned'
+  const lastActivity = lead.updated_at ? new Date(lead.updated_at) : new Date(lead.created_at)
+  const minutesSince = (Date.now() - lastActivity.getTime()) / 60000
+  return minutesSince < 15 ? 'in_progress' : 'abandoned'
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -182,15 +193,28 @@ export default function LeadsPage() {
                     {name && <p className="text-xs text-zinc-500 truncate">{lead.email}</p>}
                   </div>
                   <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    {/* Badge source */}
                     <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${src.color}`}>
                       <span>{src.emoji}</span> {src.label}
                     </span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[lead.status] ?? 'bg-zinc-100 text-zinc-600'}`}>
-                      {STATUS_LABELS[lead.status] ?? lead.status}
-                    </span>
-                    {lead.source === 'website_form_unfinished' && lead.form_step_abandoned !== null && (
-                      <span className="text-xs text-zinc-500">
-                        Abandonné à l&apos;étape {lead.form_step_abandoned}
+                    {/* Badge statut — avec logique 15min pour formulaire */}
+                    {lead.source === 'website_form_unfinished' ? (() => {
+                      const fs = getFormLeadStatus(lead)
+                      if (fs === 'in_progress') return (
+                        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-zinc-100 text-zinc-400 border border-zinc-200">
+                          <svg className="w-3 h-3 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="2" className="opacity-30"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6l4 2"/></svg>
+                          En cours…
+                        </span>
+                      )
+                      if (fs === 'abandoned') return (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-50 text-amber-600 border border-amber-200">
+                          🔶 Abandonné {lead.form_step !== null ? `— étape ${lead.form_step}` : ''}
+                        </span>
+                      )
+                      return null
+                    })() : (
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[lead.status] ?? 'bg-zinc-100 text-zinc-600'}`}>
+                        {STATUS_LABELS[lead.status] ?? lead.status}
                       </span>
                     )}
                     <span className="text-xs text-zinc-400">
