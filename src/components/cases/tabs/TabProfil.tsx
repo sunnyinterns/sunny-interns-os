@@ -51,7 +51,7 @@ interface InternData {
 }
 
 interface TabProfilProps {
-  intern: InternData | null
+  intern: (InternData & { local_cv_url?: string | null }) | null
   arrivalDate?: string | null
   internId?: string | null
   caseId?: string | null
@@ -59,6 +59,108 @@ interface TabProfilProps {
   desiredStartDate?: string | null
   desiredEndDate?: string | null
   desiredDurationMonths?: number | null
+  qualificationNotes?: string | null
+}
+
+function InterviewSummary({
+  intern,
+  caseId,
+  schoolName,
+  qualificationNotes,
+}: {
+  intern: InternData & { local_cv_url?: string | null }
+  caseId?: string | null
+  schoolName?: string | null
+  qualificationNotes?: string | null
+}) {
+  const [notes, setNotes] = useState(qualificationNotes ?? '')
+  const [savingNotes, setSavingNotes] = useState(false)
+  const initials = `${(intern.first_name?.[0] ?? '').toUpperCase()}${(intern.last_name?.[0] ?? '').toUpperCase()}`
+  const fullName = `${intern.first_name ?? ''} ${intern.last_name ?? ''}`.trim() || '—'
+  const cvUrl = intern.local_cv_url ?? intern.cv_url ?? null
+  const mainLang = intern.spoken_languages?.[0]
+
+  async function saveNotes() {
+    if (!caseId || notes === (qualificationNotes ?? '')) return
+    setSavingNotes(true)
+    try {
+      await fetch(`/api/cases/${caseId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ qualification_notes: notes || null }),
+      })
+      showToast()
+    } finally {
+      setSavingNotes(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-4">
+      <div className="flex items-start gap-4 flex-wrap">
+        <div className="w-16 h-16 rounded-full bg-[#c8a96e] flex items-center justify-center flex-shrink-0">
+          <span className="text-white text-xl font-bold">{initials || '?'}</span>
+        </div>
+        <div className="flex-1 min-w-[200px]">
+          <h2 className="text-2xl font-bold text-[#1a1918] leading-tight">{fullName}</h2>
+          <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-600">
+            {intern.email && <a href={`mailto:${intern.email}`} className="hover:text-[#c8a96e]">✉ {intern.email}</a>}
+            {intern.whatsapp && <a href={`https://wa.me/${intern.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-[#c8a96e]">📱 {intern.whatsapp}</a>}
+          </div>
+        </div>
+        {cvUrl && (
+          <a
+            href={cvUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2.5 bg-[#0d9e75] hover:bg-[#0a8a65] text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
+          >
+            📄 Voir le CV
+          </a>
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {intern.main_desired_job && (
+          <span className="px-2.5 py-1 text-xs font-medium bg-[#c8a96e]/10 text-[#8a6a2a] rounded-full">💼 {intern.main_desired_job}</span>
+        )}
+        {schoolName && (
+          <span className="px-2.5 py-1 text-xs font-medium bg-zinc-100 text-zinc-700 rounded-full">🎓 {schoolName}</span>
+        )}
+        {intern.nationality && (
+          <span className="px-2.5 py-1 text-xs font-medium bg-zinc-100 text-zinc-700 rounded-full">🌍 {intern.nationality}</span>
+        )}
+        {mainLang && (
+          <span className="px-2.5 py-1 text-xs font-medium bg-zinc-100 text-zinc-700 rounded-full">🗣 {mainLang}</span>
+        )}
+        {intern.touchpoint && (
+          <span className="px-2.5 py-1 text-xs font-medium bg-zinc-100 text-zinc-700 rounded-full">🔗 {intern.touchpoint}</span>
+        )}
+      </div>
+
+      {intern.stage_ideal && (
+        <div className="pt-3 border-t border-zinc-50">
+          <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-1">Stage idéal</p>
+          <p className="text-sm text-[#1a1918] whitespace-pre-wrap">{intern.stage_ideal}</p>
+        </div>
+      )}
+
+      <div className="pt-3 border-t border-zinc-50">
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Notes de l&apos;entretien</p>
+          {savingNotes && <span className="text-xs text-zinc-400">Sauvegarde…</span>}
+        </div>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          onBlur={() => { void saveNotes() }}
+          placeholder="Notes pendant l'entretien — motivations, points forts, points d'attention, secteur cible…"
+          rows={5}
+          className="w-full px-3 py-2.5 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e] resize-y"
+        />
+      </div>
+    </div>
+  )
 }
 
 const FIELD_LABELS: Record<string, string> = {
@@ -365,7 +467,7 @@ const DURATION_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
   label: `${i + 1} mois`,
 }))
 
-export function TabProfil({ intern, arrivalDate, internId, caseId, schoolName, desiredStartDate, desiredEndDate, desiredDurationMonths }: TabProfilProps) {
+export function TabProfil({ intern, arrivalDate, internId, caseId, schoolName, desiredStartDate, desiredEndDate, desiredDurationMonths, qualificationNotes }: TabProfilProps) {
   if (!intern) {
     return <p className="text-sm text-zinc-400">Aucun profil associé</p>
   }
@@ -381,6 +483,14 @@ export function TabProfil({ intern, arrivalDate, internId, caseId, schoolName, d
 
   return (
     <div className="space-y-4">
+      {/* Résumé entretien — zone de travail principale pendant l'appel */}
+      <InterviewSummary
+        intern={intern}
+        caseId={caseId}
+        schoolName={schoolName}
+        qualificationNotes={qualificationNotes}
+      />
+
       {/* Passport warning banner */}
       {passportValid === false && intern.passport_expiry && (
         <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">

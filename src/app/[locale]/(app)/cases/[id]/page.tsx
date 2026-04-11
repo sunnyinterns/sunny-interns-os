@@ -78,6 +78,23 @@ export default function CaseDetailPage() {
   const [activeTab, setActiveTab] = useState<TabKey>(tabFromUrl ?? 'process')
   const [showEditModal, setShowEditModal] = useState(false)
   const [showInternCard, setShowInternCard] = useState(false)
+  const [sendingRecap, setSendingRecap] = useState(false)
+  const [recapSent, setRecapSent] = useState(false)
+
+  async function sendRecapEmail() {
+    if (!id) return
+    setSendingRecap(true)
+    try {
+      const r = await fetch(`/api/cases/${id}/send-recap-email`, { method: 'POST' })
+      if (r.ok) {
+        setRecapSent(true)
+        setTimeout(() => setRecapSent(false), 3000)
+        fetchCase()
+      }
+    } finally {
+      setSendingRecap(false)
+    }
+  }
 
   function fetchCase() {
     if (!id) return
@@ -230,6 +247,15 @@ export default function CaseDetailPage() {
                   Portail candidat
                 </a>
               )}
+              {caseData.status === 'rdv_booked' && (
+                <button
+                  onClick={() => { void sendRecapEmail() }}
+                  disabled={sendingRecap}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-[#0d9e75] text-white font-semibold hover:bg-[#0a8a65] transition-colors disabled:opacity-60"
+                >
+                  {sendingRecap ? 'Envoi…' : recapSent ? '✓ Envoyé' : '📧 Récap entretien'}
+                </button>
+              )}
               {caseData.status === 'active' && (
                 <button
                   onClick={() => setShowInternCard(true)}
@@ -360,6 +386,7 @@ export default function CaseDetailPage() {
             desiredEndDate={(caseData as any).actual_end_date ?? (caseData as any).interns?.desired_end_date ?? null}
             desiredDurationMonths={(caseData as any).desired_duration_months ?? null}
             arrivalDate={(caseData as any).actual_start_date ?? (caseData as any).desired_start_date ?? null}
+            qualificationNotes={(caseData as any).qualification_notes ?? null}
           />
         )}
         {activeTab === 'jobs' && (
