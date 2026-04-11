@@ -581,9 +581,10 @@ export default function ApplyPage() {
     // STEP 1: Set URL params AVANT de charger Fillout (inherit-parameters les lit au init)
     const params = new URLSearchParams()
     const fullName = `${form.first_name} ${form.last_name}`.trim()
-    if (fullName) params.set('name', fullName)
-    if (form.email) params.set('email', form.email)
-    // Variantes que Fillout accepte aussi
+    // Fillout inherit-parameters lit EXACTEMENT le nom du champ dans l'éditeur Fillout
+    // Les champs s'appellent "Email" et "Name" dans le form Fillout (avec majuscule)
+    if (form.email) { params.set('Email', form.email); params.set('email', form.email) }
+    if (fullName) { params.set('Name', fullName); params.set('name', fullName) }
     if (form.first_name) params.set('firstName', form.first_name)
     if (form.last_name) params.set('lastName', form.last_name)
     window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`)
@@ -611,7 +612,7 @@ export default function ApplyPage() {
       script.src = 'https://server.fillout.com/embed/v1/'
       script.async = true
       document.head.appendChild(script)
-    }, 50)
+    }, 200)
 
     return () => {
       clearTimeout(timer)
@@ -1692,13 +1693,7 @@ export default function ApplyPage() {
               data-fillout-embed-type="standard"
               data-fillout-inherit-parameters
               data-fillout-dynamic-resize
-              data-fillout-parameters={JSON.stringify({
-                name: `${form.first_name} ${form.last_name}`.trim(),
-                email: form.email,
-                firstName: form.first_name,
-                lastName: form.last_name,
-              })}
-            />
+/>
             <p className="text-xs text-zinc-400 text-center mt-3">
               {lang === 'fr'
                 ? "Le créneau sera confirmé par email • Manila (GMT+8)"

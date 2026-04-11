@@ -82,6 +82,7 @@ export default function LeadsPage() {
 
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [sourceFilter, setSourceFilter] = useState<string>('all')
 
   useEffect(() => {
@@ -179,7 +180,8 @@ export default function LeadsPage() {
             return (
               <div
                 key={lead.id}
-                className="bg-white border border-zinc-100 rounded-xl p-4 flex items-center gap-4 hover:border-zinc-200 transition-colors"
+                className="bg-white border border-zinc-100 rounded-xl p-4 flex items-center gap-4 hover:border-zinc-200 hover:shadow-sm transition-all cursor-pointer"
+                onClick={() => setSelectedLead(lead)}
               >
                 <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center text-sm font-semibold text-zinc-600 flex-shrink-0">
                   {initials(lead.first_name, lead.last_name, lead.email)}
