@@ -424,7 +424,7 @@ export default function ApplyPage() {
   const [step, setStep] = useState(() => {
     try {
       const saved = typeof window !== 'undefined' ? localStorage.getItem('apply_desktop_step_v1') : null
-      return saved ? Math.min(parseInt(saved), 4) : 0
+      return saved ? Math.min(parseInt(saved), 5) : 0
     } catch { return 0 }
   })
   const [lang, setLang] = useState<'fr'|'en'>('fr')
@@ -576,7 +576,7 @@ export default function ApplyPage() {
 
   // Fillout: URL params FIRST, then script, then postMessage listener for auto-redirect
   useEffect(() => {
-    if (step !== 4) return
+    if (step !== 5) return
 
     // STEP 1: Set URL params AVANT de charger Fillout (inherit-parameters les lit au init)
     const params = new URLSearchParams()
@@ -669,39 +669,37 @@ export default function ApplyPage() {
   })()
 
   const stepTitles = [
-    T('Qui es-tu ?', 'Who are you?', lang),
+    T('Ce que tu cherches', 'What you are looking for', lang),
+    T('Qui es-tu ?', 'About you', lang),
     T('Ton profil', 'Your profile', lang),
-    T('Ton stage', 'Your internship', lang),
+    T('Ton stage idéal', 'Your ideal internship', lang),
     T('Prix & engagement', 'Pricing & Commitment', lang),
-    T('Prends ton RDV', 'Book your call', lang),
   ]
 
   // ── Validation ──
   function canNext(): boolean {
     switch (step) {
       case 0: {
-        // Phone = warning only (not blocking — formats vary by country)
-        // emailChecking = NOT blocking (API might be slow)
         return !!(
-          form.first_name.trim() && form.last_name.trim() &&
-          form.email.trim() && isValidEmail(form.email) &&
-          !emailExists &&
-          form.whatsapp_number.trim() &&
-          (form.nationalities as string[]).length > 0 &&
-          form.birth_date && form.passport_expiry
+          form.email.trim() && isValidEmail(form.email) && !emailExists &&
+          (form.desired_jobs.length > 0 || form.custom_jobs.length > 0) &&
+          form.duration
         )
       }
       case 1:
-        return !!((form.cv_en_file || form.cv_url) && form.spoken_languages.length > 0 && !cvUploading)
-      case 2:
         return !!(
-          form.duration &&
-          form.start_date &&
-          form.stage_ideal.trim().length > 0
+          form.first_name.trim() && form.last_name.trim() &&
+          form.whatsapp_number.trim() && !phoneError &&
+          form.nationalities.length > 0 &&
+          form.birth_date && form.passport_expiry
         )
+      case 2:
+        return !!((form.cv_en_file || form.cv_url) && form.spoken_languages.length > 0 && !cvUploading)
       case 3:
-        return !!(form.commitment_price && form.commitment_budget && form.commitment_terms)
+        return !!(form.stage_ideal?.trim())
       case 4:
+        return !!(form.commitment_price && form.commitment_budget && form.commitment_terms)
+      case 5:
         return true
       default:
         return false
@@ -849,8 +847,8 @@ export default function ApplyPage() {
 
   return (
     <div className="min-h-screen bg-[#fafaf9] text-[#1a1918]">
-      {/* ── Progress bar — cachée à l'étape RDV (step 4) ── */}
-      {step !== 4 && <div className="sticky top-0 z-50 bg-[#fafaf9]/95 backdrop-blur border-b border-zinc-200">
+      {/* ── Progress bar — cachée à l'étape RDV (step 5) ── */}
+      {step !== 5 && <div className="sticky top-0 z-50 bg-[#fafaf9]/95 backdrop-blur border-b border-zinc-200">
         <div className="max-w-xl mx-auto px-4 py-3">
           <div className="flex items-center gap-1.5">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -865,8 +863,8 @@ export default function ApplyPage() {
 
 
       <div className="max-w-xl mx-auto px-4 py-8">
-        {/* Toggle langue — caché à step 4 */}
-        {step !== 4 && <div className="flex justify-end mb-4">
+        {/* Toggle langue — caché à step 5 */}
+        {step !== 5 && <div className="flex justify-end mb-4">
           <div className="inline-flex rounded-lg border border-zinc-200 bg-white overflow-hidden text-xs font-medium">
             <button
               onClick={() => setLang('fr')}
@@ -882,25 +880,13 @@ export default function ApplyPage() {
             </button>
           </div>
         </div>}
-        {step !== 4 && <h1 className="text-2xl font-bold text-[#1a1918] mb-6">{stepTitles[step]}</h1>}
+        {step !== 5 && <h1 className="text-2xl font-bold text-[#1a1918] mb-6">{stepTitles[step]}</h1>}
 
         {/* ════════════════════════════════════════════════════════
-            ÉTAPE 1 — Qui es-tu ?
+            ÉTAPE 1 — Ce que tu cherches
             ════════════════════════════════════════════════════════ */}
         {step === 0 && (
           <div className="space-y-4">
-            {/* Prénom + Nom */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className={labelClass}>{lang==='fr'?'Pr\u00e9nom *':'First name *'}</label>
-                <input type="text" value={form.first_name} onChange={e => set('first_name', e.target.value)} className={inputClass} placeholder={lang==='fr'?'Jean':'John'} />
-              </div>
-              <div>
-                <label className={labelClass}>{lang==='fr'?'Nom *':'Last name *'}</label>
-                <input type="text" value={form.last_name} onChange={e => set('last_name', e.target.value)} className={inputClass} placeholder={lang==='fr'?'Dupont':'Smith'} />
-              </div>
-            </div>
-
             {/* Email */}
             <div>
               <label className={labelClass}>Email *</label>
@@ -936,6 +922,206 @@ export default function ApplyPage() {
               {form.email && isValidEmail(form.email) && !emailExists && (
                 <p className="text-xs text-green-600 mt-1">✓ {lang === 'fr' ? 'Email disponible' : 'Email available'}</p>
               )}
+            </div>
+
+            {/* Métiers souhaités (max 3) */}
+            <div>
+              <label className={labelClass}>{lang==='fr'?'M\u00e9tiers souhait\u00e9s * (max 3)':'Desired positions * (max 3)'}</label>
+              <div className="flex flex-wrap gap-2">
+                {jobTypes.filter(j => j.name_fr !== 'Autre' && j.name_en !== 'Other').map(j => {
+                  const jLabel = lang==='fr' ? (j.name_fr || j.name) : (j.name_en || j.name)
+                  return (
+                    <Chip
+                      key={j.id}
+                      selected={form.desired_jobs.includes(j.name)}
+                      onClick={() => toggleArrayField('desired_jobs', j.name, 3)}
+                    >
+                      {jLabel}
+                    </Chip>
+                  )
+                })}
+              </div>
+              {/* Custom job input */}
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="text"
+                  value={form.custom_job_input}
+                  onChange={e => set('custom_job_input', e.target.value)}
+                  className={`${inputClass} flex-1`}
+                  placeholder={lang==='fr'?'Autre m\u00e9tier...':'Other position...'}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && form.custom_job_input.trim() && form.custom_jobs.length < 3) {
+                      e.preventDefault()
+                      set('custom_jobs', [...form.custom_jobs, form.custom_job_input.trim()])
+                      set('custom_job_input', '')
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  disabled={!form.custom_job_input.trim() || form.custom_jobs.length >= 3}
+                  onClick={() => {
+                    if (form.custom_job_input.trim() && form.custom_jobs.length < 3) {
+                      set('custom_jobs', [...form.custom_jobs, form.custom_job_input.trim()])
+                      set('custom_job_input', '')
+                    }
+                  }}
+                  className="px-4 py-2 rounded-xl text-sm font-medium bg-[#c8a96e] text-[#1a1410] disabled:opacity-40"
+                >
+                  +
+                </button>
+              </div>
+              {form.custom_jobs.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {form.custom_jobs.map((j, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#c8a96e] text-[#1a1410]">
+                      {j}
+                      <button
+                        type="button"
+                        onClick={() => set('custom_jobs', form.custom_jobs.filter((_, idx) => idx !== i))}
+                        className="hover:text-red-800"
+                      >
+                        &times;
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <p className={helperClass}>
+                {form.desired_jobs.length + form.custom_jobs.length}/3 {lang==='fr'?'s\u00e9lectionn\u00e9s':'selected'}
+              </p>
+            </div>
+
+            {/* Durée */}
+            <div>
+              <label className={labelClass}>{lang==='fr'?'Dur\u00e9e souhait\u00e9e *':'Desired duration *'}</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {DURATIONS.map(d => (
+                  <button
+                    key={d.value}
+                    type="button"
+                    onClick={() => set('duration', d.value)}
+                    className={`py-3 rounded-xl text-sm font-medium transition-all ${
+                      form.duration === d.value
+                        ? 'bg-[#c8a96e] text-[#1a1410]'
+                        : 'bg-white text-[#8a7d6d] border border-zinc-200 hover:border-[#c8a96e]'
+                    }`}
+                  >
+                    {lang==='fr'?d.fr:d.en}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Date de début */}
+            <div>
+              <label className={labelClass}>{lang==='fr'?'Date de démarrage souhaitée *':'Desired start date *'}</label>
+              <DatePickerInput
+                value={form.start_date}
+                onChange={v => set('start_date', v)}
+                onBlur={() => touch('start_date')}
+                lang={lang}
+                defaultYear={new Date().getFullYear()}
+                minYear={new Date().getFullYear()}
+                maxYear={new Date().getFullYear() + 3}
+              />
+              <p className={helperClass}>{lang==='fr'?"\u00c0 2-4 semaines pr\u00e8s, c\u2019est ok":"Give or take 2-4 weeks, that\u2019s fine"}</p>
+            </div>
+
+            {/* Date de fin — champ libre optionnel */}
+            <div>
+              <label className={labelClass}>
+                {lang === 'fr'
+                  ? 'Date limite de fin de stage (optionnel)'
+                  : 'Latest date by which your internship must end (optional)'}
+              </label>
+              <DatePickerInput
+                value={form.end_date ?? ''}
+                onChange={v => set('end_date', v)}
+                lang={lang}
+                defaultYear={new Date().getFullYear() + 1}
+                minYear={new Date().getFullYear()}
+                maxYear={new Date().getFullYear() + 4}
+              />
+              <p className={helperClass}>
+                {lang === 'fr'
+                  ? "Laisse vide si tu n'as pas de contrainte précise."
+                  : "Leave empty if you have no specific date constraint."}
+              </p>
+            </div>
+
+            {/* Comment tu nous as trouvé — multi-select */}
+            <div>
+              <label className={labelClass}>
+                {lang==='fr' ? 'Comment tu nous as trouvé ?' : 'How did you find us?'}
+              </label>
+              <p className={helperClass + ' mb-2'}>
+                {lang==='fr' ? 'Tu peux sélectionner plusieurs options.' : 'You can select multiple options.'}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {TOUCHPOINTS.map(t => {
+                  const selected = form.touchpoints.includes(t.value)
+                  return (
+                    <button
+                      key={t.value}
+                      type="button"
+                      onClick={() => {
+                        const cur = form.touchpoints
+                        const next = selected ? cur.filter(x => x !== t.value) : [...cur, t.value]
+                        set('touchpoints', next)
+                        set('touchpoint', next.join(', '))
+                        if (!next.includes('Ambassadeur Bali Interns')) set('referred_by_code', '')
+                      }}
+                      className={`py-2.5 px-3 rounded-xl text-sm font-medium text-left transition-all flex items-center gap-2 ${
+                        selected
+                          ? 'bg-[#c8a96e] text-[#1a1410]'
+                          : 'bg-white text-[#1a1918] border border-zinc-200 hover:border-[#c8a96e]'
+                      }`}
+                    >
+                      {selected && (
+                        <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+                        </svg>
+                      )}
+                      {lang==='fr' ? t.fr : t.en}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Referral code conditionnel */}
+              {form.touchpoints.includes('Ambassadeur Bali Interns') && (
+                <div className="mt-3">
+                  <label className={labelClass}>{lang==='fr'?'Code de parrainage (optionnel)':'Referral code (optional)'}</label>
+                  <input
+                    type="text"
+                    value={form.referred_by_code}
+                    onChange={e => set('referred_by_code', e.target.value)}
+                    className={inputClass}
+                    placeholder="CODE123"
+                  />
+                  <p className={helperClass}>{lang==='fr'?'Si tu as un code, saisis-le ici':'If you have a code, enter it here'}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════════════
+            ÉTAPE 2 — Qui es-tu ?
+            ════════════════════════════════════════════════════════ */}
+        {step === 1 && (
+          <div className="space-y-4">
+            {/* Prénom + Nom */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>{lang==='fr'?'Pr\u00e9nom *':'First name *'}</label>
+                <input type="text" value={form.first_name} onChange={e => set('first_name', e.target.value)} className={inputClass} placeholder={lang==='fr'?'Jean':'John'} />
+              </div>
+              <div>
+                <label className={labelClass}>{lang==='fr'?'Nom *':'Last name *'}</label>
+                <input type="text" value={form.last_name} onChange={e => set('last_name', e.target.value)} className={inputClass} placeholder={lang==='fr'?'Dupont':'Smith'} />
+              </div>
             </div>
 
             {/* WhatsApp */}
@@ -1134,10 +1320,96 @@ export default function ApplyPage() {
         )}
 
         {/* ════════════════════════════════════════════════════════
-            ÉTAPE 2 — Ton profil
+            ÉTAPE 3 — Ton profil
             ════════════════════════════════════════════════════════ */}
-        {step === 1 && (
+        {step === 2 && (
           <div className="space-y-4">
+            {/* École / Université — autocomplete */}
+            <div className="relative">
+              <label className={labelClass}>{lang==='fr'?'\u00c9cole / Universit\u00e9':'School / University'}</label>
+              {!form.school_not_found ? (
+                <>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={form.school_name || form.school_search}
+                      onChange={e => {
+                        const v = e.target.value
+                        set('school_search', v)
+                        set('school_name', '')
+                        set('school_id', null)
+                        searchSchools(v)
+                      }}
+                      className={inputClass}
+                      placeholder={lang==='fr'?'Rechercher ton école...':'Search your school...'}
+                    />
+                    {isSearchingSchool && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <svg className="animate-spin w-4 h-4 text-[#c8a96e]" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                        </svg>
+                      </div>
+                    )}
+                    {form.school_name && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  {schoolResults.length > 0 && form.school_search.length >= 2 && !form.school_name && (
+                    <div className="absolute z-40 w-full mt-1 max-h-48 overflow-y-auto bg-white border border-zinc-200 rounded-xl shadow-lg">
+                      {schoolResults.map(s => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => {
+                            set('school_id', s.id)
+                            set('school_name', s.name)
+                            set('school_search', '')
+                            setSchoolResults([])
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-[#1a1918] hover:bg-zinc-100"
+                        >
+                          <span className="font-medium">{s.name}</span>
+                          {s.city && <span className="text-zinc-500"> {'\u2014'} {s.city}{s.country ? `, ${s.country}` : ''}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => set('school_not_found', true)}
+                    className="mt-2 text-xs text-[#c8a96e] underline hover:text-[#b8945a]"
+                  >
+                    {lang==='fr'?"Mon \u00e9cole n\u2019est pas dans la liste":'My school is not in the list'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    value={form.school_custom_name}
+                    onChange={e => set('school_custom_name', e.target.value)}
+                    className={inputClass}
+                    placeholder={lang==='fr'?'Nom de ton \u00e9cole':'Your school name'}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      set('school_not_found', false)
+                      set('school_custom_name', '')
+                    }}
+                    className="mt-2 text-xs text-[#c8a96e] underline hover:text-[#b8945a]"
+                  >
+                    {lang==='fr'?'Retour \u00e0 la recherche':'Back to search'}
+                  </button>
+                </>
+              )}
+            </div>
+
             {/* LinkedIn */}
             <div>
               <label className={labelClass}>{lang==='fr'?'LinkedIn (optionnel)':'LinkedIn (optional)'}</label>
@@ -1289,229 +1561,17 @@ export default function ApplyPage() {
         )}
 
         {/* ════════════════════════════════════════════════════════
-            ÉTAPE 3 — Ton stage
+            ÉTAPE 4 — Ton stage idéal
             ════════════════════════════════════════════════════════ */}
-        {step === 2 && (
+        {step === 3 && (
           <div className="space-y-4">
-            {/* École / Université — autocomplete */}
-            <div className="relative">
-              <label className={labelClass}>{lang==='fr'?'\u00c9cole / Universit\u00e9':'School / University'}</label>
-              {!form.school_not_found ? (
-                <>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={form.school_name || form.school_search}
-                      onChange={e => {
-                        const v = e.target.value
-                        set('school_search', v)
-                        set('school_name', '')
-                        set('school_id', null)
-                        searchSchools(v)
-                      }}
-                      className={inputClass}
-                      placeholder={lang==='fr'?'Rechercher ton école...':'Search your school...'}
-                    />
-                    {isSearchingSchool && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <svg className="animate-spin w-4 h-4 text-[#c8a96e]" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                        </svg>
-                      </div>
-                    )}
-                    {form.school_name && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                  {schoolResults.length > 0 && form.school_search.length >= 2 && !form.school_name && (
-                    <div className="absolute z-40 w-full mt-1 max-h-48 overflow-y-auto bg-white border border-zinc-200 rounded-xl shadow-lg">
-                      {schoolResults.map(s => (
-                        <button
-                          key={s.id}
-                          type="button"
-                          onClick={() => {
-                            set('school_id', s.id)
-                            set('school_name', s.name)
-                            set('school_search', '')
-                            setSchoolResults([])
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-[#1a1918] hover:bg-zinc-100"
-                        >
-                          <span className="font-medium">{s.name}</span>
-                          {s.city && <span className="text-zinc-500"> {'\u2014'} {s.city}{s.country ? `, ${s.country}` : ''}</span>}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => set('school_not_found', true)}
-                    className="mt-2 text-xs text-[#c8a96e] underline hover:text-[#b8945a]"
-                  >
-                    {lang==='fr'?"Mon \u00e9cole n\u2019est pas dans la liste":'My school is not in the list'}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <input
-                    type="text"
-                    value={form.school_custom_name}
-                    onChange={e => set('school_custom_name', e.target.value)}
-                    className={inputClass}
-                    placeholder={lang==='fr'?'Nom de ton \u00e9cole':'Your school name'}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      set('school_not_found', false)
-                      set('school_custom_name', '')
-                    }}
-                    className="mt-2 text-xs text-[#c8a96e] underline hover:text-[#b8945a]"
-                  >
-                    {lang==='fr'?'Retour \u00e0 la recherche':'Back to search'}
-                  </button>
-                </>
-              )}
-            </div>
-
-            {/* Durée */}
-            <div>
-              <label className={labelClass}>{lang==='fr'?'Dur\u00e9e souhait\u00e9e *':'Desired duration *'}</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {DURATIONS.map(d => (
-                  <button
-                    key={d.value}
-                    type="button"
-                    onClick={() => set('duration', d.value)}
-                    className={`py-3 rounded-xl text-sm font-medium transition-all ${
-                      form.duration === d.value
-                        ? 'bg-[#c8a96e] text-[#1a1410]'
-                        : 'bg-white text-[#8a7d6d] border border-zinc-200 hover:border-[#c8a96e]'
-                    }`}
-                  >
-                    {lang==='fr'?d.fr:d.en}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Date de début */}
-            <div>
-              <label className={labelClass}>{lang==='fr'?'Date de démarrage souhaitée *':'Desired start date *'}</label>
-              <DatePickerInput
-              value={form.start_date}
-              onChange={v => set('start_date', v)}
-              onBlur={() => touch('start_date')}
-              lang={lang}
-              defaultYear={new Date().getFullYear()}
-              minYear={new Date().getFullYear()}
-              maxYear={new Date().getFullYear() + 3}
-            />
-              <p className={helperClass}>{lang==='fr'?"\u00c0 2-4 semaines pr\u00e8s, c\u2019est ok":"Give or take 2-4 weeks, that\u2019s fine"}</p>
-            </div>
-
-            {/* Date de fin — champ libre optionnel */}
-            <div>
-              <label className={labelClass}>
-                {lang === 'fr'
-                  ? 'Date limite de fin de stage (optionnel)'
-                  : 'Latest date by which your internship must end (optional)'}
-              </label>
-              <DatePickerInput
-                value={form.end_date ?? ''}
-                onChange={v => set('end_date', v)}
-                lang={lang}
-                defaultYear={new Date().getFullYear() + 1}
-                minYear={new Date().getFullYear()}
-                maxYear={new Date().getFullYear() + 4}
-              />
-              <p className={helperClass}>
-                {lang === 'fr'
-                  ? "Laisse vide si tu n'as pas de contrainte précise."
-                  : "Leave empty if you have no specific date constraint."}
-              </p>
-            </div>
-
-            {/* Métiers souhaités (max 3) */}
-            <div>
-              <label className={labelClass}>{lang==='fr'?'M\u00e9tiers souhait\u00e9s * (max 3)':'Desired positions * (max 3)'}</label>
-              <div className="flex flex-wrap gap-2">
-                {jobTypes.filter(j => j.name_fr !== 'Autre' && j.name_en !== 'Other').map(j => {
-                  const jLabel = lang==='fr' ? (j.name_fr || j.name) : (j.name_en || j.name)
-                  return (
-                    <Chip
-                      key={j.id}
-                      selected={form.desired_jobs.includes(j.name)}
-                      onClick={() => toggleArrayField('desired_jobs', j.name, 3)}
-                    >
-                      {jLabel}
-                    </Chip>
-                  )
-                })}
-              </div>
-              {/* Custom job input */}
-              <div className="mt-2 flex gap-2">
-                <input
-                  type="text"
-                  value={form.custom_job_input}
-                  onChange={e => set('custom_job_input', e.target.value)}
-                  className={`${inputClass} flex-1`}
-                  placeholder={lang==='fr'?'Autre m\u00e9tier...':'Other position...'}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && form.custom_job_input.trim() && form.custom_jobs.length < 3) {
-                      e.preventDefault()
-                      set('custom_jobs', [...form.custom_jobs, form.custom_job_input.trim()])
-                      set('custom_job_input', '')
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  disabled={!form.custom_job_input.trim() || form.custom_jobs.length >= 3}
-                  onClick={() => {
-                    if (form.custom_job_input.trim() && form.custom_jobs.length < 3) {
-                      set('custom_jobs', [...form.custom_jobs, form.custom_job_input.trim()])
-                      set('custom_job_input', '')
-                    }
-                  }}
-                  className="px-4 py-2 rounded-xl text-sm font-medium bg-[#c8a96e] text-[#1a1410] disabled:opacity-40"
-                >
-                  +
-                </button>
-              </div>
-              {form.custom_jobs.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {form.custom_jobs.map((j, i) => (
-                    <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#c8a96e] text-[#1a1410]">
-                      {j}
-                      <button
-                        type="button"
-                        onClick={() => set('custom_jobs', form.custom_jobs.filter((_, idx) => idx !== i))}
-                        className="hover:text-red-800"
-                      >
-                        &times;
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-              <p className={helperClass}>
-                {form.desired_jobs.length + form.custom_jobs.length}/3 {lang==='fr'?'s\u00e9lectionn\u00e9s':'selected'}
-              </p>
-            </div>
-
             {/* Stage idéal */}
             <div>
               <label className={labelClass}>{lang==='fr'?'Ton stage id\u00e9al *':'Your ideal internship *'}</label>
               <textarea
                 value={form.stage_ideal}
                 onChange={e => set('stage_ideal', e.target.value)}
-                rows={6}
+                rows={8}
                 maxLength={1000}
                 placeholder={lang==='fr' ? "Objectifs, comp\u00e9tences, types d\u2019entreprises, contraintes (dates / remote / horaires), et ce que tu veux apprendre. Pas besoin d\u2019\u00eatre parfait, on clarifie ensemble en appel." : "Goals, skills, company types, constraints (dates / remote / hours), and what you want to learn. No need to be perfect, we\u2019ll clarify together on the call."}
                 className={`${inputClass} resize-none`}
@@ -1520,68 +1580,13 @@ export default function ApplyPage() {
                 {form.stage_ideal.length}/1000
               </p>
             </div>
-
-            {/* Comment tu nous as trouvé — multi-select */}
-            <div>
-              <label className={labelClass}>
-                {lang==='fr' ? 'Comment tu nous as trouvé ? *' : 'How did you find us? *'}
-              </label>
-              <p className={helperClass + ' mb-2'}>
-                {lang==='fr' ? 'Tu peux sélectionner plusieurs options.' : 'You can select multiple options.'}
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {TOUCHPOINTS.map(t => {
-                  const selected = form.touchpoints.includes(t.value)
-                  return (
-                    <button
-                      key={t.value}
-                      type="button"
-                      onClick={() => {
-                        const cur = form.touchpoints
-                        const next = selected ? cur.filter(x => x !== t.value) : [...cur, t.value]
-                        set('touchpoints', next)
-                        set('touchpoint', next.join(', '))
-                        if (!next.includes('Ambassadeur Bali Interns')) set('referred_by_code', '')
-                      }}
-                      className={`py-2.5 px-3 rounded-xl text-sm font-medium text-left transition-all flex items-center gap-2 ${
-                        selected
-                          ? 'bg-[#c8a96e] text-[#1a1410]'
-                          : 'bg-white text-[#1a1918] border border-zinc-200 hover:border-[#c8a96e]'
-                      }`}
-                    >
-                      {selected && (
-                        <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
-                        </svg>
-                      )}
-                      {lang==='fr' ? t.fr : t.en}
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* Referral code conditionnel */}
-              {form.touchpoints.includes('Ambassadeur Bali Interns') && (
-                <div className="mt-3">
-                  <label className={labelClass}>{lang==='fr'?'Code de parrainage (optionnel)':'Referral code (optional)'}</label>
-                  <input
-                    type="text"
-                    value={form.referred_by_code}
-                    onChange={e => set('referred_by_code', e.target.value)}
-                    className={inputClass}
-                    placeholder="CODE123"
-                  />
-                  <p className={helperClass}>{lang==='fr'?'Si tu as un code, saisis-le ici':'If you have a code, enter it here'}</p>
-                </div>
-              )}
-            </div>
           </div>
         )}
 
         {/* ════════════════════════════════════════════════════════
-            ÉTAPE 4 — Prix & engagement
+            ÉTAPE 5 — Prix & engagement
             ════════════════════════════════════════════════════════ */}
-        {step === 3 && (
+        {step === 4 && (
           <div className="space-y-5">
             {/* Price card */}
             <div className="bg-white border border-zinc-200 rounded-2xl p-6">
@@ -1666,7 +1671,7 @@ export default function ApplyPage() {
         {/* ════════════════════════════════════════════════════════
             ÉTAPE 6 — Prends un RDV
             ════════════════════════════════════════════════════════ */}
-        {step === 4 && (
+        {step === 5 && (
           <div className="space-y-6">
             <div>
               <p className="text-lg font-semibold text-[#1a1918] mb-4">
@@ -1721,7 +1726,7 @@ export default function ApplyPage() {
               {lang==='fr'?'\u2190 Retour':'\u2190 Back'}
             </button>
           )}
-          {step < 3 && (
+          {step < 4 && (
             <button
               type="button"
               disabled={!canNext()}
@@ -1737,7 +1742,9 @@ export default function ApplyPage() {
                       form_step: step + 1,
                       first_name: form.first_name || undefined,
                       last_name: form.last_name || undefined,
-                      desired_jobs: form.desired_jobs.length > 0 ? form.desired_jobs : undefined,
+                      desired_jobs: [...form.desired_jobs, ...form.custom_jobs].length > 0 ? [...form.desired_jobs, ...form.custom_jobs] : undefined,
+                      desired_start_date: form.start_date || undefined,
+                      touchpoint: form.touchpoints.join(', ') || undefined,
                       school_country: form.school_country || undefined,
                     }),
                   }).catch(() => null)
@@ -1749,11 +1756,11 @@ export default function ApplyPage() {
               {lang==='fr'?'Continuer \u2192':'Continue \u2192'}
             </button>
           )}
-          {step === 3 && (
+          {step === 4 && (
             <button
               type="button"
               disabled={!canNext() || submitting}
-              onClick={async () => { await handleSubmit(); setStep(4); setError(''); window.scrollTo(0,0) }}
+              onClick={async () => { await handleSubmit(); setStep(5); setError(''); window.scrollTo(0,0) }}
               className="flex-1 py-3 min-h-[48px] rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a]"
             >
               {submitting
