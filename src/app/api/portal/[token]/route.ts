@@ -16,6 +16,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
       job_submissions (
         id,
         status,
+        intern_priority,
         jobs (
           id,
           public_title,

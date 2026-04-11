@@ -58,6 +58,7 @@ interface PortalData {
   job_submissions?: Array<{
     id: string
     status: string
+    intern_priority?: number | null
     jobs?: {
       public_title?: string | null
       title?: string | null
@@ -239,6 +240,50 @@ export default function PortalPage() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Vos offres de stage */}
+      {data.job_submissions && data.job_submissions.length > 0 && (
+        <section style={{ marginBottom: 24 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 10 }}>💼 Vos offres de stage</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[...data.job_submissions]
+              .sort((a, b) => ((a.intern_priority ?? 99) - (b.intern_priority ?? 99)))
+              .map((sub, i) => {
+                const job = sub.jobs
+                const company = job?.companies
+                const statusMap: Record<string, { label: string; color: string }> = {
+                  proposed: { label: '⏳ En cours de traitement', color: '#d97706' },
+                  cv_pending: { label: '📄 CV en attente de validation', color: '#d97706' },
+                  cv_validated: { label: '✅ Profil validé', color: '#2563eb' },
+                  sent: { label: '📤 Candidature envoyée', color: '#1d4ed8' },
+                  interview: { label: "🤝 Entretien avec l'employeur", color: '#7c3aed' },
+                  retained: { label: '🎉 Stage retenu !', color: '#059669' },
+                  rejected: { label: "❌ Non retenu par l'employeur", color: '#dc2626' },
+                  cancelled: { label: 'Annulé', color: '#9ca3af' },
+                }
+                const st = statusMap[sub.status] ?? statusMap.proposed
+                return (
+                  <div key={sub.id} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '12px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: '#d1d5db', width: 24, textAlign: 'center', flexShrink: 0 }}>
+                        {sub.intern_priority ?? i + 1}
+                      </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: 14, fontWeight: 600, color: '#1a1918', margin: 0 }}>
+                          {job?.public_title ?? job?.title ?? '—'}
+                        </p>
+                        {company?.name && (
+                          <p style={{ fontSize: 12, color: '#6b7280', margin: '2px 0 0' }}>{company.name}</p>
+                        )}
+                        <p style={{ fontSize: 12, fontWeight: 500, color: st.color, margin: '4px 0 0' }}>{st.label}</p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+          </div>
+        </section>
       )}
 
       {/* Ton stage */}

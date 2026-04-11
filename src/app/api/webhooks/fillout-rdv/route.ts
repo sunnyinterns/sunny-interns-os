@@ -35,16 +35,33 @@ export async function POST(request: Request) {
     const payload = await request.json() as FilloutWebhookPayload
     const supabase = getServiceClient()
 
-    // Extraire email depuis les URL params (passés par notre formulaire)
-    const emailParam = payload.urlParameters?.find(p => p.name === 'email')?.value
-    const nameParam = payload.urlParameters?.find(p => p.name === 'name')?.value
+    // Extraire email — plusieurs sources par ordre de fiabilité
+    let email: string | null = null
+    const urlParams = payload.urlParameters
 
-    // Extraire email depuis les questions du formulaire Fillout
-    const emailQuestion = payload.questions?.find(q =>
-      q.name?.toLowerCase().includes('email') || q.type === 'Email'
-    )?.value
+    // 1. URL parameters (les plus fiables car on les set nous-mêmes)
+    if (urlParams) {
+      const emailParam = urlParams.find(p => p.id === 'email' || p.name === 'email')
+      if (emailParam?.value) email = emailParam.value
+    }
 
-    const email = emailParam || emailQuestion
+    // 2. Questions/réponses du formulaire
+    if (!email && payload.questions) {
+      for (const q of payload.questions) {
+        const name = (q.name ?? '').toLowerCase()
+        if ((name.includes('email') || q.type === 'Email') && typeof q.value === 'string' && q.value) {
+          email = q.value
+          break
+        }
+      }
+    }
+
+    // 3. Top-level email
+    if (!email && typeof (payload as Record<string, unknown>).email === 'string') {
+      email = (payload as Record<string, unknown>).email as string
+    }
+
+    const nameParam = urlParams?.find(p => p.id === 'name' || p.name === 'name')?.value
 
     if (!email) {
       // Payload de test Fillout sans email — on ignore gracieusement

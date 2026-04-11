@@ -264,6 +264,14 @@ export default function CaseDetailPage() {
                   Carte stagiaire
                 </button>
               )}
+              {(caseData.status === 'payment_pending' || caseData.status === 'convention_signed') && (
+                <button
+                  onClick={() => setActiveTab('facturation')}
+                  className="px-3 py-1.5 text-xs font-semibold bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+                >
+                  💶 Facturation
+                </button>
+              )}
               <button
                 onClick={() => setShowEditModal(true)}
                 className="px-3 py-1.5 text-xs font-medium bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors"
@@ -374,6 +382,7 @@ export default function CaseDetailPage() {
             paymentAmount={(caseData as any).payment_amount ?? null}
             caseData={caseData as Record<string, unknown>}
             onRefresh={fetchCase}
+            onTabChange={(tab: string) => setActiveTab(tab as TabKey)}
           />
         )}
         {activeTab === 'profil' && (

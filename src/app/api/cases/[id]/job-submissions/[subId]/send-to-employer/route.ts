@@ -18,13 +18,13 @@ export async function POST(
 
   const { data: sub } = await admin
     .from('job_submissions')
-    .select('*, jobs(id, title, public_title, description, companies(id, name, email))')
+    .select('*, jobs(id, title, public_title, description, companies(id, name, email, website))')
     .eq('id', subId)
     .single()
 
   const { data: caseRow } = await admin
     .from('cases')
-    .select('*, interns(first_name, last_name, email, whatsapp, cv_url, local_cv_url, school_country, main_desired_job, private_comment_for_employer, linkedin_url, spoken_languages, english_level, stage_ideal)')
+    .select('*, interns(first_name, last_name, email, whatsapp, cv_url, local_cv_url, school_country, main_desired_job, private_comment_for_employer, linkedin_url, spoken_languages, english_level, stage_ideal, preferred_language)')
     .eq('id', id)
     .single()
 
