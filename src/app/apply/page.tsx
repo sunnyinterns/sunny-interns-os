@@ -1121,7 +1121,7 @@ export default function ApplyPage() {
             <div>
               <label className={labelClass}>WhatsApp *</label>
               <p className={helperClass + " mb-2"}>
-                {lang === 'fr' ? "Tout le monde à Bali l'utilise, mets un numéro joignable !" : "Everyone uses it in Bali, make sure the number is correct."}
+                {lang === 'fr' ? "Tout le monde à Bali l'utilise ! Nous communiquerons aussi ensemble via WhatsApp pour faciliter nos échanges." : "Everyone uses it in Bali! We will also communicate with you via WhatsApp throughout the process."}
               </p>
               <div className="flex gap-2">
                 {/* Indicatif custom dropdown */}
@@ -1613,8 +1613,7 @@ export default function ApplyPage() {
               <ul className="space-y-1.5">
                 {[
                   lang === 'fr' ? '🎯 Matching personnalisé avec nos entreprises partenaires' : '🎯 Personalized matching with our partner companies',
-                  lang === 'fr' ? '📄 Rédaction et gestion de la convention de stage' : '📄 Internship agreement drafting and management',
-                  lang === 'fr' ? '🛂 Accompagnement pour le visa étudiant (VOA)' : '🛂 Student visa support (VOA)',
+                  lang === 'fr' ? "🛂 Procédure administrative d'obtention du visa stagiaire, accès aux offres de nos partenaires pour préparer l'arrivée (eSIM, logement, scooter) et sur place (activités, restaurants, etc.)" : '🛂 Visa procedure support + partner offers for arrival prep (eSIM, housing, scooter) and on-site (activities, restaurants, etc.)',
                   lang === 'fr' ? "🚗 Chauffeur à l'aéroport à l'arrivée" : '🚗 Airport pickup on arrival',
                   lang === 'fr' ? '💬 Support WhatsApp tout au long du stage' : '💬 WhatsApp support throughout the internship',
                 ].map((item, i) => (

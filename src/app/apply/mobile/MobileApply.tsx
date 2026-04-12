@@ -308,13 +308,13 @@ export function MobileApply({
     { id: 'referral_code', type: 'text', label: 'Tu as un code parrain ?', labelEn: 'Do you have a referral code?', field: 'referred_by_code', required: false, skip: (f) => !f.touchpoints.includes('Ambassadeur Bali Interns'), section: 'Ce que tu cherches', sectionEn: 'What you are looking for' },
     // ── BLOC 2: Qui es-tu (identité) ──
     { id: 'name_pair', type: 'name_pair', label: 'Prénom & Nom', labelEn: 'First & Last name', field: 'first_name', required: true, section: SEC_ID.fr, sectionEn: SEC_ID.en },
-    { id: 'whatsapp', type: 'tel_whatsapp', label: 'Ton numéro WhatsApp ?', labelEn: 'Your WhatsApp number?', field: 'whatsapp_number', required: true, helper: "Tout le monde à Bali l'utilise !", helperEn: 'Everyone uses it in Bali!', section: SEC_ID.fr, sectionEn: SEC_ID.en },
+    { id: 'whatsapp', type: 'tel_whatsapp', label: 'Ton numéro WhatsApp ?', labelEn: 'Your WhatsApp number?', field: 'whatsapp_number', required: true, helper: "Tout le monde à Bali l'utilise ! Nous communiquerons aussi ensemble via WhatsApp pour faciliter nos échanges.", helperEn: 'Everyone uses it in Bali! We will also communicate with you via WhatsApp throughout the process.', section: SEC_ID.fr, sectionEn: SEC_ID.en },
     { id: 'nationalities', type: 'chips', label: 'Ta ou tes nationalités ?', labelEn: 'Your nationality(ies)?', field: 'nationalities', required: true, options: COUNTRIES, section: SEC_ID.fr, sectionEn: SEC_ID.en },
     { id: 'dates_identity', type: 'date_pair', label: 'Dates importantes', labelEn: 'Important dates', field: 'birth_date', required: true, section: SEC_ID.fr, sectionEn: SEC_ID.en },
     { id: 'school_country', type: 'select', label: 'Pays où tu fais tes études ?', labelEn: 'Country where you study?', field: 'school_country', required: true, options: COUNTRIES, helper: 'Détermine le type de convention de stage', helperEn: 'Determines your internship agreement type', section: SEC_ID.fr, sectionEn: SEC_ID.en },
     // ── BLOC 3: Ton profil ──
     { id: 'linkedin_school', type: 'linkedin_school', label: 'École & LinkedIn', labelEn: 'School & LinkedIn', field: 'school_name', required: false, section: SEC_PR.fr, sectionEn: SEC_PR.en },
-    { id: 'cv_pair', type: 'cv_pair', label: 'Tes CV', labelEn: 'Your CVs', field: 'cv_en_file', required: true, helper: 'PDF, DOC, JPG - Max 20MB', helperEn: 'PDF, DOC, JPG - Max 20MB', section: SEC_PR.fr, sectionEn: SEC_PR.en },
+    { id: 'cv_pair', type: 'cv_pair', label: 'CV en anglais * (PDF/DOC/JPG, max 20MB)', labelEn: 'English CV * (PDF/DOC/JPG, max 20MB)', field: 'cv_en_file', required: true, helper: 'Même format que la version desktop', helperEn: 'Same format as desktop version', section: SEC_PR.fr, sectionEn: SEC_PR.en },
     { id: 'spoken_languages', type: 'chips', label: 'Tes langues de travail ?', labelEn: 'Your working languages?', field: 'spoken_languages', required: true, section: SEC_PR.fr, sectionEn: SEC_PR.en },
     // ── BLOC 4: Ton stage idéal ──
     { id: 'stage_ideal', type: 'textarea', label: 'Ton stage idéal en quelques lignes', labelEn: 'Your ideal internship in a few lines', field: 'stage_ideal', required: true, section: SEC_ST.fr, sectionEn: SEC_ST.en },
@@ -1168,6 +1168,26 @@ export function MobileApply({
               </p>
             </div>
 
+            {/* Ce qui est inclus */}
+            <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 mb-2">
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
+                {lang === 'fr' ? 'Ce qui est inclus' : "What's included"}
+              </p>
+              <ul className="space-y-1.5">
+                {[
+                  [lang === 'fr' ? '🎯 Matching personnalisé avec nos entreprises partenaires' : '🎯 Personalized matching with our partner companies'],
+                  [lang === 'fr' ? "🛂 Procédure visa stagiaire + offres partenaires (eSIM, logement, scooter, activités)" : '🛂 Visa procedure + partner offers (eSIM, housing, scooter, activities)'],
+                  [lang === 'fr' ? "🚗 Chauffeur à l'aéroport à l'arrivée" : '🚗 Airport pickup on arrival'],
+                  [lang === 'fr' ? '💬 Support WhatsApp tout au long du stage' : '💬 WhatsApp support throughout the internship'],
+                ].map((item, i) => (
+                  <li key={i} className="text-sm text-zinc-700 flex items-start gap-1.5">
+                    <span className="flex-shrink-0">{item[0].split(' ')[0]}</span>
+                    <span>{item[0].split(' ').slice(1).join(' ')}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
             <label className="flex items-start gap-3 cursor-pointer min-h-[48px]">
               <input
                 type="checkbox"
@@ -1342,7 +1362,7 @@ export function MobileApply({
               : isLastQuestion
                 ? (lang === 'fr' ? 'Confirmer ma candidature' : 'Submit my application')
                 : !question.required
-                  ? (lang === 'fr' ? 'Passer \u2192' : 'Skip \u2192')
+                  ? (lang === 'fr' ? 'Continuer \u2192' : 'Continue \u2192')
                   : (lang === 'fr' ? 'Continuer \u2192' : 'Continue \u2192')}
           </button>
 
