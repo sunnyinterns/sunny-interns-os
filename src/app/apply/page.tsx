@@ -1235,7 +1235,7 @@ export default function ApplyPage() {
                 onBlur={() => touch('birth_date')}
                 lang={lang}
                 defaultYear={2007}
-                minYear={1940}
+                minYear={1990}
                 maxYear={new Date().getFullYear() - 16}
               />
             </div>
