@@ -220,6 +220,13 @@ export default function LeadsPage() {
                     </p>
                     {name && <p className="text-xs text-zinc-500 truncate">{lead.email}</p>}
                   </div>
+                  {lead.desired_jobs && lead.desired_jobs.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {lead.desired_jobs.slice(0, 2).map((j, i) => (
+                        <span key={i} className="text-[10px] px-1.5 py-0.5 bg-[#c8a96e]/10 text-[#8a6a2a] rounded-full">{j}</span>
+                      ))}
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                     {/* Badge source */}
                     <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${src.color}`}>
@@ -248,6 +255,18 @@ export default function LeadsPage() {
                     <span className="text-xs text-zinc-400">
                       {new Date(lead.created_at).toLocaleDateString('fr-FR')}
                     </span>
+                    {lead.desired_start_date && (
+                      <span className="text-[10px] text-zinc-400">
+                        🛫 {new Date(lead.desired_start_date).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+                      </span>
+                    )}
+                    {lead.whatsapp && (
+                      <a href={`https://wa.me/${lead.whatsapp.replace(/[^0-9]/g, '')}`}
+                        onClick={e => e.stopPropagation()}
+                        className="text-[10px] text-green-600 hover:underline">
+                        💬 WhatsApp
+                      </a>
+                    )}
                   </div>
                 </div>
 
