@@ -501,6 +501,7 @@ export function MobileApply({
         if (!(val as string)?.trim()) return false
         if (q.type === 'email' && !isValidEmail(val as string)) return false
         if (q.type === 'email' && emailExists) return false
+        if (q.type === 'email' && emailChecking) return false
         return true
       case 'tel_whatsapp':
         return !!(form.whatsapp_number?.trim())
@@ -1360,10 +1361,10 @@ export function MobileApply({
           >
             {submitting
               ? (lang === 'fr' ? 'Envoi en cours...' : 'Submitting...')
-              : isLastQuestion
-                ? (lang === 'fr' ? 'Confirmer ma candidature' : 'Submit my application')
-                : !question.required
-                  ? (lang === 'fr' ? 'Continuer \u2192' : 'Continue \u2192')
+              : emailChecking && question.type === 'email'
+                ? (lang === 'fr' ? 'Vérification…' : 'Checking…')
+                : isLastQuestion
+                  ? (lang === 'fr' ? 'Confirmer ma candidature' : 'Submit my application')
                   : (lang === 'fr' ? 'Continuer \u2192' : 'Continue \u2192')}
           </button>
 

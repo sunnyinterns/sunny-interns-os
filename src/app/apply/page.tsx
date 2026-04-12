@@ -1769,7 +1769,9 @@ export default function ApplyPage() {
               }}
               className="flex-1 py-3 min-h-[48px] rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#c8a96e] text-[#1a1410] hover:bg-[#b8945a]"
             >
-              {lang==='fr'?'Continuer \u2192':'Continue \u2192'}
+              {emailChecking && step === 0
+                ? (lang==='fr'?'Vérification…':'Checking…')
+                : (lang==='fr'?'Continuer \u2192':'Continue \u2192')}
             </button>
           )}
           {step === 4 && (
