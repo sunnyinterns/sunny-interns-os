@@ -159,7 +159,7 @@ export async function GET(
           passport_number, passport_expiry, passport_issue_city, passport_issue_date,
           linkedin_url, cv_url, photo_id_url, spoken_languages, english_level,
           main_desired_job, desired_sectors, stage_ideal, touchpoint, source,
-          intern_level, education_level, diploma_track, qualification_debrief,
+          intern_level, education_level, intern_level_notes, diploma_track, qualification_debrief,
           school_contact_name, school_contact_email,
           emergency_contact_name, emergency_contact_phone, insurance_company,
           intern_address, intern_signing_city, mother_first_name, mother_last_name,
