@@ -297,17 +297,21 @@ export default function CaseDetailPage() {
             </div>
           </div>
 
-          {/* RDV 1er entretien */}
-          {caseData.intern_first_meeting_date && (
+          {/* RDV 1er entretien — visible si date OU si event Google Calendar présent */}
+          {(caseData.intern_first_meeting_date || caseData.google_calendar_event_id) && (
             <div className="mb-3 flex flex-wrap items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
               <span>📅</span>
-              <span className="font-medium">
-                1er entretien : {new Date(caseData.intern_first_meeting_date).toLocaleDateString('fr-FR', {
-                  weekday: 'short', day: 'numeric', month: 'short'
-                })} à {new Date(caseData.intern_first_meeting_date).toLocaleTimeString('fr-FR', {
-                  hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta'
-                })} WITA
-              </span>
+              {caseData.intern_first_meeting_date ? (
+                <span className="font-medium">
+                  1er entretien : {new Date(caseData.intern_first_meeting_date).toLocaleDateString('fr-FR', {
+                    weekday: 'short', day: 'numeric', month: 'short'
+                  })} à {new Date(caseData.intern_first_meeting_date).toLocaleTimeString('fr-FR', {
+                    hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta'
+                  })} WITA
+                </span>
+              ) : (
+                <span className="font-medium">1er entretien planifié (date à synchroniser)</span>
+              )}
               {caseData.google_meet_link && (
                 <a href={caseData.google_meet_link} target="_blank" rel="noopener noreferrer"
                   className="ml-1 px-2 py-0.5 bg-[#1a73e8] text-white rounded text-[10px] font-semibold hover:bg-[#1557b0]">
