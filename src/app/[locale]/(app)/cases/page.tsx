@@ -67,6 +67,16 @@ export default function CasesPage() {
   const [showModal, setShowModal] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+
+  const STATUS_FILTERS: { value: string; label: string }[] = [
+    { value: 'all', label: 'Tous' },
+    { value: 'lead', label: 'Lead' },
+    { value: 'rdv_booked', label: 'RDV booké' },
+    { value: 'qualification_done', label: 'Qualifié' },
+    { value: 'job_submitted,job_retained', label: 'Matché' },
+    { value: 'convention_signed,payment_pending,payment_received', label: 'Paiement' },
+  ]
 
   const fetchCases = useCallback(async () => {
     setLoading(true)
@@ -89,6 +99,12 @@ export default function CasesPage() {
   }, [fetchCases])
 
   const filtered = cases.filter((c) => {
+    // Status filter
+    if (statusFilter !== 'all') {
+      const statuses = statusFilter.split(',')
+      if (!statuses.includes(c.status)) return false
+    }
+    // Search filter
     if (!search) return true
     const q = search.toLowerCase()
     const name = `${c.interns?.first_name ?? ''} ${c.interns?.last_name ?? ''}`.toLowerCase()
@@ -108,8 +124,8 @@ export default function CasesPage() {
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="mb-4">
+      {/* Search + Filters */}
+      <div className="mb-4 space-y-3">
         <input
           type="text"
           placeholder="Rechercher par nom, email..."
@@ -117,6 +133,22 @@ export default function CasesPage() {
           onChange={(e) => setSearch(e.target.value)}
           className="w-full max-w-xs px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white text-[#1a1918] focus:outline-none focus:ring-2 focus:ring-[#c8a96e]/40"
         />
+        <div className="flex flex-wrap gap-2">
+          {STATUS_FILTERS.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setStatusFilter(f.value)}
+              className={[
+                'px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors',
+                statusFilter === f.value
+                  ? 'bg-[#c8a96e] text-white border-[#c8a96e]'
+                  : 'bg-white text-zinc-600 border-zinc-200 hover:border-[#c8a96e]/50',
+              ].join(' ')}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* List */}
