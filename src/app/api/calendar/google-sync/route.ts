@@ -46,6 +46,9 @@ interface GoogleCalendarEvent {
   start?: { dateTime?: string; date?: string }
   end?: { dateTime?: string; date?: string }
   hangoutLink?: string
+  conferenceData?: {
+    entryPoints?: Array<{ entryPointType: string; uri: string }>
+  }
   attendees?: Array<{ email: string; displayName?: string; responseStatus?: string; self?: boolean }>
   organizer?: { email: string }
   htmlLink?: string
@@ -74,6 +77,12 @@ export async function POST() {
       const summaryNameMatch = ev.summary?.match(/Team Bali Interns and (.+)/i)
       const rescheduleMatch = ev.description?.match(/Cancel or reschedule: (https:\/\/\S+)/i)
 
+      // Extract meet link from conferenceData (preferred) or hangoutLink fallback
+      const meetEntry = ev.conferenceData?.entryPoints?.find(
+        (ep) => ep.entryPointType === 'video'
+      )
+      const meetLink = meetEntry?.uri ?? ev.hangoutLink ?? null
+
       await supabase.from('calendar_events').upsert({
         id: ev.id,
         google_calendar_id: calId,
@@ -82,7 +91,7 @@ export async function POST() {
         status: ev.status ?? 'confirmed',
         start_datetime: ev.start?.dateTime ?? ev.start?.date ?? null,
         end_datetime: ev.end?.dateTime ?? ev.end?.date ?? null,
-        meet_link: ev.hangoutLink ?? null,
+        meet_link: meetLink,
         cancel_reschedule_link: rescheduleMatch?.[1] ?? null,
         intern_email: candidateAttendee?.email ?? null,
         intern_name: candidateAttendee?.displayName?.trim() ?? summaryNameMatch?.[1]?.trim() ?? null,
@@ -92,7 +101,25 @@ export async function POST() {
         synced_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }, { onConflict: 'id' }).then(null, () => null)
-      
+
+      // If we found a meet link and there's an associated intern, update the case
+      if (meetLink && candidateAttendee?.email) {
+        const { data: internRow } = await supabase
+          .from('interns')
+          .select('id')
+          .eq('email', candidateAttendee.email)
+          .maybeSingle()
+
+        if (internRow) {
+          await supabase
+            .from('cases')
+            .update({ google_meet_link: meetLink })
+            .eq('intern_id', internRow.id)
+            .is('google_meet_link', null)
+            .then(null, () => null)
+        }
+      }
+
       totalSynced++
     }
   }
