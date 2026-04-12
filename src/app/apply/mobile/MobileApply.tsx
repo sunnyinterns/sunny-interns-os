@@ -1,7 +1,7 @@
 'use client'
 import { DatePickerInput } from '@/components/ui/DatePickerInput'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 
 // ─── Types ─────────────────────────────────────────────────────
 type FormData = {
@@ -379,31 +379,16 @@ export function MobileApply({
     return () => { if (emailCheckTimeout.current) clearTimeout(emailCheckTimeout.current) }
   }, [form.email])
 
-  // ── Fillout script for schedule step ──
-  useEffect(() => {
-    if (question.type !== 'schedule') return
-    const params = new URLSearchParams()
+  // ── Fillout iframe URL avec params dans le src (même méthode que desktop) ──
+  const filloutIframeSrc = useMemo(() => {
+    if (question.type !== 'schedule') return ''
     const fullName = `${form.first_name} ${form.last_name}`.trim()
-    if (fullName) params.set('name', fullName)
-    if (form.email) params.set('email', form.email)
+    const params = new URLSearchParams()
+    if (form.email) { params.set('Email', form.email); params.set('email', form.email) }
+    if (fullName) { params.set('Name', fullName); params.set('name', fullName) }
     if (form.first_name) params.set('firstName', form.first_name)
     if (form.last_name) params.set('lastName', form.last_name)
-    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`)
-    const existing = document.getElementById('fillout-script')
-    if (existing) existing.remove()
-    // Attendre que le div Fillout soit dans le DOM avant de charger le script
-    setTimeout(() => {
-      const script = document.createElement('script')
-      script.id = 'fillout-script'
-      script.src = 'https://server.fillout.com/embed/v1/'
-      script.async = true
-      document.head.appendChild(script)
-    }, 100)
-    return () => {
-      const s = document.getElementById('fillout-script')
-      if (s) s.remove()
-      window.history.replaceState({}, '', window.location.pathname)
-    }
+    return `https://form.fillout.com/t/gn4Zg9eydFus?${params.toString()}`
   }, [question.type, form.first_name, form.last_name, form.email])
 
   // ── Helpers ──
@@ -1248,15 +1233,14 @@ export function MobileApply({
                 ? 'Réserve un Google Meet de 45 min avec nous pour confirmer ta candidature'
                 : 'Book a 45-min Google Meet with us to confirm your application'}
             </p>
-            <div
-              style={{ width: '100%', height: '500px' }}
-              data-fillout-id="iqn73wjLFeus"
-              data-fillout-embed-type="standard"
-              data-fillout-inherit-parameters
-              data-fillout-dynamic-resize
-              data-fillout-name={`${form.first_name} ${form.last_name}`.trim()}
-              data-fillout-email={form.email}
-            />
+            {filloutIframeSrc && (
+              <iframe
+                src={filloutIframeSrc}
+                style={{ width: '100%', height: '650px', border: 'none', borderRadius: '12px' }}
+                title="Prendre un rendez-vous"
+                allow="camera; microphone; fullscreen"
+              />
+            )}
           </div>
         )
 

@@ -36,44 +36,49 @@ export async function POST(req: Request) {
       .eq('email', normalized)
       .maybeSingle()
 
-    if (existingIntern && existingIntern.first_name && existingIntern.first_name.length > 0) {
+    if (existingIntern?.first_name) {
       return NextResponse.json({ ok: false, reason: 'already_candidate' })
     }
 
-    // Lead existant ? update
-    const { data: existingLead } = await supabase
-      .from('leads')
-      .select('id, form_step')
-      .eq('email', normalized)
-      .maybeSingle()
-
-    if (existingLead) {
-      await supabase
-        .from('leads')
-        .update({
-          form_step: form_step ?? existingLead.form_step,
-          ...rest,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existingLead.id)
-      return NextResponse.json({ ok: true, lead_id: existingLead.id, action: 'updated' })
+    // Filtrer les champs undefined pour ne pas écraser avec null
+    const updateFields: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
     }
+    if (form_step !== undefined) updateFields.form_step = form_step
+    if (rest.first_name) updateFields.first_name = rest.first_name
+    if (rest.last_name) updateFields.last_name = rest.last_name
+    if (rest.desired_jobs?.length) updateFields.desired_jobs = rest.desired_jobs
+    if (rest.desired_start_date) updateFields.desired_start_date = rest.desired_start_date
+    if (rest.school_country) updateFields.school_country = rest.school_country
+    if (rest.spoken_languages?.length) updateFields.spoken_languages = rest.spoken_languages
+    if (rest.touchpoint) updateFields.touchpoint = rest.touchpoint
+    if (rest.sub_source) updateFields.sub_source = rest.sub_source
 
-    // Nouveau lead
-    const { data: lead } = await supabase
+    // UPSERT atomique — évite les race conditions du mobile qui envoie plusieurs requêtes simultanées
+    const { data: lead, error } = await supabase
       .from('leads')
-      .insert({
-        email: normalized,
-        source,
-        form_step: form_step ?? 0,
-        abandon_reason: 'form_abandoned',
-        status: 'new',
-        ...rest,
-      })
+      .upsert(
+        {
+          email: normalized,
+          source,
+          status: 'new',
+          abandon_reason: 'form_abandoned',
+          ...updateFields,
+        },
+        {
+          onConflict: 'email,source',
+          ignoreDuplicates: false,
+        }
+      )
       .select('id')
       .single()
 
-    return NextResponse.json({ ok: true, lead_id: lead?.id, action: 'created' })
+    if (error) {
+      console.error('[capture-email] upsert error:', error)
+      return NextResponse.json({ ok: false, error: error.message })
+    }
+
+    return NextResponse.json({ ok: true, lead_id: lead?.id, action: 'upserted' })
   } catch (e) {
     console.error('[capture-email]', e)
     return NextResponse.json({ ok: false })
