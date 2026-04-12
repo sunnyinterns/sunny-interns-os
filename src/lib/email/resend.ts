@@ -2,7 +2,8 @@ import { Resend } from 'resend'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
-const FROM = 'Charly de Bali Interns <team@bali-interns.com>'
+const FROM_PRIMARY = 'Charly de Bali Interns <team@bali-interns.com>'
+const FROM_FALLBACK = 'Charly de Bali Interns <onboarding@resend.dev>'
 const CHARLY = 'charly@bali-interns.com'
 
 // ─── Send helper (graceful no-op if not configured) ──────────────────────────
@@ -17,20 +18,30 @@ async function send(opts: {
     console.warn('[email] RESEND_API_KEY not set — skipping email:', opts.subject)
     return
   }
-  try {
-    const { error } = await resend.emails.send({
-      from: FROM,
-      to: Array.isArray(opts.to) ? opts.to : [opts.to],
-      ...(opts.cc ? { cc: Array.isArray(opts.cc) ? opts.cc : [opts.cc] } : {}),
-      subject: opts.subject,
-      html: opts.html,
-    })
-    if (error) {
-      // Log error (ex: domain not verified) mais ne bloque pas le flow applicatif
-      console.error('[email] Send failed:', error)
+
+  const tryFroms = [FROM_PRIMARY, FROM_FALLBACK]
+  for (const from of tryFroms) {
+    try {
+      const { data, error } = await resend.emails.send({
+        from,
+        to: Array.isArray(opts.to) ? opts.to : [opts.to],
+        ...(opts.cc ? { cc: Array.isArray(opts.cc) ? opts.cc : [opts.cc] } : {}),
+        subject: opts.subject,
+        html: opts.html,
+      })
+      if (error) {
+        console.error('[email] Send failed from', from, ':', error)
+        if ((error as { statusCode?: number }).statusCode === 403 || error.name === 'validation_error') {
+          console.warn('[email] Domain not verified, trying fallback...')
+          continue
+        }
+      } else {
+        console.log('[email] Sent from', from, '- id:', data?.id)
+        return
+      }
+    } catch (e) {
+      console.error('[email] Exception:', e)
     }
-  } catch (e) {
-    console.error('[email] Send exception:', e)
   }
 }
 
