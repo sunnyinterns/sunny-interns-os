@@ -33,6 +33,7 @@ interface Props {
   defaultYear?: number
   minYear?: number
   maxYear?: number
+  minDate?: string     // ISO format YYYY-MM-DD — dates avant minDate seront disabled
   className?: string
 }
 
@@ -46,6 +47,7 @@ export function DatePickerInput({
   defaultYear,
   minYear,
   maxYear,
+  minDate,
   className = '',
 }: Props) {
   const currentYear = new Date().getFullYear()
@@ -139,6 +141,14 @@ export function DatePickerInput({
   // Build year grid
   const years: number[] = []
   for (let y = yearMax; y >= yearMin; y--) years.push(y)
+
+  function isDateDisabled(year: number, month: number, day: number): boolean {
+    if (!minDate) return false
+    const selected = new Date(year, month - 1, day)
+    const min = new Date(minDate)
+    min.setHours(0, 0, 0, 0)
+    return selected < min
+  }
 
   const maxDay = pickerMonth ? daysInMonth(pickerYear, pickerMonth) : 31
   const days: number[] = []
@@ -275,15 +285,19 @@ export function DatePickerInput({
                   const currentM = value ? parseInt(value.split('-')[1]) : null
                   const currentY = value ? parseInt(value.split('-')[0]) : null
                   const isSelected = d === currentD && pickerMonth === currentM && pickerYear === currentY
+                  const disabled = isDateDisabled(pickerYear, pickerMonth!, d)
                   return (
                     <button
                       key={d}
                       type="button"
                       onClick={() => selectDay(d)}
+                      disabled={disabled}
                       className={`py-1.5 text-xs rounded-lg font-medium transition-colors ${
-                        isSelected
-                          ? 'bg-[#c8a96e] text-white'
-                          : 'text-zinc-700 hover:bg-zinc-100'
+                        disabled
+                          ? 'opacity-30 cursor-not-allowed'
+                          : isSelected
+                            ? 'bg-[#c8a96e] text-white'
+                            : 'text-zinc-700 hover:bg-zinc-100'
                       }`}
                     >
                       {d}

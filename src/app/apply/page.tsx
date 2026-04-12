@@ -1019,6 +1019,7 @@ export default function ApplyPage() {
                 defaultYear={new Date().getFullYear()}
                 minYear={new Date().getFullYear()}
                 maxYear={new Date().getFullYear() + 3}
+                minDate={new Date().toISOString().split('T')[0]}
               />
               <p className={helperClass}>{lang==='fr'?"\u00c0 2-4 semaines pr\u00e8s, c\u2019est ok":"Give or take 2-4 weeks, that\u2019s fine"}</p>
             </div>

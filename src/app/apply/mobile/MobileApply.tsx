@@ -865,6 +865,7 @@ export function MobileApply({
             defaultYear={new Date().getFullYear()}
             minYear={new Date().getFullYear()}
             maxYear={new Date().getFullYear() + 3}
+            minDate={new Date().toISOString().split('T')[0]}
           />
         )
 
