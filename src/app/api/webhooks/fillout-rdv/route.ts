@@ -214,6 +214,17 @@ export async function POST(request: Request) {
       }, { onConflict: 'id' }).then(() => null, () => null)
     }
 
+    // Déclencher sync GCal pour récupérer le meet_link
+    try {
+      const syncRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/calendar/google-sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (!syncRes.ok) console.warn('[webhook] GCal sync failed:', await syncRes.text())
+    } catch (e) {
+      console.error('[webhook] GCal sync error:', e)
+    }
+
     // Envoyer email de confirmation (sera actif dès que Resend est vérifié)
     try {
       const { sendRdvConfirmation } = await import('@/lib/email/resend')
