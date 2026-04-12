@@ -51,7 +51,7 @@ interface InternData {
 }
 
 interface TabProfilProps {
-  intern: (InternData & { local_cv_url?: string | null; intern_level_notes?: string | null; english_level?: string | null }) | null
+  intern: (InternData & { local_cv_url?: string | null; intern_level_notes?: string | null; english_level?: string | null; education_level?: string | null }) | null
   arrivalDate?: string | null
   internId?: string | null
   caseId?: string | null
@@ -552,6 +552,13 @@ export function TabProfil({ intern, internId, caseId, schoolName, desiredStartDa
         )}
         <EditableField label="École" value={schoolName} fieldKey="school_name" readonly />
         <EditableField label="Niveau d'études" value={intern.intern_level} fieldKey="intern_level" internId={iid} caseId={caseId} />
+        <EditableField
+          label="Formation / Diplôme"
+          value={(intern as { education_level?: string | null }).education_level}
+          fieldKey="education_level"
+          internId={iid}
+          caseId={caseId}
+        />
         <EditableField
           label="Commentaire formation"
           value={(intern as { intern_level_notes?: string | null }).intern_level_notes}
