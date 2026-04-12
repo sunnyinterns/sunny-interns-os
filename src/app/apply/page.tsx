@@ -590,16 +590,15 @@ export default function ApplyPage() {
   useEffect(() => {
     if (step !== 5) return
 
-    // Pour compatibilité postMessage redirect
+    // Mettre les params dans l'URL pour compatibilité
     const params = new URLSearchParams()
     const fullName = `${form.first_name} ${form.last_name}`.trim()
     if (form.email) { params.set('Email', form.email); params.set('email', form.email) }
     if (fullName) { params.set('Name', fullName); params.set('name', fullName) }
     window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`)
 
-    // STEP 2: Écouter le postMessage de Fillout pour rediriger automatiquement
     function handleMessage(e: MessageEvent) {
-      // Fillout émet différents types selon la version
+      // Redirection après soumission Fillout
       if (
         e.data?.type === 'fillout:formSubmitted' ||
         e.data?.type === 'fillout_form_submitted' ||
@@ -608,10 +607,44 @@ export default function ApplyPage() {
       ) {
         router.push(`/apply/confirmation?name=${encodeURIComponent(form.first_name)}&lang=${lang}&rdv=1`)
       }
+
+      // Auto-avance la page Fields (page cachée) dès qu'elle est chargée
+      // Fillout émet 'fillout:pageChange' ou 'fillout:loaded' quand une page est affichée
+      if (
+        e.data?.type === 'fillout:pageChange' ||
+        e.data?.type === 'fillout:loaded' ||
+        e.data?.type === 'fillout:ready' ||
+        e.data?.event === 'page_change' ||
+        (e.data?.type && typeof e.data.type === 'string' && e.data.type.startsWith('fillout:'))
+      ) {
+        // Si on est sur la page 0 (Fields page), avancer automatiquement
+        const pageIndex = e.data?.pageIndex ?? e.data?.page ?? e.data?.currentPage
+        if (pageIndex === 0 || pageIndex === undefined) {
+          // Envoyer un message à l'iframe pour avancer à la page suivante
+          const iframe = document.querySelector('iframe[src*="fillout"]') as HTMLIFrameElement | null
+          if (iframe?.contentWindow) {
+            // Tenter plusieurs formats de message supportés par Fillout
+            iframe.contentWindow.postMessage({ type: 'fillout:next' }, '*')
+            iframe.contentWindow.postMessage({ type: 'fillout:navigate', page: 1 }, '*')
+            iframe.contentWindow.postMessage({ action: 'next' }, '*')
+          }
+        }
+      }
     }
     window.addEventListener('message', handleMessage)
 
+    // Fallback: après 1.5s, tenter de cliquer sur le bouton Next de l'iframe via postMessage
+    const autoAdvanceTimer = setTimeout(() => {
+      const iframe = document.querySelector('iframe[src*="fillout"]') as HTMLIFrameElement | null
+      if (iframe?.contentWindow) {
+        iframe.contentWindow.postMessage({ type: 'fillout:next' }, '*')
+        iframe.contentWindow.postMessage({ action: 'next' }, '*')
+        iframe.contentWindow.postMessage({ type: 'fillout:navigate', direction: 'next' }, '*')
+      }
+    }, 1500)
+
     return () => {
+      clearTimeout(autoAdvanceTimer)
       window.removeEventListener('message', handleMessage)
       window.history.replaceState({}, '', window.location.pathname)
     }
@@ -1699,14 +1732,16 @@ export default function ApplyPage() {
                   : "⚠️ If you can't make it, a reschedule link will be in your confirmation email. Due to high demand, only one reschedule is allowed."}
               </p>
             </div>
-            {/* Fillout iframe direct — params Name et Email inclus dans le src */}
+            {/* Fillout iframe — la page Fields (champs cachés) est auto-skippée via postMessage */}
             {filloutIframeSrc && (
-              <iframe
-                src={filloutIframeSrc}
-                style={{ width: '100%', height: '700px', border: 'none', borderRadius: '12px' }}
-                title="Prendre un rendez-vous"
-                allow="camera; microphone; fullscreen"
-              />
+              <div style={{ position: 'relative', width: '100%', minHeight: '700px' }}>
+                <iframe
+                  src={filloutIframeSrc}
+                  style={{ width: '100%', height: '700px', border: 'none', borderRadius: '12px' }}
+                  title="Prendre un rendez-vous"
+                  allow="camera; microphone; fullscreen"
+                />
+              </div>
             )}
             <p className="text-xs text-zinc-400 text-center mt-3">
               {lang === 'fr'

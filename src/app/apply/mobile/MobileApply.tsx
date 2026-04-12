@@ -391,6 +391,37 @@ export function MobileApply({
     return `https://form.fillout.com/t/gn4Zg9eydFus?${params.toString()}`
   }, [question.type, form.first_name, form.last_name, form.email])
 
+  // ── Auto-avance la page Fields de Fillout via postMessage ──
+  useEffect(() => {
+    if (question.type !== 'schedule') return
+    function handleFilloutMsg(e: MessageEvent) {
+      if (
+        e.data?.type === 'fillout:pageChange' ||
+        e.data?.type === 'fillout:loaded' ||
+        e.data?.type === 'fillout:ready' ||
+        (e.data?.type && typeof e.data.type === 'string' && e.data.type.startsWith('fillout:'))
+      ) {
+        const pageIndex = e.data?.pageIndex ?? e.data?.page ?? e.data?.currentPage
+        if (pageIndex === 0 || pageIndex === undefined) {
+          const iframe = document.querySelector('iframe[src*="fillout"]') as HTMLIFrameElement | null
+          if (iframe?.contentWindow) {
+            iframe.contentWindow.postMessage({ type: 'fillout:next' }, '*')
+            iframe.contentWindow.postMessage({ action: 'next' }, '*')
+          }
+        }
+      }
+    }
+    window.addEventListener('message', handleFilloutMsg)
+    const t = setTimeout(() => {
+      const iframe = document.querySelector('iframe[src*="fillout"]') as HTMLIFrameElement | null
+      if (iframe?.contentWindow) {
+        iframe.contentWindow.postMessage({ type: 'fillout:next' }, '*')
+        iframe.contentWindow.postMessage({ action: 'next' }, '*')
+      }
+    }, 1500)
+    return () => { clearTimeout(t); window.removeEventListener('message', handleFilloutMsg) }
+  }, [question.type])
+
   // ── Helpers ──
   function set<K extends keyof FormData>(key: K, value: FormData[K]) {
     setForm(f => ({ ...f, [key]: value }))
