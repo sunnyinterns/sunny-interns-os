@@ -98,7 +98,7 @@ export default function LeadsPage() {
   }, [fetchLeads])
 
   useEffect(() => {
-    const interval = setInterval(() => { void fetchLeads() }, 30000)
+    const interval = setInterval(() => { void fetchLeads() }, 15000)
     return () => clearInterval(interval)
   }, [fetchLeads])
 
