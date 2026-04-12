@@ -1,4 +1,4 @@
-# Sunny Interns OS Ñ Claude Code Context
+# Sunny Interns OS ï¿½ Claude Code Context
 
 ## Projet
 OS interne de Sunny Interns (ex-Bali Interns). Remplace Airtable + FillOut + Squarespace.
@@ -7,14 +7,14 @@ OS interne de Sunny Interns (ex-Bali Interns). Remplace Airtable + FillOut + Squ
 - Supabase project : djoqjgiyseobotsjqcgz (ap-southeast-2)
 - GitHub : github.com/sunnyinterns/sunny-interns-os
 
-## Rgles ABSOLUES
-1. Un sprint = une mission complte. Jamais de demi-sprint.
-2. Ne jamais crer de fichier placeholder ou TODO. Si c'est dans le sprint, c'est implment.
-3. Ne jamais ajouter de dpendances hors stack valide sans alerter Sidney.
-4. Chaque commit = tests verts. Zro commit rouge.
-5. Finir par : SPRINT-XXX DONE ? Ñ [fichiers crs] Ñ [tests] Ñ [1 chose ˆ vrifier]
-6. Ne jamais demander permission pour des dcisions techniques mineures. Tranche seul.
-7. Si bloqu > 10min : liste le problme + 3 solutions. Ne tourne pas en rond.
+## Rï¿½gles ABSOLUES
+1. Un sprint = une mission complï¿½te. Jamais de demi-sprint.
+2. Ne jamais crï¿½er de fichier placeholder ou TODO. Si c'est dans le sprint, c'est implï¿½mentï¿½.
+3. Ne jamais ajouter de dï¿½pendances hors stack validï¿½e sans alerter Sidney.
+4. Chaque commit = tests verts. Zï¿½ro commit rouge.
+5. Finir par : SPRINT-XXX DONE ? ï¿½ [fichiers crï¿½ï¿½s] ï¿½ [tests] ï¿½ [1 chose ï¿½ vï¿½rifier]
+6. Ne jamais demander permission pour des dï¿½cisions techniques mineures. Tranche seul.
+7. Si bloquï¿½ > 10min : liste le problï¿½me + 3 solutions. Ne tourne pas en rond.
 
 ## Stack
 - Next.js 16 App Router sur Vercel
@@ -25,7 +25,7 @@ OS interne de Sunny Interns (ex-Bali Interns). Remplace Airtable + FillOut + Squ
 - Resend + React Email
 - react-pdf (server-side)
 - Claude API (Anthropic) pour AI matching
-- Remotion (vido auto jobs)
+- Remotion (vidï¿½o auto jobs)
 - Web Push API natif
 
 ## Design tokens
@@ -44,7 +44,7 @@ SUPABASE_SERVICE_ROLE_KEY=[depuis Supabase Settings > API]
 GOOGLE_CLIENT_ID=[Google Cloud Console]
 GOOGLE_CLIENT_SECRET=[Google Cloud Console]
 RESEND_API_KEY=[resend.com]
-ANTHROPIC_API_KEY=[djˆ dans ~/.zshrc]
+ANTHROPIC_API_KEY=[dï¿½jï¿½ dans ~/.zshrc]
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 ## Structure src/
@@ -67,53 +67,53 @@ src/
 lead ? rdv_booked ? qualification_done ? job_submitted ? job_retained ?
 convention_signed ? payment_pending ? payment_received ? visa_in_progress ?
 visa_received ? arrival_prep ? active ? alumni
-+ tats: not_interested, not_qualified, on_hold, suspended, visa_refused, archived, completed
++ ï¿½tats: not_interested, not_qualified, on_hold, suspended, visa_refused, archived, completed
 
-## Rtro-planning (depuis date d'arrive)
-- J-40 : billet confirm (ATTENTION)
-- J-30 : paiement reu (CRITIQUE)
+## Rï¿½tro-planning (depuis date d'arrivï¿½e)
+- J-40 : billet confirmï¿½ (ATTENTION)
+- J-30 : paiement reï¿½u (CRITIQUE)
 - J-30 : visa soumis agent (CRITIQUE)
-- J-7  : visa reu (CRITIQUE)
-- J-2  : chauffeur notifi (ATTENTION)
+- J-7  : visa reï¿½u (CRITIQUE)
+- J-2  : chauffeur notifiï¿½ (ATTENTION)
 - J-0  : chauffeur rappel (ATTENTION)
 
-## Rgles mtier CRITIQUES
-1. Dure sjour MAX 175j (visa B211A). Alerte ˆ 165j. Calcul EXACT :
+## Rï¿½gles mï¿½tier CRITIQUES
+1. Durï¿½e sï¿½jour MAX 175j (visa B211A). Alerte ï¿½ 165j. Calcul EXACT :
    Math.floor((returnDate - arrivalDate) / (1000 * 60 * 60 * 24))
-   TEST: 3 avril ? 16 septembre = 166j (pas 197j Ñ bug Airtable corrig)
-2. Facture envoye APRéS paiement confirm. Jamais avant.
-3. PT THE ABUNDANCE GUILD = is_active:false Ñ alerte rouge dans billing
-4. Automations arrive bloques si visa_received_at IS NULL ou flight_number IS NULL
-5. Email unique Ñ doublon bloqu ˆ la soumission
-6. Suppression protge Ñ company/school/job lis ˆ dossiers actifs
-7. Passeport 6 mois aprs date d'arrive Ñ vrification auto
-8. IBAN li ˆ l'entit lgale Ñ slectable par client, UK par dfaut
-9. FillOut supprim Ñ tout est natif dans l'OS
-10. Tous les templates ditables dans l'interface admin (emails, contrats, PDFs, WhatsApp)
+   TEST: 3 avril ? 16 septembre = 166j (pas 197j ï¿½ bug Airtable corrigï¿½)
+2. Facture envoyï¿½e APRï¿½S paiement confirmï¿½. Jamais avant.
+3. PT THE ABUNDANCE GUILD = is_active:false ï¿½ alerte rouge dans billing
+4. Automations arrivï¿½e bloquï¿½es si visa_received_at IS NULL ou flight_number IS NULL
+5. Email unique ï¿½ doublon bloquï¿½ ï¿½ la soumission
+6. Suppression protï¿½gï¿½e ï¿½ company/school/job liï¿½s ï¿½ dossiers actifs
+7. Passeport 6 mois aprï¿½s date d'arrivï¿½e ï¿½ vï¿½rification auto
+8. IBAN liï¿½ ï¿½ l'entitï¿½ lï¿½gale ï¿½ sï¿½lectable par client, UK par dï¿½faut
+9. FillOut supprimï¿½ ï¿½ tout est natif dans l'OS
+10. Tous les templates ï¿½ditables dans l'interface admin (emails, contrats, PDFs, WhatsApp)
 
-## Activity Feed Ñ 4 zones
-1. Aujourd'hui Ñ deadlines du jour
-2. Ë faire maintenant Ñ tries par urgence J-X
-3. En attente Ñ bloqu externement
-4. Complt aujourd'hui Ñ visible gris
+## Activity Feed ï¿½ 4 zones
+1. Aujourd'hui ï¿½ deadlines du jour
+2. ï¿½ faire maintenant ï¿½ triï¿½es par urgence J-X
+3. En attente ï¿½ bloquï¿½ externement
+4. Complï¿½tï¿½ aujourd'hui ï¿½ visible grisï¿½
 
-## Sprints P0 (ordre d'excution)
-S001 ? Supabase schema SQL + seed (migrations djˆ prtes dans supabase/migrations/)
+## Sprints P0 (ordre d'exï¿½cution)
+S001 ? Supabase schema SQL + seed (migrations dï¿½jï¿½ prï¿½tes dans supabase/migrations/)
 S002 ? Auth Next.js + middleware + Google OAuth
 S003 ? Design System + AppShell + Sidebar
-S004 ? Activity Feed 4 zones + donnes Supabase
+S004 ? Activity Feed 4 zones + donnï¿½es Supabase
 S005 ? Actions contextuelles + mutations optimistes
-S006 ? Rtro-planning engine (correctif bug dure sjour)
+S006 ? Rï¿½tro-planning engine (correctif bug durï¿½e sï¿½jour)
 S007 ? Notifications Resend + Web Push
 S008 ? Pipeline Kanban
 S009 ? Fiche Dossier 6 tabs
-S010 ? Cration/dition dossier
+S010 ? Crï¿½ation/ï¿½dition dossier
 S012 ? Jobs Board
-S014 ? Submissions + rponses employeurs
+S014 ? Submissions + rï¿½ponses employeurs
 S015 ? Visa tracking + checklist docs
-S022 ? Arrive + WhatsApp chauffeur auto-gnr
-S023 ? Moteur email + templates ditables WYSIWYG
-S035 ? Google Calendar API (remplace FillOut Ñ P0)
+S022 ? Arrivï¿½e + WhatsApp chauffeur auto-gï¿½nï¿½rï¿½
+S023 ? Moteur email + templates ï¿½ditables WYSIWYG
+S035 ? Google Calendar API (remplace FillOut ï¿½ P0)
 
 ## Git flow
 main ? production (Vercel)
@@ -123,14 +123,51 @@ sprint/XXX-nom ? PR vers develop
 ## Message WhatsApp chauffeur (template)
 Bonjour [nom_chauffeur],
 Stagiaire : {first_name} {last_name}
-Tl : {intern_bali_phone}
+Tï¿½l : {intern_bali_phone}
 Vol : {flight_number} ({last_stopover_city} ? Denpasar)
-Arrive : {flight_arrival_datetime}
-Dposer ˆ : {dropoff_address}
+Arrivï¿½e : {flight_arrival_datetime}
+Dï¿½poser ï¿½ : {dropoff_address}
 Tracking :
 ? https://www.flightradar24.com/{flight_number}
 ? https://www.flightaware.com/live/flight/{flight_number}
 
-## Email nouveau candidat (format confirm)
-Objet: Nouveau stagiaire ! [Prnom] [Nom] a candidat
-Contenu: date dmarrage, dure, lien /app/cases/[id], ?/? passeport, secteurs, commentaire
+## Email nouveau candidat (format confirmÃ©)
+Objet: Nouveau stagiaire ! [PrÃ©nom] [Nom] a candidatÃ©
+Contenu: date dÃ©marrage, durÃ©e, lien /app/cases/[id], âœ“/âœ— passeport, secteurs, commentaire
+
+## Commandes
+- Dev local: npm run dev
+- Build: npm run build
+- Deploy: git push origin main (Vercel auto-deploy)
+
+## Variables d'env clÃ©s (dans Vercel)
+- NEXT_PUBLIC_SUPABASE_URL
+- SUPABASE_SERVICE_ROLE_KEY
+- RESEND_API_KEY
+- NEXT_PUBLIC_APP_URL=https://sunny-interns-os.vercel.app
+
+## RÃ¨gles de dev
+- Ne jamais stopper sur une erreur non-bloquante
+- Push aprÃ¨s chaque section
+- Toujours build + tsc --noEmit avant push final
+- Ne jamais rÃ©initialiser la DB sans vÃ©rification explicite
+
+## Architecture routes
+- /apply â€” Formulaire candidature (desktop + mobile)
+- /fr/leads â€” Leads multi-sources
+- /fr/cases â€” Liste candidats
+- /fr/cases/[id] â€” Dossier candidat (6 onglets)
+- /fr/feed â€” Dashboard
+- /fr/calendar â€” Calendrier RDVs
+- /fr/todo â€” Todo alertes
+- /fr/activity â€” Feed activitÃ©
+- /portal/[token] â€” Portail candidat
+
+## Fillout
+- Form ID: gn4Zg9eydFus (scheduling 45min)
+- Webhook: https://sunny-interns-os.vercel.app/api/webhooks/fillout-rdv
+- URL params: Email, Name (dÃ©clarÃ©s dans Fillout Settings)
+
+## Resend
+- Domain: bali-interns.com (pending verification â€” DNS propagÃ©s)
+- FROM: Charly de Bali Interns <team@bali-interns.com>
