@@ -20,6 +20,7 @@ interface CaseRow {
   status: CaseStatus
   created_at: string
   desired_start_date: string | null
+  intern_first_meeting_date: string | null
   interns: {
     first_name: string
     last_name: string
@@ -152,6 +153,11 @@ export default function CasesPage() {
                       {intern?.main_desired_job ? ` \u00b7 ${intern.main_desired_job}` : ''}
                     </p>
                   </div>
+                  {c.intern_first_meeting_date && (
+                    <span className="text-xs text-blue-500 flex-shrink-0">
+                      📅 {new Date(c.intern_first_meeting_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                    </span>
+                  )}
                   <Badge
                     label={STATUS_LABELS[c.status] ?? c.status}
                     variant={statusToVariant(c.status)}
