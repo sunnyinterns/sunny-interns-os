@@ -325,22 +325,21 @@ export default function CaseDetailPage() {
                 )}
               </div>
               <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                <span className="text-xs text-zinc-500 truncate max-w-[160px]">{email}</span>
                 <a href={`mailto:${email}`}
                   className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-red-50 text-red-600 rounded font-medium hover:bg-red-100 transition-colors"
-                  title="Envoyer un email">
-                  ✉️ Gmail
+                  title={email}>
+                  ✉️ {email}
                 </a>
                 {whatsapp && (
                   <a href={`https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}`}
                     target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-[#25d366]/10 text-[#128c5e] rounded font-medium hover:bg-[#25d366]/20 transition-colors"
-                    title="WhatsApp">
+                    title={whatsapp}>
                     💬 WA
                   </a>
                 )}
-                {phone && (
-                  <span className="text-[10px] text-zinc-400">📞 {phone}</span>
+                {phone && !whatsapp && (
+                  <span className="text-[10px] text-zinc-400" title={phone}>📞 {phone}</span>
                 )}
                 {linkedinUrl && (
                   <a href={linkedinUrl.startsWith('http') ? linkedinUrl : `https://${linkedinUrl}`}
