@@ -66,6 +66,8 @@ export async function GET() {
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
+  const endOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7, 23, 59, 59).toISOString()
 
   const { data: allCases } = await admin
     .from('cases')
@@ -74,9 +76,37 @@ export async function GET() {
     .order('created_at', { ascending: false })
     .limit(2000) as { data: CaseRow[] | null }
 
+  // Fetch leads for stats
+  const { data: allLeads } = await admin
+    .from('leads')
+    .select('id, status, created_at')
+    .not('status', 'eq', 'converted')
+  const leads = allLeads ?? []
+  const leadsToday = leads.filter(l => l.created_at >= startOfToday).length
+  const leadsConverted = allLeads ? allLeads.filter(l => l.status === 'converted').length : 0
+  const totalLeads = leads.length
+  const conversionRate = totalLeads > 0 ? Math.round((leadsConverted / (totalLeads + leadsConverted)) * 100) : 0
+
   const cases = allCases ?? []
   const by = (statuses: string[]) => cases.filter(c => statuses.includes(c.status))
   const conv = (curr: number, prev: number) => prev === 0 ? '—' : `${Math.round((curr / prev) * 100)}%`
+
+  // RDV stats
+  const rdvsThisWeek = cases.filter(c =>
+    c.intern_first_meeting_date &&
+    c.intern_first_meeting_date >= startOfToday &&
+    c.intern_first_meeting_date <= endOfWeek
+  )
+  const upcomingRdvs = cases
+    .filter(c => c.intern_first_meeting_date && c.intern_first_meeting_date >= startOfToday)
+    .sort((a, b) => (a.intern_first_meeting_date! > b.intern_first_meeting_date! ? 1 : -1))
+    .slice(0, 3)
+    .map(toProfile)
+
+  // Pipeline stats
+  const inProgressStatuses = ['rdv_booked', 'qualification_done', 'job_submitted', 'job_retained', 'convention_signed', 'payment_pending', 'payment_received', 'visa_docs_sent', 'visa_submitted', 'visa_in_progress', 'visa_received', 'arrival_prep']
+  const inProgress = cases.filter(c => inProgressStatuses.includes(c.status)).length
+  const completedThisMonth = cases.filter(c => c.status === 'alumni' && c.updated_at >= startOfMonth).length
 
   // ── SECTION 1: LEADS (Candidature → À recontacter) ──────────────────────
   const candidatures = by(['lead'])
@@ -300,5 +330,13 @@ export async function GET() {
     },
   ]
 
-  return NextResponse.json({ sections })
+  return NextResponse.json({
+    sections,
+    meta: {
+      leads: { total: totalLeads, today: leadsToday, conversion_rate: conversionRate },
+      rdvs: { this_week: rdvsThisWeek.length, upcoming: upcomingRdvs },
+      pipeline: { in_progress: inProgress, completed_this_month: completedThisMonth },
+      total_cases: cases.length,
+    },
+  })
 }
