@@ -297,109 +297,83 @@ export default function CaseDetailPage() {
             </div>
           </div>
 
-          {/* Header identité enrichi */}
-          <div className="flex items-center gap-4 py-3">
-            {/* Avatar */}
-            <div className="relative flex-shrink-0">
-              {avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={avatarUrl}
-                  alt={`${firstName} ${lastName}`}
-                  className="w-14 h-14 rounded-full object-cover border-2 border-zinc-100"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden') }}
-                />
-              ) : null}
-              <div className={`w-14 h-14 rounded-full bg-[#c8a96e]/20 flex items-center justify-center text-lg font-bold text-[#c8a96e] flex-shrink-0 ${avatarUrl ? 'hidden' : ''}`}>
-                {getInitials(firstName, lastName)}
+          {/* LIGNE PRINCIPALE: 2 colonnes sur md+, stack sur mobile */}
+          <div className="flex flex-col md:flex-row md:items-center gap-4 pb-3">
+            {/* Colonne gauche: avatar + infos */}
+            <div className="flex items-center gap-3 flex-shrink-0">
+              {/* Avatar */}
+              <div className="relative w-12 h-12 flex-shrink-0">
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={avatarUrl}
+                    alt={`${firstName} ${lastName}`}
+                    className="w-12 h-12 rounded-full object-cover absolute inset-0 border-2 border-zinc-100"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden') }}
+                  />
+                ) : null}
+                <div className={`w-12 h-12 rounded-full bg-[#c8a96e]/20 flex items-center justify-center text-lg font-bold text-[#c8a96e] ${avatarUrl ? 'hidden' : ''}`}>
+                  {getInitials(firstName, lastName)}
+                </div>
+              </div>
+              {/* Infos candidat */}
+              <div>
+                <h1 className="text-base font-bold text-[#1a1918] leading-tight">
+                  {firstName} {lastName}
+                  {age ? <span className="text-sm font-normal text-zinc-400 ml-1">({age} ans)</span> : null}
+                </h1>
+                <p className="text-xs text-zinc-500">{email}</p>
+                {/* Boutons Gmail + WA + LinkedIn */}
+                <div className="flex items-center gap-2 mt-1">
+                  <a href={`mailto:${email}`}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-lg text-xs font-medium transition-colors">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
+                    Email
+                  </a>
+                  {whatsapp && (
+                    <a href={`https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#25d366] text-white rounded-lg text-xs font-bold hover:bg-[#20bd5a] transition-colors">
+                      WA
+                    </a>
+                  )}
+                  {linkedinUrl && (
+                    <a href={linkedinUrl.startsWith('http') ? linkedinUrl : `https://${linkedinUrl}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-colors">
+                      LinkedIn
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Infos principales */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-base font-bold text-[#1a1918] leading-tight">{firstName} {lastName}</h1>
-                {age && <span className="text-xs text-zinc-400 font-medium">{age} ans</span>}
-                {schoolCountry && (
-                  <span className="flex items-center gap-1 text-xs px-2 py-0.5 bg-zinc-100 rounded-full text-zinc-600">
-                    🎓 {schoolCountry}
-                  </span>
+            {/* Colonne droite: timeline (masquée en mode compact) */}
+            <div className={`flex-1 transition-all duration-200 ${headerCompact ? 'hidden' : 'block'}`}>
+              <ProcessTimeline
+                caseId={caseData.id}
+                currentStatus={caseData.status as CaseStatus}
+                onStatusChange={(newStatus: CaseStatus) => {
+                  setCaseData((prev: Record<string,unknown> | null) => prev ? { ...prev, status: newStatus } : prev)
+                }}
+                isVisaOnly={isVisaOnly}
+              />
+              {/* Badge statut actuel + infos clés */}
+              <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+                <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                  style={{ backgroundColor: badge.bg, color: badge.text }}>
+                  {badge.label}
+                </span>
+                {schoolName && (
+                  <span className="text-xs text-zinc-500">🎓 {schoolName}</span>
                 )}
-              </div>
-              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                <a
-                  href={`mailto:${email}`}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 rounded-xl text-xs font-semibold transition-colors shadow-sm"
-                  title={email}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="flex-shrink-0">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                    <polyline points="22,6 12,12 2,6"/>
-                  </svg>
-                  <span className="hidden sm:inline">Email</span>
-                </a>
-                {whatsapp && (
-                  <a
-                    href={`https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#25d366] text-white rounded-xl text-xs font-bold hover:bg-[#20bd5a] transition-colors shadow-sm"
-                    title={whatsapp}
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" className="flex-shrink-0">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                    </svg>
-                    <span className="hidden sm:inline">WhatsApp</span>
-                    <span className="text-[10px] opacity-80 hidden sm:inline">{whatsapp}</span>
-                  </a>
+                {dateDepart && (
+                  <span className="text-xs text-zinc-400">📅 {dateDepart}</span>
                 )}
-                {phone && !whatsapp && (
-                  <span className="text-xs text-zinc-400" title={phone}>📞 {phone}</span>
-                )}
-                {linkedinUrl && (
-                  <a href={linkedinUrl.startsWith('http') ? linkedinUrl : `https://${linkedinUrl}`}
-                    target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-xl text-xs font-semibold hover:bg-blue-100 transition-colors"
-                    title="LinkedIn">
-                    🔗 LinkedIn
-                  </a>
+                {durationMonths && (
+                  <span className="text-xs text-zinc-400">⏱ {durationMonths} mois</span>
                 )}
               </div>
             </div>
-          </div>
-
-          {/* Chronologie — ProcessTimeline compacte dans le header fixe */}
-          <div className="py-2 border-t border-zinc-100">
-            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5">Chronologie</p>
-            <ProcessTimeline
-              caseId={caseData.id}
-              currentStatus={caseData.status as import('@/lib/types').CaseStatus}
-              onStatusChange={(newStatus: CaseStatus) => {
-                setCaseData((prev: Record<string,unknown> | null) => prev ? { ...prev, status: newStatus } : prev)
-              }}
-              isVisaOnly={isVisaOnly}
-            />
-          </div>
-
-          {/* Chips infos clés — masquées en mode compact */}
-          <div className={`flex flex-wrap gap-2 text-xs transition-all duration-200 ${headerCompact ? 'max-h-0 opacity-0 pb-0 overflow-hidden pointer-events-none' : 'max-h-24 opacity-100 pb-3'}`}>
-{/* métier retiré du header */}
-            {schoolName && (
-              <span className="flex items-center gap-1 px-2.5 py-1 bg-zinc-100 rounded-full text-zinc-700">
-                🎓 {schoolName}
-              </span>
-            )}
-            {dateDepart && (
-              <span className="flex items-center gap-1 px-2.5 py-1 bg-zinc-100 rounded-full text-zinc-700">
-                📅 Départ souhaité : {new Date(dateDepart).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
-              </span>
-            )}
-            {durationMonths && (
-              <span className="flex items-center gap-1 px-2.5 py-1 bg-zinc-100 rounded-full text-zinc-700">
-                ⏱ {durationMonths} mois
-              </span>
-            )}
-{/* touchpoint retiré du header */}
           </div>
 
           {/* ── BANDEAU UNIQUE: RDV + Prochaine étape ── */}
@@ -472,7 +446,7 @@ export default function CaseDetailPage() {
       </div>
 
       {/* ── TAB CONTENT ── */}
-      <div ref={scrollContainerRef} className="max-w-5xl mx-auto px-4 sm:px-6 py-6 flex-1 overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex-1 overflow-y-auto w-full pb-20 md:pb-6">
         {/* TabProcess supprimé - changement de statut dans la timeline */}
         {activeTab === 'profil' && (
           <TabProfil
