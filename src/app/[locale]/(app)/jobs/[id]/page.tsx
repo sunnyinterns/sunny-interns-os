@@ -54,9 +54,13 @@ const STATUS_BADGE: Record<string, { bg: string; color: string; label: string }>
 }
 
 const SUB_STATUS: Record<string, { bg: string; color: string; label: string }> = {
+  proposed: { bg: '#f3f4f6', color: '#374151', label: 'Proposé' },
+  sent: { bg: '#fef3c7', color: '#92400e', label: 'CV envoyé' },
   submitted: { bg: '#fef3c7', color: '#92400e', label: 'Soumis' },
+  interview: { bg: '#dbeafe', color: '#1e40af', label: 'Entretien' },
   retained: { bg: '#d1fae5', color: '#065f46', label: 'Retenu' },
   rejected: { bg: '#fee2e2', color: '#991b1b', label: 'Refusé' },
+  cancelled: { bg: '#f3f4f6', color: '#6b7280', label: 'Annulé' },
 }
 
 const inputCls = 'w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm bg-white text-[#1a1918] focus:outline-none focus:ring-2 focus:ring-[#c8a96e]'
@@ -194,7 +198,10 @@ export default function JobDetailPage() {
             </div>
           </div>
           {job.companies?.name && (
-            <div className="text-right">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-xl bg-[#c8a96e]/15 flex items-center justify-center text-sm font-bold text-[#c8a96e] flex-shrink-0">
+                {job.companies.name.charAt(0).toUpperCase()}
+              </div>
               <p className="text-sm font-medium text-[#1a1918]">{job.companies.name}</p>
             </div>
           )}
