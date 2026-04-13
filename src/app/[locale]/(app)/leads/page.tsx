@@ -146,9 +146,9 @@ export default function LeadsPage() {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="px-4 sm:px-6 py-6 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-xl font-bold text-[#1a1918]">Leads</h1>
           <p className="text-sm text-zinc-500 mt-0.5">
@@ -178,7 +178,7 @@ export default function LeadsPage() {
       </div>
 
       {/* Filtres */}
-      <div className="flex gap-1 bg-zinc-100 rounded-xl p-1 mb-5 w-fit">
+      <div className="flex gap-1 bg-zinc-100 rounded-xl p-1 mb-5 w-fit overflow-x-auto max-w-full">
         {filters.map(f => (
           <button
             key={f.key}

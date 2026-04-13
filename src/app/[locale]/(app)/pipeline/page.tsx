@@ -109,9 +109,9 @@ export default function PipelinePage() {
   ).length
 
   return (
-    <div className="flex flex-col h-full p-6 gap-3">
+    <div className="flex flex-col h-full px-4 sm:px-6 py-4 sm:py-6 gap-3">
       {/* Header compact */}
-      <div className="flex items-center justify-between flex-shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0">
         <div>
           <h1 className="text-lg font-semibold text-[#1a1918]">Pipeline</h1>
           <p className="text-[11px] text-[#71717a]">{activeCasesCount} candidats actifs</p>
@@ -161,7 +161,7 @@ export default function PipelinePage() {
       </div>
 
       {/* Search + Filters */}
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
         <div className="relative flex-1 max-w-xs">
           <svg
             width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth={2}
@@ -203,7 +203,7 @@ export default function PipelinePage() {
       </div>
 
       {/* Board */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
         {loading && <PipelineSkeleton />}
         {error && (
           <div className="px-4 py-3 bg-[#fef2f2] border border-red-200 rounded-xl text-[12px] text-[#dc2626]">

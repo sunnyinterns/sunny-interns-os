@@ -111,9 +111,9 @@ export default function ClientsPage() {
   const arrivalDate = (c: ClientRow) => c.actual_start_date ?? c.desired_start_date
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="px-4 sm:px-6 py-6 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div>
           <h1 className="text-xl font-semibold text-[#1a1918]">Dossiers actifs</h1>
           <p className="text-sm text-zinc-500 mt-0.5">{clients.length} clients en cours</p>
@@ -121,7 +121,7 @@ export default function ClientsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
         <input
           type="text"
           placeholder="Rechercher par nom, email..."
@@ -129,10 +129,10 @@ export default function ClientsPage() {
           onChange={(e) => setSearch(e.target.value)}
           className="flex-1 max-w-xs px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white text-[#1a1918] focus:outline-none focus:ring-2 focus:ring-[#c8a96e]/40"
         />
-        <div className="flex gap-1">
+        <div className="flex flex-wrap gap-1 overflow-x-auto">
           <button
             onClick={() => setStatusFilter('all')}
-            className={`px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors ${statusFilter === 'all' ? 'bg-[#1a1918] text-white' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'}`}
+            className={`px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${statusFilter === 'all' ? 'bg-[#1a1918] text-white' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'}`}
           >
             Tous
           </button>
