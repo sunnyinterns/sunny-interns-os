@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { NewCaseModal } from '@/components/cases/NewCaseModal'
 import Link from 'next/link'
-import { TabProcess } from '@/components/cases/tabs/TabProcess'
 import { TabProfil } from '@/components/cases/tabs/TabProfil'
 import { TabStaffing } from '@/components/cases/tabs/TabStaffing'
 import { TabHistorique } from '@/components/cases/tabs/TabHistorique'
@@ -43,7 +42,7 @@ const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> 
 }
 
 const NEXT_ACTIONS: Record<string, { text: string; cta: string | null; action: string | null }> = {
-  lead: { text: 'Booker un RDV de qualification', cta: 'Booker RDV', action: 'process' },
+  lead: { text: 'Booker un RDV de qualification', cta: 'Booker RDV', action: 'profil' },
   rdv_booked: { text: "Faire l'entretien et qualifier", cta: 'Voir Meet', action: 'meet' },
   qualification_done: { text: 'Proposer des offres de stage', cta: 'Proposer job', action: 'jobs' },
   job_submitted: { text: 'Attendre la reponse candidat/employeur', cta: null, action: null },
@@ -71,7 +70,7 @@ function getLinkedinSlug(url: string): string | null {
   return match ? match[1] : null
 }
 
-type TabKey = 'process' | 'profil' | 'staffing' | 'historique'
+type TabKey = 'profil' | 'staffing' | 'historique'
 
 export default function CaseDetailPage() {
   const params = useParams()
@@ -84,7 +83,7 @@ export default function CaseDetailPage() {
   const [caseData, setCaseData] = useState<CaseDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<TabKey>(tabFromUrl ?? 'profil')
+  const [activeTab, setActiveTab] = useState<TabKey>('profil')
   const [headerCompact, setHeaderCompact] = useState(false)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [jobSubmissionsCount, setJobSubmissionsCount] = useState(0)
@@ -213,14 +212,14 @@ export default function CaseDetailPage() {
   const handleCtaClick = () => {
     if (!actionInfo?.action) return
     switch (actionInfo.action) {
-      case 'process':
-        setActiveTab('process')
+      case 'profil':
+        setActiveTab('profil')
         break
       case 'meet':
         if (caseData.google_meet_link) {
           window.open(caseData.google_meet_link, '_blank')
         } else {
-          setActiveTab('process')
+          setActiveTab('profil')
         }
         break
       case 'jobs':
@@ -231,7 +230,6 @@ export default function CaseDetailPage() {
   }
 
   const tabs: { key: TabKey; label: string }[] = [
-    { key: 'process', label: '⚡ Processus' },
     { key: 'profil', label: '👤 Profil' },
     ...(!isClient && !isVisaOnly ? [{ key: 'staffing' as TabKey, label: '💼 Staffing' }] : []),
     { key: 'historique' as TabKey, label: '📋 Historique' },
@@ -489,26 +487,7 @@ export default function CaseDetailPage() {
 
       {/* ── TAB CONTENT ── */}
       <div ref={scrollContainerRef} className="max-w-5xl mx-auto px-4 sm:px-6 py-6 flex-1 overflow-y-auto w-full">
-        {activeTab === 'process' && (
-          <TabProcess
-            caseId={caseData.id}
-            status={caseData.status as CaseStatus}
-            activityFeed={(caseData as any).activity_feed ?? []}
-            isVisaOnly={isVisaOnly}
-            checklist={{
-              billet_avion: (caseData as any).billet_avion ?? null,
-              papiers_visas: (caseData as any).papiers_visas ?? null,
-              visa_recu: (caseData as any).visa_recu ?? null,
-              convention_signee_check: (caseData as any).convention_signee_check ?? null,
-              chauffeur_reserve: (caseData as any).chauffeur_reserve ?? null,
-            }}
-            internEmail={(caseData as any).interns?.email ?? null}
-            paymentAmount={(caseData as any).payment_amount ?? null}
-            caseData={caseData as Record<string, unknown>}
-            onRefresh={fetchCase}
-            onTabChange={(tab: string) => setActiveTab(tab as TabKey)}
-          />
-        )}
+        {/* TabProcess supprimé - changement de statut dans la timeline */}
         {activeTab === 'profil' && (
           <TabProfil
             intern={(caseData as any).interns ?? null}
