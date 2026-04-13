@@ -524,12 +524,12 @@ export default function CaseDetailPage() {
             intern={intern as any}
             caseData={caseData as any}
             desiredStartDate={caseData.desired_start_date ?? null}
-            desiredEndDate={caseData.end_date ?? caseData.actual_end_date ?? null}
+            desiredEndDate={intern.desired_end_date ?? caseData.end_date ?? caseData.actual_end_date ?? null}
             desiredDurationMonths={caseData.desired_duration_months ?? null}
             cvUrl={intern.cv_url ?? null}
             cvLocalUrl={intern.cv_url ?? caseData.local_cv_url ?? null}
             cvFeedback={caseData.cv_feedback ?? null}
-            desiredSectors={intern.desired_sectors ?? caseData.desired_sectors ?? null}
+            desiredSectors={intern.desired_jobs ?? intern.desired_sectors ?? caseData.desired_sectors ?? null}
             qualificationNotes={caseData.qualification_notes ?? null}
             stageIdeal={intern.stage_ideal ?? null}
             spokenLanguages={intern.spoken_languages ?? null}
