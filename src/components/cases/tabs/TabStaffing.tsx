@@ -807,10 +807,17 @@ export function TabStaffing({
                   </button>
                 </div>
                 {cvDisplayUrl && (
-                  <a href={cvDisplayUrl} target="_blank" rel="noopener noreferrer"
-                    className="text-xs text-[#c8a96e] hover:underline flex items-center gap-1">
-                    ↗ Ouvrir dans un nouvel onglet
-                  </a>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <a href={cvDisplayUrl} target="_blank" rel="noopener noreferrer"
+                      className="text-xs text-[#c8a96e] hover:underline flex items-center gap-1 font-medium">
+                      ↗ Ouvrir dans un nouvel onglet
+                    </a>
+                    <span className="text-zinc-200">·</span>
+                    <button onClick={() => setShowCVPopup(true)}
+                      className="text-xs text-zinc-500 hover:text-zinc-700">
+                      🔍 Agrandir
+                    </button>
+                  </div>
                 )}
               </div>
             ) : (
