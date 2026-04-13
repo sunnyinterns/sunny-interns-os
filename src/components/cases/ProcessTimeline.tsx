@@ -18,6 +18,31 @@ const VISA_ONLY_STEPS: { status: CaseStatus; label: string; icon: string }[] = [
   { status: 'archived', label: 'Archivé', icon: '📦' },
 ]
 
+const ALL_STATUSES: { value: string; label: string }[] = [
+  { value: 'lead', label: '📋 Demande' },
+  { value: 'rdv_booked', label: '📅 RDV Booké' },
+  { value: 'qualification_done', label: '✅ Qualifié' },
+  { value: 'job_submitted', label: '💼 Jobs proposés' },
+  { value: 'job_retained', label: '🤝 Job retenu' },
+  { value: 'convention_signed', label: '📄 Convention signée' },
+  { value: 'payment_pending', label: '💰 Paiement en attente' },
+  { value: 'payment_received', label: '💵 Payé' },
+  { value: 'visa_docs_sent', label: '📑 Docs visa envoyés' },
+  { value: 'visa_submitted', label: '🛂 Visa soumis' },
+  { value: 'visa_in_progress', label: '⏳ Visa en cours' },
+  { value: 'visa_received', label: '🎉 Visa reçu' },
+  { value: 'arrival_prep', label: '✈️ Départ imminent' },
+  { value: 'active', label: '🌴 En stage' },
+  { value: 'alumni', label: '🎓 Alumni' },
+  { value: 'completed', label: '🏁 Terminé' },
+  { value: 'not_interested', label: '👋 Pas intéressé' },
+  { value: 'not_qualified', label: '❌ Non qualifié' },
+  { value: 'on_hold', label: '⏸️ En attente' },
+  { value: 'suspended', label: '🚫 Suspendu' },
+  { value: 'visa_refused', label: '🚷 Visa refusé' },
+  { value: 'archived', label: '📦 Archivé' },
+]
+
 interface ProcessTimelineProps {
   caseId: string
   currentStatus: CaseStatus
@@ -27,14 +52,14 @@ interface ProcessTimelineProps {
 
 export function ProcessTimeline({ caseId, currentStatus, onStatusChange, isVisaOnly }: ProcessTimelineProps) {
   const [updating, setUpdating] = useState(false)
-  const [showEditPopup, setShowEditPopup] = useState(false)
+  const [showStatusModal, setShowStatusModal] = useState(false)
   const steps = isVisaOnly ? VISA_ONLY_STEPS : CANDIDATE_STEPS
   const currentIndex = steps.findIndex((s) => s.status === currentStatus)
 
-  async function handleStatusChange(status: CaseStatus) {
+  async function handleStatusChange(status: string) {
     if (updating) return
     setUpdating(true)
-    setShowEditPopup(false)
+    setShowStatusModal(false)
     try {
       const res = await fetch(`/api/cases/${caseId}/status`, {
         method: 'PATCH',
@@ -42,7 +67,7 @@ export function ProcessTimeline({ caseId, currentStatus, onStatusChange, isVisaO
         body: JSON.stringify({ status }),
       })
       if (res.ok) {
-        onStatusChange?.(status)
+        onStatusChange?.(status as CaseStatus)
       }
     } catch {
       // silent fail
@@ -57,11 +82,10 @@ export function ProcessTimeline({ caseId, currentStatus, onStatusChange, isVisaO
         {steps.map((step, index) => {
           const isPast = index < currentIndex
           const isCurrent = index === currentIndex
-          const isFuture = index > currentIndex
 
           return (
             <div key={step.status} className="flex items-center">
-              {/* Step node — non cliquable */}
+              {/* Step node — visuel seulement */}
               <div className="flex flex-col items-center gap-1 px-2">
                 <div
                   className={[
@@ -106,57 +130,46 @@ export function ProcessTimeline({ caseId, currentStatus, onStatusChange, isVisaO
           )
         })}
 
-        {/* Bouton edit */}
-        <div className="relative ml-2 -mt-4">
-          <button
-            onClick={() => setShowEditPopup(!showEditPopup)}
-            disabled={updating}
-            className="w-6 h-6 rounded-full bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-xs text-zinc-500 transition-colors disabled:opacity-50"
-            title="Modifier le statut manuellement"
-          >
-            ✏️
-          </button>
-
-          {/* Popup de confirmation + sélection statut */}
-          {showEditPopup && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowEditPopup(false)} />
-              <div className="absolute right-0 top-8 z-50 bg-white border border-zinc-200 rounded-xl shadow-xl p-4 w-72">
-                <div className="flex items-start gap-2 mb-3 pb-3 border-b border-zinc-100">
-                  <span className="text-base">⚠️</span>
-                  <p className="text-xs text-zinc-600 leading-relaxed">
-                    Modifier le statut manuellement peut déclencher des automatisations (emails, notifications). Êtes-vous sûr ?
-                  </p>
-                </div>
-                <div className="space-y-1.5">
-                  {steps.map((step, index) => (
-                    <button
-                      key={step.status}
-                      disabled={index === currentIndex || updating}
-                      onClick={() => void handleStatusChange(step.status)}
-                      className={`w-full text-left text-xs px-3 py-2 rounded-lg transition-colors flex items-center gap-2 ${
-                        index === currentIndex
-                          ? 'bg-[#c8a96e]/10 text-[#c8a96e] font-semibold cursor-default'
-                          : 'hover:bg-zinc-50 text-zinc-700'
-                      }`}
-                    >
-                      <span>{step.icon}</span>
-                      <span>{step.label}</span>
-                      {index === currentIndex && <span className="ml-auto text-[10px] text-[#c8a96e]">actuel</span>}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  onClick={() => setShowEditPopup(false)}
-                  className="w-full mt-3 pt-2 border-t border-zinc-100 text-xs text-zinc-400 hover:text-zinc-600 text-center"
-                >
-                  Annuler
-                </button>
-              </div>
-            </>
-          )}
-        </div>
+        {/* Bouton edit — ouvre modal avec tous les statuts */}
+        <button
+          onClick={() => setShowStatusModal(true)}
+          disabled={updating}
+          className="ml-2 -mt-4 text-xs flex items-center gap-1 px-2.5 py-1 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 rounded-lg transition-colors flex-shrink-0 disabled:opacity-50"
+          title="Modifier le statut manuellement"
+        >
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+          </svg>
+          ✏️
+        </button>
       </div>
+
+      {/* Modal changement de statut — tous les statuts */}
+      {showStatusModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setShowStatusModal(false)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="font-bold text-base mb-1">Modifier le statut</h3>
+            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+              ⚠️ Modifier le statut manuellement peut déclencher des automatisations (emails, notifications). Agis avec précaution.
+            </p>
+            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+              {ALL_STATUSES.map(s => (
+                <button key={s.value}
+                  onClick={() => { void handleStatusChange(s.value) }}
+                  disabled={s.value === currentStatus}
+                  className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                    s.value === currentStatus
+                      ? 'bg-[#c8a96e] text-white cursor-default'
+                      : 'bg-zinc-50 text-zinc-700 hover:bg-zinc-100'
+                  }`}>
+                  {s.value === currentStatus ? '● ' : ''}{s.label}
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setShowStatusModal(false)} className="mt-4 w-full py-2 text-sm text-zinc-400 hover:text-zinc-600">Annuler</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -187,7 +187,7 @@ export default function CaseDetailPage() {
   const age = birthDate ? Math.floor((Date.now() - new Date(birthDate).getTime()) / (365.25 * 24 * 3600 * 1000)) : null
   const linkedinSlug = getLinkedinSlug(linkedinUrl)
   const avatarUrl = intern.avatar_url ?? (linkedinSlug ? `https://unavatar.io/linkedin/${linkedinSlug}` : null)
-  const schoolName = caseData.schools?.name ?? intern.school_country ?? ''
+  const schoolName = caseData.schools?.name ?? intern.school_name ?? ''
   const mainJob = intern.main_desired_job ?? ''
   const touchpoint = intern.touchpoint ?? ''
   const departDate = caseData.actual_start_date ?? caseData.desired_start_date
@@ -381,38 +381,6 @@ export default function CaseDetailPage() {
             />
           </div>
 
-          {/* RDV 1er entretien — masqué en mode compact */}
-          {!headerCompact && (caseData.intern_first_meeting_date || caseData.google_calendar_event_id) && (
-            <div className="mb-3 flex flex-wrap items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
-              <span>📅</span>
-              {caseData.intern_first_meeting_date ? (() => {
-                const rdvDate = new Date(caseData.intern_first_meeting_date)
-                const daysUntil = Math.ceil((rdvDate.getTime() - Date.now()) / (1000 * 3600 * 24))
-                const daysLabel = daysUntil === 0 ? "aujourd'hui" : daysUntil === 1 ? 'demain' : daysUntil > 0 ? `dans ${daysUntil} jours` : `il y a ${Math.abs(daysUntil)}j`
-                return (
-                  <span className="font-medium">
-                    1er entretien : {rdvDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à {rdvDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })} WITA
-                    <span className="ml-2 px-1.5 py-0.5 bg-blue-200 text-blue-800 rounded text-[10px] font-bold">{daysLabel}</span>
-                  </span>
-                )
-              })() : (
-                <span className="font-medium">1er entretien planifié (date à synchroniser)</span>
-              )}
-              {caseData.google_meet_link && (
-                <a href={caseData.google_meet_link} target="_blank" rel="noopener noreferrer"
-                  className="ml-1 px-2 py-0.5 bg-[#1a73e8] text-white rounded text-[10px] font-semibold hover:bg-[#1557b0]">
-                  Meet
-                </a>
-              )}
-              {caseData.google_meet_cancel_link && (
-                <a href={caseData.google_meet_cancel_link} target="_blank" rel="noopener noreferrer"
-                  className="ml-1 text-[10px] text-blue-400 hover:underline">
-                  Annuler/Reprog
-                </a>
-              )}
-            </div>
-          )}
-
           {/* Chips infos clés — masquées en mode compact */}
           <div className={`flex flex-wrap gap-2 text-xs transition-all duration-200 ${headerCompact ? 'max-h-0 opacity-0 pb-0 overflow-hidden pointer-events-none' : 'max-h-24 opacity-100 pb-3'}`}>
 {/* métier retiré du header */}
@@ -434,21 +402,39 @@ export default function CaseDetailPage() {
 {/* touchpoint retiré du header */}
           </div>
 
-          {/* Next action card — masquée en mode compact */}
-          {actionInfo && (
-            <div className={`px-4 py-3 bg-[#0d9e75]/10 border border-[#0d9e75]/20 rounded-xl flex items-center justify-between transition-all duration-200 ${headerCompact ? 'max-h-0 opacity-0 mb-0 overflow-hidden py-0 px-0 border-0 pointer-events-none' : 'max-h-24 opacity-100 mb-3'}`}>
-              <div>
-                <p className="text-xs font-semibold text-[#0d9e75] uppercase tracking-wide mb-0.5">Prochaine étape</p>
-                <p className="text-sm font-medium text-[#1a1918]">{actionInfo.text}</p>
+          {/* ── BANDEAU UNIQUE: RDV + Prochaine étape ── */}
+          {(actionInfo || caseData.intern_first_meeting_date || caseData.google_meet_link) && (
+            <div className={`mb-3 px-4 py-3 border rounded-xl flex flex-wrap items-center justify-between gap-2 transition-all duration-200 ${
+              headerCompact ? 'max-h-0 opacity-0 overflow-hidden py-0 px-0 border-0' : 'max-h-32 opacity-100'
+            } ${caseData.intern_first_meeting_date ? 'bg-blue-50 border-blue-200' : 'bg-[#0d9e75]/10 border-[#0d9e75]/20'}`}>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5 text-zinc-400">Prochaine étape</p>
+                {caseData.intern_first_meeting_date ? (
+                  <>
+                    <p className="text-sm font-bold text-[#1a1918]">
+                      📅 Entretien : {new Date(caseData.intern_first_meeting_date).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' })} à {new Date(caseData.intern_first_meeting_date).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', timeZone:'Asia/Jakarta' })} WITA
+                      {(() => { const d = Math.ceil((new Date(caseData.intern_first_meeting_date).getTime() - Date.now()) / 86400000); return d >= 0 ? <span className="ml-2 text-xs text-blue-600 font-semibold">{d === 0 ? "aujourd'hui" : d === 1 ? 'demain' : `dans ${d}j`}</span> : null })()}
+                    </p>
+                    <p className="text-xs text-zinc-500 mt-0.5">Mener l&apos;entretien et qualifier le candidat dans l&apos;onglet Staffing</p>
+                  </>
+                ) : actionInfo ? (
+                  <p className="text-sm font-medium text-[#1a1918]">{actionInfo.text}</p>
+                ) : null}
               </div>
-              {actionInfo.cta && (
-                <button
-                  onClick={handleCtaClick}
-                  className="flex-shrink-0 px-3 py-1.5 bg-[#0d9e75] text-white text-xs font-semibold rounded-lg hover:bg-[#0a8a65] transition-colors"
-                >
-                  {actionInfo.cta}
-                </button>
-              )}
+              <div className="flex gap-2 flex-shrink-0">
+                {caseData.google_meet_link && (
+                  <a href={caseData.google_meet_link} target="_blank" rel="noopener noreferrer"
+                    className="px-3 py-1.5 bg-[#1a73e8] text-white text-xs font-bold rounded-lg hover:bg-[#1557b0]">
+                    Meet →
+                  </a>
+                )}
+                {actionInfo?.cta && !caseData.intern_first_meeting_date && (
+                  <button onClick={handleCtaClick}
+                    className="px-3 py-1.5 bg-[#0d9e75] text-white text-xs font-bold rounded-lg hover:bg-emerald-600">
+                    {actionInfo.cta} →
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -494,6 +480,7 @@ export default function CaseDetailPage() {
             internId={(caseData as any).interns?.id ?? null}
             caseId={caseData.id}
             schoolName={schoolName}
+            schoolId={caseData.school_id ?? null}
             desiredStartDate={(caseData as any).desired_start_date ?? null}
             desiredEndDate={(caseData as any).actual_end_date ?? (caseData as any).interns?.desired_end_date ?? null}
             desiredDurationMonths={(caseData as any).desired_duration_months ?? null}
