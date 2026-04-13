@@ -41,10 +41,14 @@ interface PortalData {
   flight_arrival_time_local?: string | null
   flight_last_stopover?: string | null
   desired_start_date?: string | null
+  desired_duration_months?: number | null
   visa_submitted_to_agent_at?: string | null
   payment_amount?: number | null
   invoice_number?: string | null
   discount_percentage?: number | null
+  intern_first_meeting_date?: string | null
+  intern_first_meeting_link?: string | null
+  intern_first_meeting_reschedule_link?: string | null
   interns?: {
     first_name?: string | null
     last_name?: string | null
@@ -54,6 +58,7 @@ interface PortalData {
     bank_statement_url?: string | null
     return_plane_ticket_url?: string | null
     cv_url?: string | null
+    desired_sectors?: string[] | null
   } | null
   job_submissions?: Array<{
     id: string
@@ -93,6 +98,60 @@ function monthsDiff(start: string, end: string) {
 
 function daysSince(date: string) {
   return Math.floor((Date.now() - new Date(date).getTime()) / 86400000)
+}
+
+function CVUploadSection({ token }: { token: string }) {
+  const [file, setFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [done, setDone] = useState(false)
+
+  async function handleUpload() {
+    if (!file) return
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch(`/api/portal/${token}/upload-cv`, { method: 'POST', body: fd })
+      if (res.ok) setDone(true)
+    } catch { /* ignore */ }
+    finally { setUploading(false) }
+  }
+
+  return (
+    <div style={{ background: '#fef9ee', border: '1px solid #fde68a', borderRadius: 12, padding: 16, marginBottom: 24 }}>
+      <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 4 }}>
+        Mise à jour CV demandée
+      </h2>
+      <p style={{ fontSize: 12, color: '#92400e', marginBottom: 12 }}>
+        Notre équipe a besoin d&apos;une nouvelle version de ton CV.
+      </p>
+      {done ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
+          <span style={{ fontSize: 14 }}>✅</span>
+          <span style={{ fontSize: 13, color: '#065f46', fontWeight: 600 }}>CV envoyé avec succès !</span>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <input
+            type="file"
+            accept=".pdf,.doc,.docx"
+            onChange={e => setFile(e.target.files?.[0] ?? null)}
+            style={{ fontSize: 13 }}
+          />
+          <button
+            onClick={() => void handleUpload()}
+            disabled={!file || uploading}
+            style={{
+              padding: '10px 16px', background: file && !uploading ? '#c8a96e' : '#d1d5db',
+              color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700,
+              cursor: file && !uploading ? 'pointer' : 'not-allowed',
+            }}>
+            {uploading ? 'Envoi en cours…' : 'Envoyer mon CV'}
+          </button>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function PortalPage() {
@@ -197,6 +256,42 @@ export default function PortalPage() {
           <div style={{ height: '100%', width: `${((currentStep - 1) / 7) * 100}%`, background: 'linear-gradient(90deg, #c8a96e, #d4b87a)', transition: 'width 0.6s ease', borderRadius: 3 }} />
         </div>
       </div>
+
+      {/* Ton RDV */}
+      {data.intern_first_meeting_date && (
+        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>📅 Ton entretien</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 13, color: '#6b7280' }}>Date et heure</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1918' }}>
+                {new Date(data.intern_first_meeting_date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                {' '}
+                {new Date(data.intern_first_meeting_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })} WITA
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              {data.intern_first_meeting_link && (
+                <a href={data.intern_first_meeting_link} target="_blank" rel="noopener noreferrer"
+                  style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: '#1a73e8', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+                  Rejoindre Google Meet
+                </a>
+              )}
+              {data.intern_first_meeting_reschedule_link && (
+                <a href={data.intern_first_meeting_reschedule_link} target="_blank" rel="noopener noreferrer"
+                  style={{ flex: 1, textAlign: 'center', padding: '10px 16px', background: '#f3f4f6', color: '#6b7280', borderRadius: 8, fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
+                  Reprogrammer
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload CV demandé */}
+      {data.cv_revision_requested && (
+        <CVUploadSection token={token} />
+      )}
 
       {/* Actions requises */}
       {pendingActions.length > 0 && (
