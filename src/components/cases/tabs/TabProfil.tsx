@@ -51,7 +51,7 @@ interface InternData {
 }
 
 interface TabProfilProps {
-  intern: (InternData & { local_cv_url?: string | null; intern_level_notes?: string | null; english_level?: string | null; education_level?: string | null }) | null
+  intern: (InternData & { local_cv_url?: string | null; intern_level_notes?: string | null; english_level?: string | null; education_level?: string | null; school_country?: string | null; phone?: string | null }) | null
   arrivalDate?: string | null
   internId?: string | null
   caseId?: string | null
@@ -446,26 +446,14 @@ const DURATION_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
   label: `${i + 1} mois`,
 }))
 
-export function TabProfil({ intern, internId, caseId, schoolName, desiredStartDate, desiredEndDate, desiredDurationMonths, qualificationNotes, desiredSectors, cvFeedback }: TabProfilProps) {
+export function TabProfil({ intern, internId, caseId, schoolName, qualificationNotes }: TabProfilProps) {
   if (!intern) {
     return <p className="text-sm text-zinc-400">Aucun profil associé</p>
   }
 
   const iid = internId ?? intern.id
-  const cvUrl = intern.cv_url ?? null
-  const localCvUrl = (intern as { local_cv_url?: string | null }).local_cv_url ?? null
-
-  async function saveCaseField(field: string, value: string) {
-    if (!caseId) return
-    try {
-      await fetch(`/api/cases/${caseId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [field]: value || null }),
-      })
-      showToast()
-    } catch { /* ignore */ }
-  }
+  const birthDate = intern.birth_date ?? null
+  const age = birthDate ? Math.floor((Date.now() - new Date(birthDate).getTime()) / (365.25 * 24 * 3600 * 1000)) : null
 
   return (
     <div className="space-y-4">
@@ -478,79 +466,53 @@ export function TabProfil({ intern, internId, caseId, schoolName, desiredStartDa
 
       <p className="text-xs text-zinc-400">Cliquer sur un champ pour l&apos;éditer.</p>
 
-      {/* SECTION 1 — CV (priorité) */}
-      <div className="bg-white border border-zinc-200 rounded-xl">
-        <div className="px-4 py-3 border-b border-zinc-100 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span>📄</span>
-            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider">CV</h3>
-          </div>
-          {caseId && (
-            <a href={`/fr/cases/${caseId}/cv-versions`} className="text-xs text-[#c8a96e] hover:underline">
-              Historique versions →
-            </a>
-          )}
-        </div>
-        <div className="px-4 py-4">
-          {cvUrl || localCvUrl ? (
-            <div className="flex flex-wrap gap-2">
-              {localCvUrl && (
-                <a href={localCvUrl} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2.5 bg-[#c8a96e] text-white rounded-xl hover:bg-[#b8945a] font-semibold text-sm transition-colors">
-                  📄 CV mis à jour
-                </a>
-              )}
-              {cvUrl && (
-                <a href={cvUrl} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2.5 bg-zinc-100 text-zinc-700 rounded-xl hover:bg-zinc-200 font-medium text-sm transition-colors">
-                  📄 CV original
-                </a>
-              )}
-            </div>
-          ) : (
-            <p className="text-sm text-zinc-400 text-center py-2">Aucun CV déposé</p>
-          )}
-          <div className="mt-3">
-            <p className="text-xs text-zinc-400 mb-1">Commentaire sur le CV</p>
-            <textarea
-              defaultValue={cvFeedback ?? ''}
-              onBlur={(e) => void saveCaseField('cv_feedback', e.target.value)}
-              placeholder="Commentaires, retours, demandes de modifications..."
-              rows={2}
-              className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#c8a96e]"
-            />
-          </div>
-
-        </div>
-      </div>
-
-      {/* SECTION 2 — Identité */}
-      <Section title="Identité">
-        <EditableField label="Prénom" value={intern.first_name} fieldKey="first_name" internId={iid} caseId={caseId} />
-        <EditableField label="Nom" value={intern.last_name} fieldKey="last_name" internId={iid} caseId={caseId} />
-        <EditableField label="Email" value={intern.email} fieldKey="email" internId={iid} caseId={caseId} type="email" />
-        <EditableField label="WhatsApp" value={intern.whatsapp} fieldKey="whatsapp" internId={iid} caseId={caseId} />
-        <EditableField label="LinkedIn" value={intern.linkedin_url} fieldKey="linkedin_url" internId={iid} caseId={caseId} type="url" />
-        <EditableField label="Nationalité(s)" value={intern.nationality} fieldKey="nationality" internId={iid} caseId={caseId} />
+      {/* SECTION 1 — Identité */}
+      <Section title="🪪 Identité">
         <EditableField label="Date de naissance" value={intern.birth_date} fieldKey="birth_date" internId={iid} caseId={caseId} type="date" />
+        {age !== null && (
+          <EditableField label="Âge" value={`${age} ans`} fieldKey="age" readonly />
+        )}
+        <EditableField label="Nationalité(s)" value={intern.nationality} fieldKey="nationality" internId={iid} caseId={caseId} />
+        <SelectField
+          label="Genre"
+          value={intern.gender ?? intern.sexe}
+          fieldKey="gender"
+          internId={iid}
+          caseId={caseId}
+          target="intern"
+          options={[
+            { value: 'male', label: 'Homme' },
+            { value: 'female', label: 'Femme' },
+            { value: 'other', label: 'Autre' },
+          ]}
+        />
+        <EditableField label="Contact urgence (nom)" value={intern.emergency_contact_name} fieldKey="emergency_contact_name" internId={iid} caseId={caseId} />
+        <EditableField label="Contact urgence (tél)" value={intern.emergency_contact_phone} fieldKey="emergency_contact_phone" internId={iid} caseId={caseId} />
+        <EditableField
+          label="Passeport"
+          value={intern.passport_number ? `${intern.passport_number}${intern.passport_expiry ? ` — exp. ${new Date(intern.passport_expiry).toLocaleDateString('fr-FR')}` : ''}` : null}
+          fieldKey="passport_number"
+          readonly
+          badge={
+            caseId ? (
+              <a href={`?tab=visa`} className="text-[10px] text-[#c8a96e] hover:underline ml-1">→ Voir onglet Visa</a>
+            ) : undefined
+          }
+        />
       </Section>
 
-      {/* SECTION 3 — Stage recherché */}
-      <Section title="Stage recherché">
-        <EditableField label="Métier principal" value={intern.main_desired_job} fieldKey="main_desired_job" internId={iid} caseId={caseId} />
-        {desiredSectors && desiredSectors.length > 0 && (
-          <div className="flex flex-col gap-1 py-2.5 border-b border-zinc-50">
-            <span className="text-[11px] text-zinc-400 font-medium">Secteurs désirés</span>
-            <div className="flex flex-wrap gap-1.5">
-              {desiredSectors.map((s, i) => (
-                <span key={i} className="px-2 py-0.5 text-xs font-medium bg-[#c8a96e]/10 text-[#8a6a2a] rounded-full">
-                  {s}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+      {/* SECTION 2 — Réseaux & Contact */}
+      <Section title="🌐 Réseaux & Contact">
+        <EditableField label="LinkedIn" value={intern.linkedin_url} fieldKey="linkedin_url" internId={iid} caseId={caseId} type="url" />
+        <EditableField label="WhatsApp" value={intern.whatsapp} fieldKey="whatsapp" internId={iid} caseId={caseId} />
+        <EditableField label="Téléphone" value={(intern as Record<string, unknown>).phone as string | undefined} fieldKey="phone" internId={iid} caseId={caseId} />
+        <EditableField label="Email" value={intern.email} fieldKey="email" internId={iid} caseId={caseId} type="email" />
+      </Section>
+
+      {/* SECTION 3 — Formation */}
+      <Section title="🎓 Formation">
         <EditableField label="École" value={schoolName} fieldKey="school_name" readonly />
+        <EditableField label="Pays d'études" value={intern.school_contact_name ? undefined : (intern as Record<string, unknown>).school_country as string | undefined} fieldKey="school_country" internId={iid} caseId={caseId} />
         <EditableField label="Niveau d'études" value={intern.intern_level} fieldKey="intern_level" internId={iid} caseId={caseId} />
         <EditableField
           label="Formation / Diplôme"
@@ -567,31 +529,8 @@ export function TabProfil({ intern, internId, caseId, schoolName, desiredStartDa
           caseId={caseId}
           type="textarea"
         />
-        <SelectField label="Durée souhaitée" value={desiredDurationMonths ? String(desiredDurationMonths) : ''} fieldKey="desired_duration_months" caseId={caseId} target="case" options={DURATION_OPTIONS} />
-        <EditableField label="Date de démarrage" value={desiredStartDate} fieldKey="desired_start_date" caseId={caseId} target="case" type="date" />
-        <EditableField label="Date de fin souhaitée" value={desiredEndDate ?? intern.desired_end_date} fieldKey="desired_end_date" internId={iid} caseId={caseId} type="date" />
-        <EditableField label="Stage idéal" value={intern.stage_ideal} fieldKey="stage_ideal" internId={iid} caseId={caseId} type="textarea" />
-        <LanguageChips label="Langues parlées" values={intern.spoken_languages} internId={iid} caseId={caseId} />
-        <EditableField
-          label="Niveau anglais"
-          value={(intern as { english_level?: string | null }).english_level}
-          fieldKey="english_level"
-          internId={iid}
-          caseId={caseId}
-        />
-        <EditableField label="Source / Touchpoint" value={intern.touchpoint} fieldKey="touchpoint" internId={iid} caseId={caseId} />
-      </Section>
-
-      {/* SECTION 4 — Commentaire pour l'employeur */}
-      <Section title="Commentaire pour l'employeur">
-        <EditableField
-          label="Ce texte sera joint à l'envoi du profil à l'employeur"
-          value={intern.private_comment_for_employer}
-          fieldKey="private_comment_for_employer"
-          internId={iid}
-          caseId={caseId}
-          type="textarea"
-        />
+        <EditableField label="Responsable pédagogique" value={intern.school_contact_name} fieldKey="school_contact_name" internId={iid} caseId={caseId} />
+        <EditableField label="Email responsable" value={intern.school_contact_email} fieldKey="school_contact_email" internId={iid} caseId={caseId} type="email" />
       </Section>
     </div>
   )
