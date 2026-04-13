@@ -64,107 +64,6 @@ interface TabProfilProps {
   cvFeedback?: string | null
 }
 
-function InterviewSummary({
-  intern,
-  caseId,
-  schoolName,
-  qualificationNotes,
-}: {
-  intern: InternData & { local_cv_url?: string | null }
-  caseId?: string | null
-  schoolName?: string | null
-  qualificationNotes?: string | null
-}) {
-  const [notes, setNotes] = useState(qualificationNotes ?? '')
-  const [savingNotes, setSavingNotes] = useState(false)
-  const initials = `${(intern.first_name?.[0] ?? '').toUpperCase()}${(intern.last_name?.[0] ?? '').toUpperCase()}`
-  const fullName = `${intern.first_name ?? ''} ${intern.last_name ?? ''}`.trim() || '—'
-  const cvUrl = intern.local_cv_url ?? intern.cv_url ?? null
-  const mainLang = intern.spoken_languages?.[0]
-
-  async function saveNotes() {
-    if (!caseId || notes === (qualificationNotes ?? '')) return
-    setSavingNotes(true)
-    try {
-      await fetch(`/api/cases/${caseId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ qualification_notes: notes || null }),
-      })
-      showToast()
-    } finally {
-      setSavingNotes(false)
-    }
-  }
-
-  return (
-    <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-4">
-      <div className="flex items-start gap-4 flex-wrap">
-        <div className="w-16 h-16 rounded-full bg-[#c8a96e] flex items-center justify-center flex-shrink-0">
-          <span className="text-white text-xl font-bold">{initials || '?'}</span>
-        </div>
-        <div className="flex-1 min-w-[200px]">
-          <h2 className="text-2xl font-bold text-[#1a1918] leading-tight">{fullName}</h2>
-          <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-600">
-            {intern.email && <a href={`mailto:${intern.email}`} className="hover:text-[#c8a96e]">✉ {intern.email}</a>}
-            {intern.whatsapp && <a href={`https://wa.me/${intern.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-[#c8a96e]">📱 {intern.whatsapp}</a>}
-          </div>
-        </div>
-        {cvUrl && (
-          <a
-            href={cvUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2.5 bg-[#0d9e75] hover:bg-[#0a8a65] text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
-          >
-            📄 Voir le CV
-          </a>
-        )}
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {intern.main_desired_job && (
-          <span className="px-2.5 py-1 text-xs font-medium bg-[#c8a96e]/10 text-[#8a6a2a] rounded-full">💼 {intern.main_desired_job}</span>
-        )}
-        {schoolName && (
-          <span className="px-2.5 py-1 text-xs font-medium bg-zinc-100 text-zinc-700 rounded-full">🎓 {schoolName}</span>
-        )}
-        {intern.nationality && (
-          <span className="px-2.5 py-1 text-xs font-medium bg-zinc-100 text-zinc-700 rounded-full">🌍 {intern.nationality}</span>
-        )}
-        {mainLang && (
-          <span className="px-2.5 py-1 text-xs font-medium bg-zinc-100 text-zinc-700 rounded-full">🗣 {mainLang}</span>
-        )}
-        {intern.touchpoint && (
-          <span className="px-2.5 py-1 text-xs font-medium bg-zinc-100 text-zinc-700 rounded-full">🔗 {intern.touchpoint}</span>
-        )}
-      </div>
-
-      {intern.stage_ideal && (
-        <div className="pt-3 border-t border-zinc-50">
-          <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-1">Stage idéal</p>
-          <p className="text-sm text-[#1a1918] whitespace-pre-wrap">{intern.stage_ideal}</p>
-        </div>
-      )}
-
-      <div className="pt-3 border-t border-zinc-50">
-        <div className="flex items-center justify-between mb-1.5">
-          <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Notes de l&apos;entretien</p>
-          {savingNotes && <span className="text-xs text-zinc-400">Sauvegarde…</span>}
-        </div>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          onBlur={() => { void saveNotes() }}
-          placeholder="Notes pendant l'entretien — motivations, points forts, points d'attention, secteur cible…"
-          rows={5}
-          className="w-full px-3 py-2.5 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e] resize-y"
-        />
-      </div>
-    </div>
-  )
-}
-
 const FIELD_LABELS: Record<string, string> = {
   email: 'Email', whatsapp: 'WhatsApp', gender: 'Genre', sexe: 'Genre',
   birth_date: 'Date de naissance', nationality: 'Nationalité',
@@ -446,7 +345,7 @@ const DURATION_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
   label: `${i + 1} mois`,
 }))
 
-export function TabProfil({ intern, internId, caseId, schoolName, qualificationNotes }: TabProfilProps) {
+export function TabProfil({ intern, internId, caseId, schoolName }: TabProfilProps) {
   if (!intern) {
     return <p className="text-sm text-zinc-400">Aucun profil associé</p>
   }
@@ -457,13 +356,6 @@ export function TabProfil({ intern, internId, caseId, schoolName, qualificationN
 
   return (
     <div className="space-y-4">
-      <InterviewSummary
-        intern={intern}
-        caseId={caseId}
-        schoolName={schoolName}
-        qualificationNotes={qualificationNotes}
-      />
-
       <p className="text-xs text-zinc-400">Cliquer sur un champ pour l&apos;éditer.</p>
 
       {/* SECTION 1 — Identité */}
@@ -503,7 +395,18 @@ export function TabProfil({ intern, internId, caseId, schoolName, qualificationN
 
       {/* SECTION 2 — Réseaux & Contact */}
       <Section title="🌐 Réseaux & Contact">
-        <EditableField label="LinkedIn" value={intern.linkedin_url} fieldKey="linkedin_url" internId={iid} caseId={caseId} type="url" />
+        {intern.linkedin_url ? (
+          <div className="flex items-center gap-2 py-2.5 border-b border-zinc-50">
+            <span className="text-[11px] text-zinc-400 font-medium w-32 flex-shrink-0">LinkedIn</span>
+            <a href={intern.linkedin_url.startsWith('http') ? intern.linkedin_url : `https://linkedin.com/in/${intern.linkedin_url}`}
+              target="_blank" rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:underline truncate">
+              {intern.linkedin_url}
+            </a>
+          </div>
+        ) : (
+          <EditableField label="LinkedIn" value={intern.linkedin_url} fieldKey="linkedin_url" internId={iid} caseId={caseId} type="url" />
+        )}
         <EditableField label="WhatsApp" value={intern.whatsapp} fieldKey="whatsapp" internId={iid} caseId={caseId} />
         <EditableField label="Téléphone" value={(intern as Record<string, unknown>).phone as string | undefined} fieldKey="phone" internId={iid} caseId={caseId} />
         <EditableField label="Email" value={intern.email} fieldKey="email" internId={iid} caseId={caseId} type="email" />
