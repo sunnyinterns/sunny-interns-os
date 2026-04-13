@@ -88,6 +88,28 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       }
     }
 
+    // Activity logging for status change
+    if (body.status && existingCase && body.status !== (existingCase as Record<string, unknown>).status) {
+      await logActivity({
+        caseId: id,
+        type: 'status_changed',
+        title: `Statut modifié → ${body.status}`,
+        description: `Le dossier est passé au statut ${body.status}`,
+        metadata: { old_status: (existingCase as Record<string, unknown>).status, new_status: body.status },
+      })
+    }
+
+    // Activity logging for CV status change
+    if (body.cv_status && existingCase && body.cv_status !== (existingCase as Record<string, unknown>).cv_status) {
+      await logActivity({
+        caseId: id,
+        type: 'cv_status_changed',
+        title: `CV ${body.cv_status === 'validated' ? 'validé' : body.cv_status === 'to_redo' ? 'à refaire' : String(body.cv_status)}`,
+        description: `Statut CV mis à jour : ${body.cv_status}`,
+        metadata: { cv_status: body.cv_status },
+      })
+    }
+
     // Activity logging for key field changes
     if (body.payment_date || body.status === 'payment_received') {
       await logActivity({

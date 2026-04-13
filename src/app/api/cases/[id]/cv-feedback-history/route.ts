@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { logActivity } from '@/lib/activity-logger'
 
 export async function GET(
   _request: Request,
@@ -43,6 +44,16 @@ export async function POST(
       .select()
       .single()
     if (error) throw error
+
+    const feedback = body.feedback.trim()
+    await logActivity({
+      caseId: id,
+      type: 'cv_feedback',
+      title: 'Commentaire CV ajouté',
+      description: feedback.slice(0, 100) + (feedback.length > 100 ? '...' : ''),
+      metadata: { feedback },
+    })
+
     return NextResponse.json(data, { status: 201 })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })

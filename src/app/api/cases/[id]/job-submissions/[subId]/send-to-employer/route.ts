@@ -1,6 +1,7 @@
 import { createClient as srv } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { logActivity } from '@/lib/activity-logger'
 
 export async function POST(
   _req: Request,
@@ -81,13 +82,12 @@ export async function POST(
     .update({ status: 'sent', submitted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq('id', subId)
 
-  await admin.from('activity_feed').insert({
-    case_id: id,
-    type: 'job_submitted',
-    title: `Candidature envoyée : ${job.public_title ?? job.title}`,
-    description: `Profil envoyé à ${company.name ?? "l'employeur"}${emailSent ? ' (email)' : ''}`,
-    source: 'manual',
-    status: 'completed',
+  await logActivity({
+    caseId: id,
+    type: 'job_sent_employer',
+    title: `Candidature envoyée à ${company.name ?? "l'employeur"}`,
+    description: `Candidature pour le poste "${job.public_title ?? job.title}" envoyée par email`,
+    metadata: { job_id: job.id, employer: company.name },
   })
 
   return NextResponse.json({ ok: true, emailSent })

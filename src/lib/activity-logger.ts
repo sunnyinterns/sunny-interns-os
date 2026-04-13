@@ -13,7 +13,10 @@ type ActivityType =
   | 'note_added'
   | 'rdv_booked'
   | 'job_proposed'
+  | 'job_sent_employer'
   | 'job_retained'
+  | 'cv_feedback'
+  | 'cv_status_changed'
   | 'convention_signed'
   | 'document_generated'
   | 'intern_arrived'
@@ -23,8 +26,10 @@ type ActivityType =
   | 'welcome_kit_sent'
   | 'driver_booked'
   | 'case_created'
-  | 'cv_uploaded'
+  | 'lead_captured'
+  | 'lead_converted'
   | 'visa_docs_ready'
+  | 'visa_docs_sent'
   | 'doc_uploaded'
 
 interface LogActivityParams {
