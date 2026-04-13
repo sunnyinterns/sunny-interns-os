@@ -167,6 +167,29 @@ visa_submitted -> visa_in_progress -> visa_received -> arrival_prep -> active ->
 3. En attente — bloque externement
 4. Complete aujourd'hui — visible grise
 
+## Onglets dossier candidat (/fr/cases/[id])
+1. Processus (TabProcess) — timeline statuts, actions statut
+2. Profil (TabProfil) — identite, passeport, ecole, contact urgence
+3. Staffing (TabStaffing) — stage ideal, CV (upload/preview/statut), jobs disponibles, jobs selectionnes (drag & drop)
+4. Facturation (TabFacturation) — package, paiement, facture, FAZZA
+5. Visa (TabVisa) — 8 sections: package visa, agent visa, documents requis, suivi visa, dates cles, notes agent, historique, alertes
+6. Arrivee (TabArrivee) — vol, chauffeur, welcome kit, logement
+
+## cv_status sur cases
+- Valeurs: pending | validated | to_redo
+- Menu deroulant dans TabStaffing (colonne CV)
+- cv_status=validated requis pour envoyer CV a l'employeur
+
+## Jobs demo
+- 9 offres ouvertes (status=open), 6 entreprises
+- Contact par defaut: sidney.ruby@gmail.com
+- Affichees dans TabStaffing section "Jobs disponibles"
+
+## Settings page
+- Route: /fr/settings
+- Lien sidebar: Parametres (icone engrenage)
+- Sections: WhatsApp templates, email config, Fillout scheduling
+
 ## Git flow
 main -> production (Vercel auto-deploy)
 Commits directs sur main (pas de branches pour l'instant)
