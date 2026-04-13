@@ -109,13 +109,14 @@ const DURATION_OPTIONS = Array.from({ length: 12 }, (_, i) => ({ value: String(i
 // ── Sortable job submission card ────────────────────────────
 
 function SortableJobCard({
-  sub, caseId, firstName, onUpdate, onSendToEmployer, actionLoading, cvIsValidated,
+  sub, caseId, firstName, onUpdate, onSendToEmployer, onViewJob, actionLoading, cvIsValidated,
 }: {
   sub: JobSubmission
   caseId: string
   firstName: string
   onUpdate: (id: string, fields: Record<string, unknown>) => void
   onSendToEmployer: (sub: JobSubmission) => void
+  onViewJob: (sub: JobSubmission) => void
   actionLoading: string | null
   cvIsValidated: boolean
 }) {
@@ -161,6 +162,14 @@ function SortableJobCard({
           )}
         </div>
       </div>
+      {/* Bouton Voir détails */}
+      <button
+        onClick={() => onViewJob(sub)}
+        className="text-xs px-2.5 py-1.5 text-zinc-500 hover:bg-zinc-100 rounded-lg font-medium flex-shrink-0 transition-colors"
+        title="Voir les détails de l'offre"
+      >
+        Voir
+      </button>
       {/* Statut badge */}
       <span className="text-xs px-2 py-1 rounded-full font-semibold flex-shrink-0" style={{ backgroundColor: cfg.bg, color: cfg.text }}>
         {cfg.label}
@@ -941,6 +950,23 @@ export function TabStaffing({
                     firstName={firstName}
                     onUpdate={updateSubmission}
                     onSendToEmployer={sendToEmployer}
+                    onViewJob={(s) => {
+                      if (s.jobs) {
+                        setSelectedJob({
+                          id: s.jobs.id,
+                          title: s.jobs.title ?? null,
+                          public_title: s.jobs.public_title ?? null,
+                          department: s.jobs.department ?? null,
+                          description: s.jobs.description ?? null,
+                          wished_duration_months: s.jobs.wished_duration_months ?? null,
+                          missions: null,
+                          public_description: null,
+                          remote_ok: null,
+                          companies: s.jobs.companies ?? null,
+                          submissions_count: 0,
+                        } as Job)
+                      }
+                    }}
                     actionLoading={actionLoading}
                     cvIsValidated={cvIsValidated}
                   />
