@@ -1,43 +1,66 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import {
+  DndContext,
+  useDroppable,
+  useDraggable,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
 
-// 13 active columns — vrai process Bali Interns
+// 7 colonnes simplifiées — pipeline Bali Interns
 const COLUMN_ORDER = [
-  'lead',
   'rdv_booked',
   'qualification_done',
   'job_submitted',
-  'job_retained',
-  'convention_signed',
-  'payment_pending',
-  'payment_received',
-  'visa_docs_sent',
-  'visa_submitted',
-  'visa_received',
-  'arrival_prep',
-  'active',
+  'job_accepted',
+  'visa',
+  'arrived',
+  'completed',
 ] as const
 
-const STATUS_ALIAS: Record<string, string> = {
-  visa_in_progress: 'visa_docs_sent',
+const COLUMN_LABELS: Record<string, string> = {
+  rdv_booked: '📅 RDV Booké',
+  qualification_done: '✅ Qualifié',
+  job_submitted: '💼 Jobs Proposés',
+  job_accepted: '🤝 Offre Acceptée',
+  visa: '🛂 Visa',
+  arrived: '🛫 Arrivé',
+  completed: '🎓 Terminé',
 }
 
-const COLUMN_LABELS: Record<string, string> = {
-  lead: 'Lead',
-  rdv_booked: 'RDV',
-  qualification_done: 'Qualifié',
-  job_submitted: 'Jobs proposés',
-  job_retained: 'Job retenu',
-  convention_signed: 'Convention',
-  payment_pending: 'Paiement ⏳',
-  payment_received: 'Payé ✓',
-  visa_docs_sent: 'Docs visa',
-  visa_submitted: 'Visa agent',
-  visa_received: 'Visa ✓',
-  arrival_prep: 'Départ 🛫',
-  active: 'En stage 🌴',
+// Map real DB statuses → kanban column
+const STATUS_TO_COLUMN: Record<string, string> = {
+  rdv_booked: 'rdv_booked',
+  qualification_done: 'qualification_done',
+  job_submitted: 'job_submitted',
+  job_retained: 'job_accepted',
+  convention_signed: 'job_accepted',
+  payment_pending: 'job_accepted',
+  payment_received: 'job_accepted',
+  visa_docs_sent: 'visa',
+  visa_submitted: 'visa',
+  visa_in_progress: 'visa',
+  visa_received: 'visa',
+  arrival_prep: 'arrived',
+  active: 'arrived',
+  completed: 'completed',
+  alumni: 'completed',
+}
+
+// When dragging to a column → what DB status to set
+const COLUMN_TO_STATUS: Record<string, string> = {
+  rdv_booked: 'rdv_booked',
+  qualification_done: 'qualification_done',
+  job_submitted: 'job_submitted',
+  job_accepted: 'job_retained',
+  visa: 'visa_docs_sent',
+  arrived: 'arrival_prep',
+  completed: 'completed',
 }
 
 const LOST_STATUSES = ['not_interested', 'not_qualified', 'on_hold', 'suspended', 'visa_refused', 'archived', 'completed', 'no_job_found', 'lost']
@@ -86,9 +109,9 @@ interface KanbanBoardProps {
 
 function getBorderColor(data: CaseData): string {
   const status = data.status
-  if (status === 'active') return '#059669'
-
-  if (status === 'arrival_prep') {
+  const col = STATUS_TO_COLUMN[status]
+  if (col === 'arrived') {
+    if (status === 'active') return '#059669'
     const ref = data.actual_start_date ?? data.desired_start_date
     if (ref) {
       const days = Math.ceil((new Date(ref).getTime() - Date.now()) / 86400000)
@@ -96,22 +119,10 @@ function getBorderColor(data: CaseData): string {
     }
     return '#d97706'
   }
-
-  if (status === 'payment_pending') {
-    const ref = data.desired_start_date
-    if (ref) {
-      const days = Math.ceil((new Date(ref).getTime() - Date.now()) / 86400000)
-      if (days < 30) return '#d97706'
-    }
-    return '#d97706'
-  }
-
-  if (status === 'visa_submitted') {
-    return '#d97706'
-  }
-
-  if (['lead', 'rdv_booked', 'qualification_done'].includes(status)) return '#c8a96e'
-
+  if (status === 'payment_pending') return '#d97706'
+  if (col === 'visa') return '#d97706'
+  if (['rdv_booked', 'qualification_done'].includes(status)) return '#c8a96e'
+  if (col === 'completed') return '#059669'
   return '#d4d4d8'
 }
 
@@ -131,7 +142,7 @@ function getUrgencyPulse(data: CaseData): boolean {
 function getDateLabel(data: CaseData): { text: string; urgent: boolean } | null {
   const status = data.status
 
-  if (['lead', 'rdv_booked'].includes(status)) {
+  if (['rdv_booked'].includes(status)) {
     if (data.desired_start_date) {
       const d = new Date(data.desired_start_date)
       return { text: `Départ: ${d.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}`, urgent: false }
@@ -210,13 +221,14 @@ function CaseCard({ data, locale }: { data: CaseData; locale: string }) {
     data.chauffeur_reserve,
   ]
 
-  const step = COLUMN_ORDER.indexOf(data.status as typeof COLUMN_ORDER[number])
+  const col = STATUS_TO_COLUMN[data.status] ?? data.status
+  const step = COLUMN_ORDER.indexOf(col as typeof COLUMN_ORDER[number])
   const progressPct = step >= 0 ? Math.round(((step + 1) / COLUMN_ORDER.length) * 100) : 0
 
   const initials = `${(data.first_name?.[0] ?? '').toUpperCase()}${(data.last_name?.[0] ?? '').toUpperCase()}`
 
-  // Lead stale > 7 days
-  const leadStale = data.status === 'lead' && data.created_at
+  // RDV stale > 7 days
+  const leadStale = data.status === 'rdv_booked' && data.created_at
     ? Math.floor((Date.now() - new Date(data.created_at).getTime()) / 86400000) > 7
     : false
 
@@ -301,8 +313,10 @@ function ListView({ cases, locale }: { cases: CaseData[]; locale: string }) {
 
   const sorted = useMemo(() => {
     return [...cases].sort((a, b) => {
-      const ia = COLUMN_ORDER.indexOf(a.status as typeof COLUMN_ORDER[number])
-      const ib = COLUMN_ORDER.indexOf(b.status as typeof COLUMN_ORDER[number])
+      const colA = STATUS_TO_COLUMN[a.status] ?? a.status
+      const colB = STATUS_TO_COLUMN[b.status] ?? b.status
+      const ia = COLUMN_ORDER.indexOf(colA as typeof COLUMN_ORDER[number])
+      const ib = COLUMN_ORDER.indexOf(colB as typeof COLUMN_ORDER[number])
       const sa = ia >= 0 ? ia : 99
       const sb = ib >= 0 ? ib : 99
       if (sa !== sb) return sa - sb
@@ -364,11 +378,37 @@ function ListView({ cases, locale }: { cases: CaseData[]; locale: string }) {
 
 // ─── KanbanBoard ────────────────────────────────────────────────
 
+// ─── DnD wrappers ────────────────────────────────────────────
+
+function DroppableColumn({ id, children, isOver }: { id: string; children: React.ReactNode; isOver: boolean }) {
+  const { setNodeRef } = useDroppable({ id })
+  return (
+    <div ref={setNodeRef} className={`flex-1 p-2 flex flex-col gap-1.5 overflow-y-auto max-h-[calc(100vh-280px)] transition-colors rounded-b-xl ${isOver ? 'bg-[#c8a96e]/10' : ''}`}>
+      {children}
+    </div>
+  )
+}
+
+function DraggableCard({ id, children }: { id: string; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id })
+  const style = transform ? { transform: `translate(${transform.x}px, ${transform.y}px)`, opacity: isDragging ? 0.5 : 1, zIndex: isDragging ? 50 : undefined } : undefined
+  return (
+    <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
+      {children}
+    </div>
+  )
+}
+
 export function KanbanBoard({ cases, locale = 'fr', search = '', viewMode = 'kanban' }: KanbanBoardProps) {
   const [groups, setGroups] = useState<InternGroup[]>([])
   const [selectedGroup, setSelectedGroup] = useState<string>('all')
-  const [alumniOpen, setAlumniOpen] = useState(false)
   const [lostOpen, setLostOpen] = useState(false)
+  const [localCases, setLocalCases] = useState(cases)
+  const [overColumn, setOverColumn] = useState<string | null>(null)
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+
+  useEffect(() => { setLocalCases(cases) }, [cases])
 
   useEffect(() => {
     fetch('/api/intern-groups')
@@ -377,42 +417,61 @@ export function KanbanBoard({ cases, locale = 'fr', search = '', viewMode = 'kan
       .catch(() => setGroups([]))
   }, [])
 
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    setOverColumn(null)
+    const { active, over } = event
+    if (!over) return
+    const caseId = String(active.id)
+    const targetCol = String(over.id)
+    const caseItem = localCases.find(c => c.id === caseId)
+    if (!caseItem) return
+    const currentCol = STATUS_TO_COLUMN[caseItem.status] ?? caseItem.status
+    if (currentCol === targetCol) return
+    const newStatus = COLUMN_TO_STATUS[targetCol]
+    if (!newStatus) return
+    // Optimistic update
+    setLocalCases(prev => prev.map(c => c.id === caseId ? { ...c, status: newStatus } : c))
+    fetch(`/api/cases/${caseId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    }).catch(() => {
+      // Revert on failure
+      setLocalCases(prev => prev.map(c => c.id === caseId ? { ...c, status: caseItem.status } : c))
+    })
+  }, [localCases])
+
   const filteredCases = useMemo(() => {
-    let result = selectedGroup === 'all' ? cases : cases.filter((c) => c.group_id === selectedGroup)
+    let result = selectedGroup === 'all' ? localCases : localCases.filter((c) => c.group_id === selectedGroup)
     if (search.trim()) {
       const q = search.toLowerCase()
       result = result.filter((c) =>
         `${c.first_name} ${c.last_name}`.toLowerCase().includes(q)
       )
     }
-    return result.map((c) => ({
-      ...c,
-      status: STATUS_ALIAS[c.status] ?? c.status,
-    }))
-  }, [cases, selectedGroup, search])
+    return result
+  }, [localCases, selectedGroup, search])
 
-  const { grouped, alumniCases, lostCases } = useMemo(() => {
+  const { grouped, lostCases } = useMemo(() => {
     const g = COLUMN_ORDER.reduce<Record<string, CaseData[]>>(
-      (acc, status) => ({ ...acc, [status]: [] }),
+      (acc, col) => ({ ...acc, [col]: [] }),
       {}
     )
-    const alumni: CaseData[] = []
     const lost: CaseData[] = []
 
     for (const c of filteredCases) {
-      if (c.status === 'alumni') {
-        alumni.push(c)
-      } else if (c.status in g) {
-        g[c.status].push(c)
+      const col = STATUS_TO_COLUMN[c.status]
+      if (col && col in g) {
+        g[col].push(c)
       } else if (LOST_STATUSES.includes(c.status)) {
         lost.push(c)
       }
     }
-    return { grouped: g, alumniCases: alumni, lostCases: lost }
+    return { grouped: g, lostCases: lost }
   }, [filteredCases])
 
-  // Count active (non-alumni, non-lost) cases
-  const activeCount = filteredCases.filter((c) => c.status !== 'alumni' && !LOST_STATUSES.includes(c.status)).length
+  // Count active (non-lost) cases
+  const activeCount = filteredCases.filter((c) => !LOST_STATUSES.includes(c.status) && STATUS_TO_COLUMN[c.status]).length
 
   return (
     <div className="flex flex-col gap-3 h-full">
@@ -450,72 +509,43 @@ export function KanbanBoard({ cases, locale = 'fr', search = '', viewMode = 'kan
 
       {/* Main board or list */}
       {viewMode === 'list' ? (
-        <ListView cases={filteredCases.filter((c) => c.status !== 'alumni' && !LOST_STATUSES.includes(c.status))} locale={locale} />
+        <ListView cases={filteredCases.filter((c) => !LOST_STATUSES.includes(c.status) && STATUS_TO_COLUMN[c.status])} locale={locale} />
       ) : (
-        <div className="flex gap-2 overflow-x-auto pb-4 min-h-0 flex-1">
-          {COLUMN_ORDER.map((status) => {
-            const items = grouped[status]
-            return (
-              <div
-                key={status}
-                className="flex-shrink-0 w-[220px] flex flex-col bg-white rounded-xl border border-[#e4e4e7]"
-              >
-                {/* Column header */}
-                <div className="px-2.5 py-2 border-b border-[#e4e4e7] flex items-center justify-between gap-1.5">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-[#71717a] truncate">
-                    {COLUMN_LABELS[status]}
-                  </span>
-                  <span className="inline-flex items-center justify-center min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-[#f4f4f5] text-[#71717a] text-[10px] font-bold flex-shrink-0">
-                    {items.length}
-                  </span>
+        <DndContext sensors={sensors} onDragEnd={handleDragEnd} onDragOver={(e) => setOverColumn(e.over ? String(e.over.id) : null)}>
+          <div className="flex gap-2 overflow-x-auto pb-4 min-h-0 flex-1">
+            {COLUMN_ORDER.map((col) => {
+              const items = grouped[col]
+              return (
+                <div
+                  key={col}
+                  className="flex-shrink-0 w-[220px] flex flex-col bg-white rounded-xl border border-[#e4e4e7]"
+                >
+                  {/* Column header */}
+                  <div className="px-2.5 py-2 border-b border-[#e4e4e7] flex items-center justify-between gap-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-[#71717a] truncate">
+                      {COLUMN_LABELS[col]}
+                    </span>
+                    <span className="inline-flex items-center justify-center min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-[#f4f4f5] text-[#71717a] text-[10px] font-bold flex-shrink-0">
+                      {items.length}
+                    </span>
+                  </div>
+                  {/* Column body — droppable */}
+                  <DroppableColumn id={col} isOver={overColumn === col}>
+                    {items.length === 0 ? (
+                      <div className="py-6 text-center text-[11px] text-[#d4d4d8]">—</div>
+                    ) : (
+                      items.map((c) => (
+                        <DraggableCard key={c.id} id={c.id}>
+                          <CaseCard data={c} locale={locale} />
+                        </DraggableCard>
+                      ))
+                    )}
+                  </DroppableColumn>
                 </div>
-                {/* Column body */}
-                <div className="flex-1 p-2 flex flex-col gap-1.5 overflow-y-auto max-h-[calc(100vh-280px)]">
-                  {items.length === 0 ? (
-                    <div className="py-6 text-center text-[11px] text-[#d4d4d8]">—</div>
-                  ) : (
-                    items.map((c) => (
-                      <CaseCard key={c.id} data={c} locale={locale} />
-                    ))
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Section Alumni */}
-      {alumniCases.length > 0 && (
-        <div className="flex-shrink-0 border-t border-[#e4e4e7] pt-3">
-          <button
-            onClick={() => setAlumniOpen((o) => !o)}
-            className="flex items-center gap-2 text-[11px] font-semibold text-[#92400e] hover:text-[#78350f] transition-colors mb-2"
-          >
-            <svg
-              width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
-              className={`transition-transform ${alumniOpen ? 'rotate-90' : ''}`}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-            🎓 Anciens stagiaires ({alumniCases.length})
-          </button>
-          {alumniOpen && (
-            <div className="flex gap-2 overflow-x-auto pb-3">
-              <div className="flex-shrink-0 w-[220px] flex flex-col rounded-xl border border-[#c8a96e]/30 bg-[#c8a96e]/5 opacity-80">
-                <div className="px-2.5 py-2 border-b border-[#c8a96e]/20 flex items-center justify-between">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-[#92400e]">Alumni</span>
-                  <span className="text-[10px] font-bold text-[#92400e] bg-[#c8a96e]/15 px-1.5 rounded-full">{alumniCases.length}</span>
-                </div>
-                <div className="flex-1 p-2 flex flex-col gap-1.5 overflow-y-auto max-h-48">
-                  {alumniCases.map((c) => (
-                    <CaseCard key={c.id} data={c} locale={locale} />
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+              )
+            })}
+          </div>
+        </DndContext>
       )}
 
       {/* Section Perdus */}
