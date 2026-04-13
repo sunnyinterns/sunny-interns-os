@@ -16,7 +16,7 @@ export async function GET(request: Request) {
       *,
       companies(id, name, contact_name, contact_email, contact_whatsapp, whatsapp_number, description, industry, location),
       contacts(id, first_name, last_name, job_title, email),
-      job_submissions(id)
+      job_submissions(id, status)
     `)
     .order('created_at', { ascending: false })
 
@@ -28,7 +28,9 @@ export async function GET(request: Request) {
 
   const jobs = (data ?? []).map(j => ({
     ...j,
-    submissions_count: Array.isArray(j.job_submissions) ? j.job_submissions.length : 0,
+    submissions_count: Array.isArray(j.job_submissions)
+      ? j.job_submissions.filter((s: Record<string, unknown>) => !['rejected', 'cancelled'].includes(s.status as string)).length
+      : 0,
     company_name: (j.companies as { name: string } | null)?.name ?? null,
     contact_name: j.contacts ? `${(j.contacts as { first_name: string; last_name: string | null }).first_name} ${(j.contacts as { first_name: string; last_name: string | null }).last_name ?? ''}`.trim() : null,
     department_name: j.department ?? null,

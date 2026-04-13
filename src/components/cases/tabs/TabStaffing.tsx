@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -81,17 +81,17 @@ interface TabStaffingProps {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
-  pending: { label: '⏳ À envoyer', bg: '#f4f4f5', text: '#71717a' },
-  proposed: { label: '💬 Proposé', bg: '#fef9ee', text: '#92400e' },
-  submitted: { label: '📧 Envoyé', bg: '#dbeafe', text: '#1d4ed8' },
-  cv_pending: { label: '📄 CV en attente', bg: '#eff6ff', text: '#1d4ed8' },
-  cv_validated: { label: '✅ CV validé', bg: '#f0fdf4', text: '#15803d' },
+  proposed: { label: '⏳ À envoyer', bg: '#f4f4f5', text: '#71717a' },
   sent: { label: '📧 Envoyé', bg: '#dbeafe', text: '#1d4ed8' },
   interview: { label: '🗓️ Entretien', bg: '#ede9fe', text: '#6d28d9' },
   retained: { label: '✅ Retenu !', bg: '#d1fae5', text: '#059669' },
   rejected: { label: '❌ Non retenu', bg: '#fee2e2', text: '#dc2626' },
-  cancelled: { label: 'Annulé', bg: '#f4f4f5', text: '#71717a' },
+  cancelled: { label: '🚫 Annulé', bg: '#f4f4f5', text: '#71717a' },
 }
+
+const DEPARTMENTS = ['Tous', 'Marketing', 'Communication', 'Commercial', 'Tech', 'Design', 'Hôtellerie', 'Restauration', 'Management', 'Médias', 'Editorial', 'RH', 'Finance', 'Autre']
+
+type JobWithCount = Job & { submissions_count: number }
 
 // ── Helpers ─────────────────────────────────────────────────
 
@@ -157,18 +157,8 @@ function SortableJobCard({
 
       {/* Actions */}
       <div className="px-4 py-3 border-t border-zinc-100 flex flex-wrap gap-2 items-center">
-        {(sub.status === 'proposed' || sub.status === 'proposed' || sub.status === 'submitted' || sub.status === 'cv_pending') && (
+        {sub.status === 'proposed' && (
           <>
-            <button disabled={isLoading}
-              onClick={() => onUpdate(sub.id, { status: 'cv_pending', cv_revision_requested: true })}
-              className="text-xs px-2.5 py-1.5 border border-amber-300 bg-amber-50 text-amber-700 rounded-lg font-medium hover:bg-amber-100 disabled:opacity-50">
-              📄 Demander MAJ CV
-            </button>
-            <button disabled={isLoading}
-              onClick={() => onUpdate(sub.id, { status: 'cv_validated', cv_revision_done: true })}
-              className="text-xs px-2.5 py-1.5 border border-green-300 bg-green-50 text-green-700 rounded-lg font-medium hover:bg-green-100 disabled:opacity-50">
-              ✅ Valider CV
-            </button>
             <button disabled={isLoading}
               onClick={() => cvIsValidated ? onSendToEmployer(sub) : showToastMsg('Valide le CV d\'abord', false)}
               title={!cvIsValidated ? 'CV non validé — valide le CV d\'abord' : undefined}
@@ -182,35 +172,17 @@ function SortableJobCard({
           </>
         )}
 
-        {sub.status === 'cv_validated' && (
-          <button disabled={isLoading}
-            onClick={() => cvIsValidated ? onSendToEmployer(sub) : showToastMsg('Valide le CV d\'abord', false)}
-            className={`text-xs px-3 py-1.5 rounded-lg font-semibold ${
-              cvIsValidated
-                ? 'bg-[#1a1918] text-white hover:bg-zinc-700 disabled:opacity-50'
-                : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
-            }`}>
-            {cvIsValidated ? '📧 Envoyer à l\u0027employeur' : '🔒 Envoyer à l\u0027employeur'}
-          </button>
-        )}
-
-        {(sub.status === 'sent' || sub.status === 'sent') && (
+        {sub.status === 'sent' && (
           <>
             <button onClick={openWAPopup}
               className="text-xs px-2.5 py-1.5 bg-[#25d366]/10 text-[#128c5e] hover:bg-[#25d366]/20 border border-[#25d366]/30 rounded-lg font-medium">
-              💬 WA employeur
+              💬 WA
             </button>
-            <select value={sub.employer_response ?? ''}
-              onChange={e => onUpdate(sub.id, {
-                employer_response: e.target.value,
-                status: e.target.value === 'interested' ? 'interview' : e.target.value === 'not_interested' ? 'rejected' : sub.status,
-              })}
-              className="text-xs border border-zinc-200 rounded-lg px-2 py-1.5">
-              <option value="">Retour employeur…</option>
-              <option value="interested">✅ Intéressé</option>
-              <option value="not_interested">❌ Pas intéressé</option>
-              <option value="pending">⏳ En attente</option>
-            </select>
+            <button disabled={isLoading}
+              onClick={() => onUpdate(sub.id, { status: 'interview' })}
+              className="text-xs px-2.5 py-1.5 border border-purple-300 bg-purple-50 text-purple-700 rounded-lg font-medium hover:bg-purple-100 disabled:opacity-50">
+              🗓️ Entretien
+            </button>
           </>
         )}
 
@@ -224,26 +196,13 @@ function SortableJobCard({
             <button disabled={isLoading}
               onClick={() => onUpdate(sub.id, { status: 'rejected' })}
               className="text-xs px-2.5 py-1.5 bg-red-50 text-red-600 rounded-lg font-medium hover:bg-red-100 disabled:opacity-50">
-              ❌ Rejeter
+              ❌ Non retenu
             </button>
           </>
         )}
 
-        {/* WhatsApp employeur — visible si pas encore envoyé */}
-        {!['sent', 'sent', 'interview', 'retained', 'rejected', 'cancelled'].includes(sub.status) && (
-          <button
-            disabled
-            className="text-xs px-2.5 py-1.5 rounded-lg font-medium bg-zinc-100 text-zinc-400 cursor-not-allowed">
-            💬 WhatsApp employeur
-          </button>
-        )}
-
-        {sub.status !== 'rejected' && sub.status !== 'cancelled' && sub.status !== 'retained' && sub.status !== 'interview' && (
-          <button disabled={isLoading}
-            onClick={() => onUpdate(sub.id, { status: 'rejected' })}
-            className="text-xs px-2 py-1.5 text-red-500 hover:bg-red-50 rounded-lg disabled:opacity-50">
-            ❌
-          </button>
+        {sub.status !== 'rejected' && sub.status !== 'cancelled' && sub.status !== 'retained' && sub.status !== 'interview' && sub.status !== 'sent' && sub.status !== 'proposed' && (
+          <span className="text-xs text-zinc-400">—</span>
         )}
 
         <input
@@ -440,6 +399,11 @@ export function TabStaffing({
   const [showCVPopup, setShowCVPopup] = useState(false)
   const [cvUploading, setCvUploading] = useState(false)
   const cvFileRef = useRef<HTMLInputElement>(null)
+  const [deptFilter, setDeptFilter] = useState('Tous')
+  const [sortBy, setSortBy] = useState<'recent' | 'company' | 'dept'>('recent')
+  const [candidatesPopup, setCandidatesPopup] = useState<{ jobId: string; jobTitle: string } | null>(null)
+  const [jobCandidates, setJobCandidates] = useState<Array<{ case_id: string; intern_name: string; status: string }>>([])
+
 
   // Editable fields
   const [stageIdealVal, setStageIdealVal] = useState(stageIdeal ?? '')
@@ -483,14 +447,44 @@ export function TabStaffing({
 
   const submittedJobIds = new Set(submissions.map(s => s.job_id))
 
-  const filteredJobs = allJobs.filter(j => {
-    if (submittedJobIds.has(j.id)) return false
-    const q = search.toLowerCase()
-    const title = (j.public_title ?? j.title ?? '').toLowerCase()
-    const company = (j.companies?.name ?? '').toLowerCase()
-    const dept = (j.department ?? '').toLowerCase()
-    return !q || title.includes(q) || company.includes(q) || dept.includes(q)
-  })
+  const filteredJobs = useMemo(() => {
+    let jobs = allJobs.filter(j => !submittedJobIds.has(j.id))
+
+    // Filtre département
+    if (deptFilter !== 'Tous') {
+      jobs = jobs.filter(j =>
+        (j.department ?? '').toLowerCase().includes(deptFilter.toLowerCase())
+      )
+    }
+
+    // Filtre recherche texte
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      jobs = jobs.filter(j =>
+        (j.public_title ?? j.title ?? '').toLowerCase().includes(q) ||
+        (j.companies?.name ?? '').toLowerCase().includes(q) ||
+        (j.department ?? '').toLowerCase().includes(q)
+      )
+    }
+
+    // Tri
+    if (sortBy === 'company') jobs.sort((a, b) => (a.companies?.name ?? '').localeCompare(b.companies?.name ?? ''))
+    if (sortBy === 'dept') jobs.sort((a, b) => (a.department ?? '').localeCompare(b.department ?? ''))
+
+    return jobs
+  }, [allJobs, submittedJobIds, deptFilter, search, sortBy])
+
+  async function openCandidatesPopup(jobId: string) {
+    const job = allJobs.find(j => j.id === jobId)
+    setCandidatesPopup({ jobId, jobTitle: job?.public_title ?? job?.title ?? 'Offre' })
+    try {
+      const res = await fetch(`/api/jobs/${jobId}/submissions`)
+      if (res.ok) {
+        const data = await res.json() as Array<{ case_id: string; intern_name: string; status: string }>
+        setJobCandidates(data)
+      }
+    } catch { setJobCandidates([]) }
+  }
 
   // Actions
   async function proposeJob(jobId: string) {
@@ -864,13 +858,70 @@ export function TabStaffing({
         </div>
       </div>
 
-      {/* ── SECTION 2: JOBS DISPONIBLES ── */}
+      {/* ── SECTION 2: JOBS SÉLECTIONNÉS ── */}
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-3">
+          Jobs sélectionnés ({sortedSubmissions.length})
+        </h3>
+        {loading ? (
+          <div className="space-y-2 animate-pulse">
+            {[1, 2].map(i => <div key={i} className="h-20 bg-zinc-100 rounded-xl" />)}
+          </div>
+        ) : sortedSubmissions.length === 0 ? (
+          <div className="py-6 text-center text-sm text-zinc-400 bg-white rounded-xl border border-dashed border-zinc-200">
+            Sélectionne des offres ci-dessous pour les ajouter
+          </div>
+        ) : (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={sortedSubmissions.map(s => s.id)} strategy={verticalListSortingStrategy}>
+              <div className="space-y-3">
+                {sortedSubmissions.map(sub => (
+                  <SortableJobCard
+                    key={sub.id}
+                    sub={sub}
+                    caseId={caseId}
+                    firstName={firstName}
+                    onUpdate={updateSubmission}
+                    onSendToEmployer={sendToEmployer}
+                    actionLoading={actionLoading}
+                    cvIsValidated={cvIsValidated}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
+      </div>
+
+      {/* ── SECTION 3: JOBS DISPONIBLES ── */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
             Jobs disponibles ({filteredJobs.length})
           </h3>
+          <select value={sortBy} onChange={e => setSortBy(e.target.value as 'recent'|'company'|'dept')}
+            className="text-xs border border-zinc-200 rounded-lg px-2 py-1 bg-white text-zinc-600">
+            <option value="recent">📅 Plus récent</option>
+            <option value="company">🏢 Entreprise</option>
+            <option value="dept">💼 Département</option>
+          </select>
         </div>
+
+        {/* Department filter chips */}
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {DEPARTMENTS.map(d => (
+            <button key={d}
+              onClick={() => setDeptFilter(d)}
+              className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
+                deptFilter === d
+                  ? 'bg-[#c8a96e] text-white'
+                  : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+              }`}>
+              {d}
+            </button>
+          ))}
+        </div>
+
         <div className="relative mb-3">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
@@ -902,7 +953,7 @@ export function TabStaffing({
           </div>
         ) : filteredJobs.length === 0 ? (
           <div className="py-8 text-center text-sm text-zinc-400 bg-white rounded-xl border border-dashed border-zinc-200">
-            {search ? `Aucun job pour "${search}"` : 'Aucun job ouvert disponible'}
+            {search || deptFilter !== 'Tous' ? 'Aucun job trouvé avec ces filtres' : 'Aucun job ouvert disponible'}
           </div>
         ) : (
           <div className="space-y-2">
@@ -930,6 +981,14 @@ export function TabStaffing({
                         <><span className="text-zinc-300 text-xs">·</span><span className="text-xs text-zinc-400">{job.department}</span></>
                       )}
                     </div>
+                    {(job as JobWithCount).submissions_count > 0 && (
+                      <button
+                        onClick={e => { e.stopPropagation(); void openCandidatesPopup(job.id) }}
+                        className="text-[10px] px-2 py-0.5 mt-1 bg-purple-100 text-purple-700 rounded-full font-medium hover:bg-purple-200"
+                      >
+                        {(job as JobWithCount).submissions_count} candidature{(job as JobWithCount).submissions_count > 1 ? 's' : ''} en cours
+                      </button>
+                    )}
                   </div>
                   <button
                     onClick={() => setSelectedJob(job)}
@@ -954,39 +1013,6 @@ export function TabStaffing({
         )}
       </div>
 
-      {/* ── SECTION 3: JOBS SÉLECTIONNÉS ── */}
-      {sortedSubmissions.length > 0 && (
-        <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-3">
-            Jobs sélectionnés ({sortedSubmissions.length})
-          </h3>
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={sortedSubmissions.map(s => s.id)} strategy={verticalListSortingStrategy}>
-              <div className="space-y-3">
-                {sortedSubmissions.map(sub => (
-                  <SortableJobCard
-                    key={sub.id}
-                    sub={sub}
-                    caseId={caseId}
-                    firstName={firstName}
-                    onUpdate={updateSubmission}
-                    onSendToEmployer={sendToEmployer}
-                    actionLoading={actionLoading}
-                    cvIsValidated={cvIsValidated}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
-        </div>
-      )}
-
-      {loading && (
-        <div className="space-y-2 animate-pulse">
-          {[1, 2].map(i => <div key={i} className="h-20 bg-zinc-100 rounded-xl" />)}
-        </div>
-      )}
-
       {/* Popups */}
       {selectedJob && (
         <JobDetailPopup
@@ -998,6 +1024,36 @@ export function TabStaffing({
       )}
       {showCVPopup && cvDisplayUrl && (
         <CVPopup url={cvDisplayUrl} onClose={() => setShowCVPopup(false)} name={`${firstName} ${lastName}`} />
+      )}
+
+      {/* Candidates popup */}
+      {candidatesPopup && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setCandidatesPopup(null)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="font-bold text-base mb-1">💼 {candidatesPopup.jobTitle}</h3>
+            <p className="text-xs text-zinc-400 mb-4">Candidatures en cours</p>
+            <div className="space-y-2">
+              {jobCandidates.length === 0 ? (
+                <p className="text-sm text-zinc-400">Aucune candidature active</p>
+              ) : jobCandidates.map(c => (
+                <div key={c.case_id} className="flex items-center justify-between py-2 border-b border-zinc-50">
+                  <span className="text-sm font-medium">{c.intern_name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-zinc-500">{STATUS_CONFIG[c.status]?.label ?? c.status}</span>
+                    <a href={`/fr/cases/${c.case_id}`} target="_blank" rel="noopener noreferrer"
+                      className="text-xs text-[#c8a96e] hover:underline font-medium">
+                      Voir →
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setCandidatesPopup(null)}
+              className="mt-4 w-full py-2 bg-zinc-100 text-zinc-700 rounded-xl text-sm font-semibold hover:bg-zinc-200">
+              Fermer
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )
