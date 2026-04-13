@@ -128,10 +128,12 @@ export async function POST(request: Request) {
 
       if (existingCase) {
         await supabase.from('cases').update({
+          status: 'rdv_booked',
           desired_start_date: d.start_date || null,
           desired_duration_months: durationMonths,
           desired_sectors: allJobs,
           school_id: d.school_id ?? null,
+          intern_first_meeting_date: d.rdv_slot ?? null,
           updated_at: new Date().toISOString(),
         }).eq('id', existingCase.id)
         caseId = existingCase.id
@@ -143,13 +145,14 @@ export async function POST(request: Request) {
         const { data: nc, error: ncErr } = await supabase.from('cases').insert({
           intern_id: internId,
           destination_id: dest?.id ?? 'fc9ece85-e5d5-41d2-9142-79054244bbce',
-          status: 'lead',
+          status: 'rdv_booked',
           desired_start_date: d.start_date || null,
           desired_duration_months: durationMonths,
           desired_sectors: allJobs,
           school_id: d.school_id ?? null,
           portal_token: portalToken,
           assigned_manager_name: 'Charly Gestede',
+          intern_first_meeting_date: d.rdv_slot ?? null,
         }).select('id').single()
         if (ncErr) return NextResponse.json({ error: ncErr.message }, { status: 500 })
         caseId = nc.id
@@ -170,7 +173,7 @@ export async function POST(request: Request) {
       const { data: nc, error: ncErr } = await supabase.from('cases').insert({
         intern_id: internId,
         destination_id: dest?.id ?? 'fc9ece85-e5d5-41d2-9142-79054244bbce',
-        status: 'lead',
+        status: 'rdv_booked',
         desired_start_date: d.start_date || null,
         desired_duration_months: durationMonths,
         desired_sectors: allJobs,
