@@ -131,7 +131,7 @@ function SortableJobCard({
 
   function openWAPopup() {
     setWAMessage(
-      `Bonjour ${contactName} ! 🌴\nJe vous ai envoyé par email la candidature de ${firstName} pour le poste de ${title}.\nPouvez-vous me confirmer la réception et me donner une réponse sous 7 jours maximum ?\nMerci beaucoup !`
+      `Bonjour ${contactName} ! 🌴\n\nJe vous ai envoyé par email la candidature de ${firstName} pour le poste de ${title}.\n\nPouvez-vous me confirmer la réception et donner une réponse sous 7 jours maximum ?\n\nMerci ! 🙏`
     )
     setShowWAPopup(true)
   }
