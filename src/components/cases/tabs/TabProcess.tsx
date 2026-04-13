@@ -141,139 +141,34 @@ export function TabProcess({
   const [noteText, setNoteText] = useState('')
   const [savingNote, setSavingNote] = useState(false)
 
-  async function changeStatus(newStatus: string) {
-    try {
-      await fetch(`/api/cases/${caseId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      })
-      onRefresh?.()
-    } catch { /* silent */ }
+  const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
+    lead: { label: 'Demande entrante', bg: '#f4f4f5', text: '#52525b' },
+    rdv_booked: { label: 'RDV planifié', bg: '#dbeafe', text: '#1d4ed8' },
+    qualification_done: { label: 'Qualifié', bg: '#ede9fe', text: '#6d28d9' },
+    job_submitted: { label: 'Jobs envoyés', bg: '#fef3c7', text: '#d97706' },
+    job_retained: { label: 'Job retenu', bg: '#d1fae5', text: '#059669' },
+    convention_signed: { label: 'Convention signée', bg: '#dcfce7', text: '#15803d' },
+    payment_pending: { label: 'Paiement en attente', bg: '#fef2f2', text: '#dc2626' },
+    payment_received: { label: 'Paiement reçu', bg: '#ccfbf1', text: '#0d9488' },
+    visa_docs_sent: { label: 'Docs visa envoyés', bg: '#e0f2fe', text: '#0284c7' },
+    visa_submitted: { label: 'Visa soumis', bg: '#dbeafe', text: '#1d4ed8' },
+    visa_in_progress: { label: 'Visa en cours', bg: '#dbeafe', text: '#1d4ed8' },
+    visa_received: { label: 'Visa reçu', bg: '#d1fae5', text: '#059669' },
+    arrival_prep: { label: 'Préparation départ', bg: '#fef3c7', text: '#d97706' },
+    active: { label: 'En stage', bg: '#d1fae5', text: '#059669' },
+    alumni: { label: 'Alumni', bg: '#f4f4f5', text: '#52525b' },
   }
 
-  const NEXT_ACTION_MAP: Record<string, {
-    bg: string; border: string; color: string
-    title: string; desc: string
-    cta?: string; ctaColor?: string
-    action?: () => void
-  }> = {
-    lead: {
-      bg: 'bg-emerald-50', border: 'border-emerald-200', color: 'text-emerald-800',
-      title: 'Candidature reçue — RDV à confirmer',
-      desc: "Le candidat a complété sa candidature. Vérifier si un RDV a été pris dans le calendrier.",
-      cta: '📅 Voir le calendrier',
-      ctaColor: 'bg-emerald-600 hover:bg-emerald-700',
-      action: () => { if (typeof window !== 'undefined') window.open('/fr/calendar', '_blank') },
-    },
-    rdv_booked: {
-      bg: 'bg-emerald-50', border: 'border-emerald-200', color: 'text-emerald-800',
-      title: "Mener l'entretien de qualification",
-      desc: "Ouvrir l'onglet Profil → prendre des notes → proposer des jobs",
-      cta: '✅ Qualifier le candidat',
-      ctaColor: 'bg-emerald-600 hover:bg-emerald-700',
-      action: () => { void changeStatus('qualification_done') },
-    },
-    qualification_done: {
-      bg: 'bg-blue-50', border: 'border-blue-200', color: 'text-blue-800',
-      title: 'Proposer des offres de stage',
-      desc: "Aller dans l'onglet Staffing → sélectionner des jobs → envoyer aux employeurs",
-      cta: '💼 Aller au Staffing',
-      ctaColor: 'bg-blue-600 hover:bg-blue-700',
-      action: () => onTabChange?.('staffing'),
-    },
-    job_submitted: {
-      bg: 'bg-amber-50', border: 'border-amber-200', color: 'text-amber-800',
-      title: 'En attente de retour employeur',
-      desc: "Relancer les employeurs par WhatsApp si pas de retour sous 7j",
-      cta: '💼 Voir Staffing',
-      ctaColor: 'bg-amber-600 hover:bg-amber-700',
-      action: () => onTabChange?.('staffing'),
-    },
-    job_retained: {
-      bg: 'bg-violet-50', border: 'border-violet-200', color: 'text-violet-800',
-      title: 'Envoyer la convention de stage',
-      desc: "Générer et envoyer la convention à l'étudiant, l'employeur et l'école",
-      cta: '📋 Aller Facturation',
-      ctaColor: 'bg-violet-600 hover:bg-violet-700',
-      action: () => onTabChange?.('facturation'),
-    },
-    convention_signed: {
-      bg: 'bg-amber-50', border: 'border-amber-200', color: 'text-amber-800',
-      title: 'Demander le paiement',
-      desc: 'La convention est signée — demander le règlement du service',
-      cta: '💶 Aller Facturation',
-      ctaColor: 'bg-amber-600 hover:bg-amber-700',
-      action: () => onTabChange?.('facturation'),
-    },
-    payment_pending: {
-      bg: 'bg-orange-50', border: 'border-orange-200', color: 'text-orange-800',
-      title: 'Confirmer la réception du paiement',
-      desc: "Une fois le paiement reçu, confirmer pour lancer les démarches visa",
-      cta: '✅ Paiement reçu',
-      ctaColor: 'bg-orange-600 hover:bg-orange-700',
-      action: () => { void changeStatus('payment_received') },
-    },
-    payment_received: {
-      bg: 'bg-sky-50', border: 'border-sky-200', color: 'text-sky-800',
-      title: 'Préparer les documents visa',
-      desc: "Demander les documents à l'étudiant via l'onglet Visa",
-      cta: '🛂 Aller Visa',
-      ctaColor: 'bg-sky-600 hover:bg-sky-700',
-      action: () => onTabChange?.('visa'),
-    },
-    visa_docs_sent: {
-      bg: 'bg-sky-50', border: 'border-sky-200', color: 'text-sky-800',
-      title: 'Dossier visa envoyé à FAZZA',
-      desc: "En attente du traitement par l'agent visa",
-    },
-    visa_submitted: {
-      bg: 'bg-blue-50', border: 'border-blue-200', color: 'text-blue-800',
-      title: 'Dossier visa en cours de traitement',
-      desc: "Le dossier est chez le sous-traitant — attendre la réponse",
-    },
-    visa_received: {
-      bg: 'bg-emerald-50', border: 'border-emerald-200', color: 'text-emerald-800',
-      title: "Visa obtenu — Préparer l'arrivée",
-      desc: "Coordonner le chauffeur aéroport et préparer l'accueil",
-      cta: "🛫 Aller Arrivée",
-      ctaColor: 'bg-emerald-600 hover:bg-emerald-700',
-      action: () => onTabChange?.('arrivee'),
-    },
-    arrival_prep: {
-      bg: 'bg-emerald-50', border: 'border-emerald-200', color: 'text-emerald-800',
-      title: 'Réserver le chauffeur',
-      desc: "Confirmer les détails de vol et envoyer le message WhatsApp au chauffeur",
-      cta: '→ Aller à Arrivée',
-      ctaColor: 'bg-emerald-600 hover:bg-emerald-700',
-      action: () => onTabChange?.('arrivee'),
-    },
-    visa_in_progress: {
-      bg: 'bg-blue-50', border: 'border-blue-200', color: 'text-blue-800',
-      title: 'Visa en cours de traitement',
-      desc: "Le dossier est chez l'agent visa — attendre la réponse",
-    },
-    active: {
-      bg: 'bg-teal-50', border: 'border-teal-200', color: 'text-teal-800',
-      title: 'Stage en cours',
-      desc: "Suivre le déroulement du stage via WhatsApp",
-      cta: '🎓 Stage terminé',
-      ctaColor: 'bg-teal-600 hover:bg-teal-700',
-      action: () => { void changeStatus('alumni') },
-    },
-    alumni: {
-      bg: 'bg-zinc-50', border: 'border-zinc-200', color: 'text-zinc-700',
-      title: 'Stage terminé 🎓',
-      desc: "Demander un avis Google/LinkedIn et proposer une convention Alumni",
-    },
-    completed: {
-      bg: 'bg-zinc-50', border: 'border-zinc-200', color: 'text-zinc-600',
-      title: 'Stage terminé 🎓',
-      desc: "Ce dossier est terminé et archivé",
-    },
-  }
+  const CANDIDATE_WORKFLOW: CaseStatus[] = [
+    'lead', 'rdv_booked', 'qualification_done', 'job_submitted', 'job_retained', 'convention_signed',
+  ]
 
-  const nextAction = NEXT_ACTION_MAP[status]
+  const currentStatusConfig = STATUS_CONFIG[status] ?? { label: status, bg: '#f4f4f5', text: '#52525b' }
+
+  const currentIdx = CANDIDATE_WORKFLOW.indexOf(status)
+  const nextStatuses = currentIdx >= 0 && currentIdx < CANDIDATE_WORKFLOW.length - 1
+    ? [{ value: CANDIDATE_WORKFLOW[currentIdx + 1], label: STATUS_CONFIG[CANDIDATE_WORKFLOW[currentIdx + 1]]?.label ?? CANDIDATE_WORKFLOW[currentIdx + 1] }]
+    : []
 
   useEffect(() => {
     fetch(`/api/cases/${caseId}/logs`)
@@ -392,7 +287,7 @@ export function TabProcess({
   }
 
   const mappedKey = STATUS_TO_TIMELINE[status] ?? status
-  const currentIdx = STATUTS_ORDRE.findIndex(s => s.key === mappedKey)
+  const timelineIdx = STATUTS_ORDRE.findIndex(s => s.key === mappedKey)
 
   return (
     <div className="space-y-6">
@@ -400,12 +295,12 @@ export function TabProcess({
       <div className="flex items-center gap-1 mb-4 overflow-x-auto pb-1">
         {STATUTS_ORDRE.map((s, i) => (
           <React.Fragment key={s.key}>
-            <div className={`flex flex-col items-center gap-0.5 flex-shrink-0 ${i <= currentIdx ? 'opacity-100' : 'opacity-30'}`}>
+            <div className={`flex flex-col items-center gap-0.5 flex-shrink-0 ${i <= timelineIdx ? 'opacity-100' : 'opacity-30'}`}>
               <span className="text-base">{s.icon}</span>
               <span className="text-[9px] text-zinc-500 text-center max-w-[50px] leading-tight">{s.label}</span>
             </div>
             {i < STATUTS_ORDRE.length - 1 && (
-              <div className={`h-0.5 w-4 flex-shrink-0 mt-[-8px] ${i < currentIdx ? 'bg-[#c8a96e]' : 'bg-zinc-200'}`} />
+              <div className={`h-0.5 w-4 flex-shrink-0 mt-[-8px] ${i < timelineIdx ? 'bg-[#c8a96e]' : 'bg-zinc-200'}`} />
             )}
           </React.Fragment>
         ))}
@@ -421,25 +316,32 @@ export function TabProcess({
         </div>
       )}
 
-      {/* Next action banner */}
-      {nextAction && (
-        <div className={`rounded-2xl border p-4 ${nextAction.bg} ${nextAction.border}`}>
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <p className={`text-sm font-bold mb-0.5 ${nextAction.color}`}>
-                ⚡ Prochaine étape
-              </p>
-              <p className={`text-sm font-semibold ${nextAction.color}`}>{nextAction.title}</p>
-              <p className="text-xs text-zinc-500 mt-0.5">{nextAction.desc}</p>
-            </div>
-            {nextAction.cta && nextAction.action && (
+      {/* Statut actuel */}
+      <div className="bg-white rounded-xl border border-zinc-100 p-4">
+        <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Statut actuel</p>
+        <span
+          className="text-sm font-bold px-3 py-1.5 rounded-xl inline-block"
+          style={{ background: currentStatusConfig.bg, color: currentStatusConfig.text }}
+        >
+          {currentStatusConfig.label}
+        </span>
+      </div>
+
+      {/* Avancer dans le workflow */}
+      {nextStatuses.length > 0 && (
+        <div className="bg-white rounded-xl border border-zinc-100 p-4">
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Avancer le dossier</p>
+          <div className="flex flex-wrap gap-2">
+            {nextStatuses.map(s => (
               <button
-                onClick={nextAction.action}
-                className={`flex-shrink-0 px-3 py-2 text-xs font-bold text-white rounded-xl transition-colors ${nextAction.ctaColor ?? ''}`}
+                key={s.value}
+                onClick={() => { void handleStatusChange(s.value) }}
+                disabled={statusChanging}
+                className="text-xs px-3 py-1.5 bg-[#c8a96e] text-white rounded-xl font-semibold hover:bg-[#b8945a] disabled:opacity-50 transition-colors"
               >
-                {nextAction.cta}
+                &rarr; {s.label}
               </button>
-            )}
+            ))}
           </div>
         </div>
       )}
