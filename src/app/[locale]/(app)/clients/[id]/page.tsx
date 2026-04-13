@@ -265,8 +265,8 @@ export default function ClientDetailPage() {
             </div>
           </div>
 
-          {/* Timeline client */}
-          <div className="flex items-center gap-1 py-2 overflow-x-auto pb-2 border-t border-zinc-100">
+          {/* Timeline client — hidden when compact */}
+          <div className={`flex items-center gap-1 py-2 overflow-x-auto pb-2 border-t border-zinc-100 transition-all duration-200 ${headerCompact ? 'max-h-0 opacity-0 overflow-hidden py-0 border-0' : 'max-h-16 opacity-100'}`}>
             {TIMELINE_STEPS.map((s, i) => (
               <div key={s.key} className="flex items-center gap-1 flex-shrink-0">
                 <div className={`flex flex-col items-center gap-0.5 ${i <= currentIdx ? 'opacity-100' : 'opacity-30'}`}>
