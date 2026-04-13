@@ -163,6 +163,15 @@ export function TabProcess({
     'lead', 'rdv_booked', 'qualification_done', 'job_submitted', 'job_retained', 'convention_signed',
   ]
 
+  const CANDIDATE_WORKFLOW_LABELS: Record<string, string> = {
+    lead: 'Candidature reçue',
+    rdv_booked: 'RDV de qualification booké',
+    qualification_done: 'Entretien passé et qualifié',
+    job_submitted: 'Offres proposées aux employeurs',
+    job_retained: 'Un employeur a retenu le candidat',
+    convention_signed: 'Convention de stage signée',
+  }
+
   const currentStatusConfig = STATUS_CONFIG[status] ?? { label: status, bg: '#f4f4f5', text: '#52525b' }
 
   const currentIdx = CANDIDATE_WORKFLOW.indexOf(status)
@@ -316,33 +325,83 @@ export function TabProcess({
         </div>
       )}
 
-      {/* Statut actuel */}
-      <div className="bg-white rounded-xl border border-zinc-100 p-4">
-        <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Statut actuel</p>
-        <span
-          className="text-sm font-bold px-3 py-1.5 rounded-xl inline-block"
-          style={{ background: currentStatusConfig.bg, color: currentStatusConfig.text }}
-        >
-          {currentStatusConfig.label}
-        </span>
+      {/* Statut actuel + workflow */}
+      <div className="bg-white rounded-xl border border-zinc-100 p-4 space-y-4">
+        <div>
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Statut actuel</p>
+          <span
+            className="text-sm font-bold px-3 py-1.5 rounded-xl inline-block"
+            style={{ background: currentStatusConfig.bg, color: currentStatusConfig.text }}
+          >
+            {currentStatusConfig.label}
+          </span>
+          {CANDIDATE_WORKFLOW_LABELS[status] && (
+            <p className="text-xs text-zinc-500 mt-1.5">{CANDIDATE_WORKFLOW_LABELS[status]}</p>
+          )}
+        </div>
+
+        {/* Avancer dans le workflow */}
+        {nextStatuses.length > 0 && (
+          <div>
+            <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Avancer le dossier</p>
+            <div className="flex flex-wrap gap-2">
+              {nextStatuses.map(s => (
+                <button
+                  key={s.value}
+                  onClick={() => { void handleStatusChange(s.value) }}
+                  disabled={statusChanging}
+                  className="text-xs px-3 py-1.5 bg-[#c8a96e] text-white rounded-xl font-semibold hover:bg-[#b8945a] disabled:opacity-50 transition-colors"
+                >
+                  &rarr; {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Dernier statut candidat → transition client */}
+        {status === 'convention_signed' && (
+          <div className="px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
+            <p className="text-sm font-medium text-amber-800">Ce candidat est maintenant un client</p>
+            <p className="text-xs text-amber-600 mt-0.5 mb-2">Les prochaines étapes (paiement, visa, arrivée) se gèrent côté client.</p>
+            {onTabChange && (
+              <a
+                href={`/${typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : 'fr'}/clients/${caseId}`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-white text-xs font-bold rounded-lg hover:bg-amber-600 transition-colors"
+              >
+                Gérer dans Clients →
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* Revenir à un statut précédent */}
+        {currentIdx > 0 && (
+          <details className="group">
+            <summary className="text-xs text-zinc-400 cursor-pointer hover:text-zinc-600 transition-colors">
+              Revenir à un statut précédent…
+            </summary>
+            <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-zinc-100">
+              {CANDIDATE_WORKFLOW.slice(0, currentIdx).map(s => (
+                <button
+                  key={s}
+                  onClick={() => { void handleStatusChange(s) }}
+                  disabled={statusChanging}
+                  className="text-xs px-2.5 py-1 bg-zinc-100 text-zinc-600 rounded-lg hover:bg-zinc-200 disabled:opacity-50 transition-colors"
+                >
+                  &larr; {STATUS_CONFIG[s]?.label ?? s}
+                </button>
+              ))}
+            </div>
+          </details>
+        )}
       </div>
 
-      {/* Avancer dans le workflow */}
-      {nextStatuses.length > 0 && (
+      {/* Notes de qualification */}
+      {caseData?.qualification_notes && (
         <div className="bg-white rounded-xl border border-zinc-100 p-4">
-          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Avancer le dossier</p>
-          <div className="flex flex-wrap gap-2">
-            {nextStatuses.map(s => (
-              <button
-                key={s.value}
-                onClick={() => { void handleStatusChange(s.value) }}
-                disabled={statusChanging}
-                className="text-xs px-3 py-1.5 bg-[#c8a96e] text-white rounded-xl font-semibold hover:bg-[#b8945a] disabled:opacity-50 transition-colors"
-              >
-                &rarr; {s.label}
-              </button>
-            ))}
-          </div>
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Notes de qualification</p>
+          <p className="text-sm text-[#1a1918] whitespace-pre-wrap">{String(caseData.qualification_notes)}</p>
         </div>
       )}
 
