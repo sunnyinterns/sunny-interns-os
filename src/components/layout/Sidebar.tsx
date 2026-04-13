@@ -49,15 +49,14 @@ export function Sidebar() {
       .then((d: unknown[]) => setNewLeadsCount(Array.isArray(d) ? d.length : 0))
       .catch(() => {})
 
-    fetch('/api/cases?view=all')
+    fetch('/api/cases?type=client')
       .then(r => r.ok ? r.json() : [])
-      .then((d: unknown[]) => {
-        if (!Array.isArray(d)) return
-        const clientSt = ['visa_docs_sent','visa_submitted','visa_in_progress','visa_received','arrival_prep','active']
-        const candidatSt = ['rdv_booked','qualification_done','job_submitted','job_retained','convention_signed','payment_pending','payment_received']
-        setActiveClientsCount(d.filter((c: unknown) => clientSt.includes((c as { status: string }).status)).length)
-        setCandidatsCount(d.filter((c: unknown) => candidatSt.includes((c as { status: string }).status)).length)
-      })
+      .then((d: unknown[]) => setActiveClientsCount(Array.isArray(d) ? d.length : 0))
+      .catch(() => {})
+
+    fetch('/api/cases?type=candidate')
+      .then(r => r.ok ? r.json() : [])
+      .then((d: unknown[]) => setCandidatsCount(Array.isArray(d) ? d.length : 0))
       .catch(() => {})
   }, [])
 
