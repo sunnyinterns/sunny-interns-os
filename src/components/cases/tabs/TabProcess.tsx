@@ -302,17 +302,19 @@ export function TabProcess({
     <div className="space-y-6">
       {/* Timeline visuelle */}
       <div className="flex items-center gap-1 mb-4 overflow-x-auto pb-1">
-        {STATUTS_ORDRE.map((s, i) => (
-          <React.Fragment key={s.key}>
-            <div className={`flex flex-col items-center gap-0.5 flex-shrink-0 ${i <= timelineIdx ? 'opacity-100' : 'opacity-30'}`}>
-              <span className="text-base">{s.icon}</span>
-              <span className="text-[9px] text-zinc-500 text-center max-w-[50px] leading-tight">{s.label}</span>
-            </div>
-            {i < STATUTS_ORDRE.length - 1 ? (
-              <div className={`h-0.5 w-4 flex-shrink-0 mt-[-8px] ${i < timelineIdx ? 'bg-[#c8a96e]' : 'bg-zinc-200'}`} />
-            ) : null}
-          </React.Fragment>
-        ))}
+        {STATUTS_ORDRE.map((s, i) => {
+          const isReached = i <= timelineIdx
+          const showLine = i < STATUTS_ORDRE.length - 1
+          return (
+            <React.Fragment key={s.key}>
+              <div className={`flex flex-col items-center gap-0.5 flex-shrink-0 ${isReached ? 'opacity-100' : 'opacity-30'}`}>
+                <span className="text-base">{s.icon}</span>
+                <span className="text-[9px] text-zinc-500 text-center max-w-[50px] leading-tight">{s.label}</span>
+              </div>
+              {showLine && <div className={`h-0.5 w-4 flex-shrink-0 mt-[-8px] ${i < timelineIdx ? 'bg-[#c8a96e]' : 'bg-zinc-200'}`} />}
+            </React.Fragment>
+          )
+        })}
       </div>
 
       {/* Toast */}
