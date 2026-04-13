@@ -18,7 +18,12 @@ export async function GET(request: Request) {
 
   let query = admin.from('leads').select('*').order('created_at', { ascending: false }).limit(200)
   if (source) query = query.eq('source', source)
-  if (status) query = query.eq('status', status)
+  // Par défaut: exclure les convertis (ils sont dans /cases)
+  if (status) {
+    query = query.eq('status', status)
+  } else {
+    query = query.neq('status', 'converted')
+  }
 
   const { data, error } = await query
   if (error) return NextResponse.json([], { status: 500 })

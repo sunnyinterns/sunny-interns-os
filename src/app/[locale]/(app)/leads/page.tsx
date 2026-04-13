@@ -105,20 +105,22 @@ export default function LeadsPage() {
   const MAIN_SOURCES = useMemo(() => new Set(['website_form_unfinished', 'linkedin', 'facebook', 'facebook_group']), [])
 
   // Cacher les leads convertis (ils ont un dossier candidat)
-  const activeLeads = leads.filter(l => !l.converted_case_id && l.status !== 'converted')
+  
+  // Toujours exclure les convertis — ils sont dans /cases
+  const activeLeads = useMemo(() => leads.filter(l => l.status !== 'converted' && !l.converted_case_id), [leads])
   
   const filtered = useMemo(() => {
-    if (sourceFilter === 'all') return leads
-    if (sourceFilter === 'in_progress') return leads.filter(l => getFormLeadStatus(l) === 'in_progress')
-    if (sourceFilter === 'other') return leads.filter(l => !MAIN_SOURCES.has(l.source))
-    if (sourceFilter === 'facebook') return leads.filter(l => ['facebook', 'facebook_group'].includes(l.source))
-    return leads.filter(l => l.source === sourceFilter)
-  }, [leads, sourceFilter, MAIN_SOURCES])
+    if (sourceFilter === 'all') return activeLeads
+    if (sourceFilter === 'in_progress') return activeLeads.filter(l => getFormLeadStatus(l) === 'in_progress')
+    if (sourceFilter === 'other') return activeLeads.filter(l => !MAIN_SOURCES.has(l.source))
+    if (sourceFilter === 'facebook') return activeLeads.filter(l => ['facebook', 'facebook_group'].includes(l.source))
+    return activeLeads.filter(l => l.source === sourceFilter)
+  }, [activeLeads, sourceFilter, MAIN_SOURCES])
 
   const counts = useMemo(() => ({
     all: activeLeads.length,
     website: activeLeads.filter(l => l.source === 'website_form_unfinished').length,
-    linkedin: leads.filter(l => l.source === 'linkedin').length,
+    linkedin: activeLeads.filter(l => l.source === 'linkedin').length,
     facebook: leads.filter(l => ['facebook', 'facebook_group'].includes(l.source)).length,
     other: leads.filter(l => !MAIN_SOURCES.has(l.source)).length,
     in_progress: leads.filter(l => getFormLeadStatus(l) === 'in_progress').length,
