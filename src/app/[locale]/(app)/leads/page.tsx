@@ -84,12 +84,14 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true)
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [sourceFilter, setSourceFilter] = useState<string>('all')
+  const [lastRefresh, setLastRefresh] = useState(new Date())
 
   const fetchLeads = useCallback(async () => {
     const res = await fetch('/api/leads')
     if (!res.ok) { setLeads([]); return }
     const data = (await res.json()) as Lead[]
     setLeads(Array.isArray(data) ? data : [])
+    setLastRefresh(new Date())
   }, [])
 
   useEffect(() => {
@@ -151,6 +153,9 @@ export default function LeadsPage() {
           <h1 className="text-xl font-bold text-[#1a1918]">Leads</h1>
           <p className="text-sm text-zinc-500 mt-0.5">
             {leads.length} lead{leads.length > 1 ? 's' : ''} · {filtered.length} affiché{filtered.length > 1 ? 's' : ''}
+            <span className="ml-2 text-xs text-zinc-400">
+              Mis à jour {lastRefresh.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </span>
           </p>
         </div>
         <div className="flex items-center gap-2">
