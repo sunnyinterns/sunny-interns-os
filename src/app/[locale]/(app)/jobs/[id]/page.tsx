@@ -35,7 +35,7 @@ interface JobDetail {
   is_remote?: boolean | null
   status?: string | null
   notes?: string | null
-  companies?: { id: string; name: string } | null
+  companies?: { id: string; name: string; contact_name?: string | null; contact_email?: string | null; contact_whatsapp?: string | null } | null
   contacts?: Contact | null
   job_departments?: { id: string; name: string } | null
   job_submissions?: JobSubmission[]
@@ -279,6 +279,29 @@ export default function JobDetailPage() {
             <Link href={`/${locale}/contacts/${job.contacts.id}`} className="text-xs px-2 py-1 bg-zinc-100 text-zinc-600 rounded-lg hover:bg-zinc-200 transition-colors flex-shrink-0">
               Voir fiche →
             </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Fallback: contact depuis companies si pas de contacts table */}
+      {!job.contacts && job.companies?.contact_email && (
+        <div className="bg-white border border-zinc-100 rounded-xl p-5">
+          <h2 className="text-sm font-semibold text-[#1a1918] mb-3">Contact employeur</h2>
+          <p className="text-sm font-medium">{job.companies.contact_name ?? ''}</p>
+          <div className="mt-2 space-y-1">
+            {job.companies.contact_email && (
+              <a href={`mailto:${job.companies.contact_email}`}
+                className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-[#c8a96e] transition-colors">
+                <span>✉</span> {job.companies.contact_email}
+              </a>
+            )}
+            {job.companies.contact_whatsapp && (
+              <a href={`https://wa.me/${job.companies.contact_whatsapp.replace(/\D/g,'')}`}
+                target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-[#0d9e75] transition-colors">
+                <span>💬</span> {job.companies.contact_whatsapp}
+              </a>
+            )}
           </div>
         </div>
       )}
