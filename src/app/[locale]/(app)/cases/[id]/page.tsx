@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { NewCaseModal } from '@/components/cases/NewCaseModal'
 import { TabProcess } from '@/components/cases/tabs/TabProcess'
@@ -84,6 +84,18 @@ export default function CaseDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<TabKey>(tabFromUrl ?? 'profil')
+  const [headerCompact, setHeaderCompact] = useState(false)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  // Header compact au scroll
+  useEffect(() => {
+    const el = scrollContainerRef.current
+    if (!el) return
+    const onScroll = () => setHeaderCompact(el.scrollTop > 60)
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [])
+
   const [showEditModal, setShowEditModal] = useState(false)
   const [showInternCard, setShowInternCard] = useState(false)
   const [sendingRecap, setSendingRecap] = useState(false)
@@ -229,7 +241,7 @@ export default function CaseDetailPage() {
   return (
     <div className="flex flex-col h-full bg-[#fafaf9]">
       {/* ── HEADER STICKY ── */}
-      <div className="sticky top-0 z-20 bg-white border-b border-zinc-200">
+      <div className={`sticky top-0 z-20 bg-white border-b border-zinc-200 transition-all duration-200 ${headerCompact ? 'shadow-md' : ''}`}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           {/* Ligne nav */}
           <div className="flex items-center justify-between py-3">
@@ -380,8 +392,8 @@ export default function CaseDetailPage() {
             />
           </div>
 
-          {/* RDV 1er entretien — visible si date OU si event Google Calendar présent */}
-          {(caseData.intern_first_meeting_date || caseData.google_calendar_event_id) && (
+          {/* RDV 1er entretien — masqué en mode compact */}
+          {!headerCompact && (caseData.intern_first_meeting_date || caseData.google_calendar_event_id) && (
             <div className="mb-3 flex flex-wrap items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
               <span>📅</span>
               {caseData.intern_first_meeting_date ? (() => {
@@ -412,8 +424,8 @@ export default function CaseDetailPage() {
             </div>
           )}
 
-          {/* Chips infos clés */}
-          <div className="flex flex-wrap gap-2 pb-3 text-xs">
+          {/* Chips infos clés — masquées en mode compact */}
+          <div className={`flex flex-wrap gap-2 text-xs transition-all duration-200 ${headerCompact ? 'max-h-0 opacity-0 pb-0 overflow-hidden pointer-events-none' : 'max-h-24 opacity-100 pb-3'}`}>
 {/* métier retiré du header */}
             {schoolName && (
               <span className="flex items-center gap-1 px-2.5 py-1 bg-zinc-100 rounded-full text-zinc-700">
@@ -433,9 +445,9 @@ export default function CaseDetailPage() {
 {/* touchpoint retiré du header */}
           </div>
 
-          {/* Next action card */}
+          {/* Next action card — masquée en mode compact */}
           {actionInfo && (
-            <div className="mb-3 px-4 py-3 bg-[#0d9e75]/10 border border-[#0d9e75]/20 rounded-xl flex items-center justify-between">
+            <div className={`px-4 py-3 bg-[#0d9e75]/10 border border-[#0d9e75]/20 rounded-xl flex items-center justify-between transition-all duration-200 ${headerCompact ? 'max-h-0 opacity-0 mb-0 overflow-hidden py-0 px-0 border-0 pointer-events-none' : 'max-h-24 opacity-100 mb-3'}`}>
               <div>
                 <p className="text-xs font-semibold text-[#0d9e75] uppercase tracking-wide mb-0.5">Prochaine étape</p>
                 <p className="text-sm font-medium text-[#1a1918]">{actionInfo.text}</p>
@@ -471,7 +483,7 @@ export default function CaseDetailPage() {
       </div>
 
       {/* ── TAB CONTENT ── */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 flex-1 overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="max-w-5xl mx-auto px-4 sm:px-6 py-6 flex-1 overflow-y-auto w-full">
         {activeTab === 'process' && (
           <TabProcess
             caseId={caseData.id}
