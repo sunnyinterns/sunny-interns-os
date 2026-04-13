@@ -220,9 +220,9 @@ export default function CaseDetailPage() {
     { key: 'process', label: '⚡ Processus' },
     { key: 'profil', label: '👤 Profil' },
     ...(!isVisaOnly ? [{ key: 'staffing' as TabKey, label: '💼 Staffing' }] : []),
+    ...(!isVisaOnly ? [{ key: 'facturation' as TabKey, label: '💶 Facturation' }] : []),
     { key: 'visa', label: '🛂 Visa' },
     ...(!isVisaOnly ? [{ key: 'arrivee' as TabKey, label: '🛫 Arrivée' }] : []),
-    { key: 'facturation', label: '💶 Facturation' },
   ]
 
   return (
@@ -360,6 +360,8 @@ export default function CaseDetailPage() {
               { key: 'qualification_done', icon: '✅', label: 'Qualifié' },
               { key: 'job_submitted', icon: '💼', label: 'Jobs' },
               { key: 'job_retained', icon: '🤝', label: 'Accepté' },
+              { key: 'convention_signed', icon: '📝', label: 'Convention' },
+              { key: 'payment_received', icon: '💳', label: 'Paiement' },
               { key: 'visa_in_progress', icon: '🛂', label: 'Visa' },
               { key: 'active', icon: '🛫', label: 'Arrivé' },
               { key: 'completed', icon: '🎓', label: 'Terminé' },
@@ -391,15 +393,17 @@ export default function CaseDetailPage() {
           {(caseData.intern_first_meeting_date || caseData.google_calendar_event_id) && (
             <div className="mb-3 flex flex-wrap items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
               <span>📅</span>
-              {caseData.intern_first_meeting_date ? (
-                <span className="font-medium">
-                  1er entretien : {new Date(caseData.intern_first_meeting_date).toLocaleDateString('fr-FR', {
-                    weekday: 'short', day: 'numeric', month: 'short'
-                  })} à {new Date(caseData.intern_first_meeting_date).toLocaleTimeString('fr-FR', {
-                    hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta'
-                  })} WITA
-                </span>
-              ) : (
+              {caseData.intern_first_meeting_date ? (() => {
+                const rdvDate = new Date(caseData.intern_first_meeting_date)
+                const daysUntil = Math.ceil((rdvDate.getTime() - Date.now()) / (1000 * 3600 * 24))
+                const daysLabel = daysUntil === 0 ? "aujourd'hui" : daysUntil === 1 ? 'demain' : daysUntil > 0 ? `dans ${daysUntil} jours` : `il y a ${Math.abs(daysUntil)}j`
+                return (
+                  <span className="font-medium">
+                    1er entretien : {rdvDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à {rdvDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })} WITA
+                    <span className="ml-2 px-1.5 py-0.5 bg-blue-200 text-blue-800 rounded text-[10px] font-bold">{daysLabel}</span>
+                  </span>
+                )
+              })() : (
                 <span className="font-medium">1er entretien planifié (date à synchroniser)</span>
               )}
               {caseData.google_meet_link && (
@@ -419,11 +423,7 @@ export default function CaseDetailPage() {
 
           {/* Chips infos clés */}
           <div className="flex flex-wrap gap-2 pb-3 text-xs">
-            {mainJob && (
-              <span className="flex items-center gap-1 px-2.5 py-1 bg-zinc-100 rounded-full text-zinc-700">
-                💼 {mainJob}
-              </span>
-            )}
+{/* métier retiré du header */}
             {schoolName && (
               <span className="flex items-center gap-1 px-2.5 py-1 bg-zinc-100 rounded-full text-zinc-700">
                 🎓 {schoolName}
@@ -431,7 +431,7 @@ export default function CaseDetailPage() {
             )}
             {dateDepart && (
               <span className="flex items-center gap-1 px-2.5 py-1 bg-zinc-100 rounded-full text-zinc-700">
-                📅 Départ: {dateDepart}
+                📅 Départ souhaité : {new Date(dateDepart).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
               </span>
             )}
             {durationMonths && (
@@ -439,11 +439,7 @@ export default function CaseDetailPage() {
                 ⏱ {durationMonths} mois
               </span>
             )}
-            {touchpoint && (
-              <span className="flex items-center gap-1 px-2.5 py-1 bg-zinc-100 rounded-full text-zinc-700">
-                🔗 {touchpoint}
-              </span>
-            )}
+{/* touchpoint retiré du header */}
           </div>
 
           {/* Next action card */}
@@ -530,7 +526,7 @@ export default function CaseDetailPage() {
             desiredStartDate={caseData.desired_start_date ?? null}
             desiredEndDate={caseData.end_date ?? caseData.actual_end_date ?? null}
             desiredDurationMonths={caseData.desired_duration_months ?? null}
-            cvUrl={intern.cv_en_url ?? caseData.cv_url ?? null}
+            cvUrl={intern.cv_url ?? null}
             cvLocalUrl={intern.cv_url ?? caseData.local_cv_url ?? null}
             cvFeedback={caseData.cv_feedback ?? null}
             desiredSectors={intern.desired_sectors ?? caseData.desired_sectors ?? null}
@@ -559,7 +555,7 @@ export default function CaseDetailPage() {
             visa_agents: caseData.visa_agents ?? null,
             packages: caseData.packages ?? null,
             desired_start_date: caseData.desired_start_date ?? null,
-          }} />
+          }} schoolName={schoolName} onStatusChange={fetchCase} />
         )}
         {activeTab === 'arrivee' && (
           <TabArrivee caseData={{

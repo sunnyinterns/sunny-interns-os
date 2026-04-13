@@ -360,26 +360,16 @@ export function TabProfil({ intern, internId, caseId, schoolName }: TabProfilPro
 
       {/* SECTION 1 — Identité */}
       <Section title="🪪 Identité">
-        <EditableField label="Date de naissance" value={intern.birth_date} fieldKey="birth_date" internId={iid} caseId={caseId} type="date" />
-        {age !== null && (
-          <EditableField label="Âge" value={`${age} ans`} fieldKey="age" readonly />
-        )}
+        {/* Date naissance + âge sur même ligne */}
+        <div className="flex gap-3 py-2.5 border-b border-zinc-50 items-center">
+          <span className="text-[11px] text-zinc-400 font-medium w-32 flex-shrink-0">Date de naissance</span>
+          <div className="flex items-center gap-2 flex-1">
+            <span className="text-sm text-[#1a1918]">{intern.birth_date ? new Date(intern.birth_date).toLocaleDateString('fr-FR') : <span className="text-zinc-300">—</span>}</span>
+            {age !== null && <span className="text-xs text-zinc-400 font-medium">({age} ans)</span>}
+          </div>
+        </div>
         <EditableField label="Nationalité(s)" value={intern.nationality} fieldKey="nationality" internId={iid} caseId={caseId} />
-        <SelectField
-          label="Genre"
-          value={intern.gender ?? intern.sexe}
-          fieldKey="gender"
-          internId={iid}
-          caseId={caseId}
-          target="intern"
-          options={[
-            { value: 'male', label: 'Homme' },
-            { value: 'female', label: 'Femme' },
-            { value: 'other', label: 'Autre' },
-          ]}
-        />
-        <EditableField label="Contact urgence (nom)" value={intern.emergency_contact_name} fieldKey="emergency_contact_name" internId={iid} caseId={caseId} />
-        <EditableField label="Contact urgence (tél)" value={intern.emergency_contact_phone} fieldKey="emergency_contact_phone" internId={iid} caseId={caseId} />
+        {/* Genre + Contact urgence → déplacés dans l'onglet Visa */}
         <EditableField
           label="Passeport"
           value={intern.passport_number ? `${intern.passport_number}${intern.passport_expiry ? ` — exp. ${new Date(intern.passport_expiry).toLocaleDateString('fr-FR')}` : ''}` : null}
@@ -432,8 +422,7 @@ export function TabProfil({ intern, internId, caseId, schoolName }: TabProfilPro
           caseId={caseId}
           type="textarea"
         />
-        <EditableField label="Responsable pédagogique" value={intern.school_contact_name} fieldKey="school_contact_name" internId={iid} caseId={caseId} />
-        <EditableField label="Email responsable" value={intern.school_contact_email} fieldKey="school_contact_email" internId={iid} caseId={caseId} type="email" />
+        {/* Responsable pédagogique → déplacé dans l'onglet Visa */}
       </Section>
     </div>
   )

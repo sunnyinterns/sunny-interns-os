@@ -586,8 +586,8 @@ export function TabStaffing({
                 <p className="text-sm mt-0.5">{desiredStartDate ? new Date(desiredStartDate).toLocaleDateString('fr-FR') : '—'}</p>
               </div>
               <div>
-                <span className="text-[11px] text-zinc-400 font-medium">Fin souhaitée</span>
-                <p className="text-sm mt-0.5">{desiredEndDate ? new Date(desiredEndDate).toLocaleDateString('fr-FR') : '—'}</p>
+                <span className="text-[11px] text-zinc-400 font-medium">Date max de fin de stage</span>
+                <p className="text-sm mt-0.5 text-xs">{desiredEndDate ? new Date(desiredEndDate).toLocaleDateString('fr-FR') : <span className="text-zinc-300 text-xs">Non renseignée</span>}</p>
               </div>
             </div>
 

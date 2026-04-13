@@ -14,20 +14,6 @@ interface Package {
   processing_days?: number | null
 }
 
-interface DocItem {
-  key: string
-  label: string
-  urlField: keyof NonNullable<TabVisaProps['caseData']['interns']>
-  hint: string
-}
-
-const DOCS: DocItem[] = [
-  { key: 'passport_page4', label: 'Passeport page 4 (haute résolution)', urlField: 'passport_page4_url', hint: 'Double-page avec photo' },
-  { key: 'photo_id', label: 'Photo fond blanc', urlField: 'photo_id_url', hint: 'Format ID, fond blanc strict' },
-  { key: 'bank_statement', label: 'Relevé bancaire', urlField: 'bank_statement_url', hint: '3 derniers mois, traduit si besoin' },
-  { key: 'return_ticket', label: 'Billet retour', urlField: 'return_plane_ticket_url', hint: 'Vol confirmé aller-retour' },
-]
-
 interface TabVisaProps {
   caseData: {
     id: string
@@ -53,14 +39,27 @@ interface TabVisaProps {
       passport_expiry?: string | null
       emergency_contact_name?: string | null
       emergency_contact_phone?: string | null
+      emergency_contact_email?: string | null
       mother_first_name?: string | null
       mother_last_name?: string | null
+      gender?: string | null
+      sexe?: string | null
+      school_contact_name?: string | null
+      school_contact_email?: string | null
+      school_contact_first_name?: string | null
+      school_contact_last_name?: string | null
+      school_contact_phone?: string | null
+      flight_departure_date?: string | null
+      flight_return_date?: string | null
+      flight_departure_city?: string | null
+      flight_number?: string | null
       [key: string]: unknown
     } | null
     desired_start_date?: string | null
     visa_agents?: { id: string; company_name: string; email?: string | null; whatsapp?: string | null } | null
     packages?: { id: string; name: string; price_eur: number; visa_cost_idr?: number | null; package_type?: string | null; processing_days?: number | null; validity_label?: string | null } | null
   }
+  schoolName?: string | null
   onStatusChange?: () => void
 }
 
@@ -72,38 +71,116 @@ function showToast() {
   setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300) }, 1500)
 }
 
-function SectionCard({ title, children, trailing }: { title: string; children: React.ReactNode; trailing?: React.ReactNode }) {
+function SectionCard({ title, children, trailing, note }: { title: string; children: React.ReactNode; trailing?: React.ReactNode; note?: string }) {
   return (
     <div className="bg-white rounded-xl border border-zinc-100 overflow-hidden">
       <div className="px-4 py-3 border-b border-zinc-50 flex items-center justify-between">
         <h4 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">{title}</h4>
         {trailing}
       </div>
-      <div className="px-4 py-3">{children}</div>
+      <div className="px-4 py-3 space-y-3">
+        {children}
+        {note && <p className="text-[11px] text-zinc-400 italic">{note}</p>}
+      </div>
     </div>
   )
 }
 
-export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
+function FieldInput({ label, value, onChange, onBlur, type = 'text', required, readonly, placeholder }: {
+  label: string; value: string; onChange: (v: string) => void; onBlur: () => void;
+  type?: string; required?: boolean; readonly?: boolean; placeholder?: string
+}) {
+  return (
+    <div>
+      <label className="block text-[11px] text-zinc-400 mb-1">
+        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+      </label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
+        readOnly={readonly}
+        placeholder={placeholder}
+        className={`w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e] ${readonly ? 'bg-zinc-50 text-zinc-500' : ''}`}
+      />
+    </div>
+  )
+}
+
+function DocRow({ label, hint, url, portalLink }: { label: string; hint: string; url?: string | null; portalLink?: string | null }) {
+  const received = !!url
+  return (
+    <div className="flex items-center gap-3 px-4 py-3">
+      <span className="text-base flex-shrink-0">{received ? '✅' : '❌'}</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-[#1a1918]">{label}</p>
+        <p className="text-xs text-zinc-400">{hint}</p>
+      </div>
+      {received ? (
+        <a href={url!} target="_blank" rel="noopener noreferrer" className="text-xs text-[#c8a96e] hover:underline flex-shrink-0">Voir</a>
+      ) : portalLink ? (
+        <a href={portalLink} target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-400 hover:text-[#c8a96e] flex-shrink-0">Portail upload</a>
+      ) : (
+        <span className="text-xs text-zinc-300 flex-shrink-0">En attente</span>
+      )}
+    </div>
+  )
+}
+
+export function TabVisa({ caseData, schoolName, onStatusChange }: TabVisaProps) {
+  const intern = caseData.interns
+  const internId = intern?.id as string | undefined
+
+  // ─── Packages ───
   const [packages, setPackages] = useState<Package[]>([])
   const [selectedPackageId, setSelectedPackageId] = useState(caseData.package_id ?? '')
-  const [noteForAgent, setNoteForAgent] = useState(caseData.note_for_agent ?? '')
+  const [loadingPkgs, setLoadingPkgs] = useState(true)
   const [saving, setSaving] = useState(false)
+
+  // ─── Note agent ───
+  const [noteForAgent, setNoteForAgent] = useState(caseData.note_for_agent ?? '')
   const [savingNote, setSavingNote] = useState(false)
+
+  // ─── FAZZA ───
+  const [fazzaSent, setFazzaSent] = useState(!!caseData.fazza_transfer_sent)
+  const [fazzaAmount, setFazzaAmount] = useState(caseData.fazza_transfer_amount_idr ?? 0)
+  const [fazzaDate, setFazzaDate] = useState(caseData.fazza_transfer_date ?? '')
+
+  // ─── Send to agent ───
   const [sendingToAgent, setSendingToAgent] = useState(false)
   const [sentToAgent, setSentToAgent] = useState(!!caseData.visa_submitted_to_agent_at)
   const [copied, setCopied] = useState(false)
-  const [loadingPkgs, setLoadingPkgs] = useState(true)
 
-  // Infos personnelles visa
-  const [passportNumber, setPassportNumber] = useState((caseData.interns?.passport_number as string) ?? '')
-  const [passportExpiry, setPassportExpiry] = useState((caseData.interns?.passport_expiry as string) ?? '')
-  const [emergencyName, setEmergencyName] = useState((caseData.interns?.emergency_contact_name as string) ?? '')
-  const [emergencyPhone, setEmergencyPhone] = useState((caseData.interns?.emergency_contact_phone as string) ?? '')
-  const [motherFirst, setMotherFirst] = useState((caseData.interns?.mother_first_name as string) ?? '')
-  const [motherLast, setMotherLast] = useState((caseData.interns?.mother_last_name as string) ?? '')
+  // ─── Section 1: Passeport ───
+  const [passportNumber, setPassportNumber] = useState((intern?.passport_number as string) ?? '')
+  const [passportExpiry, setPassportExpiry] = useState((intern?.passport_expiry as string) ?? '')
 
-  // Alerte passeport : expire avant (date démarrage + 6 mois) ou avant (today + 6 mois) en fallback
+  // ─── Section 3: Identité Mère ───
+  const [motherFirst, setMotherFirst] = useState((intern?.mother_first_name as string) ?? '')
+  const [motherLast, setMotherLast] = useState((intern?.mother_last_name as string) ?? '')
+
+  // ─── Section 4: École & Responsable ───
+  const [schoolContactFirst, setSchoolContactFirst] = useState((intern?.school_contact_first_name as string) ?? '')
+  const [schoolContactLast, setSchoolContactLast] = useState((intern?.school_contact_last_name as string) ?? '')
+  const [schoolContactEmail, setSchoolContactEmail] = useState((intern?.school_contact_email as string) ?? '')
+  const [schoolContactPhone, setSchoolContactPhone] = useState((intern?.school_contact_phone as string) ?? '')
+
+  // ─── Section 5: Contact d'urgence ───
+  const [emergencyName, setEmergencyName] = useState((intern?.emergency_contact_name as string) ?? '')
+  const [emergencyEmail, setEmergencyEmail] = useState((intern?.emergency_contact_email as string) ?? '')
+  const [emergencyPhone, setEmergencyPhone] = useState((intern?.emergency_contact_phone as string) ?? '')
+
+  // ─── Section 7: Billet d'avion ───
+  const [flightDepartureDate, setFlightDepartureDate] = useState((intern?.flight_departure_date as string) ?? '')
+  const [flightReturnDate, setFlightReturnDate] = useState((intern?.flight_return_date as string) ?? '')
+  const [flightDepartureCity, setFlightDepartureCity] = useState((intern?.flight_departure_city as string) ?? '')
+  const [flightNumber, setFlightNumber] = useState((intern?.flight_number as string) ?? '')
+
+  // ─── Section 8: Genre ───
+  const [gender, setGender] = useState((intern?.gender as string) ?? (intern?.sexe as string) ?? '')
+
+  // ─── Passport warning ───
   const passportWarning = (() => {
     if (!passportExpiry) return false
     const expiry = new Date(passportExpiry)
@@ -113,10 +190,15 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
     return expiry < limit
   })()
 
-  // FAZZA transfer
-  const [fazzaSent, setFazzaSent] = useState(!!caseData.fazza_transfer_sent)
-  const [fazzaAmount, setFazzaAmount] = useState(caseData.fazza_transfer_amount_idr ?? 0)
-  const [fazzaDate, setFazzaDate] = useState(caseData.fazza_transfer_date ?? '')
+  // ─── Flight duration check ───
+  const flightDurationWarning = (() => {
+    if (!flightDepartureDate || !flightReturnDate) return null
+    const dep = new Date(flightDepartureDate)
+    const ret = new Date(flightReturnDate)
+    const days = Math.floor((ret.getTime() - dep.getTime()) / (1000 * 60 * 60 * 24))
+    if (days > 175) return `Durée du séjour : ${days} jours (max 175 jours pour le visa B211A)`
+    return null
+  })()
 
   useEffect(() => {
     fetch('/api/packages')
@@ -127,6 +209,23 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
 
   const selectedPkg = packages.find((p) => p.id === selectedPackageId)
 
+  async function saveInternField(field: string, value: string) {
+    if (!internId) return
+    await fetch(`/api/interns/${internId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [field]: value || null }),
+    }).then(() => showToast()).catch(() => null)
+  }
+
+  async function saveCaseField(patch: Record<string, unknown>) {
+    await fetch(`/api/cases/${caseData.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    }).then(() => showToast()).catch(() => null)
+  }
+
   const handlePackageChange = useCallback(async (pkgId: string) => {
     setSelectedPackageId(pkgId)
     const pkg = packages.find((p) => p.id === pkgId)
@@ -135,10 +234,7 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
       await fetch(`/api/cases/${caseData.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          package_id: pkgId || null,
-          payment_amount: pkg?.price_eur ?? null,
-        }),
+        body: JSON.stringify({ package_id: pkgId || null, payment_amount: pkg?.price_eur ?? null }),
       })
       showToast()
       onStatusChange?.()
@@ -160,24 +256,6 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
       setSavingNote(false)
     }
   }, [caseData.id, noteForAgent])
-
-  async function handleInternSave(field: string, value: string) {
-    const internId = caseData.interns?.id as string | undefined
-    if (!internId) return
-    await fetch(`/api/interns/${internId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ [field]: value || null }),
-    }).then(() => showToast()).catch(() => null)
-  }
-
-  async function handleFazzaPatch(patch: Record<string, unknown>) {
-    await fetch(`/api/cases/${caseData.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(patch),
-    }).then(() => showToast()).catch(() => null)
-  }
 
   const portalLink = caseData.portal_token
     ? `${typeof window !== 'undefined' ? window.location.origin : ''}/portal/${caseData.portal_token}/visa`
@@ -205,129 +283,265 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
     }
   }
 
-  const docsReady = DOCS.filter((d) => !!caseData.interns?.[d.urlField]).length
-  const docsTotal = DOCS.length
+  // Doc counts for progress bar
+  const docFields = [
+    intern?.passport_page4_url,
+    intern?.photo_id_url,
+    intern?.bank_statement_url,
+    intern?.return_plane_ticket_url,
+  ]
+  const docsReady = docFields.filter(Boolean).length
+  const docsTotal = docFields.length
 
   return (
     <div className="space-y-5">
-      {/* Section 0: Infos personnelles visa */}
-      <SectionCard title="🛂 Informations personnelles">
+
+      {/* ═══ 1. PASSEPORT ═══ */}
+      <SectionCard title="🛂 Passeport">
+        <DocRow
+          label="Passeport page 4 (haute résolution)"
+          hint="Double-page avec photo"
+          url={intern?.passport_page4_url}
+          portalLink={portalLink}
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+          <FieldInput
+            label="Numéro de passeport"
+            value={passportNumber}
+            onChange={setPassportNumber}
+            onBlur={() => { void saveInternField('passport_number', passportNumber) }}
+          />
+          <FieldInput
+            label="Date d'expiration"
+            type="date"
+            value={passportExpiry}
+            onChange={setPassportExpiry}
+            onBlur={() => { void saveInternField('passport_expiry', passportExpiry) }}
+          />
+        </div>
+        {passportWarning && (
+          <div className="text-xs text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-lg">
+            ⚠️ Passeport expire trop tôt par rapport à la date de démarrage (marge &lt; 6 mois).
+          </div>
+        )}
+      </SectionCard>
+
+      {/* ═══ 2. DOCUMENTS D'IDENTITÉ ═══ */}
+      <SectionCard
+        title="📸 Documents d'identité"
+        note="Format portrait, fond blanc strict, récente"
+      >
+        <DocRow
+          label="Photo d'identité FOND BLANC"
+          hint="Requis — format portrait, fond blanc strict"
+          url={intern?.photo_id_url}
+          portalLink={portalLink}
+        />
+      </SectionCard>
+
+      {/* ═══ 3. IDENTITÉ MÈRE ═══ */}
+      <SectionCard
+        title="👩 Identité mère"
+        note="Ces informations sont requises pour le dossier visa Indonésien"
+      >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="block text-[11px] text-zinc-400 mb-1">N° passeport</label>
-            <input
-              type="text"
-              value={passportNumber}
-              onChange={(e) => setPassportNumber(e.target.value)}
-              onBlur={() => { void handleInternSave('passport_number', passportNumber) }}
-              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-            />
-          </div>
-          <div>
-            <label className="block text-[11px] text-zinc-400 mb-1">Expiration passeport</label>
-            <input
-              type="date"
-              value={passportExpiry}
-              onChange={(e) => setPassportExpiry(e.target.value)}
-              onBlur={() => { void handleInternSave('passport_expiry', passportExpiry) }}
-              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-            />
-          </div>
-          {passportWarning && (
-            <div className="sm:col-span-2 text-xs text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-lg">
-              ⚠️ Passeport expire trop tôt par rapport à la date de démarrage (marge &lt; 6 mois).
-            </div>
-          )}
-          <div>
-            <label className="block text-[11px] text-zinc-400 mb-1">Contact urgence (nom)</label>
-            <input
-              type="text"
-              value={emergencyName}
-              onChange={(e) => setEmergencyName(e.target.value)}
-              onBlur={() => { void handleInternSave('emergency_contact_name', emergencyName) }}
-              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-            />
-          </div>
-          <div>
-            <label className="block text-[11px] text-zinc-400 mb-1">Contact urgence (tél)</label>
-            <input
-              type="tel"
-              value={emergencyPhone}
-              onChange={(e) => setEmergencyPhone(e.target.value)}
-              onBlur={() => { void handleInternSave('emergency_contact_phone', emergencyPhone) }}
-              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-            />
-          </div>
-          <div>
-            <label className="block text-[11px] text-zinc-400 mb-1">Prénom mère</label>
-            <input
-              type="text"
-              value={motherFirst}
-              onChange={(e) => setMotherFirst(e.target.value)}
-              onBlur={() => { void handleInternSave('mother_first_name', motherFirst) }}
-              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-            />
-          </div>
-          <div>
-            <label className="block text-[11px] text-zinc-400 mb-1">Nom mère (naissance)</label>
-            <input
-              type="text"
-              value={motherLast}
-              onChange={(e) => setMotherLast(e.target.value)}
-              onBlur={() => { void handleInternSave('mother_last_name', motherLast) }}
-              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-            />
-          </div>
+          <FieldInput
+            label="Prénom de la mère"
+            value={motherFirst}
+            onChange={setMotherFirst}
+            onBlur={() => { void saveInternField('mother_first_name', motherFirst) }}
+            required
+          />
+          <FieldInput
+            label="Nom de famille de naissance de la mère"
+            value={motherLast}
+            onChange={setMotherLast}
+            onBlur={() => { void saveInternField('mother_last_name', motherLast) }}
+            required
+            placeholder="Nom de naissance, pas nom de mariée"
+          />
         </div>
       </SectionCard>
 
-      {/* Section 1: Package */}
-      <SectionCard title="Package visa">
-        {loadingPkgs ? (
-          <div className="h-9 bg-zinc-100 rounded-lg animate-pulse" />
-        ) : (
-          <select
-            value={selectedPackageId}
-            onChange={(e) => { void handlePackageChange(e.target.value) }}
-            disabled={saving}
-            className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e] disabled:opacity-60"
-          >
-            <option value="">— Sélectionner un package —</option>
-            {packages.map((pkg) => (
-              <option key={pkg.id} value={pkg.id}>
-                {pkg.name} — {pkg.price_eur}€
-                {pkg.visa_types ? ` · ${pkg.visa_types.code}` : ''}
-                {pkg.max_stay_days ? ` · ${pkg.max_stay_days}j max` : ''}
-              </option>
-            ))}
-          </select>
-        )}
-        {selectedPkg && (
-          <div className="flex flex-wrap gap-3 text-xs text-zinc-500 mt-3">
-            <span>Prix : <strong className="text-[#1a1918]">{selectedPkg.price_eur}€</strong></span>
-            {selectedPkg.visa_cost_idr && (
-              <span>Coût visa IDR : <strong className="text-[#1a1918]">{selectedPkg.visa_cost_idr.toLocaleString()} IDR</strong></span>
-            )}
-            {selectedPkg.processing_days && (
-              <span>Délai : <strong className="text-[#1a1918]">{selectedPkg.processing_days}j</strong></span>
-            )}
-            {selectedPkg.validity_label && (
-              <span>Validité : <strong className="text-[#1a1918]">{selectedPkg.validity_label}</strong></span>
-            )}
-          </div>
-        )}
-        {!selectedPkg && caseData.packages && (
-          <div className="flex flex-wrap gap-3 text-xs text-zinc-500 mt-3">
-            <span>Package actuel : <strong className="text-[#1a1918]">{caseData.packages.name} — {caseData.packages.price_eur}€</strong></span>
-            {caseData.packages.validity_label && <span>Validité : <strong className="text-[#1a1918]">{caseData.packages.validity_label}</strong></span>}
-          </div>
-        )}
+      {/* ═══ 4. ÉCOLE & RESPONSABLE PÉDAGOGIQUE ═══ */}
+      <SectionCard
+        title="🏫 École & Responsable Pédagogique"
+        note="Coordonnées du contact administratif responsable du suivi des stages"
+      >
+        <FieldInput
+          label="École / Université"
+          value={schoolName ?? ''}
+          onChange={() => {}}
+          onBlur={() => {}}
+          readonly
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <FieldInput
+            label="Prénom du Responsable Pédagogique"
+            value={schoolContactFirst}
+            onChange={setSchoolContactFirst}
+            onBlur={() => { void saveInternField('school_contact_first_name', schoolContactFirst) }}
+            required
+          />
+          <FieldInput
+            label="Nom du Responsable Pédagogique"
+            value={schoolContactLast}
+            onChange={setSchoolContactLast}
+            onBlur={() => { void saveInternField('school_contact_last_name', schoolContactLast) }}
+            required
+          />
+          <FieldInput
+            label="Email du Responsable Pédagogique"
+            value={schoolContactEmail}
+            onChange={setSchoolContactEmail}
+            onBlur={() => { void saveInternField('school_contact_email', schoolContactEmail) }}
+            type="email"
+            required
+          />
+          <FieldInput
+            label="Téléphone du Responsable Pédagogique"
+            value={schoolContactPhone}
+            onChange={setSchoolContactPhone}
+            onBlur={() => { void saveInternField('school_contact_phone', schoolContactPhone) }}
+            type="tel"
+          />
+        </div>
       </SectionCard>
 
-      {/* Section 2: Document checklist */}
+      {/* ═══ 5. CONTACT D'URGENCE ═══ */}
+      <SectionCard
+        title="🆘 Contact d'urgence"
+        note="Personne à contacter en cas d'urgence pendant le stage"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <FieldInput
+            label="Prénom et Nom du Contact d'urgence"
+            value={emergencyName}
+            onChange={setEmergencyName}
+            onBlur={() => { void saveInternField('emergency_contact_name', emergencyName) }}
+            required
+          />
+          <FieldInput
+            label="Email du Contact d'Urgence"
+            value={emergencyEmail}
+            onChange={setEmergencyEmail}
+            onBlur={() => { void saveInternField('emergency_contact_email', emergencyEmail) }}
+            type="email"
+            required
+          />
+          <FieldInput
+            label="Téléphone du Contact d'Urgence"
+            value={emergencyPhone}
+            onChange={setEmergencyPhone}
+            onBlur={() => { void saveInternField('emergency_contact_phone', emergencyPhone) }}
+            type="tel"
+            required
+          />
+        </div>
+      </SectionCard>
+
+      {/* ═══ 6. INFORMATIONS BANCAIRES ═══ */}
+      <SectionCard
+        title="💰 Informations bancaires"
+        note="Il doit dater du mois en cours ou du mois dernier. Limité à 5MB. Si cela pose un problème, signale-le nous."
+      >
+        <DocRow
+          label="Relevé bancaire"
+          hint="Affichant au moins 2000€, mois en cours ou dernier mois, max 5MB"
+          url={intern?.bank_statement_url}
+          portalLink={portalLink}
+        />
+      </SectionCard>
+
+      {/* ═══ 7. BILLET D'AVION ═══ */}
+      <SectionCard title="✈️ Billet d'avion">
+        {/* Encart informatif */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
+          <p className="text-sm font-semibold text-blue-900">🛩️ Billets d&apos;avion aller-retour obligatoires</p>
+          <p className="text-xs text-blue-800">L&apos;immigration Indonésienne exige les billets d&apos;avion avant d&apos;octroyer le visa.</p>
+          <div className="space-y-1 text-xs text-blue-700">
+            <p>⏰ <strong>Ne réserve pas trop tôt !</strong> À partir de la soumission du billet, comptez 1 mois pour obtenir le visa. La date de départ doit être au moins dans 1 mois.</p>
+            <p>📌 Le billet retour doit être dans un délai maximum de <strong>175 jours</strong> après l&apos;arrivée.</p>
+            <p>⚠️ Une fois le visa obtenu, vous avez <strong>90 jours maximum</strong> pour entrer en Indonésie. Tout dépassement entraîne une amende de 70€/jour.</p>
+          </div>
+        </div>
+
+        {/* Champs du formulaire */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+          <FieldInput
+            label="Date réelle de départ"
+            type="date"
+            value={flightDepartureDate}
+            onChange={setFlightDepartureDate}
+            onBlur={() => { void saveInternField('flight_departure_date', flightDepartureDate) }}
+            required
+          />
+          <FieldInput
+            label="Date réelle de retour"
+            type="date"
+            value={flightReturnDate}
+            onChange={setFlightReturnDate}
+            onBlur={() => { void saveInternField('flight_return_date', flightReturnDate) }}
+            required
+          />
+          <FieldInput
+            label="Ville de départ (dernière escale avant Denpasar)"
+            value={flightDepartureCity}
+            onChange={setFlightDepartureCity}
+            onBlur={() => { void saveInternField('flight_departure_city', flightDepartureCity) }}
+            placeholder="ex: Singapore, Kuala Lumpur..."
+          />
+          <FieldInput
+            label="Numéro du dernier vol (vers Denpasar)"
+            value={flightNumber}
+            onChange={setFlightNumber}
+            onBlur={() => { void saveInternField('flight_number', flightNumber) }}
+            placeholder="ex: QZ 501"
+          />
+        </div>
+
+        {flightDurationWarning && (
+          <div className="text-xs text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-lg">
+            ⚠️ {flightDurationWarning}
+          </div>
+        )}
+
+        {/* Upload billet */}
+        <DocRow
+          label="Billets d'avion AR"
+          hint="PDF/JPG, max 10MB — aller + retour"
+          url={intern?.return_plane_ticket_url}
+          portalLink={portalLink}
+        />
+      </SectionCard>
+
+      {/* ═══ 8. GENRE ═══ */}
+      <SectionCard title="Genre">
+        <div className="max-w-xs">
+          <select
+            value={gender}
+            onChange={(e) => {
+              setGender(e.target.value)
+              void saveInternField('gender', e.target.value)
+            }}
+            className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+          >
+            <option value="">—</option>
+            <option value="male">Homme</option>
+            <option value="female">Femme</option>
+            <option value="other">Autre</option>
+          </select>
+        </div>
+      </SectionCard>
+
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* SECTIONS EXISTANTES — Package, Documents progress, Portal, FAZZA, Note agent, Agent visa, Dates, Envoi */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+
+      {/* Document progress bar */}
       <div className="bg-white rounded-xl border border-zinc-100 overflow-hidden">
         <div className="px-4 py-3 border-b border-zinc-50 flex items-center justify-between">
-          <h4 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Documents requis</h4>
+          <h4 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Documents requis — récapitulatif</h4>
           <span className="text-xs text-zinc-400">{docsReady}/{docsTotal} reçus</span>
         </div>
         <div className="h-1 bg-zinc-100">
@@ -335,28 +549,6 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
             className="h-full bg-[#0d9e75] transition-all"
             style={{ width: `${Math.round((docsReady / docsTotal) * 100)}%` }}
           />
-        </div>
-        <div className="divide-y divide-zinc-50">
-          {DOCS.map((doc) => {
-            const url = caseData.interns?.[doc.urlField] as string | null | undefined
-            const received = !!url
-            return (
-              <div key={doc.key} className="flex items-center gap-3 px-4 py-3">
-                <span className="text-base flex-shrink-0">{received ? '✅' : '❌'}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[#1a1918]">{doc.label}</p>
-                  <p className="text-xs text-zinc-400">{doc.hint}</p>
-                </div>
-                {received ? (
-                  <a href={url!} target="_blank" rel="noopener noreferrer" className="text-xs text-[#c8a96e] hover:underline flex-shrink-0">Voir</a>
-                ) : portalLink ? (
-                  <a href={portalLink} target="_blank" rel="noopener noreferrer" className="text-xs text-zinc-400 hover:text-[#c8a96e] flex-shrink-0">Portail upload</a>
-                ) : (
-                  <span className="text-xs text-zinc-300 flex-shrink-0">En attente</span>
-                )}
-              </div>
-            )
-          })}
         </div>
       </div>
 
@@ -378,7 +570,50 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
         </SectionCard>
       )}
 
-      {/* Section 3: Virement FAZZA */}
+      {/* Package visa */}
+      <SectionCard title="Package visa">
+        {loadingPkgs ? (
+          <div className="h-9 bg-zinc-100 rounded-lg animate-pulse" />
+        ) : (
+          <select
+            value={selectedPackageId}
+            onChange={(e) => { void handlePackageChange(e.target.value) }}
+            disabled={saving}
+            className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e] disabled:opacity-60"
+          >
+            <option value="">— Sélectionner un package —</option>
+            {packages.map((pkg) => (
+              <option key={pkg.id} value={pkg.id}>
+                {pkg.name} — {pkg.price_eur}€
+                {pkg.visa_types ? ` · ${pkg.visa_types.code}` : ''}
+                {pkg.max_stay_days ? ` · ${pkg.max_stay_days}j max` : ''}
+              </option>
+            ))}
+          </select>
+        )}
+        {selectedPkg && (
+          <div className="flex flex-wrap gap-3 text-xs text-zinc-500">
+            <span>Prix : <strong className="text-[#1a1918]">{selectedPkg.price_eur}€</strong></span>
+            {selectedPkg.visa_cost_idr && (
+              <span>Coût visa IDR : <strong className="text-[#1a1918]">{selectedPkg.visa_cost_idr.toLocaleString()} IDR</strong></span>
+            )}
+            {selectedPkg.processing_days && (
+              <span>Délai : <strong className="text-[#1a1918]">{selectedPkg.processing_days}j</strong></span>
+            )}
+            {selectedPkg.validity_label && (
+              <span>Validité : <strong className="text-[#1a1918]">{selectedPkg.validity_label}</strong></span>
+            )}
+          </div>
+        )}
+        {!selectedPkg && caseData.packages && (
+          <div className="flex flex-wrap gap-3 text-xs text-zinc-500">
+            <span>Package actuel : <strong className="text-[#1a1918]">{caseData.packages.name} — {caseData.packages.price_eur}€</strong></span>
+            {caseData.packages.validity_label && <span>Validité : <strong className="text-[#1a1918]">{caseData.packages.validity_label}</strong></span>}
+          </div>
+        )}
+      </SectionCard>
+
+      {/* Virement FAZZA */}
       <SectionCard title="Virement FAZZA">
         <label className="flex items-center gap-3 cursor-pointer mb-3">
           <input
@@ -386,7 +621,7 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
             checked={fazzaSent}
             onChange={(e) => {
               setFazzaSent(e.target.checked)
-              void handleFazzaPatch({ fazza_transfer_sent: e.target.checked })
+              void saveCaseField({ fazza_transfer_sent: e.target.checked })
             }}
             className="w-4 h-4 rounded accent-[#c8a96e]"
           />
@@ -399,7 +634,7 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
               type="number"
               value={fazzaAmount || ''}
               onChange={(e) => setFazzaAmount(parseFloat(e.target.value) || 0)}
-              onBlur={() => { void handleFazzaPatch({ fazza_transfer_amount_idr: fazzaAmount || null }) }}
+              onBlur={() => { void saveCaseField({ fazza_transfer_amount_idr: fazzaAmount || null }) }}
               className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
             />
           </div>
@@ -409,14 +644,14 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
               type="date"
               value={fazzaDate}
               onChange={(e) => setFazzaDate(e.target.value)}
-              onBlur={() => { void handleFazzaPatch({ fazza_transfer_date: fazzaDate || null }) }}
+              onBlur={() => { void saveCaseField({ fazza_transfer_date: fazzaDate || null }) }}
               className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
             />
           </div>
         </div>
       </SectionCard>
 
-      {/* Section 4: Note pour agent */}
+      {/* Note pour l'agent */}
       <SectionCard title="Note pour l'agent">
         <textarea
           value={noteForAgent}
@@ -429,7 +664,7 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
         {savingNote && <p className="text-xs text-zinc-400 mt-1">Sauvegarde…</p>}
       </SectionCard>
 
-      {/* Section 5: Agent visa */}
+      {/* Agent visa */}
       <SectionCard title="Agent visa">
         {caseData.visa_agents ? (
           <div className="space-y-1 text-sm">
@@ -446,7 +681,7 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
         )}
       </SectionCard>
 
-      {/* Section 6: Dates visa */}
+      {/* Dates visa */}
       <SectionCard title="Dates visa">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -470,7 +705,7 @@ export function TabVisa({ caseData, onStatusChange }: TabVisaProps) {
         </div>
       </SectionCard>
 
-      {/* Section 7: Envoyer à FAZZA */}
+      {/* Transmission à FAZZA */}
       <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-3">
         <h4 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Transmission à FAZZA</h4>
         {!canSendToAgent && (
