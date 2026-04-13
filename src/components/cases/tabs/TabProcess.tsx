@@ -251,6 +251,11 @@ export function TabProcess({
       ctaColor: 'bg-emerald-600 hover:bg-emerald-700',
       action: () => onTabChange?.('arrivee'),
     },
+    visa_in_progress: {
+      bg: 'bg-blue-50', border: 'border-blue-200', color: 'text-blue-800',
+      title: 'Visa en cours de traitement',
+      desc: "Le dossier est chez l'agent visa — attendre la réponse",
+    },
     active: {
       bg: 'bg-teal-50', border: 'border-teal-200', color: 'text-teal-800',
       title: '🌴 Stagiaire en cours à Bali',
@@ -258,6 +263,16 @@ export function TabProcess({
       cta: '🎓 Stage terminé',
       ctaColor: 'bg-teal-600 hover:bg-teal-700',
       action: () => { void changeStatus('alumni') },
+    },
+    alumni: {
+      bg: 'bg-zinc-50', border: 'border-zinc-200', color: 'text-zinc-700',
+      title: '🎓 Stage terminé — demander un avis',
+      desc: "Envoyer un email de remerciement et demander un avis Google / témoignage",
+    },
+    completed: {
+      bg: 'bg-zinc-50', border: 'border-zinc-200', color: 'text-zinc-600',
+      title: 'Dossier clôturé',
+      desc: "Ce dossier est terminé et archivé",
     },
   }
 
@@ -353,8 +368,9 @@ export function TabProcess({
     { key: 'qualification_done', label: 'Qualifié', icon: '✅' },
     { key: 'job_submitted', label: 'Jobs proposés', icon: '💼' },
     { key: 'job_retained', label: 'Offre acceptée', icon: '🤝' },
+    { key: 'convention_signed', label: 'Convention', icon: '📝' },
     { key: 'payment_received', label: 'Paiement reçu', icon: '💶' },
-    { key: 'visa_received', label: 'Visa reçu', icon: '🛂' },
+    { key: 'visa_in_progress', label: 'Visa en cours', icon: '🛂' },
     { key: 'active', label: 'En stage', icon: '🌴' },
     { key: 'alumni', label: 'Terminé', icon: '🎓' },
   ]
@@ -365,16 +381,17 @@ export function TabProcess({
     qualification_done: 'qualification_done',
     job_submitted: 'job_submitted',
     job_retained: 'job_retained',
-    convention_signed: 'job_retained',
-    payment_pending: 'job_retained',
+    convention_signed: 'convention_signed',
+    payment_pending: 'convention_signed',
     payment_received: 'payment_received',
     visa_docs_sent: 'payment_received',
-    visa_submitted: 'payment_received',
-    visa_in_progress: 'payment_received',
-    visa_received: 'visa_received',
-    arrival_prep: 'visa_received',
+    visa_submitted: 'visa_in_progress',
+    visa_in_progress: 'visa_in_progress',
+    visa_received: 'visa_in_progress',
+    arrival_prep: 'visa_in_progress',
     active: 'active',
     alumni: 'alumni',
+    completed: 'alumni',
   }
 
   const mappedKey = STATUS_TO_TIMELINE[status] ?? status

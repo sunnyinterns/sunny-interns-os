@@ -328,7 +328,7 @@ export function TabVisa({ caseData, schoolName, onStatusChange }: TabVisaProps) 
 
       {/* ═══ 2. DOCUMENTS D'IDENTITÉ ═══ */}
       <SectionCard
-        title="📸 Documents d'identité"
+        title="📸 Photo d'identité fond blanc"
         note="Format portrait, fond blanc strict, récente"
       >
         <DocRow
@@ -516,7 +516,7 @@ export function TabVisa({ caseData, schoolName, onStatusChange }: TabVisaProps) 
       </SectionCard>
 
       {/* ═══ 8. GENRE ═══ */}
-      <SectionCard title="Genre">
+      <SectionCard title="🧍 Genre">
         <div className="max-w-xs">
           <select
             value={gender}
