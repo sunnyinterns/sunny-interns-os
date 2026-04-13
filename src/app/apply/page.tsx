@@ -1732,10 +1732,36 @@ export default function ApplyPage() {
                   : "⚠️ If you can't make it, a reschedule link will be in your confirmation email. Due to high demand, only one reschedule is allowed."}
               </p>
             </div>
-            {/* Fillout iframe — la page Fields (champs cachés) est auto-skippée via postMessage */}
+            {/* Fillout iframe — page Fields auto-skippée:
+                1. postMessage fillout:next après 1.5s
+                2. overlay qui masque le bouton Next pendant 2s (UX) */}
             {filloutIframeSrc && (
               <div style={{ position: 'relative', width: '100%', minHeight: '700px' }}>
+                {/* Overlay qui masque la page Fields pendant le skip automatique */}
+                <div
+                  id="fillout-loading-overlay"
+                  style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                    background: '#fafaf9', zIndex: 10, display: 'flex',
+                    alignItems: 'center', justifyContent: 'center',
+                    borderRadius: '12px', flexDirection: 'column', gap: '12px'
+                  }}
+                >
+                  <div style={{ width: 32, height: 32, border: '3px solid #c8a96e', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                  <p style={{ fontSize: 13, color: '#8a7d6d', margin: 0 }}>
+                    {lang === 'fr' ? 'Chargement du calendrier...' : 'Loading calendar...'}
+                  </p>
+                </div>
                 <iframe
+                  ref={(el) => {
+                    if (el) {
+                      // Cacher l'overlay après 2.5s (temps que l'iframe skip la page Fields)
+                      setTimeout(() => {
+                        const overlay = el.parentElement?.querySelector('#fillout-loading-overlay') as HTMLElement | null
+                        if (overlay) overlay.style.display = 'none'
+                      }, 2500)
+                    }
+                  }}
                   src={filloutIframeSrc}
                   style={{ width: '100%', height: '700px', border: 'none', borderRadius: '12px' }}
                   title="Prendre un rendez-vous"

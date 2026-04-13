@@ -128,7 +128,7 @@ export async function POST(request: Request) {
 
       if (existingCase) {
         await supabase.from('cases').update({
-          status: 'rdv_booked',
+          status: 'lead',
           desired_start_date: d.start_date || null,
           desired_duration_months: durationMonths,
           desired_sectors: allJobs,
@@ -145,7 +145,7 @@ export async function POST(request: Request) {
         const { data: nc, error: ncErr } = await supabase.from('cases').insert({
           intern_id: internId,
           destination_id: dest?.id ?? 'fc9ece85-e5d5-41d2-9142-79054244bbce',
-          status: 'rdv_booked',
+          status: 'lead',
           desired_start_date: d.start_date || null,
           desired_duration_months: durationMonths,
           desired_sectors: allJobs,
@@ -173,7 +173,7 @@ export async function POST(request: Request) {
       const { data: nc, error: ncErr } = await supabase.from('cases').insert({
         intern_id: internId,
         destination_id: dest?.id ?? 'fc9ece85-e5d5-41d2-9142-79054244bbce',
-        status: 'rdv_booked',
+        status: 'lead',
         desired_start_date: d.start_date || null,
         desired_duration_months: durationMonths,
         desired_sectors: allJobs,
@@ -186,14 +186,9 @@ export async function POST(request: Request) {
       caseId = nc.id
     }
 
-    // Marquer le lead comme converti si existe
-    await supabase.from('leads').update({
-      status: 'converted',
-      converted_case_id: caseId,
-      converted_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }).eq('email', d.email.toLowerCase().trim())
-    .then(() => null, () => null)
+    // NOTE: Le lead N'EST PAS converti ici — il le sera quand le webhook Fillout
+    // confirmera le RDV booké (POST /api/webhooks/fillout-rdv)
+    // Le candidat reste en status 'lead' jusqu'à la confirmation du RDV
 
     // Log activity_feed
     await supabase.from('activity_feed').insert({

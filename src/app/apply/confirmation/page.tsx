@@ -69,7 +69,7 @@ function ConfirmationContent() {
         {rdv && (
           <p className="text-sm text-[#0d9e75] font-medium mb-4">
             {isFr
-              ? 'Ton RDV est confirm\u00e9. Tu recevras un email de confirmation.'
+              ? 'Ton RDV est confirmé. Tu recevras un email de confirmation.'
               : 'Your call is confirmed. You will receive a confirmation email.'}
           </p>
         )}
@@ -77,7 +77,7 @@ function ConfirmationContent() {
         {/* Timeline des prochaines étapes */}
         <div className="mt-6 mb-8 text-left">
           <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-4 text-center">
-            {isFr ? 'Prochaines \u00e9tapes' : 'Next steps'}
+            {isFr ? 'Prochaines étapes' : 'Next steps'}
           </p>
           <div className="space-y-0">
             {steps.map((step, i) => (
@@ -106,7 +106,7 @@ function ConfirmationContent() {
                   </p>
                   {step.done && i === 0 && (
                     <p className="text-xs text-zinc-400 mt-0.5">
-                      {isFr ? 'Termin\u00e9' : 'Completed'}
+                      {isFr ? 'Terminé' : 'Completed'}
                     </p>
                   )}
                   {step.active && (
@@ -126,11 +126,11 @@ function ConfirmationContent() {
             <span className="text-xl flex-shrink-0">{'\uD83D\uDCE7'}</span>
             <div>
               <p className="text-sm font-medium text-[#1a1918]">
-                {isFr ? 'V\u00e9rifie tes emails' : 'Check your emails'}
+                {isFr ? 'Vérifie tes emails' : 'Check your emails'}
               </p>
               <p className="text-xs text-zinc-500">
                 {isFr
-                  ? 'Tu recevras la confirmation de ton entretien dans quelques minutes (pense \u00e0 regarder tes spams).'
+                  ? 'Tu recevras la confirmation de ton entretien dans quelques minutes (pense à regarder tes spams).'
                   : 'You will receive your interview confirmation in a few minutes (check your spam folder).'}
               </p>
             </div>
@@ -139,11 +139,11 @@ function ConfirmationContent() {
             <span className="text-xl flex-shrink-0">{'ℹ️'}</span>
             <div>
               <p className="text-sm font-medium text-[#1a1918]">
-                {isFr ? "Pas d'email re\u00e7u ?" : "No confirmation email?"}
+                {isFr ? "Pas d'email reçu ?" : "No confirmation email?"}
               </p>
               <p className="text-xs text-zinc-500">
                 {isFr
-                  ? <span>Contacte-nous \u00e0 <a href="mailto:team@bali-interns.com" className="text-[#c8a96e] underline">team@bali-interns.com</a></span>
+                  ? <span>Contacte-nous à <a href="mailto:team@bali-interns.com" className="text-[#c8a96e] underline">team@bali-interns.com</a></span>
                   : <span>Contact us at <a href="mailto:team@bali-interns.com" className="text-[#c8a96e] underline">team@bali-interns.com</a></span>
                 }
               </p>

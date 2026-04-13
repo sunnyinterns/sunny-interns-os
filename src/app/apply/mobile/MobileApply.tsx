@@ -1264,12 +1264,27 @@ export function MobileApply({
                 : 'Book a 45-min Google Meet with us to confirm your application'}
             </p>
             {filloutIframeSrc && (
-              <iframe
-                src={filloutIframeSrc}
-                style={{ width: '100%', height: '650px', border: 'none', borderRadius: '12px' }}
-                title="Prendre un rendez-vous"
-                allow="camera; microphone; fullscreen"
-              />
+              <div style={{ position: 'relative', width: '100%', minHeight: '600px' }}>
+                <div
+                  id="fillout-overlay-mobile"
+                  style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: '#fafaf9', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px', flexDirection: 'column', gap: 12 }}
+                >
+                  <div className="animate-spin" style={{ width: 28, height: 28, border: '3px solid #c8a96e', borderTopColor: 'transparent', borderRadius: '50%' }} />
+                  <p style={{ fontSize: 12, color: '#8a7d6d', margin: 0 }}>{lang === 'fr' ? 'Chargement du calendrier...' : 'Loading calendar...'}</p>
+                </div>
+                <iframe
+                  ref={(el) => {
+                    if (el) setTimeout(() => {
+                      const o = el.parentElement?.querySelector('#fillout-overlay-mobile') as HTMLElement | null
+                      if (o) o.style.display = 'none'
+                    }, 2500)
+                  }}
+                  src={filloutIframeSrc}
+                  style={{ width: '100%', height: '650px', border: 'none', borderRadius: '12px' }}
+                  title="Prendre un rendez-vous"
+                  allow="camera; microphone; fullscreen"
+                />
+              </div>
             )}
           </div>
         )
