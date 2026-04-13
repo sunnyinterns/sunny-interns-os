@@ -203,7 +203,7 @@ export async function GET(
         packages ( id, name, price_eur, visa_cost_idr, validity_label, processing_days ),
         visa_types ( id, code, name ),
         destinations ( id, name ),
-        activity_feed ( id, type, title, description, status, priority, created_at, due_date, actions ),
+        activity_feed ( id, type, title, description, created_at, metadata ),
         job_submissions (
           id, status, intern_interested, cv_revision_requested, notes_charly,
           jobs ( id, title, public_title, wished_start_date, wished_duration_months,
