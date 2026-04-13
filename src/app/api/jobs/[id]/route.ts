@@ -14,7 +14,18 @@ export async function GET(
     const [{ data, error }, { data: submissions }] = await Promise.all([
       supabase
         .from('jobs')
-        .select('*, companies(id, name, contact_name, contact_email, contact_whatsapp), contacts(id, first_name, last_name, job_title, email, whatsapp), job_departments(id, name)')
+        .select(`
+          id, title, public_title, job_private_name, description, public_description,
+          department, missions, status, location, remote_ok, remote_work,
+          required_languages, required_level, wished_start_date, wished_end_date,
+          wished_duration_months, is_recurring, notes_internal, is_active,
+          job_department_id, max_candidates, compensation_type, compensation_amount,
+          skills_required, profile_sought,
+          created_at, updated_at,
+          companies(id, name, contact_name, contact_email, contact_whatsapp, whatsapp_number, industry, location),
+          contacts(id, first_name, last_name, job_title, email, whatsapp),
+          job_departments(id, name, slug, categories)
+        `)
         .eq('id', id)
         .single(),
       supabase
@@ -23,7 +34,10 @@ export async function GET(
         .eq('job_id', id)
         .order('created_at', { ascending: false }),
     ])
-    if (error) throw error
+    if (error) {
+      console.error('[jobs/[id]] GET error:', error)
+      return NextResponse.json({ error: 'Job introuvable' }, { status: 404 })
+    }
     return NextResponse.json({ ...data, job_submissions: submissions ?? [] })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 404 })
