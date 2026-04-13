@@ -81,15 +81,15 @@ interface TabStaffingProps {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
-  pending: { label: '⏳ En attente', bg: '#f4f4f5', text: '#71717a' },
+  pending: { label: '⏳ À envoyer', bg: '#f4f4f5', text: '#71717a' },
   proposed: { label: '💬 Proposé', bg: '#fef9ee', text: '#92400e' },
-  submitted: { label: '💬 Proposé', bg: '#fef9ee', text: '#92400e' },
+  submitted: { label: '📧 Envoyé', bg: '#dbeafe', text: '#1d4ed8' },
   cv_pending: { label: '📄 CV en attente', bg: '#eff6ff', text: '#1d4ed8' },
   cv_validated: { label: '✅ CV validé', bg: '#f0fdf4', text: '#15803d' },
   sent_to_employer: { label: '📧 Envoyé', bg: '#dbeafe', text: '#1d4ed8' },
   sent: { label: '📤 Envoyé', bg: '#dbeafe', text: '#1d4ed8' },
   interview: { label: '🗓️ Entretien', bg: '#ede9fe', text: '#6d28d9' },
-  retained: { label: '✅ Retenu', bg: '#d1fae5', text: '#059669' },
+  retained: { label: '✅ Retenu !', bg: '#d1fae5', text: '#059669' },
   rejected: { label: '❌ Non retenu', bg: '#fee2e2', text: '#dc2626' },
   cancelled: { label: 'Annulé', bg: '#f4f4f5', text: '#71717a' },
 }
@@ -170,26 +170,25 @@ function SortableJobCard({
               className="text-xs px-2.5 py-1.5 border border-green-300 bg-green-50 text-green-700 rounded-lg font-medium hover:bg-green-100 disabled:opacity-50">
               ✅ Valider CV
             </button>
-            <button disabled={isLoading || !cvIsValidated}
-              onClick={() => cvIsValidated ? onSendToEmployer(sub) : undefined}
+            <button disabled={isLoading}
+              onClick={() => cvIsValidated ? onSendToEmployer(sub) : showToastMsg('Valide le CV d\'abord', false)}
               title={!cvIsValidated ? 'CV non validé — valide le CV d\'abord' : undefined}
-              className={`text-xs px-3 py-1.5 rounded-lg font-semibold disabled:opacity-50 ${
+              className={`text-xs px-3 py-1.5 rounded-lg font-semibold ${
                 cvIsValidated
-                  ? 'bg-[#1a1918] text-white hover:bg-zinc-700'
+                  ? 'bg-[#1a1918] text-white hover:bg-zinc-700 disabled:opacity-50'
                   : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
               }`}>
-              {cvIsValidated ? '📧 Envoyer' : '🔒 Envoyer'}
+              {cvIsValidated ? '📧 Envoyer à l\u0027employeur' : '🔒 Envoyer'}
             </button>
           </>
         )}
 
         {sub.status === 'cv_validated' && (
-          <button disabled={isLoading || !cvIsValidated}
-            onClick={() => cvIsValidated ? onSendToEmployer(sub) : undefined}
-            title={!cvIsValidated ? 'CV non validé — valide le CV d\'abord' : undefined}
-            className={`text-xs px-3 py-1.5 rounded-lg font-semibold disabled:opacity-50 ${
+          <button disabled={isLoading}
+            onClick={() => cvIsValidated ? onSendToEmployer(sub) : showToastMsg('Valide le CV d\'abord', false)}
+            className={`text-xs px-3 py-1.5 rounded-lg font-semibold ${
               cvIsValidated
-                ? 'bg-[#1a1918] text-white hover:bg-zinc-700'
+                ? 'bg-[#1a1918] text-white hover:bg-zinc-700 disabled:opacity-50'
                 : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
             }`}>
             {cvIsValidated ? '📧 Envoyer à l\u0027employeur' : '🔒 Envoyer à l\u0027employeur'}
