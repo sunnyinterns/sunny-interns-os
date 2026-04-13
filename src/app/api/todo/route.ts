@@ -240,6 +240,30 @@ export async function GET() {
     })
   })
 
+  // 8. Leads abandonnés depuis > 3j avec email (formulaire non terminé)
+  const { data: abandonedLeads } = await adminClient
+    .from('leads')
+    .select('id, email, first_name, form_step')
+    .eq('source', 'website_form_unfinished')
+    .neq('status', 'converted')
+    .lt('updated_at', new Date(Date.now() - 3 * 86400000).toISOString())
+    .limit(10)
+
+  abandonedLeads?.forEach(l => {
+    todos.push({
+      id: `lead-abandoned-${l.id}`,
+      type: 'relance',
+      priority: 'normal',
+      case_id: '',
+      intern_name: l.first_name ? `${l.first_name} (${l.email})` : (l.email ?? ''),
+      title: `Lead abandonné à l'étape ${l.form_step ?? '?'}`,
+      description: `Formulaire non terminé — relancer par email`,
+      cta_label: 'Voir les leads',
+      cta_url: '/fr/leads',
+      status: 'abandoned',
+    })
+  })
+
   // Trier par priorité puis jours d'attente
   const priorityOrder = { urgent: 0, high: 1, normal: 2 }
   todos.sort((a, b) => {
