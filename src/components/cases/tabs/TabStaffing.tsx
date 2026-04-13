@@ -29,7 +29,11 @@ interface Job {
   location?: string | null
   status?: string | null
   description?: string | null
-  companies?: { id: string; name: string; contact_name?: string | null; contact_whatsapp?: string | null; contact_email?: string | null } | null
+  requirements?: string | null
+  language_required?: string | null
+  start_date?: string | null
+  duration_months?: number | null
+  companies?: { id: string; name: string; contact_name?: string | null; contact_whatsapp?: string | null; contact_email?: string | null; description?: string | null; industry?: string | null; location?: string | null; whatsapp_number?: string | null } | null
   contacts?: { id: string; first_name: string; last_name: string; email?: string | null } | null
 }
 
@@ -269,39 +273,67 @@ function SortableJobCard({
 function JobDetailPopup({ job, onClose, onSelect, isSubmitted }: { job: Job; onClose: () => void; onSelect: () => void; isSubmitted: boolean }) {
   const title = job.public_title ?? job.title ?? 'Offre sans titre'
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between">
-          <h3 className="text-base font-bold text-[#1a1918]">{title}</h3>
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600">✕</button>
-        </div>
-        <div className="px-6 py-4 space-y-3">
-          {job.companies?.name && (
-            <div><span className="text-xs text-zinc-400">Entreprise</span><p className="text-sm font-medium">{job.companies.name}</p></div>
-          )}
-          {job.department && (
-            <div><span className="text-xs text-zinc-400">Département</span><p className="text-sm">{job.department}</p></div>
-          )}
-          {job.wished_duration_months && (
-            <div><span className="text-xs text-zinc-400">Durée</span><p className="text-sm">{job.wished_duration_months} mois</p></div>
-          )}
-          {job.wished_start_date && (
-            <div><span className="text-xs text-zinc-400">Début souhaité</span><p className="text-sm">{new Date(job.wished_start_date).toLocaleDateString('fr-FR')}</p></div>
-          )}
-          {job.location && (
-            <div><span className="text-xs text-zinc-400">Lieu</span><p className="text-sm">{job.location}</p></div>
-          )}
-          {job.description && (
-            <div><span className="text-xs text-zinc-400">Description</span><p className="text-sm whitespace-pre-wrap">{job.description}</p></div>
-          )}
-        </div>
-        <div className="px-6 py-4 border-t border-zinc-100 flex justify-end gap-2">
-          <button onClick={onClose} className="text-xs px-3 py-2 text-zinc-500 hover:bg-zinc-100 rounded-lg">Fermer</button>
-          {!isSubmitted && (
-            <button onClick={() => { onSelect(); onClose() }}
-              className="text-xs px-4 py-2 bg-[#c8a96e] text-white rounded-lg font-semibold hover:bg-[#b8945a]">
-              + Sélectionner
+    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white border-b border-zinc-100 px-6 py-4 flex items-center justify-between">
+          <div>
+            <h2 className="font-bold text-lg text-[#1a1918]">{title}</h2>
+            <p className="text-sm text-zinc-500">{job.companies?.name ?? ''}{job.department ? ` · ${job.department}` : ''}</p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => { if (!isSubmitted) { onSelect(); onClose() } }}
+              disabled={isSubmitted}
+              className="px-4 py-2 bg-[#c8a96e] text-[#1a1918] text-sm font-bold rounded-xl hover:bg-[#b8945a] disabled:opacity-40">
+              {isSubmitted ? '✓ Sélectionné' : '+ Sélectionner'}
             </button>
+            <button onClick={onClose} className="px-3 py-2 text-sm bg-zinc-100 rounded-xl hover:bg-zinc-200">✕</button>
+          </div>
+        </div>
+        <div className="px-6 py-4 space-y-4">
+          {job.description && (
+            <div>
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Description</p>
+              <p className="text-sm text-zinc-700 whitespace-pre-wrap">{job.description}</p>
+            </div>
+          )}
+          {job.requirements && (
+            <div>
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Prérequis</p>
+              <p className="text-sm text-zinc-700 whitespace-pre-wrap">{job.requirements}</p>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            {(job.start_date ?? job.wished_start_date) && (
+              <div className="bg-zinc-50 rounded-xl p-3">
+                <p className="text-xs text-zinc-400 mb-1">Démarrage</p>
+                <p className="text-sm font-medium">{new Date((job.start_date ?? job.wished_start_date)!).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</p>
+              </div>
+            )}
+            {(job.duration_months ?? job.wished_duration_months) && (
+              <div className="bg-zinc-50 rounded-xl p-3">
+                <p className="text-xs text-zinc-400 mb-1">Durée</p>
+                <p className="text-sm font-medium">{job.duration_months ?? job.wished_duration_months} mois</p>
+              </div>
+            )}
+            {job.location && (
+              <div className="bg-zinc-50 rounded-xl p-3">
+                <p className="text-xs text-zinc-400 mb-1">Localisation</p>
+                <p className="text-sm font-medium">{job.location}</p>
+              </div>
+            )}
+            {job.language_required && (
+              <div className="bg-zinc-50 rounded-xl p-3">
+                <p className="text-xs text-zinc-400 mb-1">Langue requise</p>
+                <p className="text-sm font-medium">{job.language_required}</p>
+              </div>
+            )}
+          </div>
+          {job.companies?.description && (
+            <div>
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">À propos de l&apos;entreprise</p>
+              <p className="text-sm text-zinc-700 whitespace-pre-wrap">{job.companies.description}</p>
+            </div>
           )}
         </div>
       </div>
@@ -494,11 +526,19 @@ export function TabStaffing({
     const newIndex = submissions.findIndex(s => s.id === over.id)
     const reordered = arrayMove(submissions, oldIndex, newIndex)
     setSubmissions(reordered)
-    // Save new priorities
-    reordered.forEach((sub, i) => {
-      if (sub.intern_priority !== i + 1) {
-        void updateSubmission(sub.id, { intern_priority: i + 1 })
-      }
+    // Persist sort order via reorder API
+    const order = reordered.map((s, i) => ({ id: s.id, sort_order: i }))
+    void fetch(`/api/cases/${caseId}/job-submissions/reorder`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order }),
+    }).then(() => {
+      // Also update intern_priority for display
+      reordered.forEach((sub, i) => {
+        if (sub.intern_priority !== i + 1) {
+          void updateSubmission(sub.id, { intern_priority: i + 1 })
+        }
+      })
     })
   }
 

@@ -12,7 +12,12 @@ export async function GET(request: Request) {
 
   let query = supabase
     .from('jobs')
-    .select('*, companies(id, name), contacts(id, first_name, last_name, job_title), job_submissions(id)')
+    .select(`
+      *,
+      companies(id, name, contact_name, contact_email, contact_whatsapp, whatsapp_number, description, industry, location),
+      contacts(id, first_name, last_name, job_title, email),
+      job_submissions(id)
+    `)
     .order('created_at', { ascending: false })
 
   if (status && status !== 'all') query = query.eq('status', status)
