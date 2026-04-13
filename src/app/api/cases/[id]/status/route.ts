@@ -1,8 +1,21 @@
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { sendPaymentRequest } from '@/lib/email/resend'
+import { sendPaymentRequest, sendQualificationEmail } from '@/lib/email/resend'
 import { logActivity } from '@/lib/activity-logger'
+
+function generatePassword(len = 8): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+  return Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+}
+
+function getAdmin() {
+  return createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 const STATUS_LABELS: Record<string, string> = {
   lead: 'Nouveau lead', rdv_booked: 'RDV booké', qualification_done: 'Qualifié',
@@ -81,6 +94,52 @@ export async function PATCH(
     priority: ['payment_pending', 'arrival_prep'].includes(newStatus) ? 'high' : 'normal',
     metadata: { old_status: oldStatus, new_status: newStatus },
   })
+
+  // Envoyer email qualification quand statut passe à qualification_done
+  if (newStatus === 'qualification_done') {
+    try {
+      const admin = getAdmin()
+      const { data: caseRow } = await admin
+        .from('cases')
+        .select('id, portal_token, qualification_notes_for_intern, qualification_notes, interns(first_name, last_name, email)')
+        .eq('id', id)
+        .single()
+
+      if (caseRow) {
+        const intern = (caseRow as Record<string, unknown>).interns as { first_name?: string; last_name?: string; email?: string } | null
+        let portalToken = (caseRow as Record<string, unknown>).portal_token as string | null
+        const tempPassword = generatePassword()
+
+        // Generate portal_token if missing
+        if (!portalToken) {
+          portalToken = crypto.randomUUID()
+        }
+
+        // Save portal_token + temp password
+        await admin.from('cases').update({
+          portal_token: portalToken,
+          portal_temp_password: tempPassword,
+        }).eq('id', id)
+
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+        const qualNotes = (caseRow as Record<string, unknown>).qualification_notes_for_intern as string
+          ?? (caseRow as Record<string, unknown>).qualification_notes as string
+          ?? ''
+
+        if (intern?.email) {
+          void sendQualificationEmail({
+            internEmail: intern.email,
+            prenom: intern.first_name ?? 'Stagiaire',
+            nom: intern.last_name ?? '',
+            portalToken,
+            tempPassword,
+            qualificationNotes: qualNotes,
+            portalUrl: `${appUrl}/portal/${portalToken}/login`,
+          })
+        }
+      }
+    } catch { /* non-blocking */ }
+  }
 
   // Envoyer email paiement quand statut passe à payment_pending
   if (newStatus === 'payment_pending') {
