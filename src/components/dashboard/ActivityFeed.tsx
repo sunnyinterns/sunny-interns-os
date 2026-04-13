@@ -160,8 +160,8 @@ export function ActivityFeed({ locale = 'fr', showFilters = true, initialLimit =
       ) : items.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-3xl mb-2">✅</p>
-          <p className="text-sm font-medium text-[#1a1918]">Aucune activité</p>
-          <p className="text-xs text-zinc-400 mt-1">Tout est à jour !</p>
+          <p className="text-sm font-medium text-[#1a1918]">Aucune activité récente</p>
+          <p className="text-xs text-zinc-400 mt-1">Les événements apparaîtront ici automatiquement.</p>
         </div>
       ) : (
         <div className="space-y-6">
