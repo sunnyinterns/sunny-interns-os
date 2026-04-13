@@ -65,6 +65,20 @@ const COLUMN_TO_STATUS: Record<string, string> = {
 
 const LOST_STATUSES = ['not_interested', 'not_qualified', 'on_hold', 'suspended', 'visa_refused', 'archived', 'completed', 'no_job_found', 'lost']
 
+function getLinkedinSlug(url?: string | null): string | null {
+  if (!url) return null
+  if (!url.includes('linkedin.com')) return url.trim() || null
+  const m = url.match(/linkedin\.com\/in\/([^/?#]+)/)
+  return m ? m[1] : null
+}
+
+function getAvatarSrc(data: { avatar_url?: string | null; linkedin_url?: string | null }): string | null {
+  if (data.avatar_url) return data.avatar_url
+  const slug = getLinkedinSlug(data.linkedin_url)
+  if (slug) return `https://unavatar.io/linkedin/${slug}`
+  return null
+}
+
 interface InternGroup {
   id: string
   name: string
@@ -94,6 +108,8 @@ export interface CaseData {
   email?: string | null
   main_desired_job?: string | null
   created_at?: string | null
+  linkedin_url?: string | null
+  avatar_url?: string | null
 }
 
 export type ViewMode = 'kanban' | 'list'
@@ -226,6 +242,7 @@ function CaseCard({ data, locale }: { data: CaseData; locale: string }) {
   const progressPct = step >= 0 ? Math.round(((step + 1) / COLUMN_ORDER.length) * 100) : 0
 
   const initials = `${(data.first_name?.[0] ?? '').toUpperCase()}${(data.last_name?.[0] ?? '').toUpperCase()}`
+  const avatarSrc = getAvatarSrc(data)
 
   // RDV stale > 7 days
   const leadStale = data.status === 'rdv_booked' && data.created_at
@@ -242,7 +259,14 @@ function CaseCard({ data, locale }: { data: CaseData; locale: string }) {
         {/* Row 1: Avatar + Name + J-X */}
         <div className="flex items-center gap-2 mb-1">
           <div className="relative flex-shrink-0">
-            <div className="w-7 h-7 rounded-full bg-[#c8a96e] flex items-center justify-center">
+            {avatarSrc ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarSrc} alt={`${data.first_name} ${data.last_name}`}
+                className="w-7 h-7 rounded-full object-cover border border-zinc-100"
+                onError={(e) => { e.currentTarget.style.display = 'none'; (e.currentTarget.nextElementSibling as HTMLElement)?.classList.remove('hidden') }}
+              />
+            ) : null}
+            <div className={`w-7 h-7 rounded-full bg-[#c8a96e] flex items-center justify-center ${avatarSrc ? 'hidden' : ''}`}>
               <span className="text-white text-[10px] font-bold leading-none">{initials}</span>
             </div>
             {pulse && (

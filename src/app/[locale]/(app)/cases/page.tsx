@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { Avatar } from '@/components/ui/Avatar'
 
 import { Button } from '@/components/ui/Button'
 import { NewCaseModal } from '@/components/cases/NewCaseModal'
@@ -14,6 +13,20 @@ const PRE_EMBAUCHE_STATUSES = [
   'lead', 'rdv_booked', 'qualification_done', 'job_submitted',
   'job_retained', 'convention_signed', 'payment_pending', 'payment_received',
 ]
+
+function getLinkedinSlug(url?: string | null): string | null {
+  if (!url) return null
+  if (!url.includes('linkedin.com')) return url.trim() || null
+  const m = url.match(/linkedin\.com\/in\/([^/?#]+)/)
+  return m ? m[1] : null
+}
+
+function getAvatarSrc(intern: { avatar_url?: string | null; linkedin_url?: string | null }): string | null {
+  if (intern.avatar_url) return intern.avatar_url
+  const slug = getLinkedinSlug(intern.linkedin_url)
+  if (slug) return `https://unavatar.io/linkedin/${slug}`
+  return null
+}
 
 interface CaseRow {
   id: string
@@ -26,6 +39,8 @@ interface CaseRow {
     last_name: string
     email: string
     main_desired_job: string | null
+    linkedin_url?: string | null
+    avatar_url?: string | null
   } | null
 }
 
@@ -179,7 +194,24 @@ export default function CasesPage() {
                   href={`/${locale}/cases/${c.id}`}
                   className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-zinc-100 hover:shadow-sm hover:border-zinc-200 transition-all"
                 >
-                  <Avatar name={`${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`} size="sm" />
+                  {(() => {
+                    const avatarSrc = getAvatarSrc(c.interns ?? {})
+                    return (
+                      <div className="relative w-10 h-10 flex-shrink-0">
+                        {avatarSrc && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={avatarSrc} alt={`${c.interns?.first_name} ${c.interns?.last_name}`}
+                            className="w-10 h-10 rounded-full object-cover border border-zinc-100"
+                            onError={(e) => { e.currentTarget.style.display = 'none' }}
+                          />
+                        )}
+                        <div className={`w-10 h-10 rounded-full bg-[#c8a96e]/20 flex items-center justify-center text-sm font-bold text-[#c8a96e] ${avatarSrc ? 'absolute inset-0' : ''}`}
+                          style={avatarSrc ? { zIndex: -1 } : {}}>
+                          {(c.interns?.first_name?.[0] ?? '?')}{(c.interns?.last_name?.[0] ?? '')}
+                        </div>
+                      </div>
+                    )
+                  })()}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-[#1a1918]">
                       {intern?.first_name} {intern?.last_name}
