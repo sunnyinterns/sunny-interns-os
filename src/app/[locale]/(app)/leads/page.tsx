@@ -327,7 +327,7 @@ export default function LeadsPage() {
 
             <div className="space-y-3 text-sm">
               {selectedLead.phone && <div><span className="text-zinc-500">Téléphone : </span>{selectedLead.phone}</div>}
-              {selectedLead.whatsapp && <div><span className="text-zinc-500">WhatsApp : </span>{selectedLead.whatsapp}</div>}
+              {selectedLead.whatsapp && <div><span className="text-zinc-500">WhatsApp : </span><a href={`https://wa.me/${selectedLead.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-[#128c5e] hover:underline">{selectedLead.whatsapp}</a></div>}
               {selectedLead.desired_jobs && selectedLead.desired_jobs.length > 0 && (
                 <div><span className="text-zinc-500">Métiers : </span>{selectedLead.desired_jobs.join(', ')}</div>
               )}
