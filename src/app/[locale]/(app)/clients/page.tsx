@@ -4,6 +4,12 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 
+const CLIENT_STATUSES: string[] = [
+  'convention_signed', 'payment_pending',
+  'payment_received', 'visa_docs_sent', 'visa_submitted',
+  'visa_in_progress', 'visa_received', 'arrival_prep', 'active', 'alumni', 'completed',
+]
+
 function getLinkedinSlug(url?: string | null): string | null {
   if (!url) return null
   if (!url.includes('linkedin.com')) return url.trim() || null
