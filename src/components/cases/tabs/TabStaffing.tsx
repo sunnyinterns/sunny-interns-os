@@ -370,8 +370,16 @@ function JobDetailPopup({ job, onClose, onSelect, isSubmitted }: { job: Job; onC
 
 // ── CV popup ────────────────────────────────────────────────
 
+function isPdfUrl(url: string): boolean {
+  const lower = url.toLowerCase()
+  return lower.includes('.pdf') ||
+         lower.includes('application%2fpdf') ||
+         lower.includes('application/pdf') ||
+         lower.split('?')[0].endsWith('.pdf')
+}
+
 function CVPopup({ url, onClose, name }: { url: string; onClose: () => void; name?: string }) {
-  const isPdf = url.toLowerCase().includes('.pdf') || url.includes('application/pdf')
+  const isPdf = isPdfUrl(url)
   return (
     <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl w-full max-w-5xl h-[92vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
@@ -755,11 +763,20 @@ export function TabStaffing({
                 <div
                   className="relative border border-zinc-200 rounded-lg overflow-hidden cursor-pointer hover:border-[#c8a96e] transition-colors h-48"
                   onClick={() => setShowCVPopup(true)}>
-                  {cvDisplayUrl.toLowerCase().includes('.pdf') || cvDisplayUrl.includes('application/pdf') ? (
+                  {isPdfUrl(cvDisplayUrl) ? (
                     <iframe src={cvDisplayUrl} className="w-full h-full pointer-events-none" title="CV preview" />
                   ) : (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={cvDisplayUrl} alt="CV" className="w-full h-full object-contain" />
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={cvDisplayUrl} alt="CV" className="w-full h-full object-contain"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none'
+                          e.currentTarget.parentElement?.querySelector('.cv-fallback')?.classList.remove('hidden')
+                        }} />
+                      <div className="cv-fallback hidden flex items-center justify-center h-full text-zinc-400 text-sm">
+                        📄 Cliquer pour voir le CV
+                      </div>
+                    </>
                   )}
                   <div className="absolute inset-0 bg-black/0 hover:bg-black/5 transition-colors flex items-center justify-center">
                     <span className="text-xs bg-white/90 px-3 py-1.5 rounded-lg font-medium text-zinc-700 shadow-sm opacity-0 hover:opacity-100 transition-opacity">
