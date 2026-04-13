@@ -86,8 +86,7 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string }>
   submitted: { label: '📧 Envoyé', bg: '#dbeafe', text: '#1d4ed8' },
   cv_pending: { label: '📄 CV en attente', bg: '#eff6ff', text: '#1d4ed8' },
   cv_validated: { label: '✅ CV validé', bg: '#f0fdf4', text: '#15803d' },
-  sent_to_employer: { label: '📧 Envoyé', bg: '#dbeafe', text: '#1d4ed8' },
-  sent: { label: '📤 Envoyé', bg: '#dbeafe', text: '#1d4ed8' },
+  sent: { label: '📧 Envoyé', bg: '#dbeafe', text: '#1d4ed8' },
   interview: { label: '🗓️ Entretien', bg: '#ede9fe', text: '#6d28d9' },
   retained: { label: '✅ Retenu !', bg: '#d1fae5', text: '#059669' },
   rejected: { label: '❌ Non retenu', bg: '#fee2e2', text: '#dc2626' },
@@ -158,7 +157,7 @@ function SortableJobCard({
 
       {/* Actions */}
       <div className="px-4 py-3 border-t border-zinc-100 flex flex-wrap gap-2 items-center">
-        {(sub.status === 'pending' || sub.status === 'proposed' || sub.status === 'submitted' || sub.status === 'cv_pending') && (
+        {(sub.status === 'proposed' || sub.status === 'proposed' || sub.status === 'submitted' || sub.status === 'cv_pending') && (
           <>
             <button disabled={isLoading}
               onClick={() => onUpdate(sub.id, { status: 'cv_pending', cv_revision_requested: true })}
@@ -195,7 +194,7 @@ function SortableJobCard({
           </button>
         )}
 
-        {(sub.status === 'sent_to_employer' || sub.status === 'sent') && (
+        {(sub.status === 'sent' || sub.status === 'sent') && (
           <>
             <button onClick={openWAPopup}
               className="text-xs px-2.5 py-1.5 bg-[#25d366]/10 text-[#128c5e] hover:bg-[#25d366]/20 border border-[#25d366]/30 rounded-lg font-medium">
@@ -231,7 +230,7 @@ function SortableJobCard({
         )}
 
         {/* WhatsApp employeur — visible si pas encore envoyé */}
-        {!['sent_to_employer', 'sent', 'interview', 'retained', 'rejected', 'cancelled'].includes(sub.status) && (
+        {!['sent', 'sent', 'interview', 'retained', 'rejected', 'cancelled'].includes(sub.status) && (
           <button
             disabled
             className="text-xs px-2.5 py-1.5 rounded-lg font-medium bg-zinc-100 text-zinc-400 cursor-not-allowed">
@@ -744,7 +743,7 @@ export function TabStaffing({
             <div className="flex items-center gap-2">
               <span className="text-[11px] text-zinc-400 font-medium">Statut :</span>
               <select
-                value={cvStatus ?? 'pending'}
+                value={cvStatus ?? 'proposed'}
                 onChange={e => void saveCvStatus(e.target.value)}
                 className="text-xs border border-zinc-200 rounded-lg px-2 py-1 bg-white text-zinc-700 focus:outline-none focus:border-[#c8a96e] cursor-pointer font-medium"
               >
