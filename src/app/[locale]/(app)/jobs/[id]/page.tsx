@@ -113,6 +113,7 @@ export default function JobDetailPage() {
   const [selectedCaseId, setSelectedCaseId] = useState('')
   const [addingCandidate, setAddingCandidate] = useState(false)
   const [toastMsg, setToastMsg] = useState<string | null>(null)
+  const [allDepartments, setAllDepartments] = useState<JobDepartment[]>([])
 
   function showToast(msg: string) {
     setToastMsg(msg)
@@ -142,6 +143,10 @@ export default function JobDetailPage() {
       .then(r => r.ok ? r.json() as Promise<QualifiedCase[]> : [])
       .then(d => setQualifiedCases(Array.isArray(d) ? d : []))
       .catch(() => null)
+    fetch('/api/job-departments')
+      .then(r => r.ok ? r.json() as Promise<JobDepartment[]> : [])
+      .then(d => setAllDepartments(Array.isArray(d) ? d : []))
+      .catch(() => null)
   }, [])
 
   async function patchJob(patch: Record<string, unknown>) {
@@ -152,7 +157,7 @@ export default function JobDetailPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(patch),
     })
-    if (res.ok) { void load(); setEditing({}) }
+    if (res.ok) { void load(); setEditing({}); showToast('Sauvegardé ✓') }
     else showToast('Erreur lors de la sauvegarde')
     setSaving(false)
   }
@@ -231,7 +236,19 @@ export default function JobDetailPage() {
       <div className="bg-white border border-zinc-100 rounded-xl p-5">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-[#1a1918]">{displayTitle}</h1>
+            {editing.public_title ? (
+              <input
+                className="text-xl font-bold text-[#1a1918] border border-[#c8a96e] rounded-lg px-2 py-1 w-full focus:outline-none"
+                defaultValue={job.public_title ?? job.title ?? ''}
+                autoFocus
+                onBlur={e => void patchJob({ public_title: e.target.value || null })}
+                onKeyDown={e => { if (e.key === 'Enter') void patchJob({ public_title: (e.target as HTMLInputElement).value || null }); if (e.key === 'Escape') setEditing({}) }}
+              />
+            ) : (
+              <h1 className="text-xl font-bold text-[#1a1918] cursor-pointer hover:text-[#c8a96e] transition-colors" onClick={() => setEditing(p => ({ ...p, public_title: true }))}>
+                {displayTitle}
+              </h1>
+            )}
             {job.title && job.title !== displayTitle && (
               <p className="text-xs text-zinc-400 mt-0.5">Titre interne : {job.title}</p>
             )}
@@ -239,8 +256,21 @@ export default function JobDetailPage() {
               <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: statusBadge.bg, color: statusBadge.color }}>
                 {statusBadge.label}
               </span>
-              {departmentName && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-[#c8a96e] font-medium">{departmentName}</span>
+              {editing.job_department_id ? (
+                <select
+                  className="text-xs px-2 py-0.5 rounded-full border border-[#c8a96e] bg-amber-50 text-[#c8a96e] font-medium focus:outline-none"
+                  defaultValue={job.job_department_id ?? ''}
+                  autoFocus
+                  onChange={e => void patchJob({ job_department_id: e.target.value || null })}
+                  onBlur={() => setEditing({})}
+                >
+                  <option value="">— Aucun —</option>
+                  {allDepartments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select>
+              ) : (
+                <button onClick={() => setEditing(p => ({ ...p, job_department_id: true }))} className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-[#c8a96e] font-medium hover:bg-amber-100 transition-colors">
+                  {departmentName ?? 'Définir métier'}
+                </button>
               )}
               {job.companies?.industry && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600">{job.companies.industry}</span>
@@ -270,9 +300,22 @@ export default function JobDetailPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-sm">
           <div>
             <p className="text-xs text-zinc-400 mb-1">Duree souhaitee</p>
-            <p className="text-sm text-[#1a1918] font-medium">
-              {job.wished_duration_months ? `${job.wished_duration_months} mois` : '—'}
-            </p>
+            {editing.wished_duration_months ? (
+              <select
+                className="px-2 py-1 text-sm border border-[#c8a96e] rounded-lg focus:outline-none"
+                defaultValue={job.wished_duration_months ?? ''}
+                autoFocus
+                onChange={e => void patchJob({ wished_duration_months: Number(e.target.value) || null })}
+                onBlur={() => setEditing({})}
+              >
+                <option value="">—</option>
+                {[1,2,3,4,5,6,7,8,9,10,11,12].map(n => <option key={n} value={n}>{n} mois</option>)}
+              </select>
+            ) : (
+              <button onClick={() => setEditing(p => ({ ...p, wished_duration_months: true }))} className="text-sm text-[#1a1918] font-medium hover:text-[#c8a96e] transition-colors">
+                {job.wished_duration_months ? `${job.wished_duration_months} mois` : <span className="text-zinc-300 italic text-xs">Definir</span>}
+              </button>
+            )}
           </div>
           <div>
             <p className="text-xs text-zinc-400 mb-1">Date demarrage</p>
@@ -289,7 +332,22 @@ export default function JobDetailPage() {
           </div>
           <div>
             <p className="text-xs text-zinc-400 mb-1">Niveau requis</p>
-            <p className="text-sm text-[#1a1918] font-medium">{job.required_level ?? '—'}</p>
+            {editing.required_level ? (
+              <select
+                className="px-2 py-1 text-sm border border-[#c8a96e] rounded-lg focus:outline-none"
+                defaultValue={job.required_level ?? ''}
+                autoFocus
+                onChange={e => void patchJob({ required_level: e.target.value || null })}
+                onBlur={() => setEditing({})}
+              >
+                <option value="">—</option>
+                {['Bac', 'Bac+2', 'Bac+3', 'Bac+4', 'Bac+5'].map(l => <option key={l} value={l}>{l}</option>)}
+              </select>
+            ) : (
+              <button onClick={() => setEditing(p => ({ ...p, required_level: true }))} className="text-sm text-[#1a1918] font-medium hover:text-[#c8a96e] transition-colors">
+                {job.required_level ?? <span className="text-zinc-300 italic text-xs">Definir</span>}
+              </button>
+            )}
           </div>
           <div>
             <p className="text-xs text-zinc-400 mb-1">Langues requises</p>
@@ -354,12 +412,23 @@ export default function JobDetailPage() {
       <div className="bg-white border border-zinc-100 rounded-xl p-5 space-y-4">
         <h2 className="text-sm font-semibold text-[#1a1918]">Description</h2>
 
-        {job.description && (
-          <div>
-            <p className="text-xs text-zinc-400 mb-1">Description interne</p>
-            <p className="text-sm text-zinc-600 whitespace-pre-wrap">{job.description}</p>
-          </div>
-        )}
+        <div>
+          <p className="text-xs text-zinc-400 mb-1">Description interne</p>
+          {editing.description ? (
+            <textarea
+              className="w-full text-sm text-zinc-600 border border-[#c8a96e] rounded-lg px-3 py-2 focus:outline-none"
+              rows={4}
+              defaultValue={job.description ?? ''}
+              autoFocus
+              onBlur={e => void patchJob({ description: e.target.value || null })}
+              style={{ resize: 'vertical' }}
+            />
+          ) : (
+            <button onClick={() => setEditing(p => ({ ...p, description: true }))} className="text-left w-full text-sm text-zinc-600 hover:text-[#c8a96e] transition-colors whitespace-pre-wrap">
+              {job.description || <span className="text-zinc-300 italic">Cliquer pour ajouter une description...</span>}
+            </button>
+          )}
+        </div>
 
         {job.public_description && (
           <div>
@@ -395,15 +464,26 @@ export default function JobDetailPage() {
           </div>
         )}
 
-        {job.notes_internal && (
-          <div>
-            <p className="text-xs text-zinc-400 mb-1">Notes internes</p>
-            <p className="text-sm text-zinc-500 italic whitespace-pre-wrap">{job.notes_internal}</p>
-          </div>
-        )}
+        <div>
+          <p className="text-xs text-zinc-400 mb-1">Notes internes</p>
+          {editing.notes_internal ? (
+            <textarea
+              className="w-full text-sm text-zinc-500 italic border border-[#c8a96e] rounded-lg px-3 py-2 focus:outline-none"
+              rows={3}
+              defaultValue={job.notes_internal ?? ''}
+              autoFocus
+              onBlur={e => void patchJob({ notes_internal: e.target.value || null })}
+              style={{ resize: 'vertical' }}
+            />
+          ) : (
+            <button onClick={() => setEditing(p => ({ ...p, notes_internal: true }))} className="text-left w-full text-sm text-zinc-500 italic hover:text-[#c8a96e] transition-colors whitespace-pre-wrap">
+              {job.notes_internal || <span className="text-zinc-300 not-italic">Cliquer pour ajouter des notes...</span>}
+            </button>
+          )}
+        </div>
 
-        {!job.description && !job.public_description && !job.missions?.length && !job.profile_sought && (
-          <p className="text-sm text-zinc-300 italic">Aucune description renseignee.</p>
+        {!job.description && !job.public_description && !job.missions?.length && !job.profile_sought && !job.notes_internal && !editing.description && !editing.notes_internal && (
+          <p className="text-sm text-zinc-300 italic">Cliquez sur les champs ci-dessus pour ajouter du contenu.</p>
         )}
       </div>
 
