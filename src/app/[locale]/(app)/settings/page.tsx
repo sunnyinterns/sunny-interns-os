@@ -28,7 +28,6 @@ const ADMIN_SECTIONS = [
   { href: 'users',       icon: '👤', label: 'Utilisateurs',    desc: 'Gestion des accès et rôles' },
   { href: 'notifications', icon: '🔔', label: 'Notifications', desc: 'Configuration emails et alertes' },
   { href: 'templates',   icon: '📄', label: 'Templates',       desc: 'Modèles emails et documents' },
-  { href: 'job-departments', icon: '💼', label: 'Métiers & Départements', desc: "Gérer les secteurs d'activité et métiers disponibles" },
 ]
 
 export default function SettingsPage() {

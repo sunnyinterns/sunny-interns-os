@@ -351,6 +351,39 @@ export async function sendInternCommentNotification(p: {
   })
 }
 
+export async function sendVisaDocsRequest(params: {
+  internEmail: string
+  internFirstName: string
+  portalToken: string
+}) {
+  const { internEmail, internFirstName, portalToken } = params
+  const portalUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app') + '/portal/' + portalToken + '/documents'
+
+  await send({
+    to: internEmail,
+    cc: CHARLY,
+    subject: `Documents visa requis — Bali Interns`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+        <h2 style="color:#c8a96e">Documents requis pour ton visa</h2>
+        <p>Hello ${internFirstName},</p>
+        <p>Pour lancer ta procédure de visa, nous avons besoin des documents suivants :</p>
+        <ul style="line-height:1.8">
+          <li><strong>Photo d'identité</strong> (fond blanc, format passeport)</li>
+          <li><strong>Scan passeport page 4</strong> (page avec ta photo)</li>
+          <li><strong>Relevé bancaire récent</strong> (moins de 3 mois)</li>
+          <li><strong>Billet d'avion aller-retour</strong></li>
+        </ul>
+        <p>Tu peux les uploader directement depuis ton espace candidat :</p>
+        <a href="${portalUrl}" style="display:inline-block;background:#c8a96e;color:white;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin-top:8px">
+          Uploader mes documents →
+        </a>
+        <p style="color:#999;font-size:12px;margin-top:24px">Sunny Interns — team@bali-interns.com</p>
+      </div>
+    `,
+  })
+}
+
 export async function sendWelcomeKitShort(p: { internEmail: string; prenom: string }) {
   await send({ to: p.internEmail, cc: CHARLY, subject: `Welcome Kit Bali Interns`, html: `<p>Hey <strong>${p.prenom}</strong>, ton départ approche ! Nous t'envoyons toutes les infos pratiques très vite. Charly</p>` })
 }
