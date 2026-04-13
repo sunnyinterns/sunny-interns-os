@@ -12,25 +12,21 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core'
 
-// 7 colonnes simplifiées — pipeline Bali Interns
+// 5 colonnes candidats — pipeline Bali Interns
 const COLUMN_ORDER = [
   'rdv_booked',
   'qualification_done',
   'job_submitted',
-  'job_accepted',
-  'visa',
-  'arrived',
-  'completed',
+  'job_retained',
+  'convention_signed',
 ] as const
 
 const COLUMN_LABELS: Record<string, string> = {
-  rdv_booked: '📅 RDV Booké',
+  rdv_booked: '📅 RDV planifié',
   qualification_done: '✅ Qualifié',
-  job_submitted: '💼 Jobs Proposés',
-  job_accepted: '🤝 Offre Acceptée',
-  visa: '🛂 Visa',
-  arrived: '🛫 Arrivé',
-  completed: '🎓 Terminé',
+  job_submitted: '💼 Jobs envoyés',
+  job_retained: '🤝 Job retenu',
+  convention_signed: '📝 Convention',
 }
 
 // Map real DB statuses → kanban column
@@ -38,18 +34,8 @@ const STATUS_TO_COLUMN: Record<string, string> = {
   rdv_booked: 'rdv_booked',
   qualification_done: 'qualification_done',
   job_submitted: 'job_submitted',
-  job_retained: 'job_accepted',
-  convention_signed: 'job_accepted',
-  payment_pending: 'job_accepted',
-  payment_received: 'job_accepted',
-  visa_docs_sent: 'visa',
-  visa_submitted: 'visa',
-  visa_in_progress: 'visa',
-  visa_received: 'visa',
-  arrival_prep: 'arrived',
-  active: 'arrived',
-  completed: 'completed',
-  alumni: 'completed',
+  job_retained: 'job_retained',
+  convention_signed: 'convention_signed',
 }
 
 // When dragging to a column → what DB status to set
@@ -57,10 +43,8 @@ const COLUMN_TO_STATUS: Record<string, string> = {
   rdv_booked: 'rdv_booked',
   qualification_done: 'qualification_done',
   job_submitted: 'job_submitted',
-  job_accepted: 'job_retained',
-  visa: 'visa_docs_sent',
-  arrived: 'arrival_prep',
-  completed: 'completed',
+  job_retained: 'job_retained',
+  convention_signed: 'convention_signed',
 }
 
 const LOST_STATUSES = ['not_interested', 'not_qualified', 'on_hold', 'suspended', 'visa_refused', 'archived', 'completed', 'no_job_found', 'lost']
