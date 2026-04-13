@@ -18,26 +18,61 @@ interface JobSubmission {
   status: string
   cv_sent?: boolean | null
   intern_interested?: boolean | null
+  created_at?: string | null
   cases?: {
     id: string
     interns?: { first_name: string; last_name: string } | null
   } | null
 }
 
+interface JobDepartment {
+  id: string
+  name: string
+  slug: string | null
+  categories: string[] | null
+}
+
 interface JobDetail {
   id: string
   title?: string | null
   public_title?: string | null
+  job_private_name?: string | null
   description?: string | null
   public_description?: string | null
-  wished_start_date?: string | null
-  wished_duration_months?: number | null
-  is_remote?: boolean | null
+  department?: string | null
+  missions?: string[] | null
   status?: string | null
-  notes?: string | null
-  companies?: { id: string; name: string; contact_name?: string | null; contact_email?: string | null; contact_whatsapp?: string | null } | null
+  location?: string | null
+  remote_ok?: boolean | null
+  remote_work?: string | null
+  required_languages?: string[] | null
+  required_level?: string | null
+  wished_start_date?: string | null
+  wished_end_date?: string | null
+  wished_duration_months?: number | null
+  is_recurring?: boolean | null
+  notes_internal?: string | null
+  is_active?: boolean | null
+  job_department_id?: string | null
+  max_candidates?: number | null
+  compensation_type?: string | null
+  compensation_amount?: number | null
+  skills_required?: string[] | null
+  profile_sought?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+  companies?: {
+    id: string
+    name: string
+    contact_name?: string | null
+    contact_email?: string | null
+    contact_whatsapp?: string | null
+    whatsapp_number?: string | null
+    industry?: string | null
+    location?: string | null
+  } | null
   contacts?: Contact | null
-  job_departments?: { id: string; name: string } | null
+  job_departments?: JobDepartment | null
   job_submissions?: JobSubmission[]
 }
 
@@ -50,20 +85,18 @@ interface QualifiedCase {
 const STATUS_BADGE: Record<string, { bg: string; color: string; label: string }> = {
   open: { bg: '#d1fae5', color: '#065f46', label: 'Cherche stagiaire' },
   staffed: { bg: '#dbeafe', color: '#1e40af', label: 'Pourvu' },
-  cancelled: { bg: '#f3f4f6', color: '#374151', label: 'Annulé' },
+  cancelled: { bg: '#f3f4f6', color: '#374151', label: 'Annule' },
 }
 
 const SUB_STATUS: Record<string, { bg: string; color: string; label: string }> = {
-  proposed: { bg: '#f3f4f6', color: '#374151', label: 'Proposé' },
-  sent: { bg: '#fef3c7', color: '#92400e', label: 'CV envoyé' },
+  proposed: { bg: '#f3f4f6', color: '#374151', label: 'Propose' },
+  sent: { bg: '#fef3c7', color: '#92400e', label: 'CV envoye' },
   submitted: { bg: '#fef3c7', color: '#92400e', label: 'Soumis' },
   interview: { bg: '#dbeafe', color: '#1e40af', label: 'Entretien' },
   retained: { bg: '#d1fae5', color: '#065f46', label: 'Retenu' },
-  rejected: { bg: '#fee2e2', color: '#991b1b', label: 'Refusé' },
-  cancelled: { bg: '#f3f4f6', color: '#6b7280', label: 'Annulé' },
+  rejected: { bg: '#fee2e2', color: '#991b1b', label: 'Refuse' },
+  cancelled: { bg: '#f3f4f6', color: '#6b7280', label: 'Annule' },
 }
-
-const inputCls = 'w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm bg-white text-[#1a1918] focus:outline-none focus:ring-2 focus:ring-[#c8a96e]'
 
 export default function JobDetailPage() {
   const params = useParams()
@@ -73,7 +106,8 @@ export default function JobDetailPage() {
 
   const [job, setJob] = useState<JobDetail | null>(null)
   const [loading, setLoading] = useState(true)
-  const [editing, setEditing] = useState<Record<string, string | boolean | number | null>>({})
+  const [error, setError] = useState(false)
+  const [editing, setEditing] = useState<Record<string, boolean>>({})
   const [saving, setSaving] = useState(false)
   const [qualifiedCases, setQualifiedCases] = useState<QualifiedCase[]>([])
   const [selectedCaseId, setSelectedCaseId] = useState('')
@@ -87,10 +121,16 @@ export default function JobDetailPage() {
 
   async function load() {
     if (!id) return
-    const res = await fetch(`/api/jobs/${id}`)
-    if (res.ok) {
-      const data = await res.json() as JobDetail
-      setJob(data)
+    try {
+      const res = await fetch(`/api/jobs/${id}`)
+      if (res.ok) {
+        const data = await res.json() as JobDetail
+        setJob(data)
+      } else {
+        setError(true)
+      }
+    } catch {
+      setError(true)
     }
     setLoading(false)
   }
@@ -125,8 +165,8 @@ export default function JobDetailPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ case_id: selectedCaseId, job_id: job.id }),
     })
-    if (res.ok) { void load(); setSelectedCaseId(''); showToast('Candidat ajouté') }
-    else showToast('Erreur lors de l\'ajout')
+    if (res.ok) { void load(); setSelectedCaseId(''); showToast('Candidat ajoute') }
+    else showToast("Erreur lors de l'ajout")
     setAddingCandidate(false)
   }
 
@@ -136,32 +176,42 @@ export default function JobDetailPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     })
-    if (res.ok) { void load(); showToast(status === 'retained' ? 'Candidat retenu !' : 'Refusé') }
+    if (res.ok) { void load(); showToast(status === 'retained' ? 'Candidat retenu !' : 'Statut mis a jour') }
   }
 
   async function markStaffed() {
     await patchJob({ status: 'staffed' })
-    showToast('Job marqué comme pourvu')
+    showToast('Job marque comme pourvu')
   }
 
   if (loading) {
     return (
       <div className="p-6 space-y-4">
-        {[1,2,3].map(i => <div key={i} className="h-20 bg-zinc-100 rounded-xl animate-pulse" />)}
+        {[1, 2, 3].map(i => <div key={i} className="h-20 bg-zinc-100 rounded-xl animate-pulse" />)}
       </div>
     )
   }
 
-  if (!job) {
+  if (error || !job) {
     return (
-      <div className="p-6">
-        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-[#dc2626]">Job introuvable</div>
+      <div className="p-6 max-w-3xl mx-auto space-y-4">
+        <div className="px-5 py-8 bg-white border border-zinc-100 rounded-xl text-center">
+          <p className="text-lg font-semibold text-[#1a1918] mb-1">Job introuvable</p>
+          <p className="text-sm text-zinc-400 mb-4">Ce job n&apos;existe pas ou a ete supprime.</p>
+          <button
+            onClick={() => router.push(`/${locale}/jobs`)}
+            className="px-4 py-2 text-sm font-medium bg-[#c8a96e] text-white rounded-lg hover:bg-[#b8945a] transition-colors"
+          >
+            Retour aux jobs
+          </button>
+        </div>
       </div>
     )
   }
 
   const statusBadge = STATUS_BADGE[job.status ?? 'open'] ?? STATUS_BADGE.open
   const displayTitle = job.public_title ?? job.title ?? 'Job sans titre'
+  const departmentName = job.job_departments?.name ?? job.department ?? null
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-5">
@@ -174,10 +224,10 @@ export default function JobDetailPage() {
 
       {/* Back */}
       <button onClick={() => router.push(`/${locale}/jobs`)} className="text-sm text-zinc-500 hover:text-[#1a1918] flex items-center gap-1 transition-colors">
-        ← Retour aux jobs
+        &larr; Retour aux jobs
       </button>
 
-      {/* Header */}
+      {/* ═══ HEADER ═══ */}
       <div className="bg-white border border-zinc-100 rounded-xl p-5">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1">
@@ -189,11 +239,17 @@ export default function JobDetailPage() {
               <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: statusBadge.bg, color: statusBadge.color }}>
                 {statusBadge.label}
               </span>
-              {job.job_departments?.name && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-[#c8a96e] font-medium">{job.job_departments.name}</span>
+              {departmentName && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-[#c8a96e] font-medium">{departmentName}</span>
               )}
-              {job.is_remote && (
+              {job.companies?.industry && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600">{job.companies.industry}</span>
+              )}
+              {(job.remote_ok || job.remote_work) && (
                 <span className="text-xs px-2 py-0.5 rounded bg-violet-100 text-violet-700 font-medium">Remote</span>
+              )}
+              {job.is_active === false && (
+                <span className="text-xs px-2 py-0.5 rounded bg-red-50 text-[#dc2626] font-medium">Inactif</span>
               )}
             </div>
           </div>
@@ -202,48 +258,75 @@ export default function JobDetailPage() {
               <div className="w-10 h-10 rounded-xl bg-[#c8a96e]/15 flex items-center justify-center text-sm font-bold text-[#c8a96e] flex-shrink-0">
                 {job.companies.name.charAt(0).toUpperCase()}
               </div>
-              <p className="text-sm font-medium text-[#1a1918]">{job.companies.name}</p>
+              <div>
+                <p className="text-sm font-medium text-[#1a1918]">{job.companies.name}</p>
+                {job.companies.location && <p className="text-xs text-zinc-400">{job.companies.location}</p>}
+              </div>
             </div>
           )}
         </div>
 
-        {/* Infos éditables inline */}
-        <div className="grid grid-cols-2 gap-3 mt-4 text-sm">
+        {/* Infos grille */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-sm">
           <div>
-            <p className="text-xs text-zinc-400 mb-1">Date démarrage</p>
-            {editing.wished_start_date !== undefined ? (
+            <p className="text-xs text-zinc-400 mb-1">Duree souhaitee</p>
+            <p className="text-sm text-[#1a1918] font-medium">
+              {job.wished_duration_months ? `${job.wished_duration_months} mois` : '—'}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-zinc-400 mb-1">Date demarrage</p>
+            {editing.wished_start_date ? (
               <div className="flex gap-1">
-                <input type="date" className="flex-1 px-2 py-1 text-sm border border-[#c8a96e] rounded-lg" defaultValue={job.wished_start_date?.slice(0,10) ?? ''} onBlur={e => void patchJob({ wished_start_date: e.target.value || null })} autoFocus />
-                <button onClick={() => setEditing({})} className="text-xs px-1 text-zinc-400">×</button>
+                <input type="date" className="flex-1 px-2 py-1 text-sm border border-[#c8a96e] rounded-lg" defaultValue={job.wished_start_date?.slice(0, 10) ?? ''} onBlur={e => void patchJob({ wished_start_date: e.target.value || null })} autoFocus />
+                <button onClick={() => setEditing({})} className="text-xs px-1 text-zinc-400">x</button>
               </div>
             ) : (
-              <button onClick={() => setEditing(p => ({...p, wished_start_date: true}))} className="text-sm text-[#1a1918] hover:text-[#c8a96e] transition-colors">
-                {job.wished_start_date ? new Date(job.wished_start_date).toLocaleDateString('fr-FR') : <span className="text-zinc-300 italic text-xs">Cliquer pour définir</span>}
+              <button onClick={() => setEditing(p => ({ ...p, wished_start_date: true }))} className="text-sm text-[#1a1918] font-medium hover:text-[#c8a96e] transition-colors">
+                {job.wished_start_date ? new Date(job.wished_start_date).toLocaleDateString('fr-FR') : <span className="text-zinc-300 italic text-xs">Definir</span>}
               </button>
             )}
           </div>
           <div>
-            <p className="text-xs text-zinc-400 mb-1">Durée souhaitée</p>
-            <button onClick={() => {
-              const v = window.prompt('Durée en mois (1-6)', String(job.wished_duration_months ?? 4))
-              if (v && !isNaN(Number(v))) void patchJob({ wished_duration_months: Number(v) })
-            }} className="text-sm text-[#1a1918] hover:text-[#c8a96e] transition-colors">
-              {job.wished_duration_months ? `${job.wished_duration_months} mois` : <span className="text-zinc-300 italic text-xs">Cliquer pour définir</span>}
-            </button>
+            <p className="text-xs text-zinc-400 mb-1">Niveau requis</p>
+            <p className="text-sm text-[#1a1918] font-medium">{job.required_level ?? '—'}</p>
+          </div>
+          <div>
+            <p className="text-xs text-zinc-400 mb-1">Langues requises</p>
+            <div className="flex gap-1 flex-wrap">
+              {job.required_languages && job.required_languages.length > 0
+                ? job.required_languages.map(l => (
+                    <span key={l} className="text-xs px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-medium">{l}</span>
+                  ))
+                : <span className="text-sm text-zinc-300">—</span>
+              }
+            </div>
           </div>
         </div>
 
-        {job.description && (
-          <div className="mt-4 pt-3 border-t border-zinc-50">
-            <p className="text-xs text-zinc-400 mb-1">Description interne</p>
-            <p className="text-sm text-zinc-600 whitespace-pre-wrap">{job.description}</p>
-          </div>
-        )}
-
-        {job.notes && (
-          <div className="mt-3 pt-3 border-t border-zinc-50">
-            <p className="text-xs text-zinc-400 mb-1">Notes internes</p>
-            <p className="text-sm text-zinc-600 italic">{job.notes}</p>
+        {/* Extra info row */}
+        {(job.max_candidates || job.compensation_type || job.location) && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-sm">
+            {job.location && (
+              <div>
+                <p className="text-xs text-zinc-400 mb-1">Lieu</p>
+                <p className="text-sm text-[#1a1918]">{job.location}</p>
+              </div>
+            )}
+            {job.max_candidates && (
+              <div>
+                <p className="text-xs text-zinc-400 mb-1">Max candidats</p>
+                <p className="text-sm text-[#1a1918]">{job.max_candidates}</p>
+              </div>
+            )}
+            {job.compensation_type && (
+              <div>
+                <p className="text-xs text-zinc-400 mb-1">Compensation</p>
+                <p className="text-sm text-[#1a1918]">
+                  {job.compensation_type}{job.compensation_amount ? ` — ${job.compensation_amount}` : ''}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -251,7 +334,7 @@ export default function JobDetailPage() {
         <div className="flex gap-2 mt-4 pt-3 border-t border-zinc-50 flex-wrap">
           {job.status === 'open' && (
             <button onClick={() => void markStaffed()} disabled={saving} className="px-3 py-1.5 text-sm font-medium bg-[#0d9e75] text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition-colors">
-              ✓ Marquer comme pourvu
+              Marquer comme pourvu
             </button>
           )}
           {job.status !== 'open' && (
@@ -259,10 +342,72 @@ export default function JobDetailPage() {
               Rouvrir
             </button>
           )}
+          {job.status !== 'cancelled' && (
+            <button onClick={() => void patchJob({ status: 'cancelled' })} disabled={saving} className="px-3 py-1.5 text-sm font-medium bg-zinc-50 text-zinc-500 rounded-lg hover:bg-zinc-100 disabled:opacity-50 transition-colors">
+              Annuler
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Section Contact employeur */}
+      {/* ═══ DESCRIPTIONS ═══ */}
+      <div className="bg-white border border-zinc-100 rounded-xl p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-[#1a1918]">Description</h2>
+
+        {job.description && (
+          <div>
+            <p className="text-xs text-zinc-400 mb-1">Description interne</p>
+            <p className="text-sm text-zinc-600 whitespace-pre-wrap">{job.description}</p>
+          </div>
+        )}
+
+        {job.public_description && (
+          <div>
+            <p className="text-xs text-zinc-400 mb-1">Description publique</p>
+            <p className="text-sm text-zinc-600 whitespace-pre-wrap">{job.public_description}</p>
+          </div>
+        )}
+
+        {job.missions && job.missions.length > 0 && (
+          <div>
+            <p className="text-xs text-zinc-400 mb-1">Missions</p>
+            <ul className="list-disc list-inside text-sm text-zinc-600 space-y-1">
+              {job.missions.map((m, i) => <li key={i}>{m}</li>)}
+            </ul>
+          </div>
+        )}
+
+        {job.profile_sought && (
+          <div>
+            <p className="text-xs text-zinc-400 mb-1">Profil recherche</p>
+            <p className="text-sm text-zinc-600 whitespace-pre-wrap">{job.profile_sought}</p>
+          </div>
+        )}
+
+        {job.skills_required && job.skills_required.length > 0 && (
+          <div>
+            <p className="text-xs text-zinc-400 mb-1">Competences requises</p>
+            <div className="flex flex-wrap gap-1">
+              {job.skills_required.map(s => (
+                <span key={s} className="text-xs px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700">{s}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {job.notes_internal && (
+          <div>
+            <p className="text-xs text-zinc-400 mb-1">Notes internes</p>
+            <p className="text-sm text-zinc-500 italic whitespace-pre-wrap">{job.notes_internal}</p>
+          </div>
+        )}
+
+        {!job.description && !job.public_description && !job.missions?.length && !job.profile_sought && (
+          <p className="text-sm text-zinc-300 italic">Aucune description renseignee.</p>
+        )}
+      </div>
+
+      {/* ═══ CONTACT EMPLOYEUR ═══ */}
       {job.contacts && (
         <div className="bg-white border border-zinc-100 rounded-xl p-5">
           <h2 className="text-sm font-semibold text-[#1a1918] mb-3">Contact employeur</h2>
@@ -273,54 +418,51 @@ export default function JobDetailPage() {
               <div className="mt-2 space-y-1">
                 {job.contacts.email && (
                   <a href={`mailto:${job.contacts.email}`} className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-[#c8a96e] transition-colors">
-                    <span>✉</span> {job.contacts.email}
+                    <span className="w-4 text-center">@</span> {job.contacts.email}
                   </a>
                 )}
                 {job.contacts.whatsapp && (
-                  <a href={`https://wa.me/${job.contacts.whatsapp.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-[#0d9e75] transition-colors">
-                    <span>💬</span> {job.contacts.whatsapp}
+                  <a href={`https://wa.me/${job.contacts.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-[#0d9e75] transition-colors">
+                    <span className="w-4 text-center">WA</span> {job.contacts.whatsapp}
                   </a>
                 )}
               </div>
             </div>
             <Link href={`/${locale}/contacts/${job.contacts.id}`} className="text-xs px-2 py-1 bg-zinc-100 text-zinc-600 rounded-lg hover:bg-zinc-200 transition-colors flex-shrink-0">
-              Voir fiche →
+              Voir fiche
             </Link>
           </div>
         </div>
       )}
 
-      {/* Fallback: contact depuis companies si pas de contacts table */}
+      {/* Fallback: contact depuis companies */}
       {!job.contacts && job.companies?.contact_email && (
         <div className="bg-white border border-zinc-100 rounded-xl p-5">
           <h2 className="text-sm font-semibold text-[#1a1918] mb-3">Contact employeur</h2>
           <p className="text-sm font-medium">{job.companies.contact_name ?? ''}</p>
           <div className="mt-2 space-y-1">
             {job.companies.contact_email && (
-              <a href={`mailto:${job.companies.contact_email}`}
-                className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-[#c8a96e] transition-colors">
-                <span>✉</span> {job.companies.contact_email}
+              <a href={`mailto:${job.companies.contact_email}`} className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-[#c8a96e] transition-colors">
+                <span className="w-4 text-center">@</span> {job.companies.contact_email}
               </a>
             )}
-            {job.companies.contact_whatsapp && (
-              <a href={`https://wa.me/${job.companies.contact_whatsapp.replace(/\D/g,'')}`}
-                target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-[#0d9e75] transition-colors">
-                <span>💬</span> {job.companies.contact_whatsapp}
+            {(job.companies.contact_whatsapp || job.companies.whatsapp_number) && (
+              <a href={`https://wa.me/${(job.companies.contact_whatsapp ?? job.companies.whatsapp_number ?? '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-[#0d9e75] transition-colors">
+                <span className="w-4 text-center">WA</span> {job.companies.contact_whatsapp ?? job.companies.whatsapp_number}
               </a>
             )}
           </div>
         </div>
       )}
 
-      {/* Section Candidats proposés */}
+      {/* ═══ CANDIDATURES EN COURS ═══ */}
       <div className="bg-white border border-zinc-100 rounded-xl p-5">
         <h2 className="text-sm font-semibold text-[#1a1918] mb-3">
-          Candidats proposés <span className="text-zinc-400 font-normal">({(job.job_submissions ?? []).length})</span>
+          Candidatures en cours <span className="text-zinc-400 font-normal">({(job.job_submissions ?? []).length})</span>
         </h2>
 
         {(job.job_submissions ?? []).length === 0 ? (
-          <p className="text-sm text-zinc-400 italic">Aucun candidat proposé pour ce job.</p>
+          <p className="text-sm text-zinc-400 italic">Aucun candidat propose pour ce job.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -328,8 +470,9 @@ export default function JobDetailPage() {
                 <tr className="border-b border-zinc-100">
                   <th className="text-left text-xs font-medium text-zinc-400 pb-2">Candidat</th>
                   <th className="text-left text-xs font-medium text-zinc-400 pb-2">Statut</th>
-                  <th className="text-left text-xs font-medium text-zinc-400 pb-2">Réponse candidat</th>
-                  <th className="text-left text-xs font-medium text-zinc-400 pb-2">CV envoyé</th>
+                  <th className="text-left text-xs font-medium text-zinc-400 pb-2">Reponse</th>
+                  <th className="text-left text-xs font-medium text-zinc-400 pb-2">CV</th>
+                  <th className="text-left text-xs font-medium text-zinc-400 pb-2">Date</th>
                   <th className="text-left text-xs font-medium text-zinc-400 pb-2">Actions</th>
                 </tr>
               </thead>
@@ -356,12 +499,15 @@ export default function JobDetailPage() {
                         </span>
                       </td>
                       <td className="py-2 pr-3">
-                        {sub.intern_interested === true && <span className="text-xs px-1.5 py-0.5 rounded bg-green-100 text-[#0d9e75] font-medium">Intéressé !</span>}
-                        {sub.intern_interested === false && <span className="text-xs px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500 font-medium">Pas intéressé</span>}
-                        {sub.intern_interested === null || sub.intern_interested === undefined ? <span className="text-xs text-zinc-300">—</span> : null}
+                        {sub.intern_interested === true && <span className="text-xs px-1.5 py-0.5 rounded bg-green-100 text-[#0d9e75] font-medium">Interesse</span>}
+                        {sub.intern_interested === false && <span className="text-xs px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500 font-medium">Pas interesse</span>}
+                        {(sub.intern_interested === null || sub.intern_interested === undefined) && <span className="text-xs text-zinc-300">—</span>}
                       </td>
                       <td className="py-2 pr-3">
-                        <span className={`text-xs ${sub.cv_sent ? 'text-[#0d9e75]' : 'text-zinc-300'}`}>{sub.cv_sent ? '✓' : '—'}</span>
+                        <span className={`text-xs ${sub.cv_sent ? 'text-[#0d9e75]' : 'text-zinc-300'}`}>{sub.cv_sent ? 'Oui' : '—'}</span>
+                      </td>
+                      <td className="py-2 pr-3 text-xs text-zinc-400">
+                        {sub.created_at ? new Date(sub.created_at).toLocaleDateString('fr-FR') : '—'}
                       </td>
                       <td className="py-2">
                         <div className="flex gap-1">
@@ -377,7 +523,7 @@ export default function JobDetailPage() {
                                 onClick={() => void updateSubmission(sub.id, 'rejected')}
                                 className="text-xs px-2 py-1 bg-red-50 text-[#dc2626] rounded-lg hover:bg-red-100 font-medium transition-colors"
                               >
-                                Refusé
+                                Refuse
                               </button>
                             </>
                           )}
@@ -393,14 +539,14 @@ export default function JobDetailPage() {
 
         {/* Ajouter un candidat */}
         <div className="mt-4 pt-4 border-t border-zinc-50">
-          <p className="text-xs font-medium text-zinc-500 mb-2">Ajouter un candidat (qualification_done)</p>
+          <p className="text-xs font-medium text-zinc-500 mb-2">Proposer un candidat (qualification_done)</p>
           <div className="flex gap-2">
             <select
               value={selectedCaseId}
               onChange={e => setSelectedCaseId(e.target.value)}
               className="flex-1 px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
             >
-              <option value="">— Sélectionner un candidat —</option>
+              <option value="">— Selectionner un candidat —</option>
               {qualifiedCases.map(c => (
                 <option key={c.id} value={c.id}>
                   {c.interns ? `${c.interns.first_name} ${c.interns.last_name}` : c.id}
@@ -412,19 +558,11 @@ export default function JobDetailPage() {
               disabled={!selectedCaseId || addingCandidate}
               className="px-3 py-2 text-sm font-medium bg-[#c8a96e] text-white rounded-lg hover:bg-[#b8945a] disabled:opacity-50 transition-colors"
             >
-              {addingCandidate ? 'Ajout…' : 'Proposer'}
+              {addingCandidate ? 'Ajout...' : 'Proposer'}
             </button>
           </div>
         </div>
       </div>
-
-      {/* Description publique */}
-      {job.public_description && (
-        <div className="bg-white border border-zinc-100 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-[#1a1918] mb-2">Description publique</h2>
-          <p className="text-sm text-zinc-600 whitespace-pre-wrap">{job.public_description}</p>
-        </div>
-      )}
     </div>
   )
 }
