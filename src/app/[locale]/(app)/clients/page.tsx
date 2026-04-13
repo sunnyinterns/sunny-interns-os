@@ -4,11 +4,19 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 
-const CLIENT_STATUSES = [
-  'convention_signed', 'payment_pending',
-  'payment_received', 'visa_docs_sent', 'visa_submitted',
-  'visa_in_progress', 'visa_received', 'arrival_prep', 'active', 'alumni', 'completed',
-]
+function getLinkedinSlug(url?: string | null): string | null {
+  if (!url) return null
+  if (!url.includes('linkedin.com')) return url.trim() || null
+  const m = url.match(/linkedin\.com\/in\/([^/?#]+)/)
+  return m ? m[1] : null
+}
+
+function getAvatarSrc(intern: { avatar_url?: string | null; linkedin_url?: string | null }): string | null {
+  if (intern.avatar_url) return intern.avatar_url
+  const slug = getLinkedinSlug(intern.linkedin_url)
+  if (slug) return `https://unavatar.io/linkedin/${slug}`
+  return null
+}
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   convention_signed: { label: '📝 Convention signée', className: 'bg-green-100 text-green-800' },
@@ -38,6 +46,8 @@ interface ClientRow {
     whatsapp: string | null
     main_desired_job: string | null
     nationality: string | null
+    linkedin_url?: string | null
+    avatar_url?: string | null
   } | null
   schools: { name: string } | null
 }
@@ -68,11 +78,10 @@ export default function ClientsPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/cases?view=all')
+      const res = await fetch('/api/cases?type=client')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json() as ClientRow[]
-      const active = data.filter((c) => CLIENT_STATUSES.includes(c.status))
-      setClients(active)
+      setClients(data)
       setAlumni([])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue')
@@ -170,11 +179,25 @@ export default function ClientsPage() {
                       <tr key={c.id} className={`hover:bg-zinc-50 transition-colors ${i % 2 === 1 ? 'bg-zinc-50/50' : 'bg-white'}`}>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-[#c8a96e] flex items-center justify-center flex-shrink-0">
-                              <span className="text-white text-[10px] font-bold">
-                                {(intern?.first_name?.[0] ?? '').toUpperCase()}{(intern?.last_name?.[0] ?? '').toUpperCase()}
-                              </span>
-                            </div>
+                            {(() => {
+                              const avatarSrc = getAvatarSrc(intern ?? {})
+                              const initials = `${(intern?.first_name?.[0] ?? '').toUpperCase()}${(intern?.last_name?.[0] ?? '').toUpperCase()}`
+                              return (
+                                <div className="relative w-8 h-8 flex-shrink-0">
+                                  {avatarSrc && (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={avatarSrc} alt={`${intern?.first_name} ${intern?.last_name}`}
+                                      className="w-8 h-8 rounded-full object-cover border border-zinc-100"
+                                      onError={(e) => { e.currentTarget.style.display = 'none' }}
+                                    />
+                                  )}
+                                  <div className={`w-8 h-8 rounded-full bg-[#c8a96e] flex items-center justify-center ${avatarSrc ? 'absolute inset-0' : ''}`}
+                                    style={avatarSrc ? { zIndex: -1 } : {}}>
+                                    <span className="text-white text-[10px] font-bold">{initials}</span>
+                                  </div>
+                                </div>
+                              )
+                            })()}
                             <div>
                               <p className="text-sm font-semibold text-[#1a1918]">{intern?.first_name} {intern?.last_name}</p>
                               <p className="text-xs text-zinc-400">{intern?.email}</p>
