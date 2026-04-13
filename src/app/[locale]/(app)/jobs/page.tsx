@@ -62,6 +62,8 @@ export default function JobsPage() {
   const [panelJobId, setPanelJobId] = useState<string | null>(null)
   const [panelSubs, setPanelSubs] = useState<JobSubmission[]>([])
   const [panelLoading, setPanelLoading] = useState(false)
+  const [filterDepartment, setFilterDepartment] = useState('')
+  const [sortBy, setSortBy] = useState<'date' | 'company' | 'department'>('date')
   const [form, setForm] = useState({
     title: '', public_title: '', contact_id: '', company_id: '', company_name: '',
     wished_start_date: '', wished_duration_months: '4', description: '', public_description: '',
@@ -135,11 +137,18 @@ export default function JobsPage() {
     setSaving(false)
   }
 
+  const departments = [...new Set(jobs.map(j => j.department).filter(Boolean))] as string[]
+
   const filtered = jobs.filter(j => {
     const matchStatus = filterStatus === 'all' || j.status === filterStatus
     const matchCompany = !filterCompany || j.companies?.id === filterCompany
+    const matchDept = !filterDepartment || j.department === filterDepartment
     const matchSearch = !search || [j.title, j.public_title, j.companies?.name, j.department].filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase())
-    return matchStatus && matchCompany && matchSearch
+    return matchStatus && matchCompany && matchDept && matchSearch
+  }).sort((a, b) => {
+    if (sortBy === 'company') return (a.companies?.name ?? '').localeCompare(b.companies?.name ?? '')
+    if (sortBy === 'department') return (a.department ?? '').localeCompare(b.department ?? '')
+    return (b.wished_start_date ?? '').localeCompare(a.wished_start_date ?? '')
   })
 
   const stats = {
@@ -188,7 +197,7 @@ export default function JobsPage() {
           {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         <div className="flex gap-1 bg-zinc-100 rounded-xl p-1">
-          {[['all', 'Tous'], ['open', 'Ouverts'], ['staffed', 'Pourvus'], ['closed', 'Fermés']].map(([v, l]) => (
+          {[['all', 'Tous'], ['open', 'Ouverts'], ['staffed', 'Pourvus'], ['closed', 'Fermes']].map(([v, l]) => (
             <button
               key={v}
               onClick={() => setFilterStatus(v)}
@@ -198,7 +207,37 @@ export default function JobsPage() {
             </button>
           ))}
         </div>
+        <select
+          value={sortBy}
+          onChange={e => setSortBy(e.target.value as 'date' | 'company' | 'department')}
+          className="px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+        >
+          <option value="date">Tri: Date</option>
+          <option value="company">Tri: Entreprise</option>
+          <option value="department">Tri: Departement</option>
+        </select>
       </div>
+
+      {/* Department chips */}
+      {departments.length > 0 && (
+        <div className="flex gap-2 mb-5 flex-wrap">
+          <button
+            onClick={() => setFilterDepartment('')}
+            className={['px-3 py-1 text-xs rounded-full border transition-colors', !filterDepartment ? 'bg-[#c8a96e] text-white border-[#c8a96e]' : 'bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300'].join(' ')}
+          >
+            Tous
+          </button>
+          {departments.map(dept => (
+            <button
+              key={dept}
+              onClick={() => setFilterDepartment(filterDepartment === dept ? '' : dept)}
+              className={['px-3 py-1 text-xs rounded-full border transition-colors', filterDepartment === dept ? 'bg-[#c8a96e] text-white border-[#c8a96e]' : 'bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300'].join(' ')}
+            >
+              {dept}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Liste */}
       {loading ? (
