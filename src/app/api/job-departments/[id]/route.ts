@@ -14,7 +14,7 @@ export async function PATCH(
 
   // Re-generate slug if name changed
   if (typeof body.name === 'string') {
-    body.slug = body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    body.slug = body.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
   }
 
   const { data, error } = await supabase

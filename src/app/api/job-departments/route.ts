@@ -41,7 +41,7 @@ export async function POST(request: Request) {
   const body = await request.json() as { name: string; categories?: string[] }
   if (!body.name) return NextResponse.json({ error: 'name requis' }, { status: 400 })
 
-  const slug = body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+  const slug = body.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
   const { data, error } = await supabase
     .from('job_departments')
