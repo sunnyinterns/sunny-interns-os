@@ -379,6 +379,10 @@ function isPdfUrl(url: string): boolean {
 
 function CVPopup({ url, onClose, name }: { url: string; onClose: () => void; name?: string }) {
   const isPdf = isPdfUrl(url)
+  // Google Docs Viewer pour PDFs — supporte multi-pages, pas de blocage X-Frame-Options
+  const viewerUrl = isPdf
+    ? `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`
+    : url
   return (
     <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl w-full max-w-5xl h-[92vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
@@ -386,7 +390,7 @@ function CVPopup({ url, onClose, name }: { url: string; onClose: () => void; nam
           <p className="font-bold text-sm text-[#1a1918]">📄 CV{name ? ` — ${name}` : ''}</p>
           <div className="flex gap-2">
             <a href={url} target="_blank" rel="noopener noreferrer"
-              className="px-3 py-1.5 text-xs bg-zinc-100 hover:bg-zinc-200 rounded-lg font-medium">
+              className="px-3 py-1.5 text-xs bg-zinc-100 hover:bg-zinc-200 rounded-lg font-medium flex items-center gap-1">
               ↗ Ouvrir dans un nouvel onglet
             </a>
             <button onClick={onClose}
@@ -395,26 +399,18 @@ function CVPopup({ url, onClose, name }: { url: string; onClose: () => void; nam
             </button>
           </div>
         </div>
-        <div className="flex-1 overflow-auto bg-zinc-50">
+        <div className="flex-1 bg-zinc-100">
           {isPdf ? (
-            <object 
-              data={url} 
-              type="application/pdf" 
-              className="w-full h-full min-h-[80vh]"
-            >
-              <div className="flex flex-col items-center justify-center h-full gap-4">
-                <span className="text-6xl">📄</span>
-                <p className="text-zinc-600 text-sm">{"Le PDF ne peut pas s'afficher en prévisualisation."}</p>
-                <a href={url} target="_blank" rel="noopener noreferrer"
-                  className="px-5 py-2.5 bg-[#c8a96e] text-white rounded-xl font-semibold hover:bg-[#b8945a]">
-                  ↗ Ouvrir le CV dans un nouvel onglet
-                </a>
-              </div>
-            </object>
+            <iframe
+              src={viewerUrl}
+              className="w-full h-full border-0"
+              title="CV PDF"
+              allow="autoplay"
+            />
           ) : (
-            <div className="flex items-center justify-center p-4">
+            <div className="flex items-center justify-center p-4 h-full overflow-auto">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={url} alt="CV" className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-lg" />
+              <img src={url} alt="CV" className="max-w-full max-h-full object-contain rounded-lg shadow-lg" />
             </div>
           )}
         </div>
