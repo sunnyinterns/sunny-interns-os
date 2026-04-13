@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 
@@ -24,10 +24,20 @@ const STEPS = [
   { num: 8, label: 'À Bali !' },
 ]
 
+const PORTAL_STEPS = [
+  { key: 'apply', label: 'Candidature', icon: '📋', statuses: ['lead', 'rdv_booked'] },
+  { key: 'interview', label: 'Entretien', icon: '🎤', statuses: ['rdv_booked', 'qualification_done'] },
+  { key: 'jobs', label: 'Offres de stage', icon: '💼', statuses: ['job_submitted', 'job_retained'] },
+  { key: 'convention', label: 'Convention', icon: '📝', statuses: ['convention_signed', 'payment_pending', 'payment_received'] },
+  { key: 'visa', label: 'Visa', icon: '🛂', statuses: ['visa_docs_sent', 'visa_in_progress', 'visa_received'] },
+  { key: 'bali', label: 'Départ Bali', icon: '🌴', statuses: ['arrival_prep', 'active', 'alumni'] },
+]
+
 interface PortalData {
   id: string
   status: string
   portal_token: string
+  qualification_notes_for_intern?: string | null
   actual_start_date?: string | null
   actual_end_date?: string | null
   billet_avion?: boolean | null
@@ -53,6 +63,8 @@ interface PortalData {
     first_name?: string | null
     last_name?: string | null
     email?: string | null
+    phone?: string | null
+    whatsapp?: string | null
     passport_page4_url?: string | null
     photo_id_url?: string | null
     bank_statement_url?: string | null
@@ -64,9 +76,12 @@ interface PortalData {
     id: string
     status: string
     intern_priority?: number | null
+    intern_comment?: string | null
+    intern_interested?: boolean | null
     jobs?: {
       public_title?: string | null
       title?: string | null
+      department?: string | null
       companies?: {
         id?: string | null
         name?: string | null
@@ -76,6 +91,16 @@ interface PortalData {
       } | null
     } | null
   }> | null
+}
+
+interface PortalJobItem {
+  submission_id: string
+  job_id: string
+  title: string
+  sector: string | null
+  public_description: string | null
+  intern_interested: boolean | null
+  status: string
 }
 
 const PAYMENT_STATUSES = new Set(['payment_pending', 'convention_signed', 'job_retained'])
@@ -94,10 +119,6 @@ function monthsDiff(start: string, end: string) {
   const s = new Date(start)
   const e = new Date(end)
   return Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24 * 30.5))
-}
-
-function daysSince(date: string) {
-  return Math.floor((Date.now() - new Date(date).getTime()) / 86400000)
 }
 
 function CVUploadSection({ token }: { token: string }) {
@@ -154,19 +175,144 @@ function CVUploadSection({ token }: { token: string }) {
   )
 }
 
+function JobCommentCard({ sub, token }: { sub: PortalJobItem; token: string }) {
+  const [comment, setComment] = useState('')
+  const [interested, setInterested] = useState<boolean | null>(sub.intern_interested)
+  const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  async function sendComment() {
+    if (!comment.trim()) return
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/portal/${token}/jobs/${sub.submission_id}/comment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comment }),
+      })
+      if (res.ok) { setSaved(true); setComment('') }
+    } catch { /* ignore */ }
+    finally { setSaving(false) }
+  }
+
+  async function sendInterest(value: boolean) {
+    setInterested(value)
+    try {
+      await fetch(`/api/portal/${token}/jobs/${sub.submission_id}/interest`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ interested: value }),
+      })
+    } catch { /* ignore */ }
+  }
+
+  const statusMap: Record<string, { label: string; color: string }> = {
+    proposed: { label: 'En cours de traitement', color: '#d97706' },
+    cv_pending: { label: 'CV en attente', color: '#d97706' },
+    cv_validated: { label: 'Profil validé', color: '#2563eb' },
+    sent: { label: 'Candidature envoyée', color: '#1d4ed8' },
+    interview: { label: 'Entretien employeur', color: '#7c3aed' },
+    retained: { label: 'Stage retenu !', color: '#059669' },
+    rejected: { label: 'Non retenu', color: '#dc2626' },
+    cancelled: { label: 'Annulé', color: '#9ca3af' },
+  }
+  const st = statusMap[sub.status] ?? statusMap.proposed
+
+  return (
+    <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 12 }}>
+      <div style={{ marginBottom: 8 }}>
+        <p style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', margin: 0 }}>{sub.title}</p>
+        {sub.sector && <p style={{ fontSize: 12, color: '#6b7280', margin: '2px 0 0' }}>{sub.sector}</p>}
+        <p style={{ fontSize: 12, fontWeight: 500, color: st.color, margin: '4px 0 0' }}>{st.label}</p>
+      </div>
+
+      {sub.public_description && (
+        <p style={{ fontSize: 13, color: '#374151', margin: '8px 0', lineHeight: 1.5 }}>{sub.public_description}</p>
+      )}
+
+      {/* Interest buttons */}
+      <div style={{ display: 'flex', gap: 8, margin: '12px 0' }}>
+        <button
+          onClick={() => void sendInterest(true)}
+          style={{
+            flex: 1, padding: '10px', border: `2px solid ${interested === true ? '#0d9e75' : '#e5e7eb'}`,
+            borderRadius: 10, background: interested === true ? '#f0fdf4' : 'white',
+            color: interested === true ? '#0d9e75' : '#6b7280', fontSize: 13, fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          {interested === true ? '✅ Intéressé' : 'Ce job m\'intéresse'}
+        </button>
+        <button
+          onClick={() => void sendInterest(false)}
+          style={{
+            flex: 1, padding: '10px', border: `2px solid ${interested === false ? '#dc2626' : '#e5e7eb'}`,
+            borderRadius: 10, background: interested === false ? '#fef2f2' : 'white',
+            color: interested === false ? '#dc2626' : '#6b7280', fontSize: 13, fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          {interested === false ? '❌ Pas intéressé' : 'Pas intéressé'}
+        </button>
+      </div>
+
+      {/* Comment zone */}
+      <div>
+        <p style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Que penses-tu de cette offre ?</p>
+        {saved ? (
+          <div style={{ padding: '10px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
+            <span style={{ fontSize: 13, color: '#065f46', fontWeight: 500 }}>Commentaire envoyé !</span>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <textarea
+              value={comment}
+              onChange={e => setComment(e.target.value)}
+              placeholder="Ex: J'adore ce poste, le secteur correspond bien a mes etudes..."
+              rows={3}
+              style={{
+                width: '100%', padding: '10px 12px', fontSize: 13, border: '1px solid #e5e7eb',
+                borderRadius: 8, resize: 'none', outline: 'none', boxSizing: 'border-box',
+              }}
+            />
+            <button
+              onClick={() => void sendComment()}
+              disabled={saving || !comment.trim()}
+              style={{
+                alignSelf: 'flex-end', padding: '8px 16px', fontSize: 13, fontWeight: 600,
+                background: comment.trim() && !saving ? '#c8a96e' : '#d1d5db', color: 'white',
+                border: 'none', borderRadius: 8, cursor: comment.trim() && !saving ? 'pointer' : 'not-allowed',
+              }}
+            >
+              {saving ? 'Envoi...' : 'Envoyer'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function PortalPage() {
   const params = useParams()
   const token = typeof params?.token === 'string' ? params.token : ''
   const [data, setData] = useState<PortalData | null>(null)
+  const [portalJobs, setPortalJobs] = useState<PortalJobItem[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
     if (!token) return
-    fetch(`/api/portal/${token}`)
-      .then(r => r.ok ? r.json() as Promise<PortalData> : Promise.reject())
-      .then(d => { setData(d); setLoading(false) })
-      .catch(() => setLoading(false))
+    Promise.all([
+      fetch(`/api/portal/${token}`).then(r => r.ok ? r.json() as Promise<PortalData> : null),
+      fetch(`/api/portal/${token}/jobs`).then(r => r.ok ? r.json() as Promise<PortalJobItem[]> : []),
+    ]).then(([portalData, jobs]) => {
+      setData(portalData)
+      setPortalJobs(jobs ?? [])
+      setLoading(false)
+    }).catch(() => setLoading(false))
   }, [token])
+
+  useEffect(() => { loadData() }, [loadData])
 
   if (loading) return <p style={{ color: '#6b7280', textAlign: 'center', marginTop: 48 }}>Chargement…</p>
   if (!data) return <p style={{ color: '#dc2626', textAlign: 'center', marginTop: 48 }}>Lien invalide ou expiré.</p>
@@ -182,9 +328,13 @@ export default function PortalPage() {
     : paymentAmount
   const isPaid = ['payment_received', 'visa_docs_sent', 'visa_submitted', 'visa_received', 'arrival_prep', 'active', 'alumni'].includes(data.status)
 
+  // Determine which portal step is current
+  const allStepStatuses = PORTAL_STEPS.flatMap(s => s.statuses)
+  const currentStepIdx = PORTAL_STEPS.findIndex(s => s.statuses.includes(data.status))
+  const qualificationDone = currentStep >= 2 && data.status !== 'lead' && data.status !== 'rdv_booked'
+
   // Pending actions
   const actions: { label: string; href: string; done: boolean; urgent?: boolean }[] = []
-
   if (currentStep >= 5) {
     actions.push({ label: 'Documents visa', href: `/portal/${token}/visa`, done: !!data.papiers_visas, urgent: currentStep >= 5 && !data.papiers_visas })
   }
@@ -227,6 +377,38 @@ export default function PortalPage() {
         )}
       </div>
 
+      {/* Chronologie portal steps */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 28, overflowX: 'auto', paddingBottom: 4 }}>
+        {PORTAL_STEPS.map((step, i) => {
+          const isReached = currentStepIdx >= i
+          const isCurrent = currentStepIdx === i
+          return (
+            <div key={step.key} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                opacity: isReached ? 1 : 0.3, flexShrink: 0,
+              }}>
+                <span style={{
+                  fontSize: 22,
+                  filter: isReached ? 'none' : 'grayscale(100%)',
+                }}>{step.icon}</span>
+                <span style={{
+                  fontSize: 9, color: isCurrent ? '#c8a96e' : '#6b7280',
+                  fontWeight: isCurrent ? 700 : 400,
+                  textAlign: 'center', maxWidth: 60, lineHeight: 1.2,
+                }}>{step.label}</span>
+              </div>
+              {i < PORTAL_STEPS.length - 1 && (
+                <div style={{
+                  width: 20, height: 2, flexShrink: 0, marginTop: -8,
+                  background: currentStepIdx > i ? '#c8a96e' : '#e5e7eb',
+                }} />
+              )}
+            </div>
+          )
+        })}
+      </div>
+
       {/* Progress bar */}
       <div style={{ marginBottom: 28 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, gap: 2 }}>
@@ -257,10 +439,35 @@ export default function PortalPage() {
         </div>
       </div>
 
+      {/* Notes de qualification */}
+      {qualificationDone && data.qualification_notes_for_intern && (
+        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 16, marginBottom: 24 }}>
+          <h2 style={{ fontSize: 14, fontWeight: 600, color: '#15803d', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Compte-rendu de ton entretien
+          </h2>
+          <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>
+            {data.qualification_notes_for_intern}
+          </p>
+        </div>
+      )}
+
+      {/* Status < qualification_done: message d'attente */}
+      {!qualificationDone && (
+        <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 12, padding: 20, marginBottom: 24, textAlign: 'center' }}>
+          <p style={{ fontSize: 18, margin: '0 0 8px' }}>⏳</p>
+          <p style={{ fontSize: 15, fontWeight: 600, color: '#1d4ed8', margin: '0 0 4px' }}>
+            Ton dossier est en cours d&apos;évaluation
+          </p>
+          <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
+            Notre équipe examine ta candidature. Tu seras notifié dès que ton entretien sera validé.
+          </p>
+        </div>
+      )}
+
       {/* Ton RDV */}
       {data.intern_first_meeting_date && (
         <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>📅 Ton entretien</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>Ton entretien</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 13, color: '#6b7280' }}>Date et heure</span>
@@ -291,6 +498,19 @@ export default function PortalPage() {
       {/* Upload CV demandé */}
       {data.cv_revision_requested && (
         <CVUploadSection token={token} />
+      )}
+
+      {/* JOBS PROPOSÉS — avec commentaire + intérêt */}
+      {qualificationDone && portalJobs.length > 0 && (
+        <section style={{ marginBottom: 24 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1918', marginBottom: 4 }}>Offres de stage proposées</h2>
+          <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16 }}>
+            Indique ton intérêt et laisse un commentaire pour chaque offre.
+          </p>
+          {portalJobs.map(sub => (
+            <JobCommentCard key={sub.submission_id} sub={sub} token={token} />
+          ))}
+        </section>
       )}
 
       {/* Actions requises */}
@@ -337,50 +557,6 @@ export default function PortalPage() {
         </div>
       )}
 
-      {/* Vos offres de stage */}
-      {data.job_submissions && data.job_submissions.length > 0 && (
-        <section style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 10 }}>💼 Vos offres de stage</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {[...data.job_submissions]
-              .sort((a, b) => ((a.intern_priority ?? 99) - (b.intern_priority ?? 99)))
-              .map((sub, i) => {
-                const job = sub.jobs
-                const company = job?.companies
-                const statusMap: Record<string, { label: string; color: string }> = {
-                  proposed: { label: '⏳ En cours de traitement', color: '#d97706' },
-                  cv_pending: { label: '📄 CV en attente de validation', color: '#d97706' },
-                  cv_validated: { label: '✅ Profil validé', color: '#2563eb' },
-                  sent: { label: '📤 Candidature envoyée', color: '#1d4ed8' },
-                  interview: { label: "🤝 Entretien avec l'employeur", color: '#7c3aed' },
-                  retained: { label: '🎉 Stage retenu !', color: '#059669' },
-                  rejected: { label: "❌ Non retenu par l'employeur", color: '#dc2626' },
-                  cancelled: { label: 'Annulé', color: '#9ca3af' },
-                }
-                const st = statusMap[sub.status] ?? statusMap.proposed
-                return (
-                  <div key={sub.id} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '12px 16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: '#d1d5db', width: 24, textAlign: 'center', flexShrink: 0 }}>
-                        {sub.intern_priority ?? i + 1}
-                      </span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 14, fontWeight: 600, color: '#1a1918', margin: 0 }}>
-                          {job?.public_title ?? job?.title ?? '—'}
-                        </p>
-                        {company?.name && (
-                          <p style={{ fontSize: 12, color: '#6b7280', margin: '2px 0 0' }}>{company.name}</p>
-                        )}
-                        <p style={{ fontSize: 12, fontWeight: 500, color: st.color, margin: '4px 0 0' }}>{st.label}</p>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-          </div>
-        </section>
-      )}
-
       {/* Ton stage */}
       {retainedSub && currentStep >= 4 && (
         <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
@@ -403,7 +579,7 @@ export default function PortalPage() {
       {/* Infos entreprise pour convention */}
       {retainedCompany && (data.status === 'job_retained' || data.status === 'convention_signed' || data.status === 'payment_pending') && (
         <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 4 }}>📋 Informations pour ta convention</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 4 }}>Informations pour ta convention</h2>
           <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 12 }}>Utilise ces informations pour faire rédiger ta convention de stage par ton école.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', gap: 12 }}>
@@ -435,7 +611,7 @@ export default function PortalPage() {
       {/* Paiement */}
       {showPayment && !isPaid && (
         <div style={{ background: '#fef9ee', border: '1px solid #fde68a', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>💶 Paiement</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>Paiement</h2>
           <div style={{ background: 'white', borderRadius: 8, padding: 12, marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 12, color: '#9ca3af' }}>Montant à régler</span>
@@ -486,6 +662,48 @@ export default function PortalPage() {
           ))}
         </div>
       </div>
+
+      {/* Infos profil */}
+      {data.interns && (
+        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>Mon profil</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {data.interns.email && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 13, color: '#6b7280' }}>Email</span>
+                <span style={{ fontSize: 13, color: '#1a1918' }}>{data.interns.email}</span>
+              </div>
+            )}
+            {data.interns.phone && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 13, color: '#6b7280' }}>Téléphone</span>
+                <span style={{ fontSize: 13, color: '#1a1918' }}>{data.interns.phone}</span>
+              </div>
+            )}
+            {data.interns.whatsapp && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 13, color: '#6b7280' }}>WhatsApp</span>
+                <span style={{ fontSize: 13, color: '#1a1918' }}>{data.interns.whatsapp}</span>
+              </div>
+            )}
+            {data.interns.cv_url && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 13, color: '#6b7280' }}>CV</span>
+                <a href={data.interns.cv_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#c8a96e', fontWeight: 600 }}>
+                  Voir mon CV
+                </a>
+              </div>
+            )}
+          </div>
+          <Link href={`/portal/${token}/cv`} style={{
+            display: 'inline-block', marginTop: 12, padding: '8px 16px',
+            background: '#f3f4f6', color: '#374151', borderRadius: 8,
+            fontSize: 13, fontWeight: 600, textDecoration: 'none',
+          }}>
+            Mettre à jour mon CV
+          </Link>
+        </div>
+      )}
 
       {/* Carte stagiaire */}
       {data.status === 'active' && (
