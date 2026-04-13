@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ProcessTimeline } from '@/components/cases/ProcessTimeline'
 import StatusActionPanel from '@/components/cases/StatusActionPanel'
 import type { CaseStatus } from '@/lib/types'
@@ -348,8 +348,55 @@ export function TabProcess({
 
   const doneCount = CHECKLIST_ITEMS.filter((item) => !!checklist[item.key]).length
 
+  const STATUTS_ORDRE = [
+    { key: 'rdv_booked', label: 'RDV booké', icon: '📅' },
+    { key: 'qualification_done', label: 'Qualifié', icon: '✅' },
+    { key: 'job_submitted', label: 'Jobs proposés', icon: '💼' },
+    { key: 'job_retained', label: 'Offre acceptée', icon: '🤝' },
+    { key: 'payment_received', label: 'Paiement reçu', icon: '💶' },
+    { key: 'visa_received', label: 'Visa reçu', icon: '🛂' },
+    { key: 'active', label: 'En stage', icon: '🌴' },
+    { key: 'alumni', label: 'Terminé', icon: '🎓' },
+  ]
+
+  const STATUS_TO_TIMELINE: Record<string, string> = {
+    lead: 'rdv_booked',
+    rdv_booked: 'rdv_booked',
+    qualification_done: 'qualification_done',
+    job_submitted: 'job_submitted',
+    job_retained: 'job_retained',
+    convention_signed: 'job_retained',
+    payment_pending: 'job_retained',
+    payment_received: 'payment_received',
+    visa_docs_sent: 'payment_received',
+    visa_submitted: 'payment_received',
+    visa_in_progress: 'payment_received',
+    visa_received: 'visa_received',
+    arrival_prep: 'visa_received',
+    active: 'active',
+    alumni: 'alumni',
+  }
+
+  const mappedKey = STATUS_TO_TIMELINE[status] ?? status
+  const currentIdx = STATUTS_ORDRE.findIndex(s => s.key === mappedKey)
+
   return (
     <div className="space-y-6">
+      {/* Timeline visuelle */}
+      <div className="flex items-center gap-1 mb-4 overflow-x-auto pb-1">
+        {STATUTS_ORDRE.map((s, i) => (
+          <React.Fragment key={s.key}>
+            <div className={`flex flex-col items-center gap-0.5 flex-shrink-0 ${i <= currentIdx ? 'opacity-100' : 'opacity-30'}`}>
+              <span className="text-base">{s.icon}</span>
+              <span className="text-[9px] text-zinc-500 text-center max-w-[50px] leading-tight">{s.label}</span>
+            </div>
+            {i < STATUTS_ORDRE.length - 1 && (
+              <div className={`h-0.5 w-4 flex-shrink-0 mt-[-8px] ${i < currentIdx ? 'bg-[#c8a96e]' : 'bg-zinc-200'}`} />
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+
       {/* Toast */}
       {toastMsg && (
         <div className={[
