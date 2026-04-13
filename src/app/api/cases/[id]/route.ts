@@ -162,7 +162,7 @@ export async function GET(
           spoken_languages, english_level,
           main_desired_job, desired_sectors, desired_jobs, stage_ideal, touchpoint, source,
           intern_level, education_level, intern_level_notes, diploma_track, qualification_debrief,
-          school_contact_name, school_contact_email, school_country, school_name,
+          school_contact_name, school_contact_email, school_country,
           emergency_contact_name, emergency_contact_phone, insurance_company,
           intern_address, intern_signing_city, mother_first_name, mother_last_name,
           housing_budget, housing_city, wants_scooter, intern_bank_name, intern_bank_iban,
