@@ -140,6 +140,8 @@ export function TabProcess({
   const [logsLoading, setLogsLoading] = useState(true)
   const [noteText, setNoteText] = useState('')
   const [savingNote, setSavingNote] = useState(false)
+  const [notesForIntern, setNotesForIntern] = useState<string>((caseData?.qualification_notes_for_intern as string) ?? '')
+  const [sendingEmail, setSendingEmail] = useState(false)
 
   const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
     lead: { label: 'Demande entrante', bg: '#f4f4f5', text: '#52525b' },
@@ -298,6 +300,37 @@ export function TabProcess({
   const mappedKey = STATUS_TO_TIMELINE[status] ?? status
   const timelineIdx = STATUTS_ORDRE.findIndex(s => s.key === mappedKey)
 
+  const DISQUALIFICATION_STATUTS: { value: CaseStatus; label: string; color: string; desc: string }[] = [
+    { value: 'no_show', label: 'No Show', color: '#f59e0b', desc: 'Le candidat ne s\'est pas présenté' },
+    { value: 'to_recontact', label: 'À recontacter', color: '#6b7280', desc: 'Retombe en lead - sera recontacté' },
+    { value: 'hors_qualification', label: 'Hors qualification', color: '#dc2626', desc: 'Cursus ou profil inadapté' },
+    { value: 'no_budget', label: 'Pas de budget', color: '#dc2626', desc: 'Ne peut pas financer le stage' },
+    { value: 'refus_general', label: 'Refus général', color: '#dc2626', desc: 'Manque de professionnalisme ou autre' },
+  ]
+
+  async function saveField(field: string, value: string) {
+    try {
+      await fetch(`/api/cases/${caseId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value }),
+      })
+    } catch { /* silent */ }
+  }
+
+  async function sendQualificationEmailAction() {
+    setSendingEmail(true)
+    try {
+      const res = await fetch(`/api/cases/${caseId}/send-qualification-email`, { method: 'POST' })
+      if (!res.ok) throw new Error()
+      showToast('Email qualification envoyé')
+    } catch {
+      showToast('Erreur lors de l\'envoi', 'error')
+    } finally {
+      setSendingEmail(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Timeline visuelle */}
@@ -403,6 +436,54 @@ export function TabProcess({
           <p className="text-sm text-[#1a1918] whitespace-pre-wrap">{caseData.qualification_notes}</p>
         </div>
       ) : null}
+
+      {/* Notes pour le candidat + envoi email qualification */}
+      <div className="bg-white rounded-xl border border-zinc-100 p-4 space-y-4">
+        <div>
+          <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+            Notes pour le candidat (envoyées par email)
+          </label>
+          <textarea
+            value={notesForIntern}
+            onChange={e => setNotesForIntern(e.target.value)}
+            onBlur={() => { void saveField('qualification_notes_for_intern', notesForIntern) }}
+            placeholder="Ex: Profil validé, fort potentiel en marketing digital. Nous allons te proposer des offres dans les domaines..."
+            rows={4}
+            className="w-full mt-2 text-sm border border-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-[#c8a96e]"
+          />
+        </div>
+        <button
+          onClick={() => { void sendQualificationEmailAction() }}
+          disabled={sendingEmail}
+          className="px-4 py-2 bg-[#0d9e75] text-white text-sm font-bold rounded-xl hover:bg-emerald-600 disabled:opacity-50"
+        >
+          {sendingEmail ? 'Envoi...' : 'Envoyer email qualification + accès portail'}
+        </button>
+      </div>
+
+      {/* Clôturer le dossier (disqualification) */}
+      <details className="group">
+        <summary className="text-sm font-semibold text-red-600 cursor-pointer hover:text-red-700 transition-colors">
+          Clôturer le dossier...
+        </summary>
+        <div className="mt-3 bg-red-50 rounded-xl border border-red-100 p-4">
+          <p className="text-xs text-red-500 mb-3">Ces actions mettent fin au processus de candidature.</p>
+          <div className="flex flex-wrap gap-2">
+            {DISQUALIFICATION_STATUTS.map(s => (
+              <button
+                key={s.value}
+                onClick={() => { void handleStatusChange(s.value) }}
+                disabled={statusChanging}
+                title={s.desc}
+                className="text-xs px-3 py-1.5 rounded-xl font-semibold border disabled:opacity-50 transition-colors hover:opacity-80"
+                style={{ borderColor: s.color, color: s.color, background: `${s.color}10` }}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </details>
 
       {/* 1. Status Action Panel — boutons compacts */}
       {caseData && (

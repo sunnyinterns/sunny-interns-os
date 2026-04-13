@@ -23,6 +23,11 @@ export type CaseStatus =
   | 'completed'
   | 'no_job_found'
   | 'lost'
+  | 'no_show'
+  | 'to_recontact'
+  | 'hors_qualification'
+  | 'no_budget'
+  | 'refus_general'
 
 export interface ActivityItem {
   id: string
