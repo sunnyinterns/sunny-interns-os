@@ -86,6 +86,7 @@ export default function CaseDetailPage() {
   const [activeTab, setActiveTab] = useState<TabKey>(tabFromUrl ?? 'profil')
   const [headerCompact, setHeaderCompact] = useState(false)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [jobSubmissionsCount, setJobSubmissionsCount] = useState(0)
 
   // Header compact au scroll
   useEffect(() => {
@@ -123,7 +124,7 @@ export default function CaseDetailPage() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         return res.json() as Promise<CaseDetail>
       })
-      .then((data) => { setCaseData(data); setLoading(false) })
+      .then((data) => { setCaseData(data); setLoading(false); fetch(`/api/cases/${data.id}/job-submissions`).then(r2 => r2.ok ? r2.json() : []).then((subs) => setJobSubmissionsCount(Array.isArray(subs) ? subs.length : 0)).catch(() => null) })
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : 'Erreur inconnue')
         setLoading(false)
@@ -195,7 +196,17 @@ export default function CaseDetailPage() {
   const isVisaOnly = caseData.case_type === 'visa_only'
 
   const badge = STATUS_BADGE[caseData.status] ?? { label: caseData.status, bg: '#f4f4f5', text: '#71717a' }
-  const actionInfo = NEXT_ACTIONS[caseData.status]
+  const baseAction = NEXT_ACTIONS[caseData.status]
+  const actionInfo = (() => {
+    if (!baseAction) return null
+    if (caseData.status === 'qualification_done' && jobSubmissionsCount > 0) {
+      return { ...baseAction, text: jobSubmissionsCount + ' job' + (jobSubmissionsCount > 1 ? 's' : '') + ' sélectionné' + (jobSubmissionsCount > 1 ? 's' : '') + ' — Envoyer aux employeurs', cta: '💼 Aller au Staffing', action: 'staffing' }
+    }
+    if (caseData.status === 'rdv_booked' && jobSubmissionsCount > 0) {
+      return { ...baseAction, text: jobSubmissionsCount + ' job' + (jobSubmissionsCount > 1 ? 's' : '') + ' sélectionné' + (jobSubmissionsCount > 1 ? 's' : '') + ' — Envoyer aux employeurs', cta: '💼 Aller au Staffing', action: 'staffing' }
+    }
+    return baseAction
+  })()
 
   const handleCtaClick = () => {
     if (!actionInfo?.action) return
@@ -211,6 +222,7 @@ export default function CaseDetailPage() {
         }
         break
       case 'jobs':
+      case 'staffing':
         setActiveTab('staffing')
         break
       case 'mark_paid':
