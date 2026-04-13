@@ -1736,7 +1736,7 @@ export default function ApplyPage() {
                 1. postMessage fillout:next après 1.5s
                 2. overlay qui masque le bouton Next pendant 2s (UX) */}
             {filloutIframeSrc && (
-              <div style={{ position: 'relative', width: '100%', minHeight: '700px' }}>
+              <div style={{ position: 'relative', width: '100%', minHeight: '600px' }}>
                 {/* Overlay qui masque la page Fields pendant le skip automatique */}
                 <div
                   id="fillout-loading-overlay"
@@ -1763,7 +1763,7 @@ export default function ApplyPage() {
                     }
                   }}
                   src={filloutIframeSrc}
-                  style={{ width: '100%', height: '700px', border: 'none', borderRadius: '12px' }}
+                  style={{ width: '100%', minHeight: '600px', height: '700px', border: 'none', borderRadius: '12px' }}
                   title="Prendre un rendez-vous"
                   allow="camera; microphone; fullscreen"
                 />
