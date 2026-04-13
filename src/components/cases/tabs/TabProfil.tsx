@@ -56,6 +56,7 @@ interface TabProfilProps {
   internId?: string | null
   caseId?: string | null
   schoolName?: string | null
+  schoolId?: string | null
   desiredStartDate?: string | null
   desiredEndDate?: string | null
   desiredDurationMonths?: number | null
@@ -345,7 +346,7 @@ const DURATION_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
   label: `${i + 1} mois`,
 }))
 
-export function TabProfil({ intern, internId, caseId, schoolName }: TabProfilProps) {
+export function TabProfil({ intern, internId, caseId, schoolName, schoolId }: TabProfilProps) {
   if (!intern) {
     return <p className="text-sm text-zinc-400">Aucun profil associé</p>
   }
@@ -360,6 +361,11 @@ export function TabProfil({ intern, internId, caseId, schoolName }: TabProfilPro
 
       {/* SECTION 1 — Identité */}
       <Section title="🪪 Identité">
+        <EditableField label="Prénom" value={intern.first_name} fieldKey="first_name" internId={iid} caseId={caseId} />
+        <EditableField label="Nom" value={intern.last_name} fieldKey="last_name" internId={iid} caseId={caseId} />
+        <EditableField label="Email" value={intern.email} fieldKey="email" internId={iid} caseId={caseId} type="email" />
+        <EditableField label="WhatsApp" value={intern.whatsapp} fieldKey="whatsapp" internId={iid} caseId={caseId} />
+        <EditableField label="Téléphone" value={(intern as Record<string, unknown>).phone as string | undefined} fieldKey="phone" internId={iid} caseId={caseId} />
         {/* Date naissance + âge sur même ligne */}
         <div className="flex gap-3 py-2.5 border-b border-zinc-50 items-center">
           <span className="text-[11px] text-zinc-400 font-medium w-32 flex-shrink-0">Date de naissance</span>
@@ -369,22 +375,7 @@ export function TabProfil({ intern, internId, caseId, schoolName }: TabProfilPro
           </div>
         </div>
         <EditableField label="Nationalité(s)" value={intern.nationality} fieldKey="nationality" internId={iid} caseId={caseId} />
-        {/* Genre + Contact urgence → déplacés dans l'onglet Visa */}
-        <EditableField
-          label="Passeport"
-          value={intern.passport_number ? `${intern.passport_number}${intern.passport_expiry ? ` — exp. ${new Date(intern.passport_expiry).toLocaleDateString('fr-FR')}` : ''}` : null}
-          fieldKey="passport_number"
-          readonly
-          badge={
-            caseId ? (
-              <a href={`?tab=visa`} className="text-[10px] text-[#c8a96e] hover:underline ml-1">→ Voir onglet Visa</a>
-            ) : undefined
-          }
-        />
-      </Section>
-
-      {/* SECTION 2 — Réseaux & Contact */}
-      <Section title="🌐 Réseaux & Contact">
+        <EditableField label="Expiration passeport" value={intern.passport_expiry} fieldKey="passport_expiry" internId={iid} caseId={caseId} type="date" />
         {intern.linkedin_url ? (
           <div className="flex items-center gap-2 py-2.5 border-b border-zinc-50">
             <span className="text-[11px] text-zinc-400 font-medium w-32 flex-shrink-0">LinkedIn</span>
@@ -397,14 +388,22 @@ export function TabProfil({ intern, internId, caseId, schoolName }: TabProfilPro
         ) : (
           <EditableField label="LinkedIn" value={intern.linkedin_url} fieldKey="linkedin_url" internId={iid} caseId={caseId} type="url" />
         )}
-        <EditableField label="WhatsApp" value={intern.whatsapp} fieldKey="whatsapp" internId={iid} caseId={caseId} />
-        <EditableField label="Téléphone" value={(intern as Record<string, unknown>).phone as string | undefined} fieldKey="phone" internId={iid} caseId={caseId} />
-        <EditableField label="Email" value={intern.email} fieldKey="email" internId={iid} caseId={caseId} type="email" />
       </Section>
 
-      {/* SECTION 3 — Formation */}
+      {/* SECTION 2 — Formation */}
       <Section title="🎓 Formation">
-        <EditableField label="École" value={schoolName} fieldKey="school_name" readonly />
+        {/* École avec lien fiche */}
+        <div className="flex items-center gap-2 py-2.5 border-b border-zinc-50">
+          <span className="text-[11px] text-zinc-400 font-medium w-32 flex-shrink-0">École</span>
+          {schoolId ? (
+            <a href={`/fr/schools/${schoolId}`}
+              className="text-sm text-[#c8a96e] hover:underline font-medium flex items-center gap-1">
+              {schoolName || '—'} <span className="text-[10px]">↗</span>
+            </a>
+          ) : (
+            <span className="text-sm text-[#1a1918]">{schoolName || <span className="text-zinc-300">—</span>}</span>
+          )}
+        </div>
         <EditableField label="Pays d'études" value={intern.school_contact_name ? undefined : (intern as Record<string, unknown>).school_country as string | undefined} fieldKey="school_country" internId={iid} caseId={caseId} />
         <EditableField label="Niveau d'études" value={intern.intern_level} fieldKey="intern_level" internId={iid} caseId={caseId} />
         <EditableField
