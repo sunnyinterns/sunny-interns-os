@@ -14,9 +14,9 @@ export async function GET(
     const { data, error } = await supabase
       .from('job_submissions')
       .select(`
-        id, status, intern_interested, cv_revision_requested, notes_charly, created_at,
-        jobs(id, title, public_title, wished_duration_months, wished_start_date,
-          companies(id, name),
+        id, status, intern_interested, intern_priority, cv_revision_requested, cv_revision_done, employer_response, notes_charly, created_at, submitted_at,
+        jobs(id, title, public_title, wished_duration_months, wished_start_date, department, description,
+          companies(id, name, contact_name, contact_whatsapp, contact_email),
           contacts(id, first_name, last_name, email, whatsapp)
         )
       `)
