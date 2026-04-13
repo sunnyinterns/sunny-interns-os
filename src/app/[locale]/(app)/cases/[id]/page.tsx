@@ -71,7 +71,7 @@ function getLinkedinSlug(url: string): string | null {
   return match ? match[1] : null
 }
 
-type TabKey = 'process' | 'profil' | 'staffing' | 'visa' | 'arrivee' | 'facturation'
+type TabKey = 'process' | 'profil' | 'staffing' | 'visa' | 'arrivee' | 'facturation' | 'historique'
 
 export default function CaseDetailPage() {
   const params = useParams()
@@ -249,6 +249,7 @@ export default function CaseDetailPage() {
     ...(!isVisaOnly ? [{ key: 'facturation' as TabKey, label: '💶 Facturation' }] : []),
     { key: 'visa', label: '🛂 Visa' },
     ...(!isVisaOnly ? [{ key: 'arrivee' as TabKey, label: '🛫 Arrivée' }] : []),
+    { key: 'historique' as TabKey, label: '📋 Historique' },
   ]
 
   return (
@@ -595,6 +596,9 @@ export default function CaseDetailPage() {
         )}
         {activeTab === 'facturation' && (
           <TabFacturation caseId={caseData.id} caseData={{ id: caseData.id, status: caseData.status, payment_amount: caseData.payment_amount, discount_percentage: caseData.discount_percentage, invoice_number: caseData.invoice_number, payment_type: caseData.payment_type, payment_date: caseData.payment_date, convention_signee_check: caseData.convention_signee_check, packages: caseData.packages as any, interns: caseData.interns ? { first_name: caseData.interns.first_name ?? '', last_name: caseData.interns.last_name ?? '' } : null } as any} />
+        )}
+        {activeTab === 'historique' && (
+          <TabHistorique caseId={caseData.id} />
         )}
       </div>
 
