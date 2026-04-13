@@ -34,9 +34,9 @@ export async function GET(request: Request) {
     submissions_count: Array.isArray(j.job_submissions)
       ? j.job_submissions.filter((s: Record<string, unknown>) => !['rejected', 'cancelled'].includes(s.status as string)).length
       : 0,
-    company_name: (j.companies as { name: string } | null)?.name ?? null,
-    contact_name: j.contacts ? `${(j.contacts as { first_name: string; last_name: string | null }).first_name} ${(j.contacts as { first_name: string; last_name: string | null }).last_name ?? ''}`.trim() : null,
-    department_name: (j.job_departments as { name: string } | null)?.name ?? j.department ?? null,
+    company_name: (j.companies as unknown as { name: string } | null)?.name ?? null,
+    contact_name: j.contacts ? `${(j.contacts as unknown as { first_name: string; last_name: string | null }).first_name} ${(j.contacts as unknown as { first_name: string; last_name: string | null }).last_name ?? ''}`.trim() : null,
+    department_name: (j.job_departments as unknown as { name: string } | null)?.name ?? j.department ?? null,
   }))
 
   return NextResponse.json(jobs)

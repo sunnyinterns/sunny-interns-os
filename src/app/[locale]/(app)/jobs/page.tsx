@@ -438,7 +438,7 @@ export default function JobsPage() {
                 <div>
                   <label className="block text-xs font-medium text-zinc-600 mb-1">Durée (mois)</label>
                   <select className={inputCls} value={form.wished_duration_months} onChange={e => setForm(p => ({...p, wished_duration_months: e.target.value}))}>
-                    {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} mois</option>)}
+                    {[1,2,3,4,5,6,7,8,9,10,11,12].map(n => <option key={n} value={n}>{n} mois</option>)}
                   </select>
                 </div>
               </div>
@@ -447,7 +447,7 @@ export default function JobsPage() {
                   <label className="block text-xs font-medium text-zinc-600 mb-1">Niveau requis</label>
                   <select className={inputCls} value={form.required_level} onChange={e => setForm(p => ({...p, required_level: e.target.value}))}>
                     <option value="">— Aucun —</option>
-                    {['bac', 'bac+2', 'bac+3', 'bac+4', 'bac+5'].map(n => <option key={n} value={n}>{n}</option>)}
+                    {['Bac', 'Bac+2', 'Bac+3', 'Bac+4', 'Bac+5'].map(l => <option key={l} value={l}>{l}</option>)}
                   </select>
                 </div>
                 <div>
