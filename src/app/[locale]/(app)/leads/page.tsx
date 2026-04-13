@@ -121,10 +121,10 @@ export default function LeadsPage() {
     all: activeLeads.length,
     website: activeLeads.filter(l => l.source === 'website_form_unfinished').length,
     linkedin: activeLeads.filter(l => l.source === 'linkedin').length,
-    facebook: leads.filter(l => ['facebook', 'facebook_group'].includes(l.source)).length,
-    other: leads.filter(l => !MAIN_SOURCES.has(l.source)).length,
-    in_progress: leads.filter(l => getFormLeadStatus(l) === 'in_progress').length,
-  }), [leads, MAIN_SOURCES])
+    facebook: activeLeads.filter(l => ['facebook', 'facebook_group'].includes(l.source)).length,
+    other: activeLeads.filter(l => !MAIN_SOURCES.has(l.source)).length,
+    in_progress: activeLeads.filter(l => getFormLeadStatus(l) === 'in_progress').length,
+  }), [activeLeads, MAIN_SOURCES])
 
   const filters: { key: string; label: string; count: number }[] = [
     { key: 'all', label: 'Tous', count: counts.all },
@@ -328,6 +328,7 @@ export default function LeadsPage() {
               )}
               {selectedLead.desired_start_date && <div><span className="text-zinc-500">Démarrage : </span>{selectedLead.desired_start_date}</div>}
               {selectedLead.school_country && <div><span className="text-zinc-500">Pays d'études : </span>{selectedLead.school_country}</div>}
+              {selectedLead.touchpoint && <div><span className="text-zinc-500">Touchpoint : </span>{selectedLead.touchpoint}</div>}
               {selectedLead.form_step !== null && <div><span className="text-zinc-500">Étape atteinte : </span>{selectedLead.form_step}</div>}
               {selectedLead.notes && <div><span className="text-zinc-500">Notes : </span>{selectedLead.notes}</div>}
               <div><span className="text-zinc-500">Créé le : </span>{new Date(selectedLead.created_at).toLocaleString('fr-FR')}</div>
