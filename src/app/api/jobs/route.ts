@@ -13,15 +13,18 @@ export async function GET(request: Request) {
   let query = supabase
     .from('jobs')
     .select(`
-      *,
-      companies(id, name, contact_name, contact_email, contact_whatsapp, whatsapp_number, description, industry, location),
-      contacts(id, first_name, last_name, job_title, email),
-      job_submissions(id, status)
+      id, title, public_title, department, status, wished_duration_months,
+      wished_start_date, required_level, created_at, updated_at, job_department_id, is_active,
+      remote_ok, remote_work, is_remote, location, description,
+      companies(id, name, contact_name, contact_email, contact_whatsapp, whatsapp_number),
+      contacts(id, first_name, last_name),
+      job_submissions(id, status),
+      job_departments(id, name, slug)
     `)
     .order('created_at', { ascending: false })
 
   if (status && status !== 'all') query = query.eq('status', status)
-  if (departmentId) query = query.eq('department', departmentId)
+  if (departmentId) query = query.eq('job_department_id', departmentId)
 
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -33,7 +36,7 @@ export async function GET(request: Request) {
       : 0,
     company_name: (j.companies as { name: string } | null)?.name ?? null,
     contact_name: j.contacts ? `${(j.contacts as { first_name: string; last_name: string | null }).first_name} ${(j.contacts as { first_name: string; last_name: string | null }).last_name ?? ''}`.trim() : null,
-    department_name: j.department ?? null,
+    department_name: (j.job_departments as { name: string } | null)?.name ?? j.department ?? null,
   }))
 
   return NextResponse.json(jobs)
