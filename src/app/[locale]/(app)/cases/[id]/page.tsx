@@ -3,16 +3,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { NewCaseModal } from '@/components/cases/NewCaseModal'
+import Link from 'next/link'
 import { TabProcess } from '@/components/cases/tabs/TabProcess'
 import { TabProfil } from '@/components/cases/tabs/TabProfil'
 import { TabStaffing } from '@/components/cases/tabs/TabStaffing'
-import { TabVisa } from '@/components/cases/tabs/TabVisa'
-import { TabArrivee } from '@/components/cases/tabs/TabArrivee'
-import { TabFacturation } from '@/components/cases/tabs/TabFacturation'
 import { TabHistorique } from '@/components/cases/tabs/TabHistorique'
 import { InternCardDigital } from '@/components/cases/InternCardDigital'
 import type { CaseStatus } from '@/lib/types'
 import { ProcessTimeline } from '@/components/cases/ProcessTimeline'
+
+const CANDIDATE_STATUSES = ['lead', 'rdv_booked', 'qualification_done', 'job_submitted', 'job_retained', 'convention_signed']
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CaseDetail = Record<string, any>
@@ -71,7 +71,7 @@ function getLinkedinSlug(url: string): string | null {
   return match ? match[1] : null
 }
 
-type TabKey = 'process' | 'profil' | 'staffing' | 'visa' | 'arrivee' | 'facturation' | 'historique'
+type TabKey = 'process' | 'profil' | 'staffing' | 'historique'
 
 export default function CaseDetailPage() {
   const params = useParams()
@@ -195,6 +195,7 @@ export default function CaseDetailPage() {
   const dateDepart = departDate ? new Date(departDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
   const durationMonths = caseData.desired_duration_months ?? ''
   const isVisaOnly = caseData.case_type === 'visa_only'
+  const isClient = !CANDIDATE_STATUSES.includes(caseData.status)
 
   const badge = STATUS_BADGE[caseData.status] ?? { label: caseData.status, bg: '#f4f4f5', text: '#71717a' }
   const baseAction = NEXT_ACTIONS[caseData.status]
@@ -226,34 +227,31 @@ export default function CaseDetailPage() {
       case 'staffing':
         setActiveTab('staffing')
         break
-      case 'mark_paid':
-        fetch(`/api/cases/${caseData.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'payment_received' }),
-        }).then(() => fetchCase())
-        break
-      case 'visa':
-        setActiveTab('visa')
-        break
-      case 'arrivee':
-        setActiveTab('arrivee')
-        break
     }
   }
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'process', label: '⚡ Processus' },
     { key: 'profil', label: '👤 Profil' },
-    ...(!isVisaOnly ? [{ key: 'staffing' as TabKey, label: '💼 Staffing' }] : []),
-    ...(!isVisaOnly ? [{ key: 'facturation' as TabKey, label: '💶 Facturation' }] : []),
-    { key: 'visa', label: '🛂 Visa' },
-    ...(!isVisaOnly ? [{ key: 'arrivee' as TabKey, label: '🛫 Arrivée' }] : []),
+    ...(!isClient && !isVisaOnly ? [{ key: 'staffing' as TabKey, label: '💼 Staffing' }] : []),
     { key: 'historique' as TabKey, label: '📋 Historique' },
   ]
 
   return (
     <div className="flex flex-col h-full bg-[#fafaf9]">
+      {/* Bannière redirection client */}
+      {isClient && (
+        <div className="sticky top-0 z-30 bg-amber-50 border-b-2 border-amber-300 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-amber-600 font-bold text-sm">Ce candidat est maintenant un client</span>
+            <span className="text-amber-500 text-xs">({caseData.status})</span>
+          </div>
+          <Link href={`/${locale}/clients/${caseData.id}`}
+            className="px-4 py-1.5 bg-amber-500 text-white text-sm font-bold rounded-xl hover:bg-amber-600 transition-colors">
+            Voir la fiche client →
+          </Link>
+        </div>
+      )}
       {/* ── HEADER STICKY ── */}
       <div className={`sticky top-0 z-20 bg-white border-b border-zinc-200 transition-all duration-200 ${headerCompact ? 'shadow-md' : ''}`}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
@@ -303,14 +301,6 @@ export default function CaseDetailPage() {
                   className="text-xs px-3 py-1.5 rounded-lg bg-[#c8a96e] text-white hover:opacity-90 transition-opacity"
                 >
                   Carte stagiaire
-                </button>
-              )}
-              {(caseData.status === 'payment_pending' || caseData.status === 'convention_signed') && (
-                <button
-                  onClick={() => setActiveTab('facturation')}
-                  className="px-3 py-1.5 text-xs font-semibold bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
-                >
-                  💶 Facturation
                 </button>
               )}
               <button
@@ -553,49 +543,6 @@ export default function CaseDetailPage() {
             spokenLanguages={intern.spoken_languages ?? null}
             onRefresh={fetchCase}
           />
-        )}
-        {activeTab === 'visa' && (
-          <TabVisa caseData={{
-            id: caseData.id,
-            status: caseData.status,
-            portal_token: caseData.portal_token,
-            package_id: caseData.package_id,
-            note_for_agent: caseData.note_for_agent,
-            visa_submitted_to_agent_at: caseData.visa_submitted_to_agent_at,
-            visa_submitted_at: caseData.visa_submitted_at,
-            visa_received_at: caseData.visa_received_at,
-            billet_avion: caseData.billet_avion,
-            papiers_visas: caseData.papiers_visas,
-            fazza_transfer_sent: caseData.fazza_transfer_sent,
-            fazza_transfer_amount_idr: caseData.fazza_transfer_amount_idr,
-            fazza_transfer_date: caseData.fazza_transfer_date,
-            interns: caseData.interns as Parameters<typeof TabVisa>[0]['caseData']['interns'],
-            visa_agents: caseData.visa_agents ?? null,
-            packages: caseData.packages ?? null,
-            desired_start_date: caseData.desired_start_date ?? null,
-          }} schoolName={schoolName} onStatusChange={fetchCase} />
-        )}
-        {activeTab === 'arrivee' && (
-          <TabArrivee caseData={{
-            id: caseData.id,
-            flight_number: caseData.flight_number,
-            flight_departure_city: caseData.flight_departure_city,
-            flight_arrival_time_local: caseData.flight_arrival_time_local,
-            actual_start_date: caseData.actual_start_date,
-            actual_end_date: caseData.actual_end_date,
-            driver_booked: caseData.driver_booked ?? caseData.chauffeur_reserve,
-            welcome_kit_sent_at: caseData.welcome_kit_sent_at,
-            whatsapp_ambassador_bali_msg: caseData.whatsapp_ambassador_bali_msg,
-            whatsapp_ambassador_done_msg: caseData.whatsapp_ambassador_done_msg,
-            interns: caseData.interns ? {
-              first_name: caseData.interns.first_name,
-              last_name: caseData.interns.last_name,
-              return_plane_ticket_url: caseData.interns.return_plane_ticket_url,
-            } : null,
-          }} />
-        )}
-        {activeTab === 'facturation' && (
-          <TabFacturation caseId={caseData.id} caseData={{ id: caseData.id, status: caseData.status, payment_amount: caseData.payment_amount, discount_percentage: caseData.discount_percentage, invoice_number: caseData.invoice_number, payment_type: caseData.payment_type, payment_date: caseData.payment_date, convention_signee_check: caseData.convention_signee_check, packages: caseData.packages as any, interns: caseData.interns ? { first_name: caseData.interns.first_name ?? '', last_name: caseData.interns.last_name ?? '' } : null } as any} />
         )}
         {activeTab === 'historique' && (
           <TabHistorique caseId={caseData.id} />
