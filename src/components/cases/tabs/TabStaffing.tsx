@@ -405,9 +405,9 @@ export function TabStaffing({
   // Fetch jobs
   useEffect(() => {
     fetch('/api/jobs?status=open')
-      .then(r => r.ok ? r.json() as Promise<Job[]> : Promise.resolve([]))
-      .then(data => setAllJobs(data))
-      .catch(() => setAllJobs([]))
+      .then(r => { console.log('[TabStaffing] jobs fetch status:', r.status); return r.ok ? r.json() as Promise<Job[]> : Promise.resolve([]) })
+      .then(data => { console.log('[TabStaffing] jobs loaded:', data.length); setAllJobs(data) })
+      .catch(e => { console.error('[TabStaffing] jobs error:', e); setAllJobs([]) })
       .finally(() => setJobsLoading(false))
   }, [])
 
@@ -424,11 +424,12 @@ export function TabStaffing({
   const submittedJobIds = new Set(submissions.map(s => s.job_id))
 
   const filteredJobs = allJobs.filter(j => {
+    if (submittedJobIds.has(j.id)) return false
     const q = search.toLowerCase()
     const title = (j.public_title ?? j.title ?? '').toLowerCase()
     const company = (j.companies?.name ?? '').toLowerCase()
     const dept = (j.department ?? '').toLowerCase()
-    return title.includes(q) || company.includes(q) || dept.includes(q)
+    return !q || title.includes(q) || company.includes(q) || dept.includes(q)
   })
 
   // Actions
