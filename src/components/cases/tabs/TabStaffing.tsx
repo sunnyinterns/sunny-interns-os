@@ -455,7 +455,7 @@ export function TabStaffing({
   const [durationVal, setDurationVal] = useState(desiredDurationMonths ? String(desiredDurationMonths) : '')
   const [cvHistory, setCvHistory] = useState<{ id: string; feedback: string; created_at: string }[]>([])
 
-  const cvDisplayUrl = cvUrl ?? cvLocalUrl ?? null // cv_url en priorité
+  const cvDisplayUrl = cvUrl ?? (intern?.cv_url as string | null) ?? null
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
@@ -761,12 +761,15 @@ export function TabStaffing({
             {cvDisplayUrl ? (
               <div className="space-y-2">
                 <div
-                  className="relative border border-zinc-200 rounded-lg overflow-hidden cursor-pointer hover:border-[#c8a96e] transition-colors h-48"
+                  className="group relative border border-zinc-200 rounded-lg overflow-hidden cursor-pointer hover:border-[#c8a96e] transition-colors h-48"
                   onClick={() => setShowCVPopup(true)}>
                   {isPdfUrl(cvDisplayUrl) ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-zinc-50">
-                      <span className="text-4xl">📄</span>
-                      <span className="text-xs text-zinc-500 font-medium">PDF — cliquer pour ouvrir</span>
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-gradient-to-b from-zinc-50 to-zinc-100 cursor-pointer group-hover:from-[#c8a96e]/5 group-hover:to-[#c8a96e]/10">
+                      <span className="text-5xl">📄</span>
+                      <div className="text-center">
+                        <p className="text-xs font-semibold text-zinc-600">Document PDF</p>
+                        <p className="text-[10px] text-zinc-400 mt-0.5">Cliquer pour visualiser</p>
+                      </div>
                     </div>
                   ) : (
                     <>
@@ -807,6 +810,12 @@ export function TabStaffing({
                     {cvUploading ? '⏳...' : '📎 Remplacer le CV'}
                   </button>
                 </div>
+                {cvDisplayUrl && (
+                  <a href={cvDisplayUrl} target="_blank" rel="noopener noreferrer"
+                    className="text-xs text-[#c8a96e] hover:underline flex items-center gap-1">
+                    ↗ Ouvrir dans un nouvel onglet
+                  </a>
+                )}
               </div>
             ) : (
               <div className="space-y-2">
