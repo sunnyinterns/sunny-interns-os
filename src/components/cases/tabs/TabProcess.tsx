@@ -308,22 +308,19 @@ export function TabProcess({
               <span className="text-base">{s.icon}</span>
               <span className="text-[9px] text-zinc-500 text-center max-w-[50px] leading-tight">{s.label}</span>
             </div>
-            {i < STATUTS_ORDRE.length - 1 && (
+            {i < STATUTS_ORDRE.length - 1 ? (
               <div className={`h-0.5 w-4 flex-shrink-0 mt-[-8px] ${i < timelineIdx ? 'bg-[#c8a96e]' : 'bg-zinc-200'}`} />
-            )}
+            ) : null}
           </React.Fragment>
         ))}
       </div>
 
       {/* Toast */}
-      {toastMsg && (
-        <div className={[
-          'fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white',
-          toastMsg.type === 'success' ? 'bg-[#0d9e75]' : 'bg-[#dc2626]',
-        ].join(' ')}>
+      {toastMsg !== null && toastMsg !== undefined ? (
+        <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white ${toastMsg.type === 'success' ? 'bg-[#0d9e75]' : 'bg-[#dc2626]'}`}>
           {toastMsg.text}
         </div>
-      )}
+      ) : null}
 
       {/* Statut actuel + workflow */}
       <div className="bg-white rounded-xl border border-zinc-100 p-4 space-y-4">
@@ -398,12 +395,12 @@ export function TabProcess({
       </div>
 
       {/* Notes de qualification */}
-      {caseData?.qualification_notes && (
+      {typeof caseData?.qualification_notes === 'string' && caseData.qualification_notes.length > 0 ? (
         <div className="bg-white rounded-xl border border-zinc-100 p-4">
           <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Notes de qualification</p>
-          <p className="text-sm text-[#1a1918] whitespace-pre-wrap">{String(caseData.qualification_notes)}</p>
+          <p className="text-sm text-[#1a1918] whitespace-pre-wrap">{caseData.qualification_notes}</p>
         </div>
-      )}
+      ) : null}
 
       {/* 1. Status Action Panel — boutons compacts */}
       {caseData && (
