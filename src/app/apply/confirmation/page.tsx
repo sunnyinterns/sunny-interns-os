@@ -54,24 +54,28 @@ function ConfirmationContent() {
 
         {name && (
           <p className="text-lg text-[#c8a96e] font-semibold mb-1">
-            {isFr ? `Bravo ${name} !` : `Well done ${name}!`}
+            {isFr ? `Félicitations ${name} !` : `Congratulations ${name}!`}
           </p>
         )}
 
-        {email && (
-          <p className="text-sm text-zinc-500 mb-2">
+        <p className="text-base text-zinc-700 mb-2 font-medium">
             {isFr
-              ? `Tu vas recevoir un email de confirmation à ${email}`
-              : `You will receive a confirmation email at ${email}`}
+              ? "Ta candidature pour un stage à Bali a bien été reçue."
+              : "Your internship application for Bali has been received."}
           </p>
-        )}
+          {email && (
+            <p className="text-sm text-zinc-500 mb-2">
+              {isFr
+                ? `Tu recevras très bientôt un email de confirmation à ${email} avec les informations de connexion à ton entretien de qualification qui aura lieu sur Google Meet.`
+                : `You will shortly receive a confirmation email at ${email} with your Google Meet qualification interview details.`}
+            </p>
+          )}
 
         {rdv && (
-          <p className="text-sm text-[#0d9e75] font-medium mb-4">
-            {isFr
-              ? 'Ton RDV est confirmé. Tu recevras un email de confirmation.'
-              : 'Your call is confirmed. You will receive a confirmation email.'}
-          </p>
+          <div className="mb-4 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-800 font-medium flex items-center gap-2">
+            <span>✅</span>
+            <span>{isFr ? 'Ton entretien Google Meet est confirmé !' : 'Your Google Meet interview is confirmed!'}</span>
+          </div>
         )}
 
         {/* Timeline des prochaines étapes */}
@@ -130,8 +134,8 @@ function ConfirmationContent() {
               </p>
               <p className="text-xs text-zinc-500">
                 {isFr
-                  ? 'Tu recevras la confirmation de ton entretien dans quelques minutes (pense à regarder tes spams).'
-                  : 'You will receive your interview confirmation in a few minutes (check your spam folder).'}
+                  ? 'Tu recevras le lien Google Meet de ton entretien de qualification par email dans quelques minutes. Pense à vérifier tes spams.'
+                  : 'You will receive your Google Meet qualification interview link by email in a few minutes. Check your spam folder.'}
               </p>
             </div>
           </div>
@@ -149,6 +153,12 @@ function ConfirmationContent() {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Signature */}
+        <div className="mb-6 text-center text-sm text-zinc-500">
+          <p>Questions ? <a href="mailto:team@bali-interns.com" className="text-[#c8a96e] underline font-medium">team@bali-interns.com</a></p>
+          <p className="mt-1 font-medium text-zinc-600">{isFr ? 'À très vite,' : 'See you soon,'} <br /><span className="text-[#c8a96e]">{isFr ? "L'équipe Bali Interns" : "The Bali Interns Team"}</span></p>
         </div>
 
         {/* WhatsApp */}

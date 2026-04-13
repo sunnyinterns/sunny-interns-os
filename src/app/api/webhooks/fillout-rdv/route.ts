@@ -98,7 +98,13 @@ export async function POST(request: Request) {
     }
 
     // Extraire les infos du RDV
-    const rdvStart = payload.scheduling?.startTime
+    // Fillout peut envoyer la date dans différents champs selon la version
+    const payloadAny2 = payload as unknown as Record<string, unknown>
+    const rdvStart: string | undefined = payload.scheduling?.startTime 
+      ?? (payloadAny2.startTime as string | undefined)
+      ?? (payloadAny2.start_time as string | undefined)
+      ?? (Array.isArray(payload.questions) ? (payload.questions.find((q: Record<string,unknown>) => 
+          typeof q.value === 'string' && (q.id === 'startTime' || q.name === 'startTime' || String(q.id).includes('date')))?.value as string | undefined) : undefined)
     const rdvEnd = payload.scheduling?.endTime
     const meetLink = payload.scheduling?.meetLink
     const gcalEventId = payload.scheduling?.eventId
@@ -108,12 +114,12 @@ export async function POST(request: Request) {
       updated_at: new Date().toISOString(),
     }
 
+    // Toujours passer en rdv_booked si encore en lead (le RDV a été booké)
+    if (caseRow.status === 'lead') {
+      updateData.status = 'rdv_booked'
+    }
     if (rdvStart) {
       updateData.intern_first_meeting_date = rdvStart
-      // Passer au statut rdv_booked si encore en lead
-      if (caseRow.status === 'lead') {
-        updateData.status = 'rdv_booked'
-      }
     }
     if (meetLink) updateData.google_meet_link = meetLink
     if (gcalEventId) updateData.google_calendar_event_id = gcalEventId
