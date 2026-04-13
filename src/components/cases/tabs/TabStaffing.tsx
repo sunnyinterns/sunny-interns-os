@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -72,6 +72,7 @@ interface TabStaffingProps {
   cvUrl?: string | null
   cvLocalUrl?: string | null
   cvFeedback?: string | null
+  cvStatus?: string | null
   desiredSectors?: string[] | null
   qualificationNotes?: string | null
   stageIdeal?: string | null
@@ -80,14 +81,16 @@ interface TabStaffingProps {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
+  pending: { label: '⏳ En attente', bg: '#f4f4f5', text: '#71717a' },
   proposed: { label: '💬 Proposé', bg: '#fef9ee', text: '#92400e' },
   submitted: { label: '💬 Proposé', bg: '#fef9ee', text: '#92400e' },
   cv_pending: { label: '📄 CV en attente', bg: '#eff6ff', text: '#1d4ed8' },
   cv_validated: { label: '✅ CV validé', bg: '#f0fdf4', text: '#15803d' },
+  sent_to_employer: { label: '📧 Envoyé', bg: '#dbeafe', text: '#1d4ed8' },
   sent: { label: '📤 Envoyé', bg: '#dbeafe', text: '#1d4ed8' },
-  interview: { label: '🤝 Interview', bg: '#ede9fe', text: '#6d28d9' },
-  retained: { label: '🎉 Retenu', bg: '#d1fae5', text: '#059669' },
-  rejected: { label: '❌ Refusé', bg: '#fee2e2', text: '#dc2626' },
+  interview: { label: '🗓️ Entretien', bg: '#ede9fe', text: '#6d28d9' },
+  retained: { label: '✅ Retenu', bg: '#d1fae5', text: '#059669' },
+  rejected: { label: '❌ Non retenu', bg: '#fee2e2', text: '#dc2626' },
   cancelled: { label: 'Annulé', bg: '#f4f4f5', text: '#71717a' },
 }
 
@@ -107,7 +110,7 @@ const DURATION_OPTIONS = Array.from({ length: 12 }, (_, i) => ({ value: String(i
 // ── Sortable job submission card ────────────────────────────
 
 function SortableJobCard({
-  sub, caseId, firstName, onUpdate, onSendToEmployer, actionLoading,
+  sub, caseId, firstName, onUpdate, onSendToEmployer, actionLoading, cvIsValidated,
 }: {
   sub: JobSubmission
   caseId: string
@@ -115,6 +118,7 @@ function SortableJobCard({
   onUpdate: (id: string, fields: Record<string, unknown>) => void
   onSendToEmployer: (sub: JobSubmission) => void
   actionLoading: string | null
+  cvIsValidated: boolean
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: sub.id })
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
@@ -127,7 +131,6 @@ function SortableJobCard({
   const contactName = sub.jobs?.companies?.contact_name ?? ''
   const contactWA = sub.jobs?.companies?.contact_whatsapp ?? ''
   const isLoading = actionLoading === sub.id
-  const isSent = ['sent', 'interview', 'retained'].includes(sub.status)
 
   function openWAPopup() {
     setWAMessage(
@@ -155,7 +158,7 @@ function SortableJobCard({
 
       {/* Actions */}
       <div className="px-4 py-3 border-t border-zinc-100 flex flex-wrap gap-2 items-center">
-        {(sub.status === 'proposed' || sub.status === 'submitted' || sub.status === 'cv_pending') && (
+        {(sub.status === 'pending' || sub.status === 'proposed' || sub.status === 'submitted' || sub.status === 'cv_pending') && (
           <>
             <button disabled={isLoading}
               onClick={() => onUpdate(sub.id, { status: 'cv_pending', cv_revision_requested: true })}
@@ -167,19 +170,38 @@ function SortableJobCard({
               className="text-xs px-2.5 py-1.5 border border-green-300 bg-green-50 text-green-700 rounded-lg font-medium hover:bg-green-100 disabled:opacity-50">
               ✅ Valider CV
             </button>
+            <button disabled={isLoading || !cvIsValidated}
+              onClick={() => cvIsValidated ? onSendToEmployer(sub) : undefined}
+              title={!cvIsValidated ? 'CV non validé — valide le CV d\'abord' : undefined}
+              className={`text-xs px-3 py-1.5 rounded-lg font-semibold disabled:opacity-50 ${
+                cvIsValidated
+                  ? 'bg-[#1a1918] text-white hover:bg-zinc-700'
+                  : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
+              }`}>
+              {cvIsValidated ? '📧 Envoyer' : '🔒 Envoyer'}
+            </button>
           </>
         )}
 
         {sub.status === 'cv_validated' && (
-          <button disabled={isLoading}
-            onClick={() => onSendToEmployer(sub)}
-            className="text-xs px-3 py-1.5 bg-[#1a1918] text-white rounded-lg font-semibold hover:bg-zinc-700 disabled:opacity-50">
-            📧 Envoyer à l&apos;employeur
+          <button disabled={isLoading || !cvIsValidated}
+            onClick={() => cvIsValidated ? onSendToEmployer(sub) : undefined}
+            title={!cvIsValidated ? 'CV non validé — valide le CV d\'abord' : undefined}
+            className={`text-xs px-3 py-1.5 rounded-lg font-semibold disabled:opacity-50 ${
+              cvIsValidated
+                ? 'bg-[#1a1918] text-white hover:bg-zinc-700'
+                : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
+            }`}>
+            {cvIsValidated ? '📧 Envoyer à l\u0027employeur' : '🔒 Envoyer à l\u0027employeur'}
           </button>
         )}
 
-        {(sub.status === 'sent' || sub.status === 'interview') && (
+        {(sub.status === 'sent_to_employer' || sub.status === 'sent') && (
           <>
+            <button onClick={openWAPopup}
+              className="text-xs px-2.5 py-1.5 bg-[#25d366]/10 text-[#128c5e] hover:bg-[#25d366]/20 border border-[#25d366]/30 rounded-lg font-medium">
+              💬 WA employeur
+            </button>
             <select value={sub.employer_response ?? ''}
               onChange={e => onUpdate(sub.id, {
                 employer_response: e.target.value,
@@ -191,29 +213,34 @@ function SortableJobCard({
               <option value="not_interested">❌ Pas intéressé</option>
               <option value="pending">⏳ En attente</option>
             </select>
-            {sub.employer_response === 'interested' && (
-              <button disabled={isLoading}
-                onClick={() => onUpdate(sub.id, { status: 'retained' })}
-                className="text-xs px-2.5 py-1.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50">
-                🎉 Retenir ce stage
-              </button>
-            )}
           </>
         )}
 
-        {/* WhatsApp employeur */}
-        <button
-          disabled={!isSent}
-          onClick={openWAPopup}
-          className={`text-xs px-2.5 py-1.5 rounded-lg font-medium transition-colors ${
-            isSent
-              ? 'bg-[#25d366]/10 text-[#128c5e] hover:bg-[#25d366]/20 border border-[#25d366]/30'
-              : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
-          }`}>
-          💬 WhatsApp employeur
-        </button>
+        {sub.status === 'interview' && (
+          <>
+            <button disabled={isLoading}
+              onClick={() => onUpdate(sub.id, { status: 'retained' })}
+              className="text-xs px-2.5 py-1.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50">
+              ✅ Retenu
+            </button>
+            <button disabled={isLoading}
+              onClick={() => onUpdate(sub.id, { status: 'rejected' })}
+              className="text-xs px-2.5 py-1.5 bg-red-50 text-red-600 rounded-lg font-medium hover:bg-red-100 disabled:opacity-50">
+              ❌ Rejeter
+            </button>
+          </>
+        )}
 
-        {sub.status !== 'rejected' && sub.status !== 'cancelled' && sub.status !== 'retained' && (
+        {/* WhatsApp employeur — visible si pas encore envoyé */}
+        {!['sent_to_employer', 'sent', 'interview', 'retained', 'rejected', 'cancelled'].includes(sub.status) && (
+          <button
+            disabled
+            className="text-xs px-2.5 py-1.5 rounded-lg font-medium bg-zinc-100 text-zinc-400 cursor-not-allowed">
+            💬 WhatsApp employeur
+          </button>
+        )}
+
+        {sub.status !== 'rejected' && sub.status !== 'cancelled' && sub.status !== 'retained' && sub.status !== 'interview' && (
           <button disabled={isLoading}
             onClick={() => onUpdate(sub.id, { status: 'rejected' })}
             className="text-xs px-2 py-1.5 text-red-500 hover:bg-red-50 rounded-lg disabled:opacity-50">
@@ -343,20 +370,34 @@ function JobDetailPopup({ job, onClose, onSelect, isSubmitted }: { job: Job; onC
 
 // ── CV popup ────────────────────────────────────────────────
 
-function CVPopup({ url, onClose }: { url: string; onClose: () => void }) {
+function CVPopup({ url, onClose, name }: { url: string; onClose: () => void; name?: string }) {
+  const isPdf = url.toLowerCase().includes('.pdf') || url.includes('application/pdf')
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl w-[90vw] h-[90vh] max-w-4xl overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100">
-          <span className="text-sm font-bold text-[#1a1918]">📄 CV</span>
-          <div className="flex items-center gap-2">
-            <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 rounded-lg text-zinc-700 font-medium">
-              Ouvrir dans un nouvel onglet
+    <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl w-full max-w-5xl h-[92vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-100 flex-shrink-0">
+          <p className="font-bold text-sm text-[#1a1918]">📄 CV{name ? ` — ${name}` : ''}</p>
+          <div className="flex gap-2">
+            <a href={url} target="_blank" rel="noopener noreferrer"
+              className="px-3 py-1.5 text-xs bg-zinc-100 hover:bg-zinc-200 rounded-lg font-medium">
+              ↗ Ouvrir dans un nouvel onglet
             </a>
-            <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 text-lg">✕</button>
+            <button onClick={onClose}
+              className="px-3 py-1.5 text-xs bg-zinc-800 text-white hover:bg-zinc-700 rounded-lg font-medium">
+              ✕ Fermer
+            </button>
           </div>
         </div>
-        <iframe src={url} className="flex-1 w-full" title="CV preview" />
+        <div className="flex-1 overflow-auto bg-zinc-50">
+          {isPdf ? (
+            <iframe src={url} className="w-full h-full min-h-[80vh]" title="CV PDF" />
+          ) : (
+            <div className="flex items-center justify-center p-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={url} alt="CV" className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-lg" />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -365,10 +406,11 @@ function CVPopup({ url, onClose }: { url: string; onClose: () => void }) {
 // ── Main TabStaffing ────────────────────────────────────────
 
 export function TabStaffing({
-  caseId, firstName, intern, desiredStartDate, desiredEndDate, desiredDurationMonths,
-  cvUrl, cvLocalUrl, cvFeedback, desiredSectors, qualificationNotes, stageIdeal, spokenLanguages, onRefresh,
+  caseId, firstName, lastName, intern, desiredStartDate, desiredEndDate, desiredDurationMonths,
+  cvUrl, cvLocalUrl, cvFeedback, cvStatus, desiredSectors, qualificationNotes, stageIdeal, spokenLanguages, onRefresh,
 }: TabStaffingProps) {
   const internId = intern?.id as string | undefined
+  const cvIsValidated = cvStatus === 'validated'
 
   // State
   const [submissions, setSubmissions] = useState<JobSubmission[]>([])
@@ -381,6 +423,8 @@ export function TabStaffing({
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [showCVPopup, setShowCVPopup] = useState(false)
+  const [cvUploading, setCvUploading] = useState(false)
+  const cvFileRef = useRef<HTMLInputElement>(null)
 
   // Editable fields
   const [stageIdealVal, setStageIdealVal] = useState(stageIdeal ?? '')
@@ -512,6 +556,37 @@ export function TabStaffing({
       const res = await fetch(`/api/cases/${caseId}/cv-feedback-history`)
       if (res.ok) setCvHistory(await res.json() as typeof cvHistory)
     } catch { /* non-blocking */ }
+  }
+
+  async function saveCvStatus(status: string) {
+    await fetch(`/api/cases/${caseId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cv_status: status }),
+    })
+    if (onRefresh) onRefresh()
+  }
+
+  async function handleCvReplace(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setCvUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('bucket', 'intern-cvs')
+      const res = await fetch('/api/upload', { method: 'POST', body: formData })
+      if (!res.ok) throw new Error()
+      const { url } = await res.json() as { url: string }
+      await fetch(`/api/interns/${internId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cv_url: url }),
+      })
+      if (onRefresh) onRefresh()
+      showToastMsg('CV mis à jour ✅')
+    } catch { showToastMsg('Erreur upload', false) }
+    finally { setCvUploading(false) }
   }
 
   async function toggleLang(lang: string) {
@@ -648,19 +723,54 @@ export function TabStaffing({
           {/* Colonne droite: CV */}
           <div className="px-4 py-4 space-y-3">
             <span className="text-[11px] text-zinc-400 font-medium">📄 CV</span>
+
+            {/* Badge statut CV */}
+            {(() => {
+              const cvBadge: Record<string, { label: string; color: string }> = {
+                pending: { label: '⏳ En attente de validation', color: 'bg-amber-100 text-amber-700' },
+                validated: { label: '✅ CV validé', color: 'bg-emerald-100 text-emerald-700' },
+                to_redo: { label: '🔄 À refaire', color: 'bg-red-100 text-red-700' },
+              }
+              const badge = cvBadge[cvStatus ?? 'pending'] ?? cvBadge.pending
+              return (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${badge.color}`}>
+                    {badge.label}
+                  </span>
+                  {cvStatus !== 'validated' && (
+                    <button onClick={() => void saveCvStatus('validated')}
+                      className="text-xs px-2.5 py-1 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700">
+                      ✅ Valider le CV
+                    </button>
+                  )}
+                  {cvStatus !== 'to_redo' && (
+                    <button onClick={() => void saveCvStatus('to_redo')}
+                      className="text-xs px-2.5 py-1 bg-red-100 text-red-700 rounded-lg font-semibold hover:bg-red-200">
+                      🔄 Demander refonte
+                    </button>
+                  )}
+                </div>
+              )
+            })()}
+
             {cvDisplayUrl ? (
               <div className="space-y-2">
                 <div
                   className="relative border border-zinc-200 rounded-lg overflow-hidden cursor-pointer hover:border-[#c8a96e] transition-colors h-48"
                   onClick={() => setShowCVPopup(true)}>
-                  <iframe src={cvDisplayUrl} className="w-full h-full pointer-events-none" title="CV preview" />
+                  {cvDisplayUrl.toLowerCase().includes('.pdf') || cvDisplayUrl.includes('application/pdf') ? (
+                    <iframe src={cvDisplayUrl} className="w-full h-full pointer-events-none" title="CV preview" />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={cvDisplayUrl} alt="CV" className="w-full h-full object-contain" />
+                  )}
                   <div className="absolute inset-0 bg-black/0 hover:bg-black/5 transition-colors flex items-center justify-center">
                     <span className="text-xs bg-white/90 px-3 py-1.5 rounded-lg font-medium text-zinc-700 shadow-sm opacity-0 hover:opacity-100 transition-opacity">
                       Cliquer pour agrandir
                     </span>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {cvLocalUrl && (
                     <a href={cvLocalUrl} target="_blank" rel="noopener noreferrer"
                       className="text-xs px-3 py-1.5 bg-[#c8a96e] text-white rounded-lg font-semibold hover:bg-[#b8945a]">
@@ -673,11 +783,25 @@ export function TabStaffing({
                       📄 CV original
                     </a>
                   )}
+                  <input ref={cvFileRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" className="hidden"
+                    onChange={e => void handleCvReplace(e)} />
+                  <button onClick={() => cvFileRef.current?.click()} disabled={cvUploading}
+                    className="text-xs px-2.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 rounded-lg font-medium text-zinc-600 flex items-center gap-1">
+                    {cvUploading ? '⏳...' : '📎 Remplacer le CV'}
+                  </button>
                 </div>
               </div>
             ) : (
-              <div className="h-48 border border-dashed border-zinc-200 rounded-lg flex items-center justify-center">
-                <p className="text-sm text-zinc-400">Aucun CV déposé</p>
+              <div className="space-y-2">
+                <div className="h-48 border border-dashed border-zinc-200 rounded-lg flex items-center justify-center">
+                  <p className="text-sm text-zinc-400">Aucun CV déposé</p>
+                </div>
+                <input ref={cvFileRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" className="hidden"
+                  onChange={e => void handleCvReplace(e)} />
+                <button onClick={() => cvFileRef.current?.click()} disabled={cvUploading}
+                  className="text-xs px-2.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 rounded-lg font-medium text-zinc-600 flex items-center gap-1">
+                  {cvUploading ? '⏳...' : '📎 Ajouter un CV'}
+                </button>
               </div>
             )}
 
@@ -820,6 +944,7 @@ export function TabStaffing({
                     onUpdate={updateSubmission}
                     onSendToEmployer={sendToEmployer}
                     actionLoading={actionLoading}
+                    cvIsValidated={cvIsValidated}
                   />
                 ))}
               </div>
@@ -844,7 +969,7 @@ export function TabStaffing({
         />
       )}
       {showCVPopup && cvDisplayUrl && (
-        <CVPopup url={cvDisplayUrl} onClose={() => setShowCVPopup(false)} />
+        <CVPopup url={cvDisplayUrl} onClose={() => setShowCVPopup(false)} name={`${firstName} ${lastName}`} />
       )}
     </div>
   )

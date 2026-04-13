@@ -27,6 +27,7 @@ const FIELD_LABELS: Record<string, string> = {
   discount_percentage: 'Remise %',
   intern_level: 'Niveau étude',
   diploma_track: 'Type diplôme',
+  cv_status: 'Statut CV',
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
