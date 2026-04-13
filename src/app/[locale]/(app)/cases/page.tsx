@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { Avatar } from '@/components/ui/Avatar'
-import { Badge } from '@/components/ui/Badge'
+
 import { Button } from '@/components/ui/Button'
 import { NewCaseModal } from '@/components/cases/NewCaseModal'
 import { Toast } from '@/components/ui/Toast'
@@ -29,11 +29,15 @@ interface CaseRow {
   } | null
 }
 
-function statusToVariant(status: CaseStatus): 'default' | 'success' | 'attention' | 'critical' | 'info' {
-  if (['payment_pending'].includes(status)) return 'attention'
-  if (['not_interested', 'not_qualified', 'visa_refused', 'suspended'].includes(status)) return 'critical'
-  if (['payment_received', 'job_retained', 'convention_signed'].includes(status)) return 'success'
-  return 'default'
+const STATUS_COLORS: Partial<Record<CaseStatus, string>> = {
+  rdv_booked: 'bg-blue-100 text-blue-700',
+  qualification_done: 'bg-emerald-100 text-emerald-700',
+  job_submitted: 'bg-purple-100 text-purple-700',
+  job_retained: 'bg-orange-100 text-orange-700',
+  convention_signed: 'bg-amber-100 text-amber-700',
+  payment_pending: 'bg-red-50 text-red-600',
+  payment_received: 'bg-teal-100 text-teal-700',
+  lead: 'bg-zinc-100 text-zinc-600',
 }
 
 const STATUS_LABELS: Partial<Record<CaseStatus, string>> = {
@@ -190,10 +194,9 @@ export default function CasesPage() {
                       📅 {new Date(c.intern_first_meeting_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                     </span>
                   )}
-                  <Badge
-                    label={STATUS_LABELS[c.status] ?? c.status}
-                    variant={statusToVariant(c.status)}
-                  />
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[c.status] ?? 'bg-zinc-100 text-zinc-600'}`}>
+                    {STATUS_LABELS[c.status] ?? c.status}
+                  </span>
                   <span className="text-xs text-zinc-400 flex-shrink-0">
                     {new Date(c.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                   </span>
