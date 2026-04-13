@@ -257,6 +257,100 @@ export async function sendRdvConfirmation(params: {
   })
 }
 
+export async function sendQualificationEmail(p: {
+  internEmail: string
+  prenom: string
+  nom: string
+  portalToken: string
+  tempPassword: string
+  qualificationNotes: string
+  portalUrl: string
+}) {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #fafaf9; padding: 32px;">
+      <div style="background: white; border-radius: 16px; padding: 32px; border: 1px solid #e4e0dc;">
+        <h1 style="color: #1a1918; font-size: 24px; margin: 0 0 8px;">
+          Félicitations ${p.prenom} !
+        </h1>
+        <p style="color: #6b7280; font-size: 14px; margin: 0 0 24px;">
+          Tu as passé avec succès ton entretien de qualification pour un stage à Bali.
+        </p>
+
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+          <h3 style="color: #15803d; margin: 0 0 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em;">
+            Compte-rendu de ton entretien
+          </h3>
+          <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0; white-space: pre-wrap;">${p.qualificationNotes || 'Profil validé pour un stage à Bali. Nous allons maintenant te proposer des offres correspondant à ton profil.'}</p>
+        </div>
+
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+          <h3 style="color: #1d4ed8; margin: 0 0 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em;">
+            Accès à ton espace candidat
+          </h3>
+          <p style="color: #374151; font-size: 14px; margin: 0 0 8px;">
+            <strong>Email :</strong> ${p.internEmail}
+          </p>
+          <p style="color: #374151; font-size: 14px; margin: 0 0 16px;">
+            <strong>Mot de passe temporaire :</strong> <code style="background: #e0e7ff; padding: 2px 8px; border-radius: 4px; font-family: monospace; font-size: 16px;">${p.tempPassword}</code>
+          </p>
+          <p style="color: #6b7280; font-size: 12px; margin: 0 0 16px;">
+            Change ton mot de passe dès ta première connexion.
+          </p>
+          <a href="${p.portalUrl}"
+            style="display: inline-block; background: #c8a96e; color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 14px;">
+            Accéder à mon espace candidat
+          </a>
+        </div>
+
+        <p style="color: #6b7280; font-size: 13px; margin: 24px 0 0;">
+          Notre équipe va te proposer des offres de stage dans les prochains jours. Tu pourras les consulter et nous indiquer tes préférences directement depuis ton espace.
+        </p>
+
+        <p style="color: #374151; font-size: 14px; margin: 16px 0 0;">
+          À très vite,<br/>
+          <strong>L'équipe Bali Interns</strong>
+        </p>
+      </div>
+    </div>
+  `
+
+  return send({
+    to: p.internEmail,
+    subject: `Entretien validé — Accès à ton espace Bali Interns`,
+    html,
+  })
+}
+
+export async function sendInternCommentNotification(p: {
+  managerEmail: string
+  prenom: string
+  nom: string
+  jobTitle: string
+  comment: string
+  caseUrl: string
+  interested: boolean | null
+}) {
+  const interestLabel = p.interested === true ? 'Intéressé' : p.interested === false ? 'Pas intéressé' : 'Non précisé'
+  await send({
+    to: p.managerEmail,
+    subject: `Commentaire de ${p.prenom} ${p.nom} sur ${p.jobTitle}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+        <h2 style="color:#c8a96e">Nouveau commentaire étudiant</h2>
+        <p><strong>${p.prenom} ${p.nom}</strong> a commenté l'offre <strong>${p.jobTitle}</strong>.</p>
+        <div style="background:#f5f5f0;padding:16px;border-radius:8px;margin:16px 0">
+          <p style="margin:0 0 8px;font-size:12px;color:#6b7280;text-transform:uppercase;font-weight:600">Commentaire</p>
+          <p style="margin:0;color:#1a1918;white-space:pre-wrap">${p.comment}</p>
+        </div>
+        <p><strong>Intérêt :</strong> <span style="color:${p.interested === true ? '#0d9e75' : p.interested === false ? '#dc2626' : '#6b7280'}">${interestLabel}</span></p>
+        <a href="${p.caseUrl}" style="display:inline-block;background:#c8a96e;color:white;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin-top:16px">
+          Voir le dossier
+        </a>
+      </div>
+    `,
+  })
+}
+
 export async function sendWelcomeKitShort(p: { internEmail: string; prenom: string }) {
   await send({ to: p.internEmail, cc: CHARLY, subject: `Welcome Kit Bali Interns`, html: `<p>Hey <strong>${p.prenom}</strong>, ton départ approche ! Nous t'envoyons toutes les infos pratiques très vite. Charly</p>` })
 }
