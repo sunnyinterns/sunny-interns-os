@@ -733,22 +733,19 @@ export function TabStaffing({
               }
               const badge = cvBadge[cvStatus ?? 'pending'] ?? cvBadge.pending
               return (
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
                   <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${badge.color}`}>
                     {badge.label}
                   </span>
-                  {cvStatus !== 'validated' && (
-                    <button onClick={() => void saveCvStatus('validated')}
-                      className="text-xs px-2.5 py-1 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700">
-                      ✅ Valider le CV
-                    </button>
-                  )}
-                  {cvStatus !== 'to_redo' && (
-                    <button onClick={() => void saveCvStatus('to_redo')}
-                      className="text-xs px-2.5 py-1 bg-red-100 text-red-700 rounded-lg font-semibold hover:bg-red-200">
-                      🔄 Demander refonte
-                    </button>
-                  )}
+                  <select
+                    value={cvStatus ?? 'pending'}
+                    onChange={e => void saveCvStatus(e.target.value)}
+                    className="text-xs border border-zinc-200 rounded-lg px-2 py-1 bg-white text-zinc-700 focus:outline-none focus:border-[#c8a96e] cursor-pointer"
+                  >
+                    <option value="pending">⏳ En attente</option>
+                    <option value="validated">✅ Valider le CV</option>
+                    <option value="to_redo">🔄 Demander refonte</option>
+                  </select>
                 </div>
               )
             })()}
