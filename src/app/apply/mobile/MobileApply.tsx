@@ -1054,17 +1054,16 @@ export function MobileApply({
           return (
             <div className="grid grid-cols-1 gap-2">
               {TOUCHPOINTS.map(t => {
-                const selected = form.touchpoints.includes(t.value)
+                const selected = form.touchpoint === t.value
                 return (
                   <button
                     key={t.value}
                     type="button"
                     onClick={() => {
-                      const cur = form.touchpoints
-                      const next = selected ? cur.filter(x => x !== t.value) : [...cur, t.value]
+                      const next = selected ? [] : [t.value]
                       set('touchpoints', next)
-                      set('touchpoint', next.join(', '))
-                      if (!next.includes('Ambassadeur Bali Interns')) set('referred_by_code', '')
+                      set('touchpoint', t.value)
+                      if (t.value !== 'Ambassadeur Bali Interns') set('referred_by_code', '')
                     }}
                     className={`py-4 px-4 rounded-2xl text-sm font-medium text-left transition-all flex items-center gap-2 min-h-[48px] ${
                       selected
