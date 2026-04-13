@@ -605,7 +605,7 @@ export default function ApplyPage() {
         e.data?.name === 'formSubmitted' ||
         (typeof e.data === 'string' && e.data.includes('submitted'))
       ) {
-        router.push(`/apply/confirmation?name=${encodeURIComponent(form.first_name)}&lang=${lang}&rdv=1`)
+        router.push(`/apply/confirmation?name=${encodeURIComponent(form.first_name)}&email=${encodeURIComponent(form.email)}&lang=${lang}&rdv=1`)
       }
 
       // Auto-avance la page Fields (page cachée) dès qu'elle est chargée

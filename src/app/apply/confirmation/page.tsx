@@ -153,7 +153,7 @@ function ConfirmationContent() {
 
         {/* WhatsApp */}
         <a
-          href="https://wa.me/6281234567890"
+          href="https://wa.me/33643487736?text=Bonjour%2C%20j%27ai%20soumis%20ma%20candidature%20Bali%20Interns%20%F0%9F%8C%B4"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold bg-[#25d366] text-white hover:bg-[#1da851] transition-all mb-3"
