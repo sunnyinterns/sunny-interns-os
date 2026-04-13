@@ -159,6 +159,12 @@ export default function CaseDetailPage() {
   const lastName = intern.last_name ?? ''
   const email = intern.email ?? ''
   const whatsapp = intern.whatsapp ?? ''
+  const linkedinUrl = intern.linkedin_url ?? ''
+  const birthDate = intern.birth_date ?? ''
+  const phone = intern.phone ?? ''
+  const schoolCountry = intern.school_country ?? ''
+  const age = birthDate ? Math.floor((Date.now() - new Date(birthDate).getTime()) / (365.25 * 24 * 3600 * 1000)) : null
+  const avatarUrl = intern.avatar_url ?? (linkedinUrl ? `https://unavatar.io/linkedin/${linkedinUrl.replace(/.*linkedin\.com\/in\//, '').replace(/\/$/, '')}` : null)
   const schoolName = caseData.schools?.name ?? intern.school_country ?? ''
   const mainJob = intern.main_desired_job ?? ''
   const touchpoint = intern.touchpoint ?? ''
@@ -281,21 +287,98 @@ export default function CaseDetailPage() {
             </div>
           </div>
 
-          {/* Identité */}
-          <div className="flex items-center gap-4 pb-4">
-            <div className="w-11 h-11 rounded-full bg-[#c8a96e]/20 flex items-center justify-center text-base font-bold text-[#c8a96e] flex-shrink-0">
-              {getInitials(firstName, lastName)}
+          {/* Header identité enrichi */}
+          <div className="flex items-center gap-4 py-3">
+            {/* Avatar */}
+            <div className="relative flex-shrink-0">
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatarUrl}
+                  alt={`${firstName} ${lastName}`}
+                  className="w-14 h-14 rounded-full object-cover border-2 border-zinc-100"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden') }}
+                />
+              ) : null}
+              <div className={`w-14 h-14 rounded-full bg-[#c8a96e]/20 flex items-center justify-center text-lg font-bold text-[#c8a96e] flex-shrink-0 ${avatarUrl ? 'hidden' : ''}`}>
+                {getInitials(firstName, lastName)}
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-[#1a1918] leading-tight">
-                {firstName} {lastName}
-              </h1>
-              <p className="text-sm text-zinc-500">
-                {email}
-                {whatsapp && <span className="ml-2">· {whatsapp}</span>}
-              </p>
+
+            {/* Infos principales */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-base font-bold text-[#1a1918] leading-tight">{firstName} {lastName}</h1>
+                {age && <span className="text-xs text-zinc-400 font-medium">{age} ans</span>}
+                {schoolCountry && (
+                  <span className="flex items-center gap-1 text-xs px-2 py-0.5 bg-zinc-100 rounded-full text-zinc-600">
+                    🎓 {schoolCountry}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                <span className="text-xs text-zinc-500 truncate max-w-[160px]">{email}</span>
+                <a href={`mailto:${email}`}
+                  className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-red-50 text-red-600 rounded font-medium hover:bg-red-100 transition-colors"
+                  title="Envoyer un email">
+                  ✉️ Gmail
+                </a>
+                {whatsapp && (
+                  <a href={`https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-[#25d366]/10 text-[#128c5e] rounded font-medium hover:bg-[#25d366]/20 transition-colors"
+                    title="WhatsApp">
+                    💬 WA
+                  </a>
+                )}
+                {phone && (
+                  <span className="text-[10px] text-zinc-400">📞 {phone}</span>
+                )}
+                {linkedinUrl && (
+                  <a href={linkedinUrl.startsWith('http') ? linkedinUrl : `https://${linkedinUrl}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded font-medium hover:bg-blue-100 transition-colors"
+                    title="LinkedIn">
+                    🔗 LinkedIn
+                  </a>
+                )}
+              </div>
             </div>
           </div>
+
+          {/* Timeline statuts — affichée en fixe dans le header */}
+          {(() => {
+            const STATUTS_TIMELINE = [
+              { key: 'rdv_booked', icon: '📅', label: 'RDV' },
+              { key: 'qualification_done', icon: '✅', label: 'Qualifié' },
+              { key: 'job_submitted', icon: '💼', label: 'Jobs' },
+              { key: 'job_retained', icon: '🤝', label: 'Accepté' },
+              { key: 'visa_in_progress', icon: '🛂', label: 'Visa' },
+              { key: 'active', icon: '🛫', label: 'Arrivé' },
+              { key: 'completed', icon: '🎓', label: 'Terminé' },
+            ]
+            const STATUS_ORDER = ['lead', 'rdv_booked', 'qualification_done', 'job_submitted', 'job_retained', 'convention_signed', 'payment_pending', 'payment_received', 'visa_docs_sent', 'visa_submitted', 'visa_in_progress', 'visa_received', 'arrival_prep', 'active', 'alumni', 'completed']
+            const currentStatusIdx = STATUS_ORDER.indexOf(caseData.status)
+            const getTimelineIdx = (key: string) => STATUS_ORDER.indexOf(key)
+            return (
+              <div className="flex items-center gap-1 py-2 overflow-x-auto">
+                {STATUTS_TIMELINE.map((s, i) => {
+                  const reached = currentStatusIdx >= getTimelineIdx(s.key)
+                  return (
+                    <div key={s.key} className="flex items-center gap-1 flex-shrink-0">
+                      <div className={`flex flex-col items-center gap-0.5 ${reached ? 'opacity-100' : 'opacity-25'}`}>
+                        <span className="text-sm">{s.icon}</span>
+                        <span className="text-[9px] text-zinc-500 font-medium">{s.label}</span>
+                      </div>
+                      {i < STATUTS_TIMELINE.length - 1 && (
+                        <div className={`h-0.5 w-6 mt-[-10px] rounded-full flex-shrink-0 ${reached && currentStatusIdx >= getTimelineIdx(STATUTS_TIMELINE[i + 1].key) ? 'bg-[#c8a96e]' : 'bg-zinc-200'}`} />
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })()}
 
           {/* RDV 1er entretien — visible si date OU si event Google Calendar présent */}
           {(caseData.intern_first_meeting_date || caseData.google_calendar_event_id) && (
