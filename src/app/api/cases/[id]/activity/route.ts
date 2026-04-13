@@ -14,7 +14,7 @@ export async function GET(
   try {
     const { data, error } = await supabase
       .from('activity_feed')
-      .select('*')
+      .select('id, type, title, description, metadata, created_at, source')
       .eq('case_id', id)
       .order('created_at', { ascending: false })
       .limit(50)
