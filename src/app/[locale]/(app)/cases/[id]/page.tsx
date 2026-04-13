@@ -11,6 +11,7 @@ import { TabArrivee } from '@/components/cases/tabs/TabArrivee'
 import { TabFacturation } from '@/components/cases/tabs/TabFacturation'
 import { InternCardDigital } from '@/components/cases/InternCardDigital'
 import type { CaseStatus } from '@/lib/types'
+import { ProcessTimeline } from '@/components/cases/ProcessTimeline'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CaseDetail = Record<string, any>
@@ -366,41 +367,18 @@ export default function CaseDetailPage() {
             </div>
           </div>
 
-          {/* Timeline statuts — affichée en fixe dans le header */}
-          {(() => {
-            const STATUTS_TIMELINE = [
-              { key: 'rdv_booked', icon: '📅', label: 'RDV' },
-              { key: 'qualification_done', icon: '✅', label: 'Qualifié' },
-              { key: 'job_submitted', icon: '💼', label: 'Jobs' },
-              { key: 'job_retained', icon: '🤝', label: 'Accepté' },
-              { key: 'convention_signed', icon: '📝', label: 'Convention' },
-              { key: 'payment_received', icon: '💳', label: 'Paiement' },
-              { key: 'visa_in_progress', icon: '🛂', label: 'Visa' },
-              { key: 'active', icon: '🛫', label: 'Arrivé' },
-              { key: 'completed', icon: '🎓', label: 'Terminé' },
-            ]
-            const STATUS_ORDER = ['lead', 'rdv_booked', 'qualification_done', 'job_submitted', 'job_retained', 'convention_signed', 'payment_pending', 'payment_received', 'visa_docs_sent', 'visa_submitted', 'visa_in_progress', 'visa_received', 'arrival_prep', 'active', 'alumni', 'completed']
-            const currentStatusIdx = STATUS_ORDER.indexOf(caseData.status)
-            const getTimelineIdx = (key: string) => STATUS_ORDER.indexOf(key)
-            return (
-              <div className="flex items-center gap-1 py-2 overflow-x-auto">
-                {STATUTS_TIMELINE.map((s, i) => {
-                  const reached = currentStatusIdx >= getTimelineIdx(s.key)
-                  return (
-                    <div key={s.key} className="flex items-center gap-1 flex-shrink-0">
-                      <div className={`flex flex-col items-center gap-0.5 ${reached ? 'opacity-100' : 'opacity-25'}`}>
-                        <span className="text-sm">{s.icon}</span>
-                        <span className="text-[9px] text-zinc-500 font-medium">{s.label}</span>
-                      </div>
-                      {i < STATUTS_TIMELINE.length - 1 && (
-                        <div className={`h-0.5 w-6 mt-[-10px] rounded-full flex-shrink-0 ${reached && currentStatusIdx >= getTimelineIdx(STATUTS_TIMELINE[i + 1].key) ? 'bg-[#c8a96e]' : 'bg-zinc-200'}`} />
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            )
-          })()}
+          {/* Chronologie — ProcessTimeline compacte dans le header fixe */}
+          <div className="py-2 border-t border-zinc-100">
+            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5">Chronologie</p>
+            <ProcessTimeline
+              caseId={caseData.id}
+              currentStatus={caseData.status as import('@/lib/types').CaseStatus}
+              onStatusChange={(newStatus: CaseStatus) => {
+                setCaseData((prev: Record<string,unknown> | null) => prev ? { ...prev, status: newStatus } : prev)
+              }}
+              isVisaOnly={isVisaOnly}
+            />
+          </div>
 
           {/* RDV 1er entretien — visible si date OU si event Google Calendar présent */}
           {(caseData.intern_first_meeting_date || caseData.google_calendar_event_id) && (
