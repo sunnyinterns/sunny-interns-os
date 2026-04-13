@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 
 interface Contact { id: string; first_name: string; last_name: string | null; job_title: string | null; companies: { id: string; name: string } | null }
+interface JobDept { id: string; name: string; slug: string }
 interface JobSubmission {
   id: string
   status: string
@@ -51,6 +52,7 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>([])
+  const [jobDepartments, setJobDepartments] = useState<JobDept[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -68,6 +70,7 @@ export default function JobsPage() {
     title: '', public_title: '', contact_id: '', company_id: '', company_name: '',
     wished_start_date: '', wished_duration_months: '4', description: '', public_description: '',
     status: 'open', is_remote: false, notes: '', department: '',
+    job_department_id: '', required_level: '', required_languages: [] as string[], location: 'Bali, Indonesie',
   })
 
   const selectedContact = contacts.find(c => c.id === form.contact_id)

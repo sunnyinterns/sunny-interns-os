@@ -17,6 +17,7 @@ const SETTING_LABELS: Record<string, string> = {
 }
 
 const ADMIN_SECTIONS = [
+  { href: 'job-departments', icon: '💼', label: 'Métiers & Départements', desc: 'Secteurs d\'activité affectables aux offres de stage' },
   { href: 'packages',    icon: '📦', label: 'Packages',        desc: 'Packages visa Standard / Express / Visa Only' },
   { href: 'visa-types',  icon: '🛂', label: 'Types de visa',   desc: 'VOA, KITAS, types de visas Indonésie' },
   { href: 'visa-agents', icon: '🏢', label: 'Agents visa',     desc: 'Agents FAZZA et partenaires visa' },

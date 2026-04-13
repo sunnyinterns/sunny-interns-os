@@ -68,6 +68,8 @@ const ACTIVITY_ICONS: Record<string, string> = {
   payment_received: '💳',
   visa_received: '🛂',
   note: '💬',
+  intern_comment: '💬',
+  intern_interest: '🎯',
   default: '•',
 }
 
