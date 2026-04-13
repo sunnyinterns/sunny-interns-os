@@ -442,6 +442,43 @@ export default function JobsPage() {
                   </select>
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Niveau requis</label>
+                  <select className={inputCls} value={form.required_level} onChange={e => setForm(p => ({...p, required_level: e.target.value}))}>
+                    <option value="">— Aucun —</option>
+                    {['bac', 'bac+2', 'bac+3', 'bac+4', 'bac+5'].map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Lieu</label>
+                  <input className={inputCls} placeholder="Bali, Indonesie" value={form.location} onChange={e => setForm(p => ({...p, location: e.target.value}))} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-600 mb-1">Langues requises</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {['FR', 'EN', 'ES', 'DE', 'IT', 'PT', 'NL', 'ZH'].map(lang => (
+                    <button
+                      key={lang}
+                      type="button"
+                      onClick={() => setForm(p => ({
+                        ...p,
+                        required_languages: p.required_languages.includes(lang)
+                          ? p.required_languages.filter(l => l !== lang)
+                          : [...p.required_languages, lang]
+                      }))}
+                      className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
+                        form.required_languages.includes(lang)
+                          ? 'bg-[#c8a96e] text-white border-[#c8a96e]'
+                          : 'bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300'
+                      }`}
+                    >
+                      {lang}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <label className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-zinc-50 transition-colors">
                 <div
                   className={['w-10 h-6 rounded-full transition-colors relative flex-shrink-0', form.is_remote ? 'bg-violet-500' : 'bg-zinc-200'].join(' ')}
