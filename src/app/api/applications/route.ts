@@ -196,8 +196,8 @@ export async function POST(request: Request) {
     await supabase.from('activity_feed').insert({
       case_id: caseId,
       type: 'case_created',
-      title: `${d.first_name} ${d.last_name} a candidaté`,
-      description: `Nouvelle candidature de ${d.first_name} ${d.last_name} - ${d.email}`,
+      title: `${d.first_name} ${d.last_name} a terminé sa candidature`,
+      description: `${d.first_name} ${d.last_name} (${d.email}) a complété le formulaire de candidature et pris son RDV de qualification.`,
       priority: 'normal',
       status: 'completed',
       source: 'automation',

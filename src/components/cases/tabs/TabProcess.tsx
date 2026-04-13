@@ -159,12 +159,12 @@ export function TabProcess({
     action?: () => void
   }> = {
     lead: {
-      bg: 'bg-blue-50', border: 'border-blue-200', color: 'text-blue-800',
-      title: 'Prendre un RDV de qualification',
-      desc: 'Le candidat a soumis sa candidature — inviter à prendre un RDV via le formulaire',
-      cta: '📅 Voir le formulaire RDV',
-      ctaColor: 'bg-blue-600 hover:bg-blue-700',
-      action: () => window.open('https://bali-interns.fillout.com/t/gn4Zg9eydFus', '_blank'),
+      bg: 'bg-emerald-50', border: 'border-emerald-200', color: 'text-emerald-800',
+      title: 'Candidature reçue — RDV à confirmer',
+      desc: "Le candidat a complété sa candidature. Vérifier si un RDV a été pris dans le calendrier.",
+      cta: '📅 Voir le calendrier',
+      ctaColor: 'bg-emerald-600 hover:bg-emerald-700',
+      action: () => { if (typeof window !== 'undefined') window.open('/fr/calendar', '_blank') },
     },
     rdv_booked: {
       bg: 'bg-emerald-50', border: 'border-emerald-200', color: 'text-emerald-800',
