@@ -62,6 +62,13 @@ function getInitials(firstName: string, lastName: string): string {
   return `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase()
 }
 
+function getLinkedinSlug(url: string): string | null {
+  if (!url) return null
+  if (!url.includes('linkedin.com')) return url.trim()
+  const match = url.match(/linkedin\.com\/in\/([^/?#]+)/)
+  return match ? match[1] : null
+}
+
 type TabKey = 'process' | 'profil' | 'staffing' | 'visa' | 'arrivee' | 'facturation'
 
 export default function CaseDetailPage() {
@@ -164,7 +171,8 @@ export default function CaseDetailPage() {
   const phone = intern.phone ?? ''
   const schoolCountry = intern.school_country ?? ''
   const age = birthDate ? Math.floor((Date.now() - new Date(birthDate).getTime()) / (365.25 * 24 * 3600 * 1000)) : null
-  const avatarUrl = intern.avatar_url ?? (linkedinUrl ? `https://unavatar.io/linkedin/${linkedinUrl.replace(/.*linkedin\.com\/in\//, '').replace(/\/$/, '')}` : null)
+  const linkedinSlug = getLinkedinSlug(linkedinUrl)
+  const avatarUrl = intern.avatar_url ?? (linkedinSlug ? `https://unavatar.io/linkedin/${linkedinSlug}` : null)
   const schoolName = caseData.schools?.name ?? intern.school_country ?? ''
   const mainJob = intern.main_desired_job ?? ''
   const touchpoint = intern.touchpoint ?? ''
