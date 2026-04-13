@@ -1,4 +1,4 @@
-# Sunny Interns OS — Claude Code Context (mis a jour le 13 avril 2026)
+# Sunny Interns OS — Claude Code Context (vérifié le 13 avril 2026)
 
 ## Projet
 OS interne de Sunny Interns (ex-Bali Interns). Remplace Airtable + FillOut + Squarespace.
