@@ -5,6 +5,28 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+const BOTTOM_NAV = [
+  { href: '/fr/feed', icon: '🏠', label: 'Dashboard' },
+  { href: '/fr/activity', icon: '⚡', label: 'Activite' },
+  { href: '/fr/todo', icon: '✅', label: 'To Do' },
+  { href: '/fr/calendar', icon: '📅', label: 'Calendrier' },
+]
+
+const DRAWER_ITEMS: { href?: string; icon?: string; label?: string; separator?: boolean }[] = [
+  { href: '/fr/pipeline', icon: '📊', label: 'Pipeline' },
+  { href: '/fr/leads', icon: '📋', label: 'Leads' },
+  { href: '/fr/cases', icon: '👤', label: 'Candidats' },
+  { href: '/fr/clients', icon: '🌴', label: 'Clients' },
+  { separator: true },
+  { href: '/fr/jobs', icon: '💼', label: 'Offres de stage' },
+  { href: '/fr/contacts', icon: '📞', label: 'Contacts' },
+  { href: '/fr/companies', icon: '🏢', label: 'Entreprises' },
+  { href: '/fr/schools', icon: '🎓', label: 'Ecoles' },
+  { separator: true },
+  { href: '/fr/finances', icon: '💶', label: 'Finances' },
+  { href: '/fr/settings', icon: '⚙️', label: 'Parametres' },
+]
+
 export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
@@ -16,6 +38,7 @@ export function Sidebar() {
   const [candidatsCount, setCandidatsCount] = useState<number | null>(null)
   const [todoCount, setTodoCount] = useState<number>(0)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
     setSettingsOpen(pathname.startsWith('/fr/settings'))
@@ -115,7 +138,8 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-56 flex-shrink-0 bg-[#fafaf9] border-r border-zinc-200 flex flex-col h-screen sticky top-0 overflow-y-auto">
+    <>
+    <aside className="hidden md:flex w-56 flex-shrink-0 bg-[#fafaf9] border-r border-zinc-200 flex-col h-screen sticky top-0 overflow-y-auto">
 
       {/* Logo */}
       <div className="px-4 pt-5 pb-3">
@@ -177,5 +201,64 @@ export function Sidebar() {
       </div>
 
     </aside>
+
+    {/* BOTTOM NAV - mobile seulement */}
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-zinc-200 md:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="flex items-center justify-around h-16 px-2">
+        {BOTTOM_NAV.map(item => {
+          const active = pathname === item.href || pathname.startsWith(item.href + '/')
+          return (
+            <Link key={item.href} href={item.href}
+              className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors ${
+                active ? 'text-[#c8a96e]' : 'text-zinc-400'
+              }`}>
+              <span className="text-xl">{item.icon}</span>
+              <span className="text-[10px] font-medium">{item.label}</span>
+            </Link>
+          )
+        })}
+        {/* Bouton hamburger */}
+        <button onClick={() => setDrawerOpen(true)}
+          className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl ${drawerOpen ? 'text-[#c8a96e]' : 'text-zinc-400'}`}>
+          <span className="text-xl">☰</span>
+          <span className="text-[10px] font-medium">Plus</span>
+        </button>
+      </div>
+    </nav>
+
+    {/* DRAWER mobile (bottom sheet) */}
+    {drawerOpen && (
+      <div className="fixed inset-0 z-[60] md:hidden" onClick={() => setDrawerOpen(false)}>
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl overflow-y-auto max-h-[80vh]"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+          onClick={e => e.stopPropagation()}>
+          <div className="w-10 h-1 bg-zinc-200 rounded-full mx-auto mt-3 mb-4" />
+          <div className="px-4 pb-6 space-y-1">
+            {DRAWER_ITEMS.map((item, i) => {
+              if (item.separator) return <div key={`sep-${i}`} className="my-2 border-t border-zinc-100" />
+              return (
+                <Link key={item.href} href={item.href!} onClick={() => setDrawerOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors ${
+                    pathname === item.href || pathname.startsWith(item.href + '/') ? 'bg-[#c8a96e]/10 text-[#c8a96e]' : 'text-zinc-700 hover:bg-zinc-50'
+                  }`}>
+                  <span className="text-lg flex-shrink-0">{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
+              )
+            })}
+            {/* Logout */}
+            <div className="mt-4 pt-3 border-t border-zinc-100">
+              <button onClick={handleLogout}
+                className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 w-full transition-colors">
+                <span className="text-lg">🚪</span>
+                <span>Deconnexion</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   )
 }
