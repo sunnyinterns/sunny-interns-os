@@ -1,14 +1,12 @@
+import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-function getServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
-
 export async function POST(request: Request) {
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File | null
@@ -21,14 +19,18 @@ export async function POST(request: Request) {
     const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
     const arrayBuffer = await file.arrayBuffer()
 
-    const supabase = getServiceClient()
-    const { error } = await supabase.storage
+    const admin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    const { error } = await admin.storage
       .from(bucket)
       .upload(filename, arrayBuffer, { contentType: file.type || 'application/octet-stream', upsert: false })
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(filename)
+    const { data: { publicUrl } } = admin.storage.from(bucket).getPublicUrl(filename)
 
     return NextResponse.json({ url: publicUrl, filename: file.name })
   } catch (e) {
