@@ -14,14 +14,14 @@ export async function GET(
     const { data, error } = await supabase
       .from('job_submissions')
       .select(`
-        id, status, intern_interested, intern_priority, cv_revision_requested, cv_revision_done, employer_response, notes_charly, created_at, submitted_at,
-        jobs(id, title, public_title, wished_duration_months, wished_start_date, department, description,
-          companies(id, name, contact_name, contact_whatsapp, contact_email),
+        *,
+        jobs(id, title, public_title, wished_duration_months, wished_start_date, department, description, missions,
+          companies(id, name, contact_name, contact_email, contact_whatsapp, whatsapp_number, contact_first_name, contact_last_name),
           contacts(id, first_name, last_name, email, whatsapp)
         )
       `)
       .eq('case_id', id)
-      .order('created_at', { ascending: false })
+      .order('sort_order', { ascending: true })
     if (error) throw error
     return NextResponse.json(data ?? [])
   } catch {
@@ -47,7 +47,8 @@ export async function POST(
       .insert({
         case_id: id,
         job_id: body.job_id,
-        status: 'proposed',
+        status: 'pending',
+      sort_order: 0,
         created_by: user.id,
       })
       .select()

@@ -13,8 +13,8 @@ export async function POST(request: Request) {
 
     const { data, error } = await supabase
       .from('job_submissions')
-      .insert({ case_id: body.case_id, job_id: body.job_id, status: 'submitted', submitted_by: user.id })
-      .select()
+      .insert({ case_id: body.case_id, job_id: body.job_id, status: 'pending', submitted_by: user.id, sort_order: 0 })
+      .select(`*, jobs(id, title, public_title, department, companies(id, name, contact_name, contact_whatsapp, contact_email, whatsapp_number))`)
       .single()
     if (error) throw error
 
