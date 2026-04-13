@@ -114,7 +114,7 @@ export async function GET(request: Request) {
         convention_signee_check, chauffeur_reserve,
         portal_token, intern_first_meeting_date, google_meet_link,
         package_id, payment_amount, payment_date,
-        interns(first_name, last_name, email, nationality, nationalities, school_country, main_desired_job, cv_url, whatsapp, spoken_languages, birth_date, linkedin_url, passport_expiry),
+        interns(first_name, last_name, email, nationality, nationalities, school_country, main_desired_job, cv_url, whatsapp, spoken_languages, birth_date, linkedin_url, avatar_url, passport_expiry),
         schools(name),
         packages(name, price_eur)
       `)

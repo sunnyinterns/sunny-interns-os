@@ -193,6 +193,9 @@ export function ActivityFeed({ locale = 'fr', showFilters = true, initialLimit =
 
                     {/* Contenu */}
                     <div className="flex-1 min-w-0">
+                      {item.intern_name && (
+                        <p className="text-xs font-bold text-[#1a1918] leading-snug">{item.intern_name}</p>
+                      )}
                       <p className="text-sm font-medium text-[#1a1918] leading-snug">{item.title}</p>
                       {item.description && item.description !== item.title && (
                         <p className="text-xs text-zinc-400 mt-0.5 line-clamp-1">{item.description}</p>
@@ -217,26 +220,25 @@ export function ActivityFeed({ locale = 'fr', showFilters = true, initialLimit =
                           )}
                         </div>
                       )}
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        {item.intern_name && (
-                          <>
-                            <span className="text-xs text-zinc-500 font-medium">{item.intern_name}</span>
-                            <span className="text-zinc-300">·</span>
-                          </>
-                        )}
+                      {item.case_id && (
                         <Link
                           href={`/${locale}/cases/${item.case_id}`}
-                          className="text-xs text-[#c8a96e] hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="text-[10px] text-[#c8a96e] hover:underline font-medium mt-0.5 inline-flex items-center gap-0.5"
                         >
-                          Voir le dossier →
+                          {item.intern_name ?? 'Voir le dossier'} →
                         </Link>
-                      </div>
+                      )}
                     </div>
 
-                    {/* Heure */}
-                    <span className="text-[11px] text-zinc-400 flex-shrink-0 mt-0.5 whitespace-nowrap">
-                      {timeAgo(item.created_at)}
-                    </span>
+                    {/* Heure précise */}
+                    <div className="flex flex-col items-end flex-shrink-0 mt-0.5">
+                      <span className="text-[11px] text-zinc-400 whitespace-nowrap">
+                        {timeAgo(item.created_at)}
+                      </span>
+                      <span className="text-[10px] text-zinc-300 whitespace-nowrap">
+                        {new Date(item.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
