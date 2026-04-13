@@ -401,7 +401,7 @@ function CVPopup({ url, onClose, name }: { url: string; onClose: () => void; nam
 // ── Main TabStaffing ────────────────────────────────────────
 
 export function TabStaffing({
-  caseId, firstName, lastName, intern, desiredStartDate, desiredEndDate, desiredDurationMonths,
+  caseId, firstName, lastName, intern, caseData, desiredStartDate, desiredEndDate, desiredDurationMonths,
   cvUrl, cvLocalUrl, cvFeedback, cvStatus, desiredSectors, qualificationNotes, stageIdeal, spokenLanguages, onRefresh,
 }: TabStaffingProps) {
   const internId = intern?.id as string | undefined
@@ -973,20 +973,20 @@ export function TabStaffing({
             )}
             {/* Documents additionnels */}
             <div className="mt-3 space-y-1.5">
-              {intern?.local_cv_url && String(intern.local_cv_url).trim() && (
-                <a href={String(intern.local_cv_url)} target="_blank" rel="noopener noreferrer"
+              {typeof intern?.local_cv_url === 'string' && intern.local_cv_url.trim() && (
+                <a href={intern.local_cv_url} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs text-zinc-600 hover:text-[#c8a96e] py-1">
                   <span>📄</span> CV (langue locale) <span className="text-[#c8a96e]">↗</span>
                 </a>
               )}
-              {intern?.portfolio_url && String(intern.portfolio_url).trim() && (
-                <a href={String(intern.portfolio_url)} target="_blank" rel="noopener noreferrer"
+              {typeof intern?.portfolio_url === 'string' && intern.portfolio_url.trim() && (
+                <a href={intern.portfolio_url} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs text-zinc-600 hover:text-[#c8a96e] py-1">
                   <span>🎨</span> Portfolio <span className="text-[#c8a96e]">↗</span>
                 </a>
               )}
-              {intern?.examples_url && String(intern.examples_url).trim() && (
-                <a href={String(intern.examples_url)} target="_blank" rel="noopener noreferrer"
+              {typeof intern?.examples_url === 'string' && intern.examples_url.trim() && (
+                <a href={intern.examples_url} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs text-zinc-600 hover:text-[#c8a96e] py-1">
                   <span>✨</span> Exemples de réalisations <span className="text-[#c8a96e]">↗</span>
                 </a>
