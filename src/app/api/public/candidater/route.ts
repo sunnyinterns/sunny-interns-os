@@ -132,7 +132,7 @@ export async function POST(request: Request) {
       .from('cases')
       .insert({
         intern_id: intern.id,
-        status: d.rdv_slot_start ? 'rdv_booked' : 'lead',
+        status: 'rdv_booked',
         desired_start_date: d.desired_start_date || null,
         case_type: 'stage',
         qualification_notes: d.comment || null,

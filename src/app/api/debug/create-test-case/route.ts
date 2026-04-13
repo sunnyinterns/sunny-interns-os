@@ -23,7 +23,7 @@ export async function POST() {
   // 2. Create case
   const { data: caseRow, error: ce } = await supabase.from('cases').insert({
     intern_id: intern.id,
-    status: 'lead',
+    status: 'rdv_booked',
     source: 'apply_form',
   }).select('id').single()
 

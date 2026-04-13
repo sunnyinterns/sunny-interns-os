@@ -269,7 +269,7 @@ export async function POST(request: Request) {
       .insert({
         intern_id: intern.id,
         destination_id: 'fc9ece85-e5d5-41d2-9142-79054244bbce',
-        status: 'lead',
+        status: 'rdv_booked',
         desired_start_date: start_date ?? null,
         case_type: internship_type ?? null,
         qualification_notes: notes ?? null,
