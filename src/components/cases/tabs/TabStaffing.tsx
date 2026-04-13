@@ -425,6 +425,19 @@ export function TabStaffing({
   const [candidatesPopup, setCandidatesPopup] = useState<{ jobId: string; jobTitle: string } | null>(null)
   const [jobCandidates, setJobCandidates] = useState<Array<{ case_id: string; intern_name: string; status: string }>>([])
 
+  // Débrief entretien
+  const status = (caseData?.status as string) ?? ''
+  const [qualifStatus, setQualifStatus] = useState<string>(status)
+  const [debriefNotes, setDebriefNotes] = useState<string>('')
+  const [emailBody, setEmailBody] = useState<string>('')
+  const [sendingQualif, setSendingQualif] = useState(false)
+
+  const QUALIF_STATUSES = [
+    { value: 'qualification_done', label: '✅ Entretien validé', color: '#0d9e75', bg: '#d1fae5' },
+    { value: 'rdv_booked', label: '🔄 À recontacter', color: '#d97706', bg: '#fef3c7' },
+    { value: 'lead', label: '⏳ En attente', color: '#6b7280', bg: '#f4f4f5' },
+    { value: 'not_qualified', label: '❌ Non retenu', color: '#dc2626', bg: '#fee2e2' },
+  ]
 
   // Editable fields
   const [stageIdealVal, setStageIdealVal] = useState(stageIdeal ?? '')
@@ -435,7 +448,13 @@ export function TabStaffing({
   const [durationVal, setDurationVal] = useState(desiredDurationMonths ? String(desiredDurationMonths) : '')
   const [cvHistory, setCvHistory] = useState<{ id: string; feedback: string; created_at: string }[]>([])
 
-  const cvDisplayUrl = cvUrl ?? (intern?.cv_url as string | null) ?? null
+  const cvDisplayUrl = (cvUrl && cvUrl.trim() !== '')
+    ? cvUrl
+    : (intern?.cv_url && String(intern.cv_url).trim() !== '')
+      ? String(intern.cv_url)
+      : (intern?.local_cv_url && String(intern.local_cv_url).trim() !== '')
+        ? String(intern.local_cv_url)
+        : null
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
@@ -690,6 +709,42 @@ export function TabStaffing({
     })
   }
 
+  // Email auto selon statut débrief
+  useEffect(() => {
+    let body = ''
+    if (qualifStatus === 'qualification_done') {
+      body = `Bonjour ${firstName},\n\nNous avons le plaisir de t'informer que ton entretien de qualification a été validé !\n\nTu vas recevoir dans quelques instants un email avec tes informations de connexion au portail candidat.`
+      if (cvStatus === 'to_redo') {
+        body += `\n\n📋 Nous avons besoin que tu nous renvoies ton CV mis à jour. Tu peux le renvoyer :\n• Par email à team@bali-interns.com\n• Par WhatsApp au +33 6 43 48 77 36\n• Directement via ton portail candidat`
+      }
+      body += `\n\nÀ très vite,\nL'équipe Bali Interns 🌴`
+    } else if (qualifStatus === 'rdv_booked') {
+      body = `Bonjour ${firstName},\n\nMerci pour notre entretien. Nous allons étudier ta candidature et reviendrons vers toi très prochainement.\n\nÀ très vite,\nL'équipe Bali Interns 🌴`
+    } else if (qualifStatus === 'not_qualified') {
+      body = `Bonjour ${firstName},\n\nNous avons étudié ta candidature avec attention. Malheureusement, nous ne sommes pas en mesure de te proposer un stage à Bali pour le moment.\n\nNous te souhaitons le meilleur pour la suite.\n\nCordialement,\nL'équipe Bali Interns`
+    }
+    setEmailBody(body)
+  }, [qualifStatus, cvStatus, firstName])
+
+  async function sendQualifEmail() {
+    setSendingQualif(true)
+    try {
+      await fetch(`/api/cases/${caseId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: qualifStatus, qualification_notes: debriefNotes }),
+      })
+      await fetch(`/api/cases/${caseId}/send-qualification-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email_body: emailBody, status: qualifStatus, first_name: firstName }),
+      })
+      showToastMsg('✅ Email envoyé et statut mis à jour !')
+      if (onRefresh) onRefresh()
+    } catch { showToastMsg('Erreur envoi', false) }
+    finally { setSendingQualif(false) }
+  }
+
   const sortedSubmissions = [...submissions].sort((a, b) => (a.intern_priority ?? 99) - (b.intern_priority ?? 99))
 
   return (
@@ -916,6 +971,27 @@ export function TabStaffing({
                 </div>
               </div>
             )}
+            {/* Documents additionnels */}
+            <div className="mt-3 space-y-1.5">
+              {intern?.local_cv_url && String(intern.local_cv_url).trim() && (
+                <a href={String(intern.local_cv_url)} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-xs text-zinc-600 hover:text-[#c8a96e] py-1">
+                  <span>📄</span> CV (langue locale) <span className="text-[#c8a96e]">↗</span>
+                </a>
+              )}
+              {intern?.portfolio_url && String(intern.portfolio_url).trim() && (
+                <a href={String(intern.portfolio_url)} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-xs text-zinc-600 hover:text-[#c8a96e] py-1">
+                  <span>🎨</span> Portfolio <span className="text-[#c8a96e]">↗</span>
+                </a>
+              )}
+              {intern?.examples_url && String(intern.examples_url).trim() && (
+                <a href={String(intern.examples_url)} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-xs text-zinc-600 hover:text-[#c8a96e] py-1">
+                  <span>✨</span> Exemples de réalisations <span className="text-[#c8a96e]">↗</span>
+                </a>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1095,6 +1171,45 @@ export function TabStaffing({
             })}
           </div>
         )}
+      </div>
+
+      {/* ── SECTION DÉBRIEF ENTRETIEN ── */}
+      <div className="mt-6 bg-white border border-zinc-100 rounded-2xl p-4 space-y-4">
+        <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">🎤 Débrief Entretien</h3>
+
+        {/* Statuts */}
+        <div className="flex flex-wrap gap-2">
+          {QUALIF_STATUSES.map(s => (
+            <button key={s.value} onClick={() => setQualifStatus(s.value)}
+              className="text-xs px-3 py-2 rounded-xl font-semibold border-2 transition-all"
+              style={qualifStatus === s.value
+                ? { backgroundColor: s.bg, borderColor: s.color, color: s.color }
+                : { backgroundColor: 'white', borderColor: '#e5e7eb', color: '#6b7280' }}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Notes internes */}
+        <div>
+          <p className="text-xs text-zinc-400 mb-1">Notes internes (non envoyées)</p>
+          <textarea value={debriefNotes} onChange={e => setDebriefNotes(e.target.value)}
+            placeholder="Observations sur le candidat, points forts/faibles..."
+            className="w-full text-sm border border-zinc-200 rounded-xl px-3 py-2.5 resize-none focus:outline-none focus:border-[#c8a96e] min-h-[70px]" rows={3} />
+        </div>
+
+        {/* Email éditable */}
+        <div>
+          <p className="text-xs text-zinc-400 mb-1">Email envoyé au candidat (éditable)</p>
+          <textarea value={emailBody} onChange={e => setEmailBody(e.target.value)}
+            className="w-full text-sm border border-zinc-200 rounded-xl px-3 py-2.5 resize-none focus:outline-none focus:border-[#c8a96e] font-mono text-xs min-h-[140px]" rows={7} />
+        </div>
+
+        {/* Bouton envoi */}
+        <button onClick={() => void sendQualifEmail()} disabled={sendingQualif || !emailBody.trim()}
+          className="w-full py-3 bg-[#0d9e75] text-white font-bold rounded-xl hover:bg-emerald-600 disabled:opacity-50 text-sm transition-colors">
+          {sendingQualif ? '⏳ Envoi...' : '📧 Envoyer l\'email et mettre à jour le statut'}
+        </button>
       </div>
 
       {/* Popups */}
