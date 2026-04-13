@@ -87,14 +87,16 @@ export default function JobsPage() {
 
   async function load() {
     setLoading(true)
-    const [j, c, co] = await Promise.all([
+    const [j, c, co, jd] = await Promise.all([
       fetch('/api/jobs').then(r => r.ok ? r.json() : []),
       fetch('/api/contacts?contact_type=employer').then(r => r.ok ? r.json() : []),
       fetch('/api/companies').then(r => r.ok ? r.json() : []),
+      fetch('/api/job-departments').then(r => r.ok ? r.json() : []),
     ])
     setJobs(Array.isArray(j) ? j : [])
     setContacts(Array.isArray(c) ? c : [])
     setCompanies(Array.isArray(co) ? co : [])
+    setJobDepartments(Array.isArray(jd) ? jd : [])
     setLoading(false)
   }
 
@@ -122,18 +124,22 @@ export default function JobsPage() {
       contact_id: form.contact_id || null,
       company_id: form.company_id || null,
       department: form.department || null,
+      job_department_id: form.job_department_id || null,
       description: form.description || null,
       public_description: form.public_description || null,
       wished_start_date: form.wished_start_date || null,
       wished_duration_months: Number(form.wished_duration_months),
       is_remote: form.is_remote,
       status: form.status,
+      required_level: form.required_level || null,
+      required_languages: form.required_languages.length > 0 ? form.required_languages : null,
+      location: form.location || null,
     }
     const res = await fetch('/api/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     if (res.ok) {
       const j = await res.json() as Job
       setShowModal(false)
-      setForm({ title: '', public_title: '', contact_id: '', company_id: '', company_name: '', wished_start_date: '', wished_duration_months: '4', description: '', public_description: '', status: 'open', is_remote: false, notes: '', department: '' })
+      setForm({ title: '', public_title: '', contact_id: '', company_id: '', company_name: '', wished_start_date: '', wished_duration_months: '4', description: '', public_description: '', status: 'open', is_remote: false, notes: '', department: '', job_department_id: '', required_level: '', required_languages: [], location: 'Bali, Indonesie' })
       setContactSearch('')
       router.push(`/${locale}/jobs/${j.id}`)
     }

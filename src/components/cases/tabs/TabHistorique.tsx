@@ -26,6 +26,8 @@ const TYPE_CONFIG: Record<string, { icon: string; color: string }> = {
   email_sent: { icon: '📧', color: '#1a73e8' },
   lead_captured: { icon: '📋', color: '#f59e0b' },
   lead_converted: { icon: '✅', color: '#0d9e75' },
+  intern_comment: { icon: '💬', color: '#8b5cf6' },
+  intern_interest: { icon: '🎯', color: '#0d9e75' },
   default: { icon: '⚡', color: '#6b7280' },
 }
 

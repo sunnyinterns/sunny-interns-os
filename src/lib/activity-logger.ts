@@ -31,6 +31,8 @@ type ActivityType =
   | 'visa_docs_ready'
   | 'visa_docs_sent'
   | 'doc_uploaded'
+  | 'intern_comment'
+  | 'intern_interest'
 
 interface LogActivityParams {
   caseId: string
