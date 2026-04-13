@@ -9,11 +9,6 @@ import { NewCaseModal } from '@/components/cases/NewCaseModal'
 import { Toast } from '@/components/ui/Toast'
 import type { CaseStatus } from '@/lib/types'
 
-const PRE_EMBAUCHE_STATUSES = [
-  'lead', 'rdv_booked', 'qualification_done', 'job_submitted',
-  'job_retained', 'convention_signed', 'payment_pending', 'payment_received',
-]
-
 function getLinkedinSlug(url?: string | null): string | null {
   if (!url) return null
   if (!url.includes('linkedin.com')) return url.trim() || null
@@ -101,11 +96,10 @@ export default function CasesPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/cases?view=all')
+      const res = await fetch('/api/cases?type=candidate')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json() as CaseRow[]
-      const candidats = data.filter((c) => PRE_EMBAUCHE_STATUSES.includes(c.status))
-      setCases(candidats)
+      setCases(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue')
     } finally {
