@@ -239,19 +239,6 @@ export default function CaseDetailPage() {
 
   return (
     <div className="flex flex-col h-full bg-[#fafaf9]">
-      {/* Bannière redirection client */}
-      {isClient && (
-        <div className="sticky top-0 z-30 bg-amber-50 border-b-2 border-amber-300 px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-amber-600 font-bold text-sm">Ce candidat est maintenant un client</span>
-            <span className="text-amber-500 text-xs">({caseData.status})</span>
-          </div>
-          <Link href={`/${locale}/clients/${caseData.id}`}
-            className="px-4 py-1.5 bg-amber-500 text-white text-sm font-bold rounded-xl hover:bg-amber-600 transition-colors">
-            Voir la fiche client →
-          </Link>
-        </div>
-      )}
       {/* ── HEADER STICKY ── */}
       <div className={`sticky top-0 z-20 bg-white border-b border-zinc-200 transition-all duration-200 ${headerCompact ? 'shadow-md' : ''}`}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
@@ -464,6 +451,20 @@ export default function CaseDetailPage() {
                   {actionInfo.cta}
                 </button>
               )}
+            </div>
+          )}
+
+          {/* Bannière redirection client — avant les onglets */}
+          {isClient && !headerCompact && (
+            <div className="mb-2 px-4 py-3 bg-amber-50 border border-amber-300 rounded-xl flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-amber-600 font-bold text-sm">Ce candidat est maintenant un client</span>
+                <span className="text-amber-500 text-xs">({badge.label})</span>
+              </div>
+              <Link href={`/${locale}/clients/${caseData.id}`}
+                className="px-4 py-1.5 bg-amber-500 text-white text-sm font-bold rounded-xl hover:bg-amber-600 transition-colors">
+                Voir la fiche client →
+              </Link>
             </div>
           )}
 
