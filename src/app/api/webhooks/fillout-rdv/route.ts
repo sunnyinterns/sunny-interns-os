@@ -35,13 +35,16 @@ export async function POST(request: Request) {
     const payload = await request.json() as FilloutWebhookPayload
     const supabase = getServiceClient()
 
+    console.log('[fillout-webhook] payload:', JSON.stringify(payload).slice(0, 500))
+
     // Extraire email — plusieurs sources par ordre de fiabilité
     let email: string | null = null
     const urlParams = payload.urlParameters
+    const payloadAny = payload as unknown as Record<string, unknown>
 
     // 1. URL parameters (les plus fiables car on les set nous-mêmes)
     if (urlParams) {
-      const emailParam = urlParams.find(p => p.id === 'email' || p.name === 'email')
+      const emailParam = urlParams.find(p => p.id === 'email' || p.name === 'email' || p.name === 'Email')
       if (emailParam?.value) email = emailParam.value
     }
 
@@ -56,11 +59,11 @@ export async function POST(request: Request) {
       }
     }
 
-    // 3. Top-level email
-    const payloadAny = payload as unknown as Record<string, unknown>
-    if (!email && typeof payloadAny.email === 'string') {
-      email = payloadAny.email
-    }
+    // 3. Top-level fields (Fillout peut envoyer l'email dans différents endroits)
+    if (!email && typeof payloadAny.email === 'string') email = payloadAny.email
+    if (!email && typeof payloadAny.Email === 'string') email = payloadAny.Email
+    if (!email && typeof (payloadAny.respondent as Record<string, unknown>)?.email === 'string') email = (payloadAny.respondent as Record<string, unknown>).email as string
+    if (!email && typeof (payloadAny.submission as Record<string, unknown>)?.email === 'string') email = (payloadAny.submission as Record<string, unknown>).email as string
 
     const nameParam = urlParams?.find(p => p.id === 'name' || p.name === 'name')?.value
 
