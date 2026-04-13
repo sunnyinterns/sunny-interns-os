@@ -139,24 +139,24 @@ function SortableJobCard({
   }
 
   return (
-    <div ref={setNodeRef} style={style} className="border rounded-xl bg-white overflow-hidden" {...attributes}>
-      <div className="flex items-center gap-3 px-4 py-3" style={{ background: cfg.bg }}>
-        {/* Drag handle */}
-        <div {...listeners} className="cursor-grab text-zinc-400 hover:text-zinc-600 flex-shrink-0">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate" style={{ color: cfg.text }}>{title}</p>
-          <p className="text-xs opacity-70">{company}{sub.jobs?.wished_duration_months ? ` · ${sub.jobs.wished_duration_months} mois` : ''}</p>
-        </div>
-        <span className="text-xs px-2 py-1 rounded-full font-semibold flex-shrink-0"
-          style={{ background: 'white', color: cfg.text, border: `1px solid ${cfg.text}33` }}>
-          {cfg.label}
-        </span>
+    <div ref={setNodeRef} style={style} className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-zinc-100 hover:border-zinc-200 hover:shadow-sm transition-all" {...attributes}>
+      {/* Drag handle */}
+      <div {...listeners} className="cursor-grab text-zinc-300 hover:text-zinc-500 flex-shrink-0 touch-none">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>
       </div>
+      {/* Avatar identique aux jobs disponibles */}
+      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-sm font-bold" style={{ backgroundColor: cfg.bg, color: cfg.text }}>
+        {(company ?? title)[0]?.toUpperCase() ?? '?'}
+      </div>
+      <div className="flex-1 min-w-0">
 
+      </div>
+      {/* Statut badge */}
+      <span className="text-xs px-2 py-1 rounded-full font-semibold flex-shrink-0" style={{ backgroundColor: cfg.bg, color: cfg.text }}>
+        {cfg.label}
+      </span>
       {/* Actions */}
-      <div className="px-4 py-3 border-t border-zinc-100 flex flex-wrap gap-2 items-center">
+      <div className="flex flex-wrap gap-1.5 items-center flex-shrink-0">
         {sub.status === 'proposed' && (
           <>
             <button disabled={isLoading}
