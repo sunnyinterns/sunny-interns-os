@@ -14,12 +14,12 @@ export async function GET(
     const [{ data, error }, { data: submissions }] = await Promise.all([
       supabase
         .from('jobs')
-        .select('*, companies(id, name), contacts(id, first_name, last_name, job_title, email, whatsapp), job_departments(id, name), cases(id, status)')
+        .select('*, companies(id, name, contact_name, contact_email, contact_whatsapp), contacts(id, first_name, last_name, job_title, email, whatsapp), job_departments(id, name)')
         .eq('id', id)
         .single(),
       supabase
         .from('job_submissions')
-        .select('id, status, cv_sent, intern_interested, cases(id, interns(first_name, last_name))')
+        .select('id, status, cv_sent, intern_interested, sort_order, cases!inner(id, interns!inner(first_name, last_name))')
         .eq('job_id', id)
         .order('created_at', { ascending: false }),
     ])
