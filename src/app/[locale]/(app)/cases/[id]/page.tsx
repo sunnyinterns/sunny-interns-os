@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { NewCaseModal } from '@/components/cases/NewCaseModal'
 import { TabProcess } from '@/components/cases/tabs/TabProcess'
 import { TabProfil } from '@/components/cases/tabs/TabProfil'
-import { TabJobs } from '@/components/cases/tabs/TabJobs'
+import { TabStaffing } from '@/components/cases/tabs/TabStaffing'
 import { TabVisa } from '@/components/cases/tabs/TabVisa'
 import { TabArrivee } from '@/components/cases/tabs/TabArrivee'
 import { TabFacturation } from '@/components/cases/tabs/TabFacturation'
@@ -62,7 +62,7 @@ function getInitials(firstName: string, lastName: string): string {
   return `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase()
 }
 
-type TabKey = 'process' | 'profil' | 'jobs' | 'visa' | 'arrivee' | 'facturation'
+type TabKey = 'process' | 'profil' | 'staffing' | 'visa' | 'arrivee' | 'facturation'
 
 export default function CaseDetailPage() {
   const params = useParams()
@@ -190,7 +190,7 @@ export default function CaseDetailPage() {
         }
         break
       case 'jobs':
-        setActiveTab('jobs')
+        setActiveTab('staffing')
         break
       case 'mark_paid':
         fetch(`/api/cases/${caseData.id}`, {
@@ -211,7 +211,7 @@ export default function CaseDetailPage() {
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'process', label: '⚡ Processus' },
     { key: 'profil', label: '👤 Profil' },
-    ...(!isVisaOnly ? [{ key: 'jobs' as TabKey, label: '💼 Jobs' }] : []),
+    ...(!isVisaOnly ? [{ key: 'staffing' as TabKey, label: '💼 Staffing' }] : []),
     { key: 'visa', label: '🛂 Visa' },
     ...(!isVisaOnly ? [{ key: 'arrivee' as TabKey, label: '🛫 Arrivée' }] : []),
     { key: 'facturation', label: '💶 Facturation' },
@@ -513,12 +513,24 @@ export default function CaseDetailPage() {
             cvFeedback={(caseData as any).cv_feedback ?? null}
           />
         )}
-        {activeTab === 'jobs' && (
-          <TabJobs
+        {activeTab === 'staffing' && (
+          <TabStaffing
             caseId={caseData.id}
             firstName={firstName}
             lastName={lastName}
-            desiredSectors={(caseData as any).desired_sectors ?? null}
+            intern={intern as any}
+            caseData={caseData as any}
+            desiredStartDate={caseData.desired_start_date ?? null}
+            desiredEndDate={caseData.end_date ?? caseData.actual_end_date ?? null}
+            desiredDurationMonths={caseData.desired_duration_months ?? null}
+            cvUrl={intern.cv_en_url ?? caseData.cv_url ?? null}
+            cvLocalUrl={intern.cv_url ?? caseData.local_cv_url ?? null}
+            cvFeedback={caseData.cv_feedback ?? null}
+            desiredSectors={intern.desired_sectors ?? caseData.desired_sectors ?? null}
+            qualificationNotes={caseData.qualification_notes ?? null}
+            stageIdeal={intern.stage_ideal ?? null}
+            spokenLanguages={intern.spoken_languages ?? null}
+            onRefresh={fetchCase}
           />
         )}
         {activeTab === 'visa' && (
