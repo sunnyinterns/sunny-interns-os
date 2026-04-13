@@ -397,7 +397,20 @@ function CVPopup({ url, onClose, name }: { url: string; onClose: () => void; nam
         </div>
         <div className="flex-1 overflow-auto bg-zinc-50">
           {isPdf ? (
-            <iframe src={url} className="w-full h-full min-h-[80vh]" title="CV PDF" />
+            <object 
+              data={url} 
+              type="application/pdf" 
+              className="w-full h-full min-h-[80vh]"
+            >
+              <div className="flex flex-col items-center justify-center h-full gap-4">
+                <span className="text-6xl">📄</span>
+                <p className="text-zinc-600 text-sm">{"Le PDF ne peut pas s'afficher en prévisualisation."}</p>
+                <a href={url} target="_blank" rel="noopener noreferrer"
+                  className="px-5 py-2.5 bg-[#c8a96e] text-white rounded-xl font-semibold hover:bg-[#b8945a]">
+                  ↗ Ouvrir le CV dans un nouvel onglet
+                </a>
+              </div>
+            </object>
           ) : (
             <div className="flex items-center justify-center p-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -442,7 +455,7 @@ export function TabStaffing({
   const [durationVal, setDurationVal] = useState(desiredDurationMonths ? String(desiredDurationMonths) : '')
   const [cvHistory, setCvHistory] = useState<{ id: string; feedback: string; created_at: string }[]>([])
 
-  const cvDisplayUrl = cvLocalUrl ?? cvUrl ?? null
+  const cvDisplayUrl = cvUrl ?? cvLocalUrl ?? null // cv_url en priorité
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
@@ -731,31 +744,19 @@ export function TabStaffing({
           <div className="px-4 py-4 space-y-3">
             <span className="text-[11px] text-zinc-400 font-medium">📄 CV</span>
 
-            {/* Badge statut CV */}
-            {(() => {
-              const cvBadge: Record<string, { label: string; color: string }> = {
-                pending: { label: '⏳ En attente de validation', color: 'bg-amber-100 text-amber-700' },
-                validated: { label: '✅ CV validé', color: 'bg-emerald-100 text-emerald-700' },
-                to_redo: { label: '🔄 À refaire', color: 'bg-red-100 text-red-700' },
-              }
-              const badge = cvBadge[cvStatus ?? 'pending'] ?? cvBadge.pending
-              return (
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${badge.color}`}>
-                    {badge.label}
-                  </span>
-                  <select
-                    value={cvStatus ?? 'pending'}
-                    onChange={e => void saveCvStatus(e.target.value)}
-                    className="text-xs border border-zinc-200 rounded-lg px-2 py-1 bg-white text-zinc-700 focus:outline-none focus:border-[#c8a96e] cursor-pointer"
-                  >
-                    <option value="pending">⏳ En attente</option>
-                    <option value="validated">✅ Valider le CV</option>
-                    <option value="to_redo">🔄 Demander refonte</option>
-                  </select>
-                </div>
-              )
-            })()}
+            {/* Statut CV — menu déroulant uniquement */}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-zinc-400 font-medium">Statut :</span>
+              <select
+                value={cvStatus ?? 'pending'}
+                onChange={e => void saveCvStatus(e.target.value)}
+                className="text-xs border border-zinc-200 rounded-lg px-2 py-1 bg-white text-zinc-700 focus:outline-none focus:border-[#c8a96e] cursor-pointer font-medium"
+              >
+                <option value="pending">⏳ En attente</option>
+                <option value="validated">✅ CV validé</option>
+                <option value="to_redo">🔄 À refaire</option>
+              </select>
+            </div>
 
             {cvDisplayUrl ? (
               <div className="space-y-2">
@@ -763,7 +764,10 @@ export function TabStaffing({
                   className="relative border border-zinc-200 rounded-lg overflow-hidden cursor-pointer hover:border-[#c8a96e] transition-colors h-48"
                   onClick={() => setShowCVPopup(true)}>
                   {isPdfUrl(cvDisplayUrl) ? (
-                    <iframe src={cvDisplayUrl} className="w-full h-full pointer-events-none" title="CV preview" />
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-zinc-50">
+                      <span className="text-4xl">📄</span>
+                      <span className="text-xs text-zinc-500 font-medium">PDF — cliquer pour ouvrir</span>
+                    </div>
                   ) : (
                     <>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
