@@ -376,6 +376,7 @@ export function TabStaffing({
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [jobsLoading, setJobsLoading] = useState(true)
+  const [jobsError, setJobsError] = useState<string | null>(null)
   const [proposingId, setProposingId] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
@@ -407,7 +408,7 @@ export function TabStaffing({
     fetch('/api/jobs?status=open')
       .then(r => { console.log('[TabStaffing] jobs fetch status:', r.status); return r.ok ? r.json() as Promise<Job[]> : Promise.resolve([]) })
       .then(data => { console.log('[TabStaffing] jobs loaded:', data.length); setAllJobs(data) })
-      .catch(e => { console.error('[TabStaffing] jobs error:', e); setAllJobs([]) })
+      .catch(e => { console.error('[TabStaffing] jobs error:', e); setAllJobs([]); setJobsError('Erreur chargement des offres') })
       .finally(() => setJobsLoading(false))
   }, [])
 
@@ -742,6 +743,10 @@ export function TabStaffing({
         {jobsLoading ? (
           <div className="space-y-2 animate-pulse">
             {[1, 2, 3].map(i => <div key={i} className="h-16 bg-zinc-100 rounded-xl" />)}
+          </div>
+        ) : jobsError ? (
+          <div className="py-8 text-center text-sm text-red-500 bg-red-50 rounded-xl border border-red-200">
+            {jobsError}
           </div>
         ) : filteredJobs.length === 0 ? (
           <div className="py-8 text-center text-sm text-zinc-400 bg-white rounded-xl border border-dashed border-zinc-200">
