@@ -5,12 +5,14 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 
 const CLIENT_STATUSES = [
-  'payment_received',
-  'visa_docs_sent', 'visa_submitted', 'visa_in_progress',
-  'visa_received', 'arrival_prep', 'active', 'alumni',
+  'convention_signed', 'payment_pending',
+  'payment_received', 'visa_docs_sent', 'visa_submitted',
+  'visa_in_progress', 'visa_received', 'arrival_prep', 'active', 'alumni', 'completed',
 ]
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
+  convention_signed: { label: '📝 Convention signée', className: 'bg-green-100 text-green-800' },
+  payment_pending: { label: '💶 Paiement en attente', className: 'bg-red-100 text-red-800' },
   payment_received: { label: '💶 Paiement reçu', className: 'bg-teal-100 text-teal-800' },
   visa_docs_sent: { label: '📄 Docs visa attendus', className: 'bg-amber-100 text-amber-800' },
   visa_submitted: { label: '🛂 Visa soumis', className: 'bg-blue-100 text-blue-800' },
@@ -193,7 +195,7 @@ export default function ClientsPage() {
                         <td className="px-4 py-3 text-sm text-zinc-500">{c.assigned_manager_name ?? '\u2014'}</td>
                         <td className="px-4 py-3">
                           <Link
-                            href={`/${locale}/cases/${c.id}`}
+                            href={`/${locale}/clients/${c.id}`}
                             className="text-xs text-[#c8a96e] hover:underline font-medium"
                           >
                             Ouvrir
@@ -229,7 +231,7 @@ export default function ClientsPage() {
                     return (
                       <Link
                         key={c.id}
-                        href={`/${locale}/cases/${c.id}`}
+                        href={`/${locale}/clients/${c.id}`}
                         className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-amber-50/50 transition-colors"
                       >
                         <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
