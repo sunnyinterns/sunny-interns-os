@@ -139,6 +139,7 @@ function SortableJobCard({
   }
 
   return (
+    <>
     <div ref={setNodeRef} style={style} className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-zinc-100 hover:border-zinc-200 hover:shadow-sm transition-all" {...attributes}>
       {/* Drag handle */}
       <div {...listeners} className="cursor-grab text-zinc-300 hover:text-zinc-500 flex-shrink-0 touch-none">
@@ -149,7 +150,16 @@ function SortableJobCard({
         {(company ?? title)[0]?.toUpperCase() ?? '?'}
       </div>
       <div className="flex-1 min-w-0">
-
+        <p className="text-sm font-semibold text-[#1a1918] truncate">{title}</p>
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          {company && <span className="text-xs text-zinc-500 font-medium">{company}</span>}
+          {sub.jobs?.wished_duration_months && (
+            <><span className="text-zinc-300 text-xs">·</span><span className="text-xs text-zinc-400">{sub.jobs.wished_duration_months} mois</span></>
+          )}
+          {sub.jobs?.department && (
+            <><span className="text-zinc-300 text-xs">·</span><span className="text-xs text-zinc-400">{sub.jobs.department}</span></>
+          )}
+        </div>
       </div>
       {/* Statut badge */}
       <span className="text-xs px-2 py-1 rounded-full font-semibold flex-shrink-0" style={{ backgroundColor: cfg.bg, color: cfg.text }}>
@@ -217,38 +227,40 @@ function SortableJobCard({
         />
       </div>
 
-      {/* WhatsApp popup */}
-      {showWAPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowWAPopup(false)}>
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6 space-y-4" onClick={e => e.stopPropagation()}>
-            <h3 className="text-sm font-bold text-[#1a1918]">💬 WhatsApp employeur</h3>
-            {contactName && <p className="text-xs text-zinc-500">Contact: {contactName}</p>}
-            {contactWA && <p className="text-xs text-zinc-500">Numéro: {contactWA}</p>}
-            <textarea
-              value={waMessage}
-              onChange={e => setWAMessage(e.target.value)}
-              rows={6}
-              className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#c8a96e]"
-            />
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setShowWAPopup(false)}
-                className="text-xs px-3 py-2 text-zinc-500 hover:bg-zinc-100 rounded-lg">
-                Annuler
-              </button>
-              <a
-                href={contactWA ? `https://wa.me/${contactWA.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(waMessage)}` : '#'}
-                target="_blank" rel="noopener noreferrer"
-                onClick={() => setShowWAPopup(false)}
-                className={`text-xs px-4 py-2 rounded-lg font-semibold transition-colors ${
-                  contactWA ? 'bg-[#25d366] text-white hover:bg-[#1da851]' : 'bg-zinc-200 text-zinc-400 pointer-events-none'
-                }`}>
-                Envoyer sur WhatsApp
-              </a>
-            </div>
+    </div>
+
+    {/* WhatsApp popup — portal séparé, hors de la card */}
+    {showWAPopup && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowWAPopup(false)}>
+        <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6 space-y-4" onClick={e => e.stopPropagation()}>
+          <h3 className="text-sm font-bold text-[#1a1918]">💬 WhatsApp employeur</h3>
+          {contactName && <p className="text-xs text-zinc-500">Contact: {contactName}</p>}
+          {contactWA && <p className="text-xs text-zinc-500">Numéro: {contactWA}</p>}
+          <textarea
+            value={waMessage}
+            onChange={e => setWAMessage(e.target.value)}
+            rows={6}
+            className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#c8a96e]"
+          />
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => setShowWAPopup(false)}
+              className="text-xs px-3 py-2 text-zinc-500 hover:bg-zinc-100 rounded-lg">
+              Annuler
+            </button>
+            <a
+              href={contactWA ? `https://wa.me/${contactWA.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(waMessage)}` : '#'}
+              target="_blank" rel="noopener noreferrer"
+              onClick={() => setShowWAPopup(false)}
+              className={`text-xs px-4 py-2 rounded-lg font-semibold transition-colors ${
+                contactWA ? 'bg-[#25d366] text-white hover:bg-[#1da851]' : 'bg-zinc-200 text-zinc-400 pointer-events-none'
+              }`}>
+              Envoyer sur WhatsApp
+            </a>
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    )}
+  </>
   )
 }
 
@@ -486,20 +498,61 @@ export function TabStaffing({
     } catch { setJobCandidates([]) }
   }
 
-  // Actions
+  // Actions — optimistic update: le job disparaît immédiatement des disponibles et apparaît dans sélectionnés
   async function proposeJob(jobId: string) {
+    const job = allJobs.find(j => j.id === jobId)
+    if (!job) return
     setProposingId(jobId)
+
+    // 1. Optimistic: créer une soumission temporaire locale IMMÉDIATEMENT
+    const tempId = `temp_${Date.now()}`
+    const optimisticSub: JobSubmission = {
+      id: tempId,
+      job_id: jobId,
+      status: 'proposed',
+      jobs: {
+        id: job.id,
+        public_title: job.public_title,
+        title: job.title,
+        wished_duration_months: job.wished_duration_months,
+        department: job.department,
+        description: job.description,
+        companies: job.companies ? {
+          id: job.companies.id,
+          name: job.companies.name,
+          contact_name: job.companies.contact_name ?? null,
+          contact_whatsapp: job.companies.contact_whatsapp ?? null,
+          contact_email: job.companies.contact_email ?? null,
+        } : null,
+      }
+    }
+    // Ajouter immédiatement dans submissions (apparaît dans "Jobs sélectionnés")
+    setSubmissions(prev => [optimisticSub, ...prev])
+
     try {
       const res = await fetch('/api/job-submissions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ case_id: caseId, job_id: jobId }),
       })
-      if (!res.ok) throw new Error()
-      showToastMsg('Job sélectionné ✅')
-      void fetchSubmissions()
-    } catch { showToastMsg('Erreur', false) }
-    finally { setProposingId(null) }
+      if (!res.ok) {
+        // Rollback si erreur
+        setSubmissions(prev => prev.filter(s => s.id !== tempId))
+        const err = await res.json().catch(() => ({})) as { error?: string }
+        showToastMsg(err.error ?? 'Erreur', false)
+        return
+      }
+      // Remplacer l'optimistic par la vraie soumission du serveur
+      const realSub = await res.json() as JobSubmission
+      setSubmissions(prev => prev.map(s => s.id === tempId ? realSub : s))
+      showToastMsg('✅ Job sélectionné !')
+    } catch {
+      // Rollback
+      setSubmissions(prev => prev.filter(s => s.id !== tempId))
+      showToastMsg('Erreur réseau', false)
+    } finally {
+      setProposingId(null)
+    }
   }
 
   async function updateSubmission(submissionId: string, fields: Record<string, unknown>) {
@@ -860,9 +913,14 @@ export function TabStaffing({
 
       {/* ── SECTION 2: JOBS SÉLECTIONNÉS ── */}
       <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-3">
-          Jobs sélectionnés ({sortedSubmissions.length})
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            💼 Jobs sélectionnés ({sortedSubmissions.length})
+          </h3>
+          {sortedSubmissions.length > 0 && (
+            <span className="text-[10px] text-zinc-400">Glisser pour réordonner</span>
+          )}
+        </div>
         {loading ? (
           <div className="space-y-2 animate-pulse">
             {[1, 2].map(i => <div key={i} className="h-20 bg-zinc-100 rounded-xl" />)}
@@ -897,7 +955,7 @@ export function TabStaffing({
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-            Jobs disponibles ({filteredJobs.length})
+            🔍 Jobs disponibles ({filteredJobs.length})
           </h3>
           <select value={sortBy} onChange={e => setSortBy(e.target.value as 'recent'|'company'|'dept')}
             className="text-xs border border-zinc-200 rounded-lg px-2 py-1 bg-white text-zinc-600">
