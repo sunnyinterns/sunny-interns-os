@@ -134,6 +134,7 @@ export default function JobsPage() {
       required_level: form.required_level || null,
       required_languages: form.required_languages.length > 0 ? form.required_languages : null,
       location: form.location || null,
+      destination_id: 'fc9ece85-e5d5-41d2-9142-79054244bbce',
     }
     const res = await fetch('/api/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     if (res.ok) {
