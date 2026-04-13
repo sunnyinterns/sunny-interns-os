@@ -413,8 +413,14 @@ export default function JobsPage() {
                 <input className={inputCls} placeholder="Ex: Community Manager" value={form.public_title} onChange={e => setForm(p => ({...p, public_title: e.target.value}))} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-zinc-600 mb-1">Département / Secteur</label>
-                <input className={inputCls} placeholder="Marketing, Tech…" value={form.department} onChange={e => setForm(p => ({...p, department: e.target.value}))} />
+                <label className="block text-xs font-medium text-zinc-600 mb-1">Departement / Metier</label>
+                <select className={inputCls} value={form.job_department_id} onChange={e => {
+                  const dept = jobDepartments.find(d => d.id === e.target.value)
+                  setForm(p => ({...p, job_department_id: e.target.value, department: dept?.name ?? p.department}))
+                }}>
+                  <option value="">— Selectionner un metier —</option>
+                  {jobDepartments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-zinc-600 mb-1">Description interne</label>
