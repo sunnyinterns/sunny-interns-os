@@ -40,13 +40,7 @@ const SECTIONS: Record<string, { title: string; items: SectionItem[] }> = {
       { href: 'scooters', icon: '🛵', label: 'Scooters', desc: 'Location scooter partenaires' },
     ],
   },
-  database: {
-    title: '📚 Base de données',
-    items: [
-      { href: 'schools', icon: '🎓', label: 'Écoles', desc: 'Universités et grandes écoles partenaires' },
-      { href: '../companies', icon: '🏢', label: 'Entreprises', desc: 'Base employeurs et clients (vers /companies)', external: true },
-    ],
-  },
+
   equipe: {
     title: '👥 Équipe & Accès',
     items: [
@@ -184,7 +178,6 @@ export default function SettingsPage() {
 
       <SettingsSection title={SECTIONS.administratif.title} items={SECTIONS.administratif.items} locale={locale} />
       <SettingsSection title={SECTIONS.partenaires.title} items={SECTIONS.partenaires.items} locale={locale} />
-      <SettingsSection title={SECTIONS.database.title} items={SECTIONS.database.items} locale={locale} />
       <SettingsSection title={SECTIONS.equipe.title} items={SECTIONS.equipe.items} locale={locale} />
     </div>
   )
