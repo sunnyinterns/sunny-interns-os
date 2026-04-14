@@ -20,6 +20,11 @@ interface Company {
   is_active: boolean
   is_employer?: boolean | null
   is_partner?: boolean | null
+  is_supplier?: boolean | null
+  partner_timing?: string | null
+  partner_category?: string | null
+  partner_deal?: string | null
+  partner_visible_from?: string | null
   onboarding_form_sent_at?: string | null
   onboarding_completed_at?: string | null
   jobs?: Job[]
@@ -50,6 +55,11 @@ const EMPTY_FORM = {
   // rôles
   is_employer: true,
   is_partner: false,
+  is_supplier: false,
+  partner_timing: 'both' as 'pre_arrival' | 'on_site' | 'both',
+  partner_category: '',
+  partner_deal: '',
+  partner_visible_from: 'payment' as 'payment' | 'arrival',
   // général
   name: '',
   website: '',
@@ -220,6 +230,11 @@ export default function CompaniesPage() {
       legal_type: form.legal_type || null,
       is_employer: form.is_employer,
       is_partner: form.is_partner,
+      is_supplier: form.is_supplier,
+      partner_timing: form.is_partner ? (form.partner_timing || 'both') : null,
+      partner_category: form.is_partner ? (form.partner_category || null) : null,
+      partner_deal: form.is_partner ? (form.partner_deal || null) : null,
+      partner_visible_from: form.is_partner ? (form.partner_visible_from || 'payment') : null,
       instagram_url: form.instagram_url || null,
       tiktok_url: form.tiktok_url || null,
       linkedin_url: form.linkedin_url || null,
@@ -378,20 +393,20 @@ export default function CompaniesPage() {
             <form onSubmit={createCompany} className="px-6 py-5 space-y-5 max-h-[75vh] overflow-y-auto">
 
               {/* SECTION 0 — Rôles */}
-              <div>
-                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">① Rôle(s) de cette entreprise</p>
-                <div className="flex flex-wrap gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={form.is_employer} onChange={e => setForm(p => ({...p, is_employer: e.target.checked}))} />
-                    <span className="text-sm font-medium">🏢 Employeur</span>
-                    <span className="text-xs text-zinc-400">(accueille des stagiaires)</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={form.is_partner} onChange={e => setForm(p => ({...p, is_partner: e.target.checked}))} />
-                    <span className="text-sm font-medium">🤝 Partenaire</span>
-                    <span className="text-xs text-zinc-400">(offre des deals aux stagiaires)</span>
-                  </label>
-                </div>
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">① Rôle(s) de cette entreprise</p>
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-zinc-700">
+                  <input type="checkbox" checked={form.is_employer} onChange={e => setForm(p => ({...p, is_employer: e.target.checked}))} className="rounded" />
+                  🏢 Employeur <span className="text-xs text-zinc-400">— recrute des stagiaires</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-zinc-700">
+                  <input type="checkbox" checked={form.is_partner} onChange={e => setForm(p => ({...p, is_partner: e.target.checked}))} className="rounded" />
+                  🤝 Partenaire <span className="text-xs text-zinc-400">— offre des deals aux étudiants</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-zinc-700">
+                  <input type="checkbox" checked={form.is_supplier} onChange={e => setForm(p => ({...p, is_supplier: e.target.checked}))} className="rounded" />
+                  📦 Fournisseur <span className="text-xs text-zinc-400">— suivi comptabilité interne</span>
+                </label>
               </div>
 
               <div className="border-t border-zinc-100" />
@@ -742,27 +757,51 @@ export default function CompaniesPage() {
                 </>
               )}
 
-              {/* SECTION 6 — Partenaire */}
+              {/* SECTION 6 — Partenariat */}
               {form.is_partner && (
                 <>
                   <div className="border-t border-zinc-100" />
                   <div className="space-y-3">
-                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">⑥ Détails de l&apos;offre partenaire</p>
+                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">⑥ Partenariat</p>
+
                     <div>
-                      <label className="block text-xs font-medium text-zinc-600 mb-1">Type de partenariat</label>
-                      <input value={form.partnership_type} onChange={e => setForm(p => ({...p, partnership_type: e.target.value}))} className={inputCls} placeholder="eSIM, Restaurant, Sport, Bien-être, Transport…" />
+                      <label className="block text-xs font-medium text-zinc-600 mb-1">Disponible</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {([['pre_arrival','Avant départ'],['on_site','Sur l\'île'],['both','Les deux']] as const).map(([val, label]) => (
+                          <button key={val} type="button"
+                            onClick={() => setForm(p => ({...p, partner_timing: val}))}
+                            className={`py-2 text-xs rounded-lg border transition-colors ${form.partner_timing === val ? 'bg-[#c8a96e] text-white border-[#c8a96e]' : 'bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300'}`}>
+                            {label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
+
                     <div>
-                      <label className="block text-xs font-medium text-zinc-600 mb-1">Offre / Deal pour les stagiaires</label>
-                      <textarea value={form.partner_offer_details} onChange={e => setForm(p => ({...p, partner_offer_details: e.target.value}))} className={inputCls} rows={2} placeholder="Ex: 15% de réduction sur présentation de la carte Bali Interns…" />
+                      <label className="block text-xs font-medium text-zinc-600 mb-1">Visible dans le portail dès</label>
+                      <select value={form.partner_visible_from} onChange={e => setForm(p => ({...p, partner_visible_from: e.target.value as 'payment' | 'arrival'}))} className={inputCls}>
+                        <option value="payment">Paiement validé (Welcome Kit)</option>
+                        <option value="arrival">Arrivée à Bali (statut Actif)</option>
+                      </select>
                     </div>
+
                     <div>
-                      <label className="block text-xs font-medium text-zinc-600 mb-1">Conditions</label>
-                      <input value={form.partner_conditions} onChange={e => setForm(p => ({...p, partner_conditions: e.target.value}))} className={inputCls} placeholder="Ex: Valable uniquement pour nos stagiaires actifs" />
+                      <label className="block text-xs font-medium text-zinc-600 mb-1">Catégorie</label>
+                      <input value={form.partner_category} onChange={e => setForm(p => ({...p, partner_category: e.target.value}))}
+                        className={inputCls} placeholder="eSIM, Assurance, VPN, Restaurant, Transport, Sport…" list="partner-categories" />
+                      <datalist id="partner-categories">
+                        {['eSIM','Assurance','VPN','Transport','Logement','Restaurant','Sport & Wellness','Coworking','Shopping','Banque','Services','Autre'].map(c => (
+                          <option key={c} value={c} />
+                        ))}
+                      </datalist>
+                      <p className="text-[10px] text-zinc-400 mt-0.5">Saisie libre — créez une nouvelle catégorie en tapant</p>
                     </div>
+
                     <div>
-                      <label className="block text-xs font-medium text-zinc-600 mb-1">Lien de réservation</label>
-                      <input type="url" value={form.partner_booking_url} onChange={e => setForm(p => ({...p, partner_booking_url: e.target.value}))} className={inputCls} placeholder="https://…" />
+                      <label className="block text-xs font-medium text-zinc-600 mb-1">Offre / Deal <span className="text-amber-600 text-[10px] font-medium">🇬🇧 EN — visible étudiant</span></label>
+                      <textarea value={form.partner_deal} onChange={e => setForm(p => ({...p, partner_deal: e.target.value}))}
+                        className={inputCls} rows={3}
+                        placeholder="Ex: 15% off on all eSIM plans with code BALIINTERNS — valid for active interns only" />
                     </div>
                   </div>
                 </>
