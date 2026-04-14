@@ -396,15 +396,7 @@ export default function ContactsPage() {
                   <label className="block text-xs font-medium text-zinc-600 mb-1">Titre / Poste</label>
                   <input className={inputCls} placeholder="Ex: DRH, Manager…" value={form.job_title} onChange={e => setForm(p => ({...p, job_title: e.target.value}))} />
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1">Catégorie</label>
-                  <select className={inputCls} value={form.contact_type} onChange={e => setForm(p => ({...p, contact_type: e.target.value}))}>
-                    <option value="employer">Employeur / Entreprise</option>
-                    <option value="promo_partner">Partenaire promo</option>
-                    <option value="visa_agent">Agent visa</option>
-                    <option value="school_contact">École / Université</option>
-                  </select>
-                </div>
+
                 <div>
                   <label className="block text-xs font-medium text-zinc-600 mb-1">Email</label>
                   <input type="email" className={inputCls} value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} />
