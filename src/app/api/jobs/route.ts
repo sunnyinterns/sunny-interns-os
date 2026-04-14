@@ -9,6 +9,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const status = searchParams.get('status')
   const departmentId = searchParams.get('department_id')
+  const view = searchParams.get('view')
+  const parentId = searchParams.get('parent_id')
 
   let query = supabase
     .from('jobs')
@@ -16,6 +18,8 @@ export async function GET(request: Request) {
       id, title, public_title, department, status, wished_duration_months,
       wished_start_date, required_level, created_at, updated_at, job_department_id, is_active,
       remote_ok, remote_work, is_remote, location, description,
+      actual_end_date, company_type, tools_required, missions, profile_sought,
+      is_recurring, parent_job_id, background_image_url,
       companies(id, name, contact_name, contact_email, contact_whatsapp, whatsapp_number),
       contacts(id, first_name, last_name),
       job_submissions(id, status),
@@ -23,8 +27,14 @@ export async function GET(request: Request) {
     `)
     .order('created_at', { ascending: false })
 
-  if (status && status !== 'all') query = query.eq('status', status)
+  if (view === 'soon') {
+    const in60 = new Date(Date.now() + 60 * 24 * 3600 * 1000).toISOString().split('T')[0]
+    query = query.eq('status', 'staffed').not('actual_end_date', 'is', null).lte('actual_end_date', in60)
+  } else {
+    if (status && status !== 'all') query = query.eq('status', status)
+  }
   if (departmentId) query = query.eq('job_department_id', departmentId)
+  if (parentId) query = query.or(`parent_job_id.eq.${parentId},id.eq.${parentId}`)
 
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -59,9 +69,20 @@ export async function POST(request: Request) {
     if (contact?.company_id) body.company_id = contact.company_id
   }
 
+  const safeBody: Record<string, unknown> = {
+    ...body,
+    wished_duration_months: body.wished_duration_months ? Number(body.wished_duration_months) : null,
+    max_candidates: body.max_candidates ? Number(body.max_candidates) : 1,
+    is_recurring: Boolean(body.is_recurring ?? false),
+    required_languages: Array.isArray(body.required_languages) ? body.required_languages : [],
+    missions: Array.isArray(body.missions) ? body.missions : [],
+    tools_required: Array.isArray(body.tools_required) ? body.tools_required : [],
+    skills_required: Array.isArray(body.skills_required) ? body.skills_required : [],
+  }
+
   const { data, error } = await supabase
     .from('jobs')
-    .insert(body)
+    .insert(safeBody)
     .select('*, companies(id, name), contacts(id, first_name, last_name)')
     .single()
 
