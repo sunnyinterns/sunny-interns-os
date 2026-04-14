@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 interface Contact {
   id: string
@@ -82,6 +83,7 @@ export default function CompanyDetailPage() {
   const params = useParams()
   const router = useRouter()
   const companyId = params.id as string
+  const locale = typeof params?.locale === 'string' ? params.locale : 'fr'
 
   const [company, setCompany] = useState<Company | null>(null)
   const [loading, setLoading] = useState(true)
@@ -648,21 +650,22 @@ export default function CompanyDetailPage() {
       {activeTab === 'contacts' && (
         <div className="space-y-3">
           {company.contacts?.map((contact) => (
-            <div key={contact.id} className="bg-white border border-zinc-100 rounded-xl px-4 py-3 flex items-center gap-4">
+            <Link key={contact.id} href={`/${locale}/contacts/${contact.id}`} className="bg-white border border-zinc-100 rounded-xl px-4 py-3 flex items-center gap-4 hover:border-[#c8a96e] hover:shadow-sm transition-all block">
               <div className="w-8 h-8 rounded-full bg-[#c8a96e]/20 flex items-center justify-center flex-shrink-0">
                 <span className="text-[#c8a96e] text-xs font-semibold">
-                  {contact.name.charAt(0).toUpperCase()}
+                  {((contact.first_name ?? contact.name ?? '?')[0] ?? '?').toUpperCase()}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[#1a1918]">{contact.name}</p>
-                {contact.role && <p className="text-xs text-zinc-500">{contact.role}</p>}
+                <p className="text-sm font-medium text-[#1a1918]">{[contact.first_name, contact.last_name].filter(Boolean).join(' ') || contact.name || 'Contact'}</p>
+                {contact.job_title && <p className="text-xs text-zinc-500">{contact.job_title}</p>}
               </div>
               <div className="text-right text-xs text-zinc-500 space-y-0.5">
                 {contact.email && <p>{contact.email}</p>}
-                {contact.phone && <p>{contact.phone}</p>}
+                {contact.whatsapp && <p>{contact.whatsapp}</p>}
               </div>
-            </div>
+              <span className="text-zinc-300 ml-2">→</span>
+            </Link>
           ))}
 
           {showContactForm ? (
@@ -732,12 +735,15 @@ export default function CompanyDetailPage() {
             <p className="text-sm text-zinc-400 py-4 text-center">Aucune offre liée à cette entreprise.</p>
           )}
           {company.jobs?.map((job) => (
-            <div key={job.id} className="bg-white border border-zinc-100 rounded-xl px-4 py-3 flex items-center justify-between">
-              <p className="text-sm font-medium text-[#1a1918]">{job.title}</p>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${job.status === 'open' ? 'bg-green-100 text-[#0d9e75]' : 'bg-zinc-100 text-zinc-500'}`}>
-                {job.status === 'open' ? 'Ouverte' : job.status}
-              </span>
-            </div>
+            <Link key={job.id} href={`/${locale}/jobs`} className="bg-white border border-zinc-100 rounded-xl px-4 py-3 flex items-center justify-between hover:border-[#c8a96e] hover:shadow-sm transition-all block">
+              <p className="text-sm font-medium text-[#1a1918]">{job.title ?? 'Offre sans titre'}</p>
+              <div className="flex items-center gap-2">
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${job.status === 'open' ? 'bg-green-100 text-[#0d9e75]' : 'bg-zinc-100 text-zinc-500'}`}>
+                  {job.status === 'open' ? 'Ouverte' : job.status}
+                </span>
+                <span className="text-zinc-300">→</span>
+              </div>
+            </Link>
           ))}
         </div>
       )}
@@ -748,12 +754,12 @@ export default function CompanyDetailPage() {
             <p className="text-sm text-zinc-400 py-4 text-center">Aucun stagiaire pour cette entreprise.</p>
           )}
           {company.cases?.map((c) => (
-            <div key={c.id} className="bg-white border border-zinc-100 rounded-xl px-4 py-3 flex items-center justify-between">
+            <Link key={c.id} href={`/${locale}/cases/${c.id}`} className="bg-white border border-zinc-100 rounded-xl px-4 py-3 flex items-center justify-between hover:border-[#c8a96e] hover:shadow-sm transition-all block">
               <p className="text-sm font-medium text-[#1a1918]">
                 {c.interns ? `${c.interns.first_name} ${c.interns.last_name}` : 'Stagiaire inconnu'}
               </p>
-              <span className="text-xs text-zinc-500">{c.status}</span>
-            </div>
+              <div className="flex items-center gap-2"><span className="text-xs text-zinc-500">{c.status}</span><span className="text-zinc-300">→</span></div>
+            </Link>
           ))}
         </div>
       )}
