@@ -762,6 +762,7 @@ export default function ApplyPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: form.school_custom_name,
+            country: form.school_country || null,
             submitted_by_email: form.email,
           }),
         })
@@ -1406,8 +1407,8 @@ export default function ApplyPage() {
                       </div>
                     )}
                   </div>
-                  {schoolResults.length > 0 && form.school_search.length >= 2 && !form.school_name && (
-                    <div className="absolute z-40 w-full mt-1 max-h-48 overflow-y-auto bg-white border border-zinc-200 rounded-xl shadow-lg">
+                  {schoolResults.length > 0 && !form.school_name && (
+                    <div className="absolute z-40 w-full mt-1 max-h-64 overflow-y-auto bg-white border border-zinc-200 rounded-xl shadow-lg">
                       {schoolResults.map(s => (
                         <button
                           key={s.id}
@@ -1418,42 +1419,56 @@ export default function ApplyPage() {
                             set('school_search', '')
                             setSchoolResults([])
                           }}
-                          className="w-full text-left px-4 py-2 text-sm text-[#1a1918] hover:bg-zinc-100"
+                          className="w-full text-left px-4 py-3 hover:bg-zinc-50 border-b border-zinc-50 last:border-0 flex items-center gap-3"
                         >
-                          <span className="font-medium">{s.name}</span>
-                          {s.city && <span className="text-zinc-500"> {'\u2014'} {s.city}{s.country ? `, ${s.country}` : ''}</span>}
+                          <div className="w-7 h-7 rounded-full bg-[#c8a96e]/10 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-bold text-[#c8a96e]">{s.name[0]}</span>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-[#1a1918]">{s.name}</p>
+                            {s.city && <p className="text-xs text-zinc-400">{s.city}{s.country ? ` — ${s.country}` : ''}</p>}
+                          </div>
                         </button>
                       ))}
                     </div>
                   )}
                   <button
                     type="button"
-                    onClick={() => set('school_not_found', true)}
-                    className="mt-2 text-xs text-[#c8a96e] underline hover:text-[#b8945a]"
+                    onClick={() => { set('school_not_found', true); set('school_name', ''); set('school_id', null); set('school_search', '') }}
+                    className="mt-2 text-sm text-zinc-400 hover:text-zinc-600 flex items-center gap-1.5 py-1"
                   >
-                    {lang==='fr'?"Mon \u00e9cole n\u2019est pas dans la liste":'My school is not in the list'}
+                    <span className="text-base">+</span>
+                    {lang === 'fr' ? "Mon école n'est pas dans la liste" : 'My school is not listed'}
                   </button>
                 </>
               ) : (
-                <>
-                  <input
-                    type="text"
-                    value={form.school_custom_name}
-                    onChange={e => set('school_custom_name', e.target.value)}
-                    className={inputClass}
-                    placeholder={lang==='fr'?'Nom de ton \u00e9cole':'Your school name'}
-                  />
+                <div className="mt-3 space-y-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                  <div className="flex items-start gap-2">
+                    <span className="text-amber-600 text-sm">⚠️</span>
+                    <p className="text-xs text-amber-700">
+                      {lang === 'fr'
+                        ? 'Nous allons ajouter ton école à notre base de données. Elle sera validée par notre équipe.'
+                        : 'We will add your school to our database. It will be validated by our team.'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className={labelClass}>{lang==='fr'?'Nom exact de ton école / université *':'Exact name of your school / university *'}</label>
+                    <input
+                      type="text"
+                      value={form.school_custom_name}
+                      onChange={e => set('school_custom_name', e.target.value)}
+                      className={inputClass}
+                      placeholder={lang==='fr' ? 'ex: École Supérieure de Commerce de Paris' : 'ex: Paris Business School'}
+                    />
+                  </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      set('school_not_found', false)
-                      set('school_custom_name', '')
-                    }}
-                    className="mt-2 text-xs text-[#c8a96e] underline hover:text-[#b8945a]"
+                    onClick={() => { set('school_not_found', false); set('school_custom_name', '') }}
+                    className="text-xs text-zinc-400 hover:text-zinc-600"
                   >
-                    {lang==='fr'?'Retour \u00e0 la recherche':'Back to search'}
+                    ← {lang === 'fr' ? 'Retour à la recherche' : 'Back to search'}
                   </button>
-                </>
+                </div>
               )}
             </div>
 
