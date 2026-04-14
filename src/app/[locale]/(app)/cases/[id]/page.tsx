@@ -43,12 +43,12 @@ const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> 
 }
 
 const NEXT_ACTIONS: Record<string, { text: string; cta: string | null; action: string | null }> = {
-  lead: { text: 'Booker un RDV de qualification', cta: 'Booker RDV', action: 'profil' },
-  rdv_booked: { text: "Faire l'entretien et qualifier", cta: 'Voir Meet', action: 'meet' },
-  qualification_done: { text: 'Proposer des offres de stage', cta: 'Proposer job', action: 'jobs' },
-  job_submitted: { text: 'Attendre la reponse candidat/employeur', cta: null, action: null },
-  job_retained: { text: 'Envoyer la convention de stage', cta: null, action: null },
-  convention_signed: { text: 'Demander le paiement', cta: null, action: null },
+  lead: { text: 'Booker un entretien de qualification avec le candidat', cta: '📅 Booker RDV', action: 'profil' },
+  rdv_booked: { text: "Mener l'entretien et qualifier dans l'onglet Staffing", cta: '💼 Aller au Staffing', action: 'staffing' },
+  qualification_done: { text: 'Proposer des offres de stage adaptées au profil', cta: '💼 Staffing', action: 'staffing' },
+  job_submitted: { text: 'En attente de retour des employeurs (~5-7 jours)', cta: null, action: null },
+  job_retained: { text: 'Félicitations ! Envoyer la convention de stage au candidat', cta: '📝 Staffing', action: 'staffing' },
+  convention_signed: { text: 'Ce candidat est maintenant un client', cta: '→ Fiche Client', action: 'client' },
   payment_pending: { text: 'Confirmer la reception du paiement', cta: 'Marquer paye', action: 'mark_paid' },
   payment_received: { text: 'Preparer les documents visa', cta: null, action: null },
   visa_docs_sent: { text: "Envoyer le dossier a l'agent FAZZA", cta: 'Envoyer FAZZA', action: 'visa' },
@@ -226,6 +226,9 @@ export default function CaseDetailPage() {
       case 'jobs':
       case 'staffing':
         setActiveTab('staffing')
+        break
+      case 'client':
+        router.push(`/${locale}/clients/${caseData.id}`)
         break
     }
   }

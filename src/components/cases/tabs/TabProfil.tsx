@@ -401,7 +401,7 @@ export function TabProfil({ intern, internId, caseId, schoolName, schoolId }: Ta
               {schoolName || '—'} <span className="text-[10px]">↗</span>
             </a>
           ) : (
-            <span className="text-sm text-[#1a1918]">{schoolName || <span className="text-zinc-300">—</span>}</span>
+            <EditableField label="" value={schoolName ?? null} fieldKey="school_name" internId={iid} caseId={caseId} />
           )}
         </div>
         <EditableField label="Pays d'études" value={intern.school_contact_name ? undefined : (intern as Record<string, unknown>).school_country as string | undefined} fieldKey="school_country" internId={iid} caseId={caseId} />
