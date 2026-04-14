@@ -9,10 +9,16 @@ import { TabProfil } from '@/components/cases/tabs/TabProfil'
 import { TabStaffing } from '@/components/cases/tabs/TabStaffing'
 import { TabHistorique } from '@/components/cases/tabs/TabHistorique'
 import { InternCardDigital } from '@/components/cases/InternCardDigital'
-import type { CaseStatus } from '@/lib/types'
-import { ProcessTimeline } from '@/components/cases/ProcessTimeline'
 
 const CANDIDATE_STATUSES = ['lead', 'rdv_booked', 'qualification_done', 'job_submitted', 'job_retained', 'convention_signed']
+
+const STATUTS_TIMELINE = [
+  { key: 'lead', icon: '🌱', label: 'Lead' },
+  { key: 'rdv_booked', icon: '📅', label: 'RDV' },
+  { key: 'qualification_done', icon: '✅', label: 'Qualifié' },
+  { key: 'job_submitted', icon: '💼', label: 'Jobs envoyés' },
+  { key: 'job_retained', icon: '🤝', label: 'Job retenu' },
+]
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CaseDetail = Record<string, any>
@@ -99,7 +105,24 @@ export default function CaseDetailPage() {
   }, [])
 
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showStatusModal, setShowStatusModal] = useState(false)
   const [showInternCard, setShowInternCard] = useState(false)
+
+  async function changeStatus(newStatus: string) {
+    if (!id) return
+    try {
+      const r = await fetch(`/api/cases/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      if (r.ok) {
+        setCaseData((prev: CaseDetail | null) => prev ? { ...prev, status: newStatus } : prev)
+      }
+    } catch {
+      // ignore
+    }
+  }
   const [sendingRecap, setSendingRecap] = useState(false)
   const [recapSent, setRecapSent] = useState(false)
 
@@ -351,16 +374,32 @@ export default function CaseDetailPage() {
               </div>
             </div>
 
-            {/* Colonne droite: timeline (masquée en mode compact) */}
+            {/* Colonne droite: timeline 5 étapes + bouton ✏️ (masquée en mode compact) */}
             <div className={`flex-1 transition-all duration-200 ${headerCompact ? 'hidden' : 'block'}`}>
-              <ProcessTimeline
-                caseId={caseData.id}
-                currentStatus={caseData.status as CaseStatus}
-                onStatusChange={(newStatus: CaseStatus) => {
-                  setCaseData((prev: Record<string,unknown> | null) => prev ? { ...prev, status: newStatus } : prev)
-                }}
-                isVisaOnly={isVisaOnly}
-              />
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 overflow-x-auto">
+                  {STATUTS_TIMELINE.map((s, i) => {
+                    const idx = STATUTS_TIMELINE.findIndex(x => x.key === caseData.status)
+                    const reached = i <= idx
+                    return (
+                      <div key={s.key} className="flex items-center gap-1 flex-shrink-0">
+                        <div className={`flex flex-col items-center gap-0.5 ${reached ? 'opacity-100' : 'opacity-25'}`}>
+                          <span className="text-sm">{s.icon}</span>
+                          <span className="text-[9px] text-zinc-500 text-center max-w-[44px] leading-tight">{s.label}</span>
+                        </div>
+                        {i < STATUTS_TIMELINE.length - 1 && (
+                          <div className={`h-0.5 w-4 mt-[-10px] rounded-full flex-shrink-0 ${i < idx ? 'bg-[#c8a96e]' : 'bg-zinc-200'}`} />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+                <button onClick={() => setShowStatusModal(true)}
+                  className="ml-2 text-xs px-2 py-1 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 rounded-lg flex-shrink-0"
+                  title="Modifier le statut">
+                  ✏️
+                </button>
+              </div>
               {/* Badge statut actuel + infos clés */}
               <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                 <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
@@ -510,6 +549,30 @@ export default function CaseDetailPage() {
           onClose={() => setShowEditModal(false)}
           onSuccess={() => { setShowEditModal(false); void fetchCase() }}
         />
+      )}
+
+      {showStatusModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setShowStatusModal(false)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-bold text-base mb-1">Modifier le statut</h3>
+            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+              ⚠️ Changer le statut manuellement peut déclencher des automatisations.
+            </p>
+            <div className="space-y-2">
+              {STATUTS_TIMELINE.map((s) => (
+                <button key={s.key}
+                  onClick={() => { void changeStatus(s.key); setShowStatusModal(false) }}
+                  disabled={s.key === caseData.status}
+                  className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                    s.key === caseData.status ? 'bg-[#c8a96e] text-white cursor-default' : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-700'
+                  }`}>
+                  {s.icon} {s.label}{s.key === caseData.status ? ' ← actuel' : ''}
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setShowStatusModal(false)} className="mt-4 w-full py-2 text-sm text-zinc-400">Annuler</button>
+          </div>
+        </div>
       )}
 
       {showInternCard && (
