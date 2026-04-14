@@ -10,7 +10,10 @@ export async function GET(request: Request) {
   const companyId = searchParams.get('company_id')
   let query = supabase
     .from('contacts')
-    .select('*, companies(id, name)')
+    .select(`
+      id, first_name, last_name, job_title, email, whatsapp, company_id,
+      companies(id, name, description, industry, company_type, location, internship_city, logo_url, website, contact_whatsapp)
+    `)
     .order('first_name')
 
   if (companyId) query = query.eq('company_id', companyId)
