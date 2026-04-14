@@ -1,218 +1,279 @@
-# Sunny Interns OS — Claude Code Context (vérifié le 13 avril 2026)
+# CLAUDE.md — Sunny Interns OS
+> Mis à jour le 14 avril 2026. Lire ce fichier EN ENTIER avant toute action.
 
-## Projet
-OS interne de Sunny Interns (ex-Bali Interns). Remplace Airtable + FillOut + Squarespace.
-- Fondateur : Sidney Ruby
-- Directeur terrain : Charly Gestede (charly@bali-interns.com)
-- Supabase project : djoqjgiyseobotsjqcgz (ap-southeast-2)
-- GitHub : github.com/sunnyinterns/sunny-interns-os
+---
 
-## Regles ABSOLUES
-1. Un sprint = une mission complete. Jamais de demi-sprint.
-2. Ne jamais creer de fichier placeholder ou TODO. Si c'est dans le sprint, c'est implemente.
-3. Ne jamais ajouter de dependances hors stack validee sans alerter Sidney.
-4. Chaque commit = tests verts. Zero commit rouge.
-5. Finir par : SPRINT-XXX DONE + [fichiers crees] + [tests] + [1 chose a verifier]
-6. Ne jamais demander permission pour des decisions techniques mineures. Tranche seul.
-7. Si bloque > 10min : liste le probleme + 3 solutions. Ne tourne pas en rond.
+## RÈGLES ABSOLUES
 
-## Stack
-- Next.js 15 App Router sur Vercel
-- Supabase (PostgreSQL + Storage + Auth + Realtime)
-- TypeScript strict
-- Tailwind CSS v4
-- next-intl (FR/EN)
-- Resend + React Email
-- react-pdf (server-side)
-- Claude API (Anthropic) pour AI matching
-- Remotion (video auto jobs)
-- Web Push API natif
-- @dnd-kit (drag & drop)
-- Fillout (scheduling form externe)
-- Google Calendar OAuth (sync RDVs)
+1. **NE JAMAIS S'ARRÊTER** sur une erreur non-critique — continuer et corriger
+2. **TOUJOURS** `npx tsc --noEmit` avant de push — zéro erreur TS tolérée
+3. **TOUJOURS** push après chaque section terminée
+4. **JAMAIS** toucher aux migrations Supabase manuellement — utiliser `supabase/migrations/`
+5. **JAMAIS** committer des secrets ou API keys
 
-## Design tokens
-- sidebar : #111110
-- accent : #c8a96e (or Sunny Interns)
-- critical : #dc2626
-- attention : #d97706
-- success : #0d9e75
-- surface : #fafaf7
-- text : #1a1918
+---
 
-## URLs
-- Prod: https://sunny-interns-os.vercel.app
-- Vercel project: prj_Rx8XVuT5UXdByUbAyy1b8KFuSCt6
+## PROJET
 
-## Commandes dev
-- Dev local: npm run dev (port 3000)
-- Build check: npx tsc --noEmit
-- Deploy: git push origin main (auto-deploy Vercel)
-- Jamais arreter sur erreur non-critique
-- Push apres chaque section complete
+**Nom:** Sunny Interns OS  
+**Domaine:** Plateforme de gestion de stages à Bali (Bali Interns)  
+**URL prod:** https://sunny-interns-os.vercel.app  
+**Login admin:** sidney.ruby@gmail.com / SunnyInterns2026!  
+**Repo:** github.com/sunnyinterns/sunny-interns-os  
+**Branch:** main (auto-deploy Vercel)
 
-## Variables d'env (.env.local)
-NEXT_PUBLIC_SUPABASE_URL=https://djoqjgiyseobotsjqcgz.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=[depuis Supabase Settings > API]
-SUPABASE_SERVICE_ROLE_KEY=[depuis Supabase Settings > API]
-GOOGLE_CLIENT_ID=[Google Cloud Console]
-GOOGLE_CLIENT_SECRET=[Google Cloud Console]
-GOOGLE_REFRESH_TOKEN=[OAuth refresh token Charly]
-RESEND_API_KEY=[resend.com]
-ANTHROPIC_API_KEY=[deja dans ~/.zshrc]
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+---
 
-## Variables d'env cles (dans Vercel)
-- NEXT_PUBLIC_SUPABASE_URL
-- SUPABASE_SERVICE_ROLE_KEY
-- RESEND_API_KEY
-- NEXT_PUBLIC_APP_URL=https://sunny-interns-os.vercel.app
+## STACK
 
-## Architecture pages (sidebar)
-- /apply — Formulaire candidature (desktop + mobile)
-- /fr/feed — Dashboard KPIs + Calendar widget
-- /fr/leads — Leads multi-sources (formulaire, LinkedIn, Facebook...)
-- /fr/cases — Liste candidats avec filtres par statut
-- /fr/cases/[id] — Dossier candidat v2:
-  * Header fixe: avatar LinkedIn, nom, age, pays, Gmail/WA buttons, timeline statuts
-  * Onglets: Process | Profil | Staffing | Visa | Arrivee | Facturation
-- /fr/pipeline — Kanban par statuts
-- /fr/calendar — Calendrier RDVs Google
-- /fr/activity — Feed activite temps reel
-- /fr/todo — Alertes et taches prioritaires
-- /fr/jobs — Offres de stage
-- /portal/[token] — Portail candidat
+- **Framework:** Next.js 15 App Router (`src/app/`)
+- **Auth:** Supabase Auth
+- **DB:** Supabase PostgreSQL (projet: `djoqjgiyseobotsjqcgz`, région: ap-southeast-2)
+- **Storage:** Supabase Storage (bucket: `intern-cvs`)
+- **Email:** Resend (`re_iVgsct7X_5D9V3WBUcMkasGKoMufamXfp`) FROM: `Charly de Bali Interns <team@bali-interns.com>`
+- **Deploy:** Vercel (`prj_Rx8XVuT5UXdByUbAyy1b8KFuSCt6` / team `team_0lWgPrvXiZcdCgp1xc2uV8Ff`)
+- **i18n:** `/fr/` (locale par défaut)
 
-## Structure src/
-src/
-  app/[locale]/(auth)/login/
-  app/[locale]/(app)/feed/
-  app/[locale]/(app)/leads/
-  app/[locale]/(app)/pipeline/
-  app/[locale]/(app)/cases/[id]/
-  app/[locale]/(app)/jobs/
-  app/[locale]/(app)/calendar/
-  app/[locale]/(app)/activity/
-  app/[locale]/(app)/todo/
-  app/[locale]/(app)/settings/
-  app/apply/                     (formulaire public)
-  app/apply/mobile/              (MobileApply.tsx)
-  app/portal/[token]/            (portail candidat)
-  app/api/webhooks/fillout-rdv/  (webhook Fillout)
-  app/api/calendar/google-sync/  (sync Google Calendar)
-  components/layout/   (AppShell, Sidebar)
-  components/ui/       (Button, Badge, Avatar, Card, Toast, DatePickerInput, DateSelectPicker, CommandPalette)
-  components/cases/    (tabs/TabProcess, TabProfil, TabStaffing, TabVisa, TabArrivee, TabFacturation)
-  lib/supabase/        (client.ts, server.ts, types.ts)
-  lib/email/           (resend.ts — sendRdvConfirmation, sendNewLeadInternal, sendJobRetenu, etc.)
-  lib/ai/              (claude.ts, prompts/)
+---
 
-## Statuts dossiers (enum case_status)
-lead -> rdv_booked -> qualification_done -> job_submitted -> job_retained ->
-convention_signed -> payment_pending -> payment_received -> visa_docs_sent ->
-visa_submitted -> visa_in_progress -> visa_received -> arrival_prep -> active -> alumni -> completed
-+ etats: not_interested, not_qualified, on_hold, suspended, visa_refused, archived
+## INFOS CLÉS
 
-## Retro-planning (depuis date d'arrivee)
-- J-40 : billet confirme (ATTENTION)
-- J-30 : paiement recu (CRITIQUE)
-- J-30 : visa soumis agent (CRITIQUE)
-- J-7  : visa recu (CRITIQUE)
-- J-2  : chauffeur notifie (ATTENTION)
-- J-0  : chauffeur rappel (ATTENTION)
+| Service | Valeur |
+|---------|--------|
+| Supabase URL | `https://djoqjgiyseobotsjqcgz.supabase.co` |
+| Fillout Form ID | `gn4Zg9eydFus` (RDV 45min) |
+| WhatsApp Bali | `+33643487736` |
+| Destination ID | `fc9ece85-e5d5-41d2-9142-79054244bbce` |
+| Resend domain | `bali-interns.com` ✅ VERIFIED |
 
-## Regles metier CRITIQUES
-1. Duree sejour MAX 175j (visa B211A). Alerte a 165j. Calcul EXACT :
-   Math.floor((returnDate - arrivalDate) / (1000 * 60 * 60 * 24))
-   TEST: 3 avril -> 16 septembre = 166j (pas 197j — bug Airtable corrige)
-2. Facture envoyee APRES paiement confirme. Jamais avant.
-3. PT THE ABUNDANCE GUILD = is_active:false -> alerte rouge dans billing
-4. Automations arrivee bloquees si visa_received_at IS NULL ou flight_number IS NULL
-5. Email unique — doublon bloque a la soumission
-6. Suppression protegee — company/school/job lies a dossiers actifs
-7. Passeport 6 mois apres date d'arrivee — verification auto
-8. IBAN lie a l'entite legale — selectable par client, UK par defaut
-9. FillOut supprime — tout est natif dans l'OS (sauf scheduling = Fillout iframe)
-10. Tous les templates editables dans l'interface admin (emails, contrats, PDFs, WhatsApp)
+---
 
-## Formulaire /apply
-- Desktop: 6 etapes (Ce que tu cherches -> Identite -> Profil -> Stage ideal -> Prix -> RDV Fillout)
-- Mobile: MobileApply.tsx — meme ordre que desktop (question par question)
-- Capture lead: onBlur email -> POST /api/applications/capture-email -> table leads
-- UPSERT atomique (contrainte UNIQUE email+source) — plus de doublons
-- Etape finale: iframe Fillout https://form.fillout.com/t/gn4Zg9eydFus?Email=xxx&Name=xxx
-- Fillout page Fields (champs caches Name/Email) -> Schedule -> Confirmation
+## ARCHITECTURE CANDIDATS VS CLIENTS
 
-## Fillout config
-- Form: gn4Zg9eydFus
-- Webhook: POST https://sunny-interns-os.vercel.app/api/webhooks/fillout-rdv (200 OK)
-- Integration Webhook activee et publiee
-- Page Fields: Name + Email (Hidden, Default = URL params) -> Booking page Respondent name/email relies
+### CANDIDAT (`/fr/cases/[id]`)
+Statuts: `lead → rdv_booked → qualification_done → job_submitted → job_retained → convention_signed`
 
-## Resend
-- Domaine: bali-interns.com — STATUS: verified
-- Domain ID: c29683c9-dba6-4cb3-8a4b-aa8aaa37d9ae
-- FROM: Charly de Bali Interns <team@bali-interns.com>
-- Emails: sendRdvConfirmation, sendNewLeadInternal, sendJobRetenu, sendJobSubmittedEmployer, sendPaymentRequest, sendWelcomeKit, sendAppAllIndonesia, sendAlerteArrivee, sendDossierPretAgent, sendNewCustomerFazza
+Onglets: **👤 Profil | 💼 Staffing | 📋 Historique**
+- Pas de Facturation/Visa/Arrivée (→ dans Clients)
+- À `convention_signed`: bannière orange "→ Voir la fiche client"
 
-## DB (Supabase)
-- Tables principales: interns, cases, leads, jobs, companies, schools, calendar_events, activity_feed, case_logs, admin_notifications, cv_feedback_history, job_submissions, packages, visa_agents
-- Contrainte UNIQUE: leads(email, source)
-- Statuts case: voir section Statuts dossiers ci-dessus
-- Statuts lead: new -> contacted -> nurturing -> converted | dead (convertis masques dans /fr/leads)
+### CLIENT (`/fr/clients/[id]`)
+Statuts: `convention_signed → payment_pending → payment_received → visa_docs_sent → visa_submitted → visa_in_progress → visa_received → arrival_prep → active → alumni → completed`
 
-## Activity Feed — 4 zones
-1. Aujourd'hui — deadlines du jour
-2. A faire maintenant — triees par urgence J-X
-3. En attente — bloque externement
-4. Complete aujourd'hui — visible grise
+Onglets: **👤 Profil | 💶 Facturation | 🛂 Visa | 🛫 Arrivée | 📋 Historique**
 
-## Onglets dossier candidat (/fr/cases/[id])
-1. Processus (TabProcess) — timeline statuts, actions statut
-2. Profil (TabProfil) — identite, passeport, ecole, contact urgence
-3. Staffing (TabStaffing) — stage ideal, CV (upload/preview/statut), jobs disponibles, jobs selectionnes (drag & drop)
-4. Facturation (TabFacturation) — package, paiement, facture, FAZZA
-5. Visa (TabVisa) — 8 sections: package visa, agent visa, documents requis, suivi visa, dates cles, notes agent, historique, alertes
-6. Arrivee (TabArrivee) — vol, chauffeur, welcome kit, logement
+### APIs de filtrage
+- `GET /api/cases?type=candidate` → statuts candidats uniquement
+- `GET /api/cases?type=client` → statuts clients uniquement
 
-## cv_status sur cases
-- Valeurs: pending | validated | to_redo
-- Menu deroulant dans TabStaffing (colonne CV)
-- cv_status=validated requis pour envoyer CV a l'employeur
+---
 
-## Jobs demo
-- 9 offres ouvertes (status=open), 6 entreprises
-- Contact par defaut: sidney.ruby@gmail.com
-- Affichees dans TabStaffing section "Jobs disponibles"
+## FLUX COMPLET
 
-## Settings page
-- Route: /fr/settings
-- Lien sidebar: Parametres (icone engrenage)
-- Sections: WhatsApp templates, email config, Fillout scheduling
+```
+/apply → lead (DB) → [Fillout booking] → rdv_booked
+→ Débrief entretien (TabStaffing) → qualification_done
+→ Jobs proposés (DnD Staffing) → job_submitted
+→ Retenu par employeur → job_retained
+→ Convention signée → convention_signed → /fr/clients/[id]
+→ Paiement → payment_received
+→ Documents visa → visa_docs_sent → visa_in_progress → visa_received
+→ Arrivée → arrival_prep → active → alumni → completed
+```
 
-## Git flow
-main -> production (Vercel auto-deploy)
-Commits directs sur main (pas de branches pour l'instant)
+---
 
-## Message WhatsApp chauffeur (template)
-Bonjour [nom_chauffeur],
-Stagiaire : {first_name} {last_name}
-Tel : {intern_bali_phone}
-Vol : {flight_number} ({last_stopover_city} -> Denpasar)
-Arrivee : {flight_arrival_datetime}
-Deposer a : {dropoff_address}
-Tracking :
-- https://www.flightradar24.com/{flight_number}
-- https://www.flightaware.com/live/flight/{flight_number}
+## NAVIGATION
 
-## Email nouveau candidat (format confirme)
-Objet: Nouveau stagiaire ! [Prenom] [Nom] a candidate
-Contenu: date demarrage, duree, lien /app/cases/[id], passeport valide/invalide, secteurs, commentaire
+### Desktop
+Sidebar latérale gauche — tous les liens
 
-## Regles de dev
-- Ne jamais stopper sur une erreur non-bloquante
-- Push apres chaque section
-- Toujours build + tsc --noEmit avant push final
-- Ne jamais reinitialiser la DB sans verification explicite
-- Status initial nouveau candidat = 'rdv_booked' (pas 'lead')
-- Leads convertis masques dans /fr/leads (dans /fr/cases a la place)
+### Mobile (nouveau)
+- **Bottom nav fixe**: Dashboard | Activité | To Do | Calendrier | ☰
+- **Drawer hamburger**: tout le reste (Pipeline, Candidats, Clients, Jobs, etc.)
+- `<main>` a `pb-20 md:pb-0` pour compenser
+
+---
+
+## STRUCTURE DES PAGES
+
+```
+src/app/
+├── [locale]/(app)/
+│   ├── feed/          # Dashboard
+│   ├── activity/      # Fil d'activité
+│   ├── todo/          # Tâches
+│   ├── calendar/      # Calendrier
+│   ├── pipeline/      # Kanban candidats (type=candidate uniquement)
+│   ├── leads/         # Leads non convertis
+│   ├── cases/         # Liste candidats
+│   │   └── [id]/      # Fiche candidat
+│   ├── clients/       # Liste clients
+│   │   └── [id]/      # Fiche client
+│   ├── jobs/          # Offres de stage
+│   │   └── [id]/      # Fiche offre
+│   ├── contacts/
+│   ├── companies/
+│   ├── schools/
+│   ├── finances/
+│   └── settings/      # Hub: packages, visa-agents, visa-types, job-departments, etc.
+├── apply/             # Formulaire candidature public
+│   └── confirmation/  # Page de confirmation
+├── portal/[token]/    # Portail étudiant
+└── api/
+    ├── cases/[id]/
+    │   ├── route.ts             # GET/PATCH/DELETE dossier
+    │   ├── intern/route.ts      # PATCH champs intern
+    │   ├── job-submissions/     # GET soumissions + [subId]/send-to-employer
+    │   ├── activity/route.ts    # GET historique dossier
+    │   ├── cv-feedback-history/ # GET/POST commentaires CV
+    │   └── send-qualification-email/route.ts
+    ├── cases/route.ts           # GET liste (type=candidate|client)
+    ├── jobs/[id]/route.ts       # GET/PATCH/DELETE offre
+    ├── job-submissions/route.ts # POST créer soumission
+    ├── job-departments/         # CRUD métiers
+    ├── leads/route.ts
+    ├── activity/route.ts
+    ├── upload/route.ts          # Upload fichiers vers Supabase Storage
+    ├── settings/route.ts
+    └── webhooks/fillout-rdv/route.ts
+```
+
+---
+
+## COMPOSANTS CLÉS
+
+```
+src/components/
+├── layout/
+│   ├── Sidebar.tsx      # Desktop sidebar + mobile bottom nav + drawer
+│   └── AppShell.tsx     # Layout wrapper (main pb-20 md:pb-0)
+└── cases/tabs/
+    ├── TabProfil.tsx    # Identité (prénom/nom/email/WA/passeport) + Formation
+    ├── TabStaffing.tsx  # Stage idéal + CV + Jobs DnD + Débrief entretien
+    ├── TabVisa.tsx      # 8 sections visa (passeport, photo, mère, école, urgence, bancaire, billet, genre)
+    ├── TabFacturation.tsx
+    ├── TabArrivee.tsx
+    └── TabHistorique.tsx # Timeline verticale activités avec filtres
+```
+
+---
+
+## SCHÉMA DB — TABLES PRINCIPALES
+
+### `interns` — colonnes importantes
+```
+cv_url, local_cv_url, portfolio_url, examples_url
+desired_start_date, desired_end_date, desired_duration_months
+school_name, school_country
+school_contact_first_name, school_contact_last_name, school_contact_email, school_contact_phone
+emergency_contact_name, emergency_contact_phone, emergency_contact_email
+mother_first_name, mother_last_name
+flight_departure_date, flight_return_date, flight_departure_city, flight_number
+passport_number, passport_expiry, passport_page4_url
+photo_id_url, bank_statement_url, return_plane_ticket_url
+linkedin_url, avatar_url
+qualification_debrief, private_comment_for_employer
+```
+
+### `cases` — colonnes importantes
+```
+status (enum), cv_status (pending|validated|to_redo)
+intern_first_meeting_date, google_meet_link, google_calendar_event_id
+school_id, package_id
+payment_amount, payment_date, payment_type
+portal_token, temp_password
+```
+
+### `job_submissions` — statuts enum
+```
+proposed → sent → interview → retained → rejected → cancelled
+```
+⚠️ JAMAIS utiliser 'pending' ou 'sent_to_employer' — invalides
+
+### `jobs` — statuts enum
+```
+open → staffed → cancelled
+```
+Colonnes: `job_department_id` (FK → job_departments), `department` (text legacy)
+
+### `job_departments`
+```
+id, name, slug, categories (text[]), is_active
+```
+
+---
+
+## DONNÉES DEMO
+
+### Offres de stage (9 offres, status=open)
+Toutes avec `contact_email = sidney.ruby@gmail.com`
+
+Entreprises demo: Bali Creative Agency, Surf & Co Bali, Warung Digital, Bali Luxury Villas, Green Bali Media, Bali Eats Restaurant Group
+
+---
+
+## EMAILS (Resend)
+
+| Fonction | Déclencheur |
+|----------|-------------|
+| `sendLeadConfirmation()` | Soumission /apply |
+| `sendRdvConfirmation()` | Webhook Fillout |
+| `sendQualificationEmail()` | Bouton débrief Staffing |
+| `sendJobSubmittedEmployer()` | Bouton "Envoyer à l'employeur" |
+| `sendPaymentRequest()` | Statut payment_pending |
+| `sendVisaDocsRequest()` | Statut visa_docs_sent |
+
+---
+
+## BUGS CONNUS / POINTS D'ATTENTION
+
+1. **cv_url vide** : filtrer avec `cv_url?.trim() || null` — ne jamais sauvegarder `""`
+2. **job_submissions status** : enum strict `proposed|sent|interview|retained|rejected|cancelled`
+3. **activity_feed SELECT** : utiliser `id, type, title, description, created_at, metadata` seulement
+4. **interns SELECT** : `desired_start_date` et `desired_duration_months` doivent être inclus (migration faite)
+5. **school_name** : vient de `intern.school_name` — PAS `school_country`
+6. **CV PDF** : utiliser Google Docs Viewer `https://docs.google.com/viewer?url=URL&embedded=true`
+7. **TabKey** : `'profil' | 'staffing' | 'historique'` — PAS 'process' (supprimé)
+
+---
+
+## PORTAIL ÉTUDIANT
+
+URL: `/portal/[token]`  
+Login: token URL OU email + temp_password  
+Fonctions: voir jobs proposés, donner avis (intéressé/pas), uploader documents
+
+---
+
+## COMMANDES UTILES
+
+```bash
+# Dev local
+npm run dev
+
+# Check TS
+npx tsc --noEmit
+
+# Push batch
+claude --dangerously-skip-permissions < /tmp/batch_xxx.txt
+
+# Voir les logs Vercel
+npx vercel logs --follow
+
+# Vérifier le dernier déploiement
+npx vercel ls
+```
+
+---
+
+## DERNIERS COMMITS (état au 14 avril 2026)
+
+```
+65294b9 fix: HTTP 500 candidat - migration desired_start_date + desired_duration_months
+ea56ef8 fix: apply form responsive mobile
+f34fed3 feat: responsive mobile - pages principales
+cc3cb3d feat: navigation mobile - bottom nav + drawer hamburger  
+3adf41c feat: cases/[id] header redesign 2 colonnes desktop
+e389995 feat: UX overhaul - timeline, bandeau fusionné, débrief entretien
+```
