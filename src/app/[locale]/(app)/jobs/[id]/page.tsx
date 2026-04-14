@@ -3,6 +3,14 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useAIAssist } from '@/hooks/useAIAssist'
+
+function daysUntil(date: string | null | undefined): number {
+  if (!date) return 999
+  return Math.ceil((new Date(date).getTime() - Date.now()) / 86400000)
+}
+
+interface RelatedJob { id: string; title: string; wished_start_date: string | null; status: string }
 
 interface Contact {
   id: string
@@ -59,6 +67,11 @@ interface JobDetail {
   compensation_amount?: number | null
   skills_required?: string[] | null
   profile_sought?: string | null
+  actual_end_date?: string | null
+  company_type?: string | null
+  tools_required?: string[] | null
+  background_image_url?: string | null
+  parent_job_id?: string | null
   created_at?: string | null
   updated_at?: string | null
   companies?: {
@@ -114,6 +127,8 @@ export default function JobDetailPage() {
   const [addingCandidate, setAddingCandidate] = useState(false)
   const [toastMsg, setToastMsg] = useState<string | null>(null)
   const [allDepartments, setAllDepartments] = useState<JobDepartment[]>([])
+  const [relatedJobs, setRelatedJobs] = useState<RelatedJob[]>([])
+  const { assist, loading: aiLoading } = useAIAssist()
 
   function showToast(msg: string) {
     setToastMsg(msg)
@@ -137,6 +152,16 @@ export default function JobDetailPage() {
   }
 
   useEffect(() => { void load() }, [id])
+
+  useEffect(() => {
+    if (!job) return
+    const parentId = job.parent_job_id ?? (job.is_recurring ? job.id : null)
+    if (!parentId) { setRelatedJobs([]); return }
+    fetch(`/api/jobs?parent_id=${parentId}`)
+      .then(r => r.ok ? r.json() as Promise<RelatedJob[]> : [])
+      .then(d => setRelatedJobs(Array.isArray(d) ? d.filter(j => j.id !== job.id) : []))
+      .catch(() => setRelatedJobs([]))
+  }, [job])
 
   useEffect(() => {
     fetch('/api/cases?status=qualification_done')
@@ -388,32 +413,95 @@ export default function JobDetailPage() {
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex gap-2 mt-4 pt-3 border-t border-zinc-50 flex-wrap">
-          {job.status === 'open' && (
-            <button onClick={() => void markStaffed()} disabled={saving} className="px-3 py-1.5 text-sm font-medium bg-[#0d9e75] text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition-colors">
-              Marquer comme pourvu
-            </button>
-          )}
-          {job.status !== 'open' && (
-            <button onClick={() => void patchJob({ status: 'open' })} disabled={saving} className="px-3 py-1.5 text-sm font-medium bg-zinc-100 text-[#1a1918] rounded-lg hover:bg-zinc-200 disabled:opacity-50 transition-colors">
-              Rouvrir
-            </button>
-          )}
-          {job.status !== 'cancelled' && (
-            <button onClick={() => void patchJob({ status: 'cancelled' })} disabled={saving} className="px-3 py-1.5 text-sm font-medium bg-zinc-50 text-zinc-500 rounded-lg hover:bg-zinc-100 disabled:opacity-50 transition-colors">
-              Annuler
-            </button>
+        {/* Status select + actual_end_date */}
+        <div className="flex gap-2 mt-4 pt-3 border-t border-zinc-50 flex-wrap items-center">
+          <select
+            value={job.status ?? 'open'}
+            onChange={e => void patchJob({ status: e.target.value })}
+            disabled={saving}
+            className="text-xs px-2 py-1 rounded-lg border border-zinc-200 focus:outline-none focus:border-[#c8a96e]"
+          >
+            <option value="open">🟢 Cherche stagiaire</option>
+            <option value="staffed">🔵 Pourvu</option>
+            <option value="cancelled">⚫ Annulé</option>
+          </select>
+          {job.status === 'staffed' && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-400">Fin prévue stagiaire</span>
+              <input
+                type="date"
+                defaultValue={job.actual_end_date ?? ''}
+                onBlur={e => void patchJob({ actual_end_date: e.target.value || null })}
+                className="text-sm border border-zinc-200 rounded-lg px-2 py-1 focus:outline-none focus:border-[#c8a96e]"
+              />
+              {job.actual_end_date && daysUntil(job.actual_end_date) <= 60 && daysUntil(job.actual_end_date) >= 0 && (
+                <span className="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                  ⏰ J-{daysUntil(job.actual_end_date)} passation
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>
+
+      {/* ═══ MISSIONS & OUTILS ═══ */}
+      {((job.missions && job.missions.length > 0) || (job.tools_required && job.tools_required.length > 0)) && (
+        <div className="bg-white border border-zinc-100 rounded-xl p-5 space-y-4">
+          {job.missions && job.missions.length > 0 && (
+            <div>
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Missions</p>
+              <ul className="space-y-1">
+                {job.missions.map((m, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-[#1a1918]">
+                    <span className="text-[#c8a96e] flex-shrink-0 mt-0.5">→</span>
+                    {m}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {job.tools_required && job.tools_required.length > 0 && (
+            <div>
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Outils requis</p>
+              <div className="flex flex-wrap gap-1.5">
+                {job.tools_required.map(t => (
+                  <span key={t} className="text-xs bg-zinc-100 text-zinc-600 px-2.5 py-1 rounded-full">{t}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══ INSTANCES RÉCURRENTES ═══ */}
+      {(job.is_recurring || job.parent_job_id) && relatedJobs.length > 0 && (
+        <div className="bg-white border border-zinc-100 rounded-xl p-5">
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">
+            {job.is_recurring ? 'Instances liées' : 'Autres instances'}
+          </p>
+          {relatedJobs.map(r => (
+            <Link key={r.id} href={`/${locale}/jobs/${r.id}`} className="flex items-center justify-between py-2 border-b border-zinc-50 hover:text-[#c8a96e] transition-colors">
+              <span className="text-xs">{r.title}</span>
+              <span className="text-xs text-zinc-400">{r.wished_start_date ?? '—'}</span>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* ═══ DESCRIPTIONS ═══ */}
       <div className="bg-white border border-zinc-100 rounded-xl p-5 space-y-4">
         <h2 className="text-sm font-semibold text-[#1a1918]">Description</h2>
 
         <div>
-          <p className="text-xs text-zinc-400 mb-1">Description interne</p>
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs text-zinc-400">Description interne</p>
+            <button type="button" disabled={aiLoading || !job.title} onClick={async () => {
+              const r = job.description
+                ? await assist('improve_text', { text: job.description, context: `Offre ${job.title} à Bali` })
+                : await assist('generate_description', { title: job.title ?? '', company_name: job.companies?.name ?? '', missions: (job.missions ?? []).join(', '), profile_sought: job.profile_sought ?? '', tools: (job.tools_required ?? []).join(', ') })
+              if (r) void patchJob({ description: r })
+            }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
+          </div>
           {editing.description ? (
             <textarea
               className="w-full text-sm text-zinc-600 border border-[#c8a96e] rounded-lg px-3 py-2 focus:outline-none"
@@ -446,12 +534,31 @@ export default function JobDetailPage() {
           </div>
         )}
 
-        {job.profile_sought && (
-          <div>
-            <p className="text-xs text-zinc-400 mb-1">Profil recherche</p>
-            <p className="text-sm text-zinc-600 whitespace-pre-wrap">{job.profile_sought}</p>
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs text-zinc-400">Profil recherché</p>
+            <button type="button" disabled={aiLoading || !job.title} onClick={async () => {
+              const r = job.profile_sought
+                ? await assist('improve_text', { text: job.profile_sought, context: `Profil pour ${job.title}` })
+                : await assist('generate_profile', { title: job.title ?? '', department: departmentName ?? '', required_level: job.required_level ?? '', tools: (job.tools_required ?? []).join(', '), languages: (job.required_languages ?? []).join(', ') })
+              if (r) void patchJob({ profile_sought: r })
+            }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
           </div>
-        )}
+          {editing.profile_sought ? (
+            <textarea
+              className="w-full text-sm text-zinc-600 border border-[#c8a96e] rounded-lg px-3 py-2 focus:outline-none"
+              rows={3}
+              defaultValue={job.profile_sought ?? ''}
+              autoFocus
+              onBlur={e => void patchJob({ profile_sought: e.target.value || null })}
+              style={{ resize: 'vertical' }}
+            />
+          ) : (
+            <button onClick={() => setEditing(p => ({ ...p, profile_sought: true }))} className="text-left w-full text-sm text-zinc-600 hover:text-[#c8a96e] transition-colors whitespace-pre-wrap">
+              {job.profile_sought || <span className="text-zinc-300 italic">Cliquer pour définir le profil recherché...</span>}
+            </button>
+          )}
+        </div>
 
         {job.skills_required && job.skills_required.length > 0 && (
           <div>
@@ -504,6 +611,19 @@ export default function JobDetailPage() {
                 {job.contacts.whatsapp && (
                   <a href={`https://wa.me/${job.contacts.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-[#0d9e75] transition-colors">
                     <span className="w-4 text-center">WA</span> {job.contacts.whatsapp}
+                  </a>
+                )}
+              </div>
+              <div className="flex items-center gap-2 mt-2">
+                {job.contacts.email && (
+                  <a href={`mailto:${job.contacts.email}`} className="text-xs px-3 py-1.5 bg-zinc-100 text-zinc-600 rounded-lg hover:bg-zinc-200">
+                    📧 Email
+                  </a>
+                )}
+                {job.contacts.whatsapp && (
+                  <a href={`https://wa.me/${job.contacts.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"
+                    className="text-xs px-3 py-1.5 bg-[#25d366] text-white rounded-lg hover:bg-[#20bd5a]">
+                    WhatsApp
                   </a>
                 )}
               </div>
