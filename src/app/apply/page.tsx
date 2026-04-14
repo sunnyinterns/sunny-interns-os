@@ -1679,12 +1679,13 @@ export default function ApplyPage() {
               <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">
                 {lang === 'fr' ? 'Ce qui est inclus' : "What's included"}
               </p>
-              <ul className="space-y-1.5">
+              <ul className="space-y-2.5">
                 {[
-                  lang === 'fr' ? '🎯 Matching personnalisé avec nos entreprises partenaires' : '🎯 Personalized matching with our partner companies',
-                  lang === 'fr' ? "🛂 Procédure administrative d'obtention du visa stagiaire, accès aux offres de nos partenaires pour préparer l'arrivée (eSIM, logement, scooter) et sur place (activités, restaurants, etc.)" : '🛂 Visa procedure support + partner offers for arrival prep (eSIM, housing, scooter) and on-site (activities, restaurants, etc.)',
-                  lang === 'fr' ? "🚗 Chauffeur à l'aéroport à l'arrivée" : '🚗 Airport pickup on arrival',
-                  lang === 'fr' ? '💬 Support WhatsApp tout au long du stage' : '💬 WhatsApp support throughout the internship',
+                  lang === 'fr' ? '🎯 Matching personnalisé avec nos entreprises partenaires à Bali' : '🎯 Personalized matching with our partner companies in Bali',
+                  lang === 'fr' ? "🛂 Procédure administrative complète d'obtention du visa stagiaire (VITAS) — le coût du visa représente environ 50% du tarif final. Aucune mauvaise surprise : tout est inclus." : '🛂 Full administrative visa procedure (VITAS) — visa cost represents approximately 50% of the total fee. No hidden fees: everything is included.',
+                  lang === 'fr' ? "🤝 Accès à toutes les offres de nos partenaires pour préparer ton arrivée et ta vie sur place à moindre prix : eSIM, logement, scooter, restaurants, activités..." : '🤝 Access to all our partner offers to prepare your arrival and daily life at lower prices: eSIM, housing, scooter, restaurants, activities...',
+                  lang === 'fr' ? '📋 Suivi personnalisé par notre équipe tout au long du processus' : '📋 Personalized support from our team throughout the process',
+                  lang === 'fr' ? '🌴 Accueil à Bali et accompagnement pendant ton stage' : '🌴 Welcome in Bali and support during your internship',
                 ].map((item, i) => (
                   <li key={i} className="text-sm text-zinc-700 flex items-start gap-2">
                     <span className="flex-shrink-0">{item.split(' ')[0]}</span>
