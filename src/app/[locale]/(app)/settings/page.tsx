@@ -23,6 +23,8 @@ const SECTIONS: Record<string, { title: string; items: SectionItem[] }> = {
     title: '🗂️ Administratif',
     items: [
       { href: 'job-departments', icon: '💼', label: 'Métiers & Départements', desc: "Secteurs d'activité et métiers disponibles" },
+      { href: 'internship-cities', icon: '📍', label: 'Villes de stage', desc: 'Canggu, Seminyak, Ubud...' },
+      { href: 'company-types', icon: '🏛️', label: 'Types de sociétés', desc: 'PT, CV, SARL, SAS... infos légales' },
       { href: 'packages', icon: '📦', label: 'Packages', desc: 'Packages Standard, Express, Visa Only' },
       { href: 'visa-types', icon: '🛂', label: 'Types de visa', desc: 'VOA, KITAS, visa touristique' },
       { href: 'visa-agents', icon: '🏢', label: 'Agents visa', desc: 'FAZZA et autres agents partenaires' },
