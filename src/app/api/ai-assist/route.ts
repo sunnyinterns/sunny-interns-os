@@ -3,11 +3,11 @@ import { NextResponse } from 'next/server'
 
 const PROMPTS: Record<string, (ctx: Record<string, string>) => string> = {
   generate_public_title: (ctx) =>
-    `Tu travailles pour Bali Interns, une agence de placement de stagiaires à Bali.
-Génère UN titre d'offre de stage accrocheur et professionnel en français pour ce poste: "${ctx.title ?? ''}".
-Entreprise: ${ctx.company_name ?? 'non précisée'}. Département: ${ctx.department ?? 'non précisé'}.
-Le titre doit être court (max 8 mots), vendeur, et mentionner Bali si pertinent.
-Réponds UNIQUEMENT avec le titre, sans guillemets ni explication.`,
+    `You work for Bali Interns, an internship placement agency in Bali, Indonesia.
+Generate ONE catchy, professional internship job title IN ENGLISH for this position: "${ctx.title ?? ''}".
+Company: ${ctx.company_name ?? 'not specified'}. Department: ${ctx.department ?? 'not specified'}.
+Max 8 words, engaging, mention Bali if relevant.
+Reply ONLY with the title IN ENGLISH, no quotes, no explanation.`,
 
   generate_description: (ctx) =>
     `Tu travailles pour Bali Interns à Bali, Indonésie.
@@ -17,19 +17,19 @@ Profil: ${ctx.profile_sought ?? ''}. Outils: ${ctx.tools ?? ''}.
 Ton professionnel et direct. Réponds uniquement avec la description.`,
 
   generate_public_description: (ctx) =>
-    `Tu travailles pour Bali Interns. Rédige une description publique attractive (visible par les candidats)
-pour ce stage à Bali: "${ctx.public_title ?? ctx.title ?? ''}".
-Entreprise type: ${ctx.company_type ?? 'entreprise locale'}.
+    `You work for Bali Interns in Bali, Indonesia. Write an attractive PUBLIC description IN ENGLISH (visible to student candidates)
+for this internship: "${ctx.public_title ?? ctx.title ?? ''}".
+Company type: ${ctx.company_type ?? 'local company'}.
 Missions: ${(ctx.missions ?? '').split(',').slice(0,3).join(', ')}.
-Outils utilisés: ${ctx.tools ?? ''}.
-Max 5 phrases. Ton enthousiaste et inspirant. Mentionne l'expérience Bali.
-Réponds uniquement avec la description.`,
+Tools: ${ctx.tools ?? ''}.
+Max 5 sentences. Enthusiastic tone. Mention the Bali experience.
+Reply only with the description IN ENGLISH.`,
 
   generate_profile: (ctx) =>
-    `Rédige un profil recherché pour un stagiaire pour ce poste: "${ctx.title ?? ''}".
-Département: ${ctx.department ?? ''}. Niveau: ${ctx.required_level ?? 'Bac+3'}.
-Outils requis: ${ctx.tools ?? ''}. Langues: ${ctx.languages ?? 'FR, EN'}.
-2-3 phrases max. Direct et précis. Réponds uniquement avec le profil.`,
+    `Write a candidate profile IN ENGLISH for this internship position: "${ctx.title ?? ''}".
+Department: ${ctx.department ?? ''}. Level: ${ctx.required_level ?? 'Bac+3'}.
+Required tools: ${ctx.tools ?? ''}. Languages: ${ctx.languages ?? 'FR, EN'}.
+2-3 sentences max. Direct and precise. Reply only with the profile IN ENGLISH.`,
 
   prefill_company: (ctx) =>
     `Tu es un assistant pour Bali Interns. À partir du site web "${ctx.website ?? ''}",

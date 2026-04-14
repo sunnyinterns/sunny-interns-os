@@ -549,12 +549,12 @@ export default function JobsPage() {
               <div className="space-y-3">
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">③ Identification du poste</p>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1">Titre interne *</label>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Titre interne * <span className="text-zinc-400 text-[10px]">(usage interne — FR ok)</span></label>
                   <input required className={inputCls} value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Ex: Stage Social Media Manager" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
-                    <span>Titre public *</span>
+                    <span>Titre public * <span className="text-amber-600 text-[10px] font-medium">🇬🇧 Visible étudiant — EN</span></span>
                     <button type="button" disabled={aiLoading || !form.title} onClick={async () => {
                       const r = await assist('generate_public_title', { title: form.title, company_name: form.company_name, department: form.department })
                       if (r) setForm(p => ({ ...p, public_title: r }))
@@ -613,7 +613,7 @@ export default function JobsPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
-                    <span>Description publique</span>
+                    <span>Description publique <span className="text-amber-600 text-[10px] font-medium">🇬🇧 EN</span></span>
                     <button type="button" disabled={aiLoading || !form.title} onClick={async () => {
                       const r = form.public_description
                         ? await assist('improve_text', { text: form.public_description, context: `Offre ${form.title} à Bali` })
