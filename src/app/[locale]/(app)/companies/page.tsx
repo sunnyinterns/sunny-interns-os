@@ -732,13 +732,6 @@ export default function CompaniesPage() {
                 )}
               </div>
 
-              {/* SECTION 5 — Sponsor */}placeholder="Sélectionner une entreprise PT locale…"
-                      searchPlaceholder="Rechercher une entreprise…"
-                    />
-                  </div>
-                  <button type="button" className="text-xs text-[#c8a96e] hover:underline">📄 Générer le template d&apos;accord de parrainage</button>
-                </div>
-              )}
 
               {/* SECTION 6 — Partenaire */}
               {form.is_partner && (
