@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { useParams } from 'next/navigation'
 
 interface FinanceRow {
   id: string
@@ -32,11 +34,23 @@ interface FinanceData {
   period: { from: string; to: string }
 }
 
+interface Supplier {
+  id: string
+  name: string
+  website: string | null
+  industry: string | null
+  company_type: string | null
+  contact_email: string | null
+}
+
 export default function FinancesPage() {
+  const params = useParams()
+  const locale = typeof params?.locale === 'string' ? params.locale : 'fr'
   const now = new Date()
   const [month, setMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`)
   const [data, setData] = useState<FinanceData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
 
   useEffect(() => {
     setLoading(true)
@@ -45,6 +59,13 @@ export default function FinancesPage() {
       .then(d => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))
   }, [month])
+
+  useEffect(() => {
+    fetch('/api/companies?role=supplier')
+      .then(r => r.ok ? r.json() as Promise<Supplier[]> : [])
+      .then(s => setSuppliers(Array.isArray(s) ? s : []))
+      .catch(() => setSuppliers([]))
+  }, [])
 
   function exportCsv() {
     window.open(`/api/finances/export?from=${month}&to=${month}`, '_blank')
@@ -140,6 +161,44 @@ export default function FinancesPage() {
           <p className="text-zinc-400">Aucun paiement pour cette période</p>
         </div>
       )}
+
+      {/* Fournisseurs */}
+      <div className="mt-10">
+        <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-3">📦 Fournisseurs</h2>
+        {suppliers.length === 0 ? (
+          <div className="bg-white border border-dashed border-zinc-200 rounded-2xl p-8 text-center">
+            <p className="text-zinc-400 text-sm">Aucun fournisseur — cochez <span className="font-medium">📦 Fournisseur</span> sur une fiche entreprise.</p>
+          </div>
+        ) : (
+          <div className="bg-white border border-zinc-100 rounded-2xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-zinc-50 border-b border-zinc-100">
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400">Fournisseur</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400">Catégorie</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400">Contact</th>
+                  <th className="px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-50">
+                {suppliers.map(s => (
+                  <tr key={s.id} className="hover:bg-zinc-50/50">
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-[#1a1918]">{s.name}</p>
+                      {s.website && <a href={s.website} target="_blank" rel="noopener noreferrer" className="text-xs text-[#c8a96e] hover:underline">{s.website}</a>}
+                    </td>
+                    <td className="px-4 py-3 text-zinc-500 text-xs">{s.industry ?? s.company_type ?? '—'}</td>
+                    <td className="px-4 py-3 text-zinc-500 text-xs">{s.contact_email ?? '—'}</td>
+                    <td className="px-4 py-3">
+                      <Link href={`/${locale}/companies/${s.id}`} className="text-xs px-2 py-1 bg-zinc-100 text-zinc-600 rounded-lg hover:bg-zinc-200">Fiche →</Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

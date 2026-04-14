@@ -17,6 +17,7 @@ export async function GET(request: Request) {
     if (destination && destination !== 'all') query = query.eq('destination_id', destination)
     if (role === 'employer') query = query.eq('is_employer', true)
     if (role === 'partner') query = query.eq('is_partner', true)
+    if (role === 'supplier') query = query.eq('is_supplier', true)
     const { data, error } = await query.order('name')
     if (error) throw error
     return NextResponse.json(data ?? [])
