@@ -89,6 +89,9 @@ const EMPTY_FORM = {
   state_of_incorporation: '',
   // sponsor
   sponsor_company_id: '',
+  address_street: '',
+  address_postal_code: '',
+  address_city: '',
   can_host_directly: false,
   partnership_agreement_url: '',
   // partenaire
@@ -164,14 +167,13 @@ export default function CompaniesPage() {
   const isPMA = form.registration_country === 'ID' && form.legal_type === 'PT_PMA'
   const needsSponsor = form.is_employer && !(isPMA && form.can_host_directly)
 
-  const sponsorItems: SearchableSelectItem[] = companies
-    .filter(c => c.id !== undefined)
-    .map(c => ({
-      id: c.id,
-      label: c.name,
-      sublabel: c.legal_type ?? c.company_type ?? c.city ?? undefined,
-      avatar: c.logo_url ?? c.name[0]?.toUpperCase(),
-    }))
+  const sponsorItems: SearchableSelectItem[] = sponsors.map(s => ({
+    id: s.id,
+    label: s.company_name,
+    sublabel: [s.city, s.npwp ? 'NPWP: ' + s.npwp : null].filter(Boolean).join(' · ') || undefined,
+    avatar: s.company_name[0]?.toUpperCase(),
+    avatarColor: '#f0ebe2',
+  }))
 
   async function prefillFromWebsite() {
     if (!form.website) return
@@ -225,7 +227,7 @@ export default function CompaniesPage() {
       category: form.industry || null,
       company_size: form.company_size || null,
       description: form.description || null,
-      company_type: form.legal_type || form.company_type || null,
+      company_type: form.legal_type || form.company_type || null, // contrainte supprimée
       type: form.legal_type || form.company_type || null,
       legal_type: form.legal_type || null,
       is_employer: form.is_employer,
@@ -242,7 +244,10 @@ export default function CompaniesPage() {
       registration_country: form.registration_country || null,
       internship_city: form.internship_city || null,
       city: form.internship_city || null,
-      legal_address: form.legal_address || null,
+      legal_address: [form.address_street, form.address_postal_code, form.address_city].filter(Boolean).join(', ') || form.legal_address || null,
+      address_street: form.address_street || null,
+      address_postal_code: form.address_postal_code || null,
+      address_city: form.address_city || null,
       google_maps_url: form.google_maps_url || null,
       nib: form.nib || null,
       npwp: form.npwp || null,
@@ -554,9 +559,19 @@ export default function CompaniesPage() {
               {/* SECTION 3 — Localisation */}
               <div className="space-y-3">
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">④ Localisation</p>
-                <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1">Adresse complète</label>
-                  <input value={form.legal_address} onChange={e => setForm(p => ({...p, legal_address: e.target.value}))} className={inputCls} placeholder="Adresse légale…" />
+<div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Adresse (rue, numéro)</label>
+                  <input value={form.address_street ?? ''} onChange={e => setForm(p => ({...p, address_street: e.target.value, legal_address: [e.target.value, p.address_postal_code, p.address_city].filter(Boolean).join(', ')}))} className={inputCls} placeholder="Jl. Raya Canggu No. 12…" />
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1">Code postal</label>
+                    <input value={form.address_postal_code ?? ''} onChange={e => setForm(p => ({...p, address_postal_code: e.target.value}))} className={inputCls} placeholder="80361" />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-xs font-medium text-zinc-600 mb-1">Ville</label>
+                    <input value={form.address_city ?? ''} onChange={e => setForm(p => ({...p, address_city: e.target.value}))} className={inputCls} placeholder="Canggu, Bali" />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-zinc-600 mb-1">Google Maps URL</label>
