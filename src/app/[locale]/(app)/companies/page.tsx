@@ -79,6 +79,7 @@ const EMPTY_FORM = {
   state_of_incorporation: '',
   // sponsor
   sponsor_company_id: '',
+  can_host_directly: false,
   partnership_agreement_url: '',
   // partenaire
   partnership_type: '',
@@ -148,7 +149,9 @@ export default function CompaniesPage() {
     return matchQ && matchSector && matchRole
   })
 
-  const needsSponsor = form.is_employer && form.registration_country && form.registration_country !== 'ID'
+  // PT PMA = sponsor toujours requis. PT Local avec can_host_directly = pas de sponsor.
+  const isPMA = form.registration_country === 'ID' && form.legal_type === 'PT_PMA'
+  const needsSponsor = isPMA && !form.can_host_directly
 
   const sponsorItems: SearchableSelectItem[] = companies
     .filter(c => c.id !== undefined)
@@ -233,6 +236,7 @@ export default function CompaniesPage() {
       registration_number: form.registration_number || null,
       state_of_incorporation: form.state_of_incorporation || null,
       needs_sponsor: needsSponsor,
+      can_host_directly: form.can_host_directly,
       sponsor_company_id: needsSponsor ? (form.sponsor_company_id || null) : null,
       partnership_agreement_url: form.partnership_agreement_url || null,
       partnership_type: form.is_partner ? (form.partnership_type || null) : null,
@@ -585,18 +589,33 @@ export default function CompaniesPage() {
                         className={inputCls} placeholder="Optionnel" />
                     </div>
                     {form.legal_type === 'PT_PMA' && (
-                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
-                        <p className="text-xs font-medium text-amber-800 mb-2">
-                          PT PMA — Sponsor requis pour le VITAS
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-3">
+                        <p className="text-xs font-medium text-amber-800">
+                          PT PMA — un sponsor PT local est requis pour le VITAS stagiaire
                         </p>
-                        <SearchableSelect
-                          label="Entreprise sponsor (PT locale)"
-                          items={sponsorItems}
-                          value={form.sponsor_company_id || null}
-                          onChange={item => setForm(p => ({...p, sponsor_company_id: item?.id ?? ''}))}
-                          placeholder={sponsorItems.length > 0 ? "Sélectionner un sponsor…" : "Aucun sponsor configuré — voir Paramètres > Administratif > Sponsors"}
-                          searchPlaceholder="Rechercher une entreprise…"
-                        />
+                        <label className="flex items-start gap-2 cursor-pointer">
+                          <input type="checkbox" checked={form.can_host_directly}
+                            onChange={e => setForm(p => ({...p, can_host_directly: e.target.checked, sponsor_company_id: e.target.checked ? '' : p.sponsor_company_id}))}
+                            className="mt-0.5 rounded" />
+                          <span className="text-xs text-amber-700">
+                            Cette société indonésienne peut accueillir des stagiaires directement (PT locale — pas de sponsor requis)
+                          </span>
+                        </label>
+                        {!form.can_host_directly && (
+                          <SearchableSelect
+                            label="Entreprise sponsor (PT locale) *"
+                            items={sponsorItems}
+                            value={form.sponsor_company_id || null}
+                            onChange={item => setForm(p => ({...p, sponsor_company_id: item?.id ?? ''}))}
+                            placeholder={sponsorItems.length > 0 ? "Sélectionner un sponsor…" : "Aucun sponsor configuré — voir Paramètres > Administratif > Sponsors"}
+                            searchPlaceholder="Rechercher un sponsor…"
+                          />
+                        )}
+                        {!form.can_host_directly && sponsorItems.length === 0 && (
+                          <p className="text-xs text-amber-600">
+                            → Configurer les sponsors dans Paramètres › Administratif › Sponsors PT
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
@@ -713,21 +732,7 @@ export default function CompaniesPage() {
                 )}
               </div>
 
-              {/* SECTION 5 — Sponsor */}
-              {needsSponsor && (
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
-                  <p className="text-xs font-bold text-amber-700">⚠️ Accord de parrainage requis</p>
-                  <p className="text-xs text-amber-600">
-                    Cette entreprise n&apos;est pas immatriculée en Indonésie ou n&apos;a pas le droit d&apos;accueillir directement un stagiaire.
-                    Un accord de parrainage avec une société sponsor indonésienne est nécessaire.
-                  </p>
-                  <div>
-                    <SearchableSelect
-                      label="Entreprise sponsor (PT locale)"
-                      items={sponsorItems}
-                      value={form.sponsor_company_id || null}
-                      onChange={item => setForm(p => ({...p, sponsor_company_id: item?.id ?? ''}))}
-                      placeholder="Sélectionner une entreprise PT locale…"
+              {/* SECTION 5 — Sponsor */}placeholder="Sélectionner une entreprise PT locale…"
                       searchPlaceholder="Rechercher une entreprise…"
                     />
                   </div>
