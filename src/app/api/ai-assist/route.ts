@@ -31,6 +31,20 @@ Département: ${ctx.department ?? ''}. Niveau: ${ctx.required_level ?? 'Bac+3'}.
 Outils requis: ${ctx.tools ?? ''}. Langues: ${ctx.languages ?? 'FR, EN'}.
 2-3 phrases max. Direct et précis. Réponds uniquement avec le profil.`,
 
+  prefill_company: (ctx) =>
+    `Tu es un assistant pour Bali Interns. À partir du site web "${ctx.website ?? ''}",
+génère un JSON avec les infos de l'entreprise. Réponds UNIQUEMENT avec ce JSON valide:
+{
+  "name": "Nom officiel de l'entreprise",
+  "description": "Description courte de l'activité (2-3 phrases max)",
+  "industry": "Secteur d'activité (Marketing/Tech/Hôtellerie/Tourisme/Finance/Autre)",
+  "company_type": "Type d'entreprise (Agence digitale, Restaurant, Surf school...)",
+  "city": "Ville principale si à Bali",
+  "instagram": "URL Instagram si trouvé ou null",
+  "linkedin": "URL LinkedIn si trouvé ou null"
+}
+Si tu ne trouves pas l'info, mets null. Pas d'explication, JSON uniquement.`,
+
   improve_text: (ctx) =>
     `Améliore ce texte pour une offre de stage à Bali. Rends-le plus attractif et professionnel.
 Texte original: "${ctx.text ?? ''}". Contexte: ${ctx.context ?? ''}.
