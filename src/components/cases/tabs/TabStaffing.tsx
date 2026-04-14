@@ -72,6 +72,7 @@ interface TabStaffingProps {
   cvUrl?: string | null
   cvLocalUrl?: string | null
   cvFeedback?: string | null
+  extraDocsUrls?: string[] | null
   cvStatus?: string | null
   desiredSectors?: string[] | null
   qualificationNotes?: string | null
@@ -402,7 +403,7 @@ function CVPopup({ url, onClose, name }: { url: string; onClose: () => void; nam
 
 export function TabStaffing({
   caseId, firstName, lastName, intern, caseData, desiredStartDate, desiredEndDate, desiredDurationMonths,
-  cvUrl, cvLocalUrl, cvFeedback, cvStatus, desiredSectors, qualificationNotes, stageIdeal, spokenLanguages, onRefresh,
+  cvUrl, cvLocalUrl, cvFeedback, cvStatus, desiredSectors, qualificationNotes, stageIdeal, spokenLanguages, extraDocsUrls, onRefresh,
 }: TabStaffingProps) {
   const internId = intern?.id as string | undefined
   const cvIsValidated = cvStatus === 'validated'
@@ -452,9 +453,7 @@ export function TabStaffing({
     ? cvUrl
     : (intern?.cv_url && String(intern.cv_url).trim() !== '')
       ? String(intern.cv_url)
-      : (intern?.local_cv_url && String(intern.local_cv_url).trim() !== '')
-        ? String(intern.local_cv_url)
-        : null
+      : null
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
@@ -897,16 +896,10 @@ export function TabStaffing({
                   </div>
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                  {cvLocalUrl && (
-                    <a href={cvLocalUrl} target="_blank" rel="noopener noreferrer"
-                      className="text-xs px-3 py-1.5 bg-[#c8a96e] text-white rounded-lg font-semibold hover:bg-[#b8945a]">
-                      📄 CV mis à jour
-                    </a>
-                  )}
-                  {cvUrl && cvUrl !== cvLocalUrl && (
+                  {cvUrl && (
                     <a href={cvUrl} target="_blank" rel="noopener noreferrer"
-                      className="text-xs px-3 py-1.5 bg-zinc-100 text-zinc-700 rounded-lg font-medium hover:bg-zinc-200">
-                      📄 CV original
+                      className="text-xs px-3 py-1.5 bg-[#c8a96e] text-white rounded-lg font-semibold hover:bg-[#b8945a]">
+                      📄 CV
                     </a>
                   )}
                   <input ref={cvFileRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" className="hidden"
@@ -973,12 +966,6 @@ export function TabStaffing({
             )}
             {/* Documents additionnels */}
             <div className="mt-3 space-y-1.5">
-              {typeof intern?.local_cv_url === 'string' && intern.local_cv_url.trim() && (
-                <a href={intern.local_cv_url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-xs text-zinc-600 hover:text-[#c8a96e] py-1">
-                  <span>📄</span> CV (langue locale) <span className="text-[#c8a96e]">↗</span>
-                </a>
-              )}
               {typeof intern?.portfolio_url === 'string' && intern.portfolio_url.trim() && (
                 <a href={intern.portfolio_url} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs text-zinc-600 hover:text-[#c8a96e] py-1">
@@ -990,6 +977,17 @@ export function TabStaffing({
                   className="flex items-center gap-2 text-xs text-zinc-600 hover:text-[#c8a96e] py-1">
                   <span>✨</span> Exemples de réalisations <span className="text-[#c8a96e]">↗</span>
                 </a>
+              )}
+              {extraDocsUrls && extraDocsUrls.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-[11px] text-zinc-400 font-medium uppercase tracking-wider mb-1">Documents supplémentaires</p>
+                  {extraDocsUrls.map((url, i) => (
+                    <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-xs text-zinc-600 hover:text-[#c8a96e] py-1">
+                      <span>📎</span> Document {i + 1} <span className="text-[#c8a96e]">↗</span>
+                    </a>
+                  ))}
+                </div>
               )}
             </div>
           </div>
