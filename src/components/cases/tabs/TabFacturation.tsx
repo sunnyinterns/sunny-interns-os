@@ -12,9 +12,10 @@ interface TabFacturationProps {
     invoice_number?: string | null
     interns?: { first_name: string; last_name: string } | null
   }
+  referred_by_code?: string | null
 }
 
-export function TabFacturation({ caseId, caseData }: TabFacturationProps) {
+export function TabFacturation({ caseId, caseData, referred_by_code }: TabFacturationProps) {
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -43,6 +44,16 @@ export function TabFacturation({ caseId, caseData }: TabFacturationProps) {
 
   return (
     <div className="space-y-4">
+      {referred_by_code && (
+        <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+          <span className="text-base">🎁</span>
+          <div>
+            <p className="text-xs font-semibold text-amber-700">Code ambassadeur</p>
+            <p className="text-sm font-mono text-amber-800">{referred_by_code}</p>
+            <p className="text-xs text-amber-600 mt-0.5">Vérifier si une remise s&apos;applique</p>
+          </div>
+        </div>
+      )}
       {canSendPaymentEmail && (
         <div className="bg-[#fef9ee] border border-[#fde68a] rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex-1 min-w-[200px]">
