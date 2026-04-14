@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useAIAssist } from "@/hooks/useAIAssist"
 
@@ -97,6 +97,11 @@ export default function CompaniesPage() {
   const [prefilling, setPrefilling] = useState(false)
   const [toastMsg, setToastMsg] = useState<string | null>(null)
   const [sponsorOptions, setSponsorOptions] = useState<{ id: string; name: string }[]>([])
+  const [logoMode, setLogoMode] = useState<'url' | 'upload'>('url')
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [logoUploading, setLogoUploading] = useState(false)
+  const logoInputRef = useRef<HTMLInputElement>(null)
 
   function toast(msg: string) {
     setToastMsg(msg)
@@ -163,10 +168,28 @@ export default function CompaniesPage() {
 
   async function createCompany(e: React.FormEvent) {
     e.preventDefault()
+    let finalLogoUrl = form.logo_url
+    if (logoFile) {
+      setLogoUploading(true)
+      try {
+        const fd = new FormData()
+        fd.append('file', logoFile)
+        fd.append('bucket', 'company-logos')
+        const uploadRes = await fetch('/api/upload', { method: 'POST', body: fd })
+        if (uploadRes.ok) {
+          const { url } = await uploadRes.json() as { url: string }
+          finalLogoUrl = url
+        } else {
+          toast('Échec upload logo')
+        }
+      } finally {
+        setLogoUploading(false)
+      }
+    }
     const payload: Record<string, unknown> = {
       name: form.name,
       website: form.website || null,
-      logo_url: form.logo_url || null,
+      logo_url: finalLogoUrl || null,
       industry: form.industry || null,
       sector: form.industry || null,
       category: form.industry || null,
@@ -214,6 +237,7 @@ export default function CompaniesPage() {
       setCompanies(prev => [...prev, c])
       setShowModal(false)
       setForm(EMPTY_FORM)
+      setLogoFile(null); setLogoPreview(null); setLogoMode('url')
       router.push(`/${locale as string}/companies/${c.id}`)
     } else {
       const err = await r.json().catch(() => ({}))
@@ -370,8 +394,67 @@ export default function CompaniesPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1">Logo (URL)</label>
-                  <input type="url" value={form.logo_url} onChange={e => setForm(p => ({...p, logo_url: e.target.value}))} className={inputCls} placeholder="https://…/logo.png" />
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Logo</label>
+                  <div className="space-y-2">
+                    {(form.logo_url || logoPreview) && (
+                      <div className="flex items-center gap-3 p-2 bg-zinc-50 rounded-xl">
+                        <img
+                          src={logoPreview || form.logo_url}
+                          alt="Logo preview"
+                          className="w-12 h-12 object-contain rounded-lg bg-white border border-zinc-100"
+                          onError={e => { e.currentTarget.src = '' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => { setForm(p => ({...p, logo_url: ''})); setLogoPreview(null); setLogoFile(null) }}
+                          className="text-xs text-red-400 hover:text-red-600">
+                          Supprimer
+                        </button>
+                      </div>
+                    )}
+                    <div className="flex gap-2 text-xs mb-1">
+                      <button type="button" onClick={() => setLogoMode('url')}
+                        className={`px-2 py-0.5 rounded ${logoMode === 'url' ? 'bg-zinc-200 font-medium' : 'text-zinc-400'}`}>
+                        URL
+                      </button>
+                      <button type="button" onClick={() => setLogoMode('upload')}
+                        className={`px-2 py-0.5 rounded ${logoMode === 'upload' ? 'bg-zinc-200 font-medium' : 'text-zinc-400'}`}>
+                        Upload
+                      </button>
+                    </div>
+                    {logoMode === 'url' ? (
+                      <input
+                        type="url"
+                        value={form.logo_url}
+                        onChange={e => { setForm(p => ({...p, logo_url: e.target.value})); setLogoPreview(null); setLogoFile(null) }}
+                        className={inputCls}
+                        placeholder="https://example.com/logo.png"
+                      />
+                    ) : (
+                      <div>
+                        <input
+                          ref={logoInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={e => {
+                            const file = e.target.files?.[0]
+                            if (!file) return
+                            setLogoFile(file)
+                            const reader = new FileReader()
+                            reader.onload = ev => setLogoPreview(ev.target?.result as string)
+                            reader.readAsDataURL(file)
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => logoInputRef.current?.click()}
+                          className="w-full py-3 border-2 border-dashed border-zinc-200 rounded-xl text-xs text-zinc-400 hover:border-[#c8a96e] hover:text-[#c8a96e] transition-colors">
+                          {logoUploading ? 'Upload…' : logoFile ? logoFile.name : 'Cliquer pour choisir une image (PNG, JPG, SVG)'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
