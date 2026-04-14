@@ -112,6 +112,7 @@ export default function CompaniesPage() {
   const [filterRole, setFilterRole] = useState<'all' | 'employer' | 'partner'>('all')
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [prefilling, setPrefilling] = useState(false)
   const [toastMsg, setToastMsg] = useState<string | null>(null)
@@ -201,6 +202,8 @@ export default function CompaniesPage() {
 
   async function createCompany(e: React.FormEvent) {
     e.preventDefault()
+    if (saving) return
+    setSaving(true)
     let finalLogoUrl = form.logo_url
     if (logoFile) {
       setLogoUploading(true)
@@ -276,12 +279,14 @@ export default function CompaniesPage() {
     if (r.ok) {
       const c = await r.json() as Company
       setCompanies(prev => [...prev, c])
+      setSaving(false)
       setShowModal(false)
       setForm(EMPTY_FORM)
       setLogoFile(null); setLogoPreview(null); setLogoMode('url')
       router.push(`/${locale as string}/companies/${c.id}`)
     } else {
       const err = await r.json().catch(() => ({}))
+      setSaving(false)
       alert('Erreur création: ' + (err.error ?? r.statusText))
     }
   }
@@ -824,7 +829,7 @@ export default function CompaniesPage() {
 
               <div className="flex justify-end gap-2 pt-2 border-t border-zinc-100">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm rounded-lg border border-zinc-200 text-zinc-600">Annuler</button>
-                <button type="submit" className="px-4 py-2 text-sm font-medium rounded-lg bg-[#c8a96e] text-white hover:bg-[#b8945a]">Créer</button>
+                <button type="submit" disabled={saving} className="px-4 py-2 text-sm font-medium rounded-lg bg-[#c8a96e] text-white hover:bg-[#b8945a] disabled:opacity-50 disabled:cursor-not-allowed">{saving ? "Création…" : "Créer"}</button>
               </div>
             </form>
           </div>

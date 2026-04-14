@@ -12,14 +12,7 @@ export async function GET(
   try {
     const { data, error } = await supabase
       .from('companies')
-      .select(`
-        id, name, description, industry, company_type, website, location, internship_city,
-        logo_url, notes_internal, company_size, type, category, phone,
-        contact_name, contact_email, contact_whatsapp, whatsapp_number,
-        contacts(id, first_name, last_name, job_title, email, whatsapp),
-        jobs(id, title, status),
-        cases(id, status, interns(first_name, last_name))
-      `)
+      .select('*, contacts(id, first_name, last_name, job_title, email, whatsapp, phone, linkedin_url, gender), jobs(id, title, status), cases(id, status, interns(first_name, last_name))')
       .eq('id', id)
       .single()
     if (error) throw error
