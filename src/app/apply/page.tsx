@@ -188,6 +188,7 @@ const TOUCHPOINTS: { value: string; fr: string; en: string }[] = [
   { value: 'Google', fr: 'Google', en: 'Google' },
   { value: 'Bouche \u00e0 oreille', fr: 'Bouche \u00e0 oreille', en: 'Word of mouth' },
   { value: 'École', fr: 'École', en: 'School' },
+  { value: 'Jobboard École', fr: 'Jobboard / Espace Stages École', en: 'School Job Board' },
   { value: 'Ambassadeur Bali Interns', fr: 'Ambassadeur Bali Interns', en: 'Bali Interns Ambassador' },
 ]
 
@@ -1066,12 +1067,21 @@ export default function ApplyPage() {
               </label>
               <DatePickerInput
                 value={form.end_date ?? ''}
-                onChange={v => set('end_date', v)}
+                onChange={v => {
+                  if (v && form.start_date && v < form.start_date) return
+                  set('end_date', v)
+                }}
                 lang={lang}
                 defaultYear={new Date().getFullYear() + 1}
                 minYear={new Date().getFullYear()}
                 maxYear={new Date().getFullYear() + 4}
+                minDate={form.start_date || new Date().toISOString().split('T')[0]}
               />
+              {form.end_date && form.start_date && form.end_date < form.start_date && (
+                <p className="text-xs text-red-500 mt-1">
+                  {lang === 'fr' ? 'La date de fin doit être après la date de début.' : 'End date must be after start date.'}
+                </p>
+              )}
               <p className={helperClass}>
                 {lang === 'fr'
                   ? "Laisse vide si tu n'as pas de contrainte précise."
@@ -1268,7 +1278,7 @@ export default function ApplyPage() {
                 onBlur={() => touch('birth_date')}
                 lang={lang}
                 defaultYear={2007}
-                minYear={1990}
+                minYear={1960}
                 maxYear={new Date().getFullYear() - 16}
               />
             </div>
