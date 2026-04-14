@@ -1,5 +1,23 @@
-# CLAUDE.md — Sunny Interns OS
-> Mis à jour le 14 avril 2026. Lire ce fichier EN ENTIER avant toute action.
+# ⚠️ PROJET : SUNNY INTERNS OS — Bali Interns
+> **Sidney Ruby** | Plateforme de gestion de stages à Bali, Indonésie
+> **Ce n'est PAS un autre projet.** Lire ce fichier EN ENTIER avant toute action.
+> Mis à jour le 14 avril 2026.
+
+---
+
+## 🎯 IDENTITÉ DU PROJET (à lire en premier)
+
+| Champ | Valeur |
+|-------|--------|
+| **Nom produit** | Sunny Interns OS |
+| **Business** | Bali Interns — placement de stagiaires français à Bali |
+| **Fondateur** | Sidney Ruby — sidney.ruby@gmail.com |
+| **Admin login** | sidney.ruby@gmail.com / SunnyInterns2026! |
+| **URL prod** | https://sunny-interns-os.vercel.app |
+| **Repo** | github.com/sunnyinterns/sunny-interns-os |
+| **Email envoi** | team@bali-interns.com (Resend ✅ vérifié) |
+| **WhatsApp** | +33 6 43 48 77 36 |
+| **Stack** | Next.js 15 + Supabase + Vercel + Resend + Fillout |
 
 ---
 
