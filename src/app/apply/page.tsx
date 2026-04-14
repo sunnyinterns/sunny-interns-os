@@ -723,7 +723,7 @@ export default function ApplyPage() {
           form.birth_date && form.passport_expiry
         )
       case 2:
-        return !!((form.cv_en_file || form.cv_url) && form.spoken_languages.length > 0 && !cvUploading)
+        return !!(form.school_country && (form.cv_en_file || form.cv_url) && form.spoken_languages.length > 0 && !cvUploading)
       case 3:
         return !!(form.stage_ideal?.trim())
       case 4:
@@ -1307,13 +1307,20 @@ export default function ApplyPage() {
               )}
             </div>
 
-            {/* Pays d'études — select */}
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════════════
+            ÉTAPE 3 — Ton profil
+            ════════════════════════════════════════════════════════ */}
+        {step === 2 && (
+          <div className="space-y-4">
+            {/* Pays d'études — EN PREMIER */}
             <div>
               <label className={labelClass}>{lang==='fr'?'Pays où tu étudies *':'Country where you study *'}</label>
               <p className={helperClass + " mb-2"}>
-                {lang === 'fr' ? "Pays dans lequel ta convention de stage sera établie de droit commun." : "Country where your internship agreement will be issued by law."}
+                {lang === 'fr' ? "Pays dans lequel ta convention de stage sera établie." : "Country where your internship agreement will be established."}
               </p>
-              {/* Chip selected */}
               {form.school_country && (
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#c8a96e] text-white">
@@ -1353,14 +1360,7 @@ export default function ApplyPage() {
                 </div>
               )}
             </div>
-          </div>
-        )}
 
-        {/* ════════════════════════════════════════════════════════
-            ÉTAPE 3 — Ton profil
-            ════════════════════════════════════════════════════════ */}
-        {step === 2 && (
-          <div className="space-y-4">
             {/* École / Université — autocomplete */}
             <div className="relative">
               <label className={labelClass}>{lang==='fr'?'\u00c9cole / Universit\u00e9':'School / University'}</label>
