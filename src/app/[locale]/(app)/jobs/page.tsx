@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { JOB_TEMPLATES, ALL_TOOLS, type JobTemplate } from '@/lib/job-templates'
 import { useAIAssist } from '@/hooks/useAIAssist'
+import { SearchableSelect, type SearchableSelectItem } from '@/components/ui/SearchableSelect'
 
 interface Contact {
   id: string
@@ -103,8 +104,6 @@ export default function JobsPage() {
   const [sortBy, setSortBy] = useState<SortKey>('recent')
   const [showModal, setShowModal] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [contactSearch, setContactSearch] = useState('')
-  const [showContactDropdown, setShowContactDropdown] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [prefilledFrom, setPrefilledFrom] = useState<string | null>(null)
   const [cities, setCities] = useState<{id:string;name:string;area:string}[]>([])
@@ -135,18 +134,11 @@ export default function JobsPage() {
       }
       return next
     })
-    setContactSearch('')
-    setShowContactDropdown(false)
     if (co?.name) {
       setPrefilledFrom(co.name)
       setTimeout(() => setPrefilledFrom(null), 3000)
     }
   }
-
-  const filteredContacts = contacts.filter(c => {
-    const q = contactSearch.toLowerCase()
-    return !q || `${c.first_name} ${c.last_name ?? ''} ${c.companies?.name ?? ''} ${c.job_title ?? ''}`.toLowerCase().includes(q)
-  })
 
   async function load() {
     setLoading(true)
@@ -165,7 +157,6 @@ export default function JobsPage() {
 
   function resetForm() {
     setForm(EMPTY_FORM)
-    setContactSearch('')
   }
 
   function applyTemplate(t: JobTemplate) {
@@ -450,53 +441,30 @@ export default function JobsPage() {
               <div className="space-y-2">
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">① Contact employeur</p>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1">Contact * <span className="text-zinc-400 font-normal">(détermine l&apos;entreprise et pré-remplit les champs)</span></label>
-                  <div className="relative">
-                    <input
-                      className={inputCls}
-                      placeholder="Rechercher un contact…"
-                      value={contactSearch || (selectedContact ? `${selectedContact.first_name} ${selectedContact.last_name ?? ''} — ${selectedContact.companies?.name ?? ''}` : '')}
-                      onFocus={() => { setShowContactDropdown(true); if (selectedContact) setContactSearch('') }}
-                      onBlur={() => setTimeout(() => setShowContactDropdown(false), 150)}
-                      onChange={e => { setContactSearch(e.target.value); setForm(p => ({ ...p, contact_id: '', company_id: '', company_name: '' })) }}
-                    />
-                    {showContactDropdown && filteredContacts.length > 0 && (
-                      <div className="absolute z-10 mt-1 w-full bg-white border border-zinc-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
-                        {filteredContacts.slice(0, 20).map(c => (
-                          <button key={c.id} type="button"
-                            className="w-full text-left px-3 py-2.5 hover:bg-zinc-50 flex items-center gap-3 border-b border-zinc-50 last:border-0"
-                            onMouseDown={() => selectContact(c)}>
-                            <div className="w-8 h-8 rounded-lg bg-[#c8a96e]/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                              {c.companies?.logo_url ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={c.companies.logo_url} alt="" className="w-8 h-8 object-cover rounded-lg"
-                                  onError={e => { e.currentTarget.style.display = 'none' }} />
-                              ) : (
-                                <span className="text-xs font-bold text-[#c8a96e]">
-                                  {(c.companies?.name ?? c.first_name)[0]?.toUpperCase()}
-                                </span>
-                              )}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-[#1a1918] truncate">
-                                {c.first_name} {c.last_name ?? ''}
-                                {c.job_title && <span className="text-zinc-400 font-normal"> — {c.job_title}</span>}
-                              </p>
-                              <p className="text-xs text-zinc-400 truncate">{c.companies?.name ?? '—'}</p>
-                              {c.companies?.industry && (
-                                <p className="text-[10px] text-zinc-300 truncate">{c.companies.industry}</p>
-                              )}
-                            </div>
-                            {c.companies?.description && (
-                              <span className="text-[9px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded flex-shrink-0">
-                                auto-fill
-                              </span>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <SearchableSelect
+                    label="Contact employeur"
+                    required
+                    items={contacts.map<SearchableSelectItem>(c => ({
+                      id: c.id,
+                      label: `${c.first_name} ${c.last_name ?? ''}${c.job_title ? ' — ' + c.job_title : ''}`.trim(),
+                      sublabel: c.companies?.name ?? c.companies?.industry ?? undefined,
+                      avatar: c.companies?.logo_url ?? (c.companies?.name ?? c.first_name)[0]?.toUpperCase(),
+                      badge: c.companies?.description ? 'auto-fill' : undefined,
+                      meta: { contact: c },
+                    }))}
+                    value={form.contact_id || null}
+                    onChange={item => {
+                      if (!item) {
+                        setForm(p => ({ ...p, contact_id: '', company_id: '', company_name: '' }))
+                        return
+                      }
+                      const c = (item.meta?.contact as Contact)
+                      selectContact(c)
+                    }}
+                    searchPlaceholder="Rechercher par nom, entreprise…"
+                    placeholder="Sélectionner un contact…"
+                    emptyText="Aucun contact trouvé"
+                  />
                   {prefilledFrom && (
                     <p className="text-xs text-[#0d9e75] mt-1 flex items-center gap-1">
                       ✓ Champs pré-remplis depuis la fiche <strong>{prefilledFrom}</strong>
