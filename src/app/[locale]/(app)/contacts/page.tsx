@@ -1,4 +1,5 @@
 'use client'
+import { SearchableSelect, type SearchableSelectItem } from '@/components/ui/SearchableSelect'
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
@@ -43,7 +44,7 @@ export default function ContactsPage() {
   const router = useRouter()
   const locale = typeof params?.locale === 'string' ? params.locale : 'fr'
   const [contacts, setContacts] = useState<Contact[]>([])
-  const [companies, setCompanies] = useState<{ id: string; name: string }[]>([])
+  const [companies, setCompanies] = useState<{ id: string; name: string; logo_url?: string | null; internship_city?: string | null; legal_type?: string | null; company_type?: string | null }[]>([])
   const [loading, setLoading] = useState(true)
   const [filterType, setFilterType] = useState<string>('all')
   const [filterCompany, setFilterCompany] = useState('')
@@ -396,12 +397,12 @@ export default function ContactsPage() {
                   <input className={inputCls} placeholder="Ex: DRH, Manager…" value={form.job_title} onChange={e => setForm(p => ({...p, job_title: e.target.value}))} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1">Type</label>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Catégorie</label>
                   <select className={inputCls} value={form.contact_type} onChange={e => setForm(p => ({...p, contact_type: e.target.value}))}>
-                    <option value="employer">Employeur</option>
+                    <option value="employer">Employeur / Entreprise</option>
                     <option value="promo_partner">Partenaire promo</option>
                     <option value="visa_agent">Agent visa</option>
-                    <option value="school_contact">École</option>
+                    <option value="school_contact">École / Université</option>
                   </select>
                 </div>
                 <div>
@@ -414,11 +415,22 @@ export default function ContactsPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-zinc-600 mb-1">Entreprise</label>
-                <select className={inputCls} value={form.company_id} onChange={e => setForm(p => ({...p, company_id: e.target.value}))}>
-                  <option value="">— Aucune —</option>
-                  {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <SearchableSelect
+                  label="Entreprise associée"
+                  items={companies.map((c): SearchableSelectItem => ({
+                    id: c.id,
+                    label: c.name,
+                    sublabel: [c.internship_city, c.legal_type ?? c.company_type].filter(Boolean).join(' · ') || undefined,
+                    avatar: c.logo_url ?? c.name[0]?.toUpperCase(),
+                    avatarColor: '#f0ebe2',
+                  }))}
+                  value={form.company_id || null}
+                  onChange={item => setForm(p => ({...p, company_id: item?.id ?? ''}))}
+                  placeholder="Rechercher une entreprise…"
+                  searchPlaceholder="Nom de l'entreprise…"
+                  clearable={true}
+                  emptyText="Aucune entreprise trouvée"
+                />
               </div>
               <div className="flex justify-end gap-2 pt-2 border-t border-zinc-100">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm rounded-lg border border-zinc-200 text-zinc-600 hover:bg-zinc-50">Annuler</button>
