@@ -63,6 +63,9 @@ interface TabProfilProps {
   qualificationNotes?: string | null
   desiredSectors?: string[] | null
   cvFeedback?: string | null
+  touchpoint?: string | null
+  touchpoints?: string[] | null
+  referred_by_code?: string | null
 }
 
 const FIELD_LABELS: Record<string, string> = {
@@ -346,7 +349,7 @@ const DURATION_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
   label: `${i + 1} mois`,
 }))
 
-export function TabProfil({ intern, internId, caseId, schoolName, schoolId }: TabProfilProps) {
+export function TabProfil({ intern, internId, caseId, schoolName, schoolId, touchpoint, touchpoints, referred_by_code }: TabProfilProps) {
   if (!intern) {
     return <p className="text-sm text-zinc-400">Aucun profil associé</p>
   }
@@ -423,6 +426,34 @@ export function TabProfil({ intern, internId, caseId, schoolName, schoolId }: Ta
         />
         {/* Responsable pédagogique → déplacé dans l'onglet Visa */}
       </Section>
+
+      {/* SECTION SOURCE */}
+      {(touchpoint || (touchpoints && touchpoints.length > 0) || referred_by_code) && (
+        <Section title="🔍 Source">
+          {touchpoint && (
+            <div className="flex items-center gap-2 py-2.5 border-b border-zinc-50">
+              <span className="text-[11px] text-zinc-400 font-medium w-32 flex-shrink-0">Comment trouvé</span>
+              <span className="text-sm text-[#1a1918]">{touchpoint}</span>
+            </div>
+          )}
+          {touchpoints && touchpoints.length > 0 && (
+            <div className="flex items-start gap-2 py-2.5 border-b border-zinc-50">
+              <span className="text-[11px] text-zinc-400 font-medium w-32 flex-shrink-0">Canaux</span>
+              <div className="flex flex-wrap gap-1">
+                {touchpoints.map(t => (
+                  <span key={t} className="text-xs bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-full">{t}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {referred_by_code && (
+            <div className="flex items-center gap-2 py-2.5 border-b border-zinc-50">
+              <span className="text-[11px] text-zinc-400 font-medium w-32 flex-shrink-0">Code ambassadeur</span>
+              <span className="text-sm font-mono bg-amber-50 text-amber-700 px-2 py-0.5 rounded-lg">{referred_by_code}</span>
+            </div>
+          )}
+        </Section>
+      )}
     </div>
   )
 }

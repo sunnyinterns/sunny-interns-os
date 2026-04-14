@@ -499,12 +499,15 @@ export default function CaseDetailPage() {
             schoolName={schoolName}
             schoolId={caseData.school_id ?? null}
             desiredStartDate={(caseData as any).desired_start_date ?? null}
-            desiredEndDate={(caseData as any).actual_end_date ?? (caseData as any).interns?.desired_end_date ?? null}
+            desiredEndDate={intern?.desired_end_date ?? null}
             desiredDurationMonths={(caseData as any).desired_duration_months ?? null}
             arrivalDate={(caseData as any).actual_start_date ?? (caseData as any).desired_start_date ?? null}
             qualificationNotes={(caseData as any).qualification_notes ?? null}
             desiredSectors={(caseData as any).desired_sectors ?? null}
             cvFeedback={(caseData as any).cv_feedback ?? null}
+            touchpoint={intern?.touchpoint ?? null}
+            touchpoints={(intern as any)?.touchpoints ?? null}
+            referred_by_code={(intern as any)?.referred_by_code ?? null}
           />
         )}
         {activeTab === 'staffing' && (
