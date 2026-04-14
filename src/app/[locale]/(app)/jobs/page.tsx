@@ -201,8 +201,8 @@ export default function JobsPage() {
       public_description: form.public_description || null,
       wished_start_date: form.wished_start_date || null,
       wished_duration_months: form.wished_duration_months,
-      is_remote: form.is_remote,
-      remote_ok: form.remote_ok,
+      remote_ok: form.remote_ok ?? false,
+      is_remote: form.remote_ok ?? false,
       status: form.status,
       required_level: form.required_level || null,
       required_languages: form.required_languages.length > 0 ? form.required_languages : [],
@@ -439,11 +439,95 @@ export default function JobsPage() {
               <h2 className="text-base font-semibold text-[#1a1918]">Nouvelle offre de stage</h2>
               <button onClick={() => setShowModal(false)} className="text-zinc-400 hover:text-zinc-600 text-xl">×</button>
             </div>
-            <form onSubmit={createJob} className="px-6 py-5 space-y-4 max-h-[75vh] overflow-y-auto">
+            <form onSubmit={createJob} className="px-6 py-5 space-y-5 max-h-[75vh] overflow-y-auto">
 
-              {/* Section 0 — Templates */}
-              <div>
-                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Partir d&apos;un template</p>
+              {/* ÉTAPE 0 — Contact employeur (EN PREMIER) */}
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">① Contact employeur</p>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Contact * <span className="text-zinc-400 font-normal">(détermine l&apos;entreprise et pré-remplit les champs)</span></label>
+                  <div className="relative">
+                    <input
+                      className={inputCls}
+                      placeholder="Rechercher un contact…"
+                      value={contactSearch || (selectedContact ? `${selectedContact.first_name} ${selectedContact.last_name ?? ''} — ${selectedContact.companies?.name ?? ''}` : '')}
+                      onFocus={() => { setShowContactDropdown(true); if (selectedContact) setContactSearch('') }}
+                      onBlur={() => setTimeout(() => setShowContactDropdown(false), 150)}
+                      onChange={e => { setContactSearch(e.target.value); setForm(p => ({ ...p, contact_id: '', company_id: '', company_name: '' })) }}
+                    />
+                    {showContactDropdown && filteredContacts.length > 0 && (
+                      <div className="absolute z-10 mt-1 w-full bg-white border border-zinc-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                        {filteredContacts.slice(0, 20).map(c => (
+                          <button key={c.id} type="button"
+                            className="w-full text-left px-3 py-2.5 hover:bg-zinc-50 flex items-center gap-3 border-b border-zinc-50 last:border-0"
+                            onMouseDown={() => selectContact(c)}>
+                            <div className="w-8 h-8 rounded-lg bg-[#c8a96e]/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {c.companies?.logo_url ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={c.companies.logo_url} alt="" className="w-8 h-8 object-cover rounded-lg"
+                                  onError={e => { e.currentTarget.style.display = 'none' }} />
+                              ) : (
+                                <span className="text-xs font-bold text-[#c8a96e]">
+                                  {(c.companies?.name ?? c.first_name)[0]?.toUpperCase()}
+                                </span>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-[#1a1918] truncate">
+                                {c.first_name} {c.last_name ?? ''}
+                                {c.job_title && <span className="text-zinc-400 font-normal"> — {c.job_title}</span>}
+                              </p>
+                              <p className="text-xs text-zinc-400 truncate">{c.companies?.name ?? '—'}</p>
+                              {c.companies?.industry && (
+                                <p className="text-[10px] text-zinc-300 truncate">{c.companies.industry}</p>
+                              )}
+                            </div>
+                            {c.companies?.description && (
+                              <span className="text-[9px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded flex-shrink-0">
+                                auto-fill
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {prefilledFrom && (
+                    <p className="text-xs text-[#0d9e75] mt-1 flex items-center gap-1">
+                      ✓ Champs pré-remplis depuis la fiche <strong>{prefilledFrom}</strong>
+                    </p>
+                  )}
+                  {form.company_name && (
+                    <div className="mt-2 flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                      <div className="w-8 h-8 rounded-lg bg-[#c8a96e]/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {selectedContact?.companies?.logo_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={selectedContact.companies.logo_url} alt="" className="w-8 h-8 object-cover rounded-lg" />
+                        ) : (
+                          <span className="text-xs font-bold text-[#c8a96e]">{form.company_name[0]?.toUpperCase()}</span>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold text-[#1a1918] truncate">{form.company_name}</p>
+                        {form.company_id && (
+                          <a href={`/${locale}/companies/${form.company_id}`} target="_blank" rel="noreferrer"
+                            className="text-[10px] text-[#c8a96e] hover:underline">
+                            🏢 Voir la fiche entreprise ↗
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Separator */}
+              <div className="border-t border-zinc-100" />
+
+              {/* ÉTAPE 1 — Template (optionnel) */}
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">② Partir d&apos;un template <span className="text-zinc-300 font-normal normal-case">— optionnel, pré-remplit la suite</span></p>
+                <p className="text-[11px] text-zinc-400">Vous pouvez choisir un template ou remplir manuellement.</p>
                 <div className="grid grid-cols-3 gap-2">
                   {JOB_TEMPLATES.map(t => (
                     <button key={t.id} type="button"
@@ -459,236 +543,186 @@ export default function JobsPage() {
                 </div>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-4">
-                {/* LEFT COL */}
-                <div className="space-y-3">
-                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Identification</p>
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1">Titre interne *</label>
-                    <input required className={inputCls} value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
-                      <span>Titre public</span>
-                      <button type="button" disabled={aiLoading || !form.title} onClick={async () => {
-                        const r = await assist('generate_public_title', { title: form.title, company_name: form.company_name, department: form.department })
-                        if (r) setForm(p => ({ ...p, public_title: r }))
-                      }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
-                    </label>
-                    <input className={inputCls} value={form.public_title} onChange={e => setForm(p => ({ ...p, public_title: e.target.value }))} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1">Contact employeur *</label>
-                    <div className="relative">
-                      <input
-                        className={inputCls}
-                        placeholder="Rechercher un contact…"
-                        value={contactSearch || (selectedContact ? `${selectedContact.first_name} ${selectedContact.last_name ?? ''} — ${selectedContact.companies?.name ?? ''}` : '')}
-                        onFocus={() => { setShowContactDropdown(true); if (selectedContact) setContactSearch('') }}
-                        onBlur={() => setTimeout(() => setShowContactDropdown(false), 150)}
-                        onChange={e => { setContactSearch(e.target.value); setForm(p => ({ ...p, contact_id: '', company_id: '', company_name: '' })) }}
-                      />
-                      {showContactDropdown && filteredContacts.length > 0 && (
-                        <div className="absolute z-10 mt-1 w-full bg-white border border-zinc-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
-                          {filteredContacts.slice(0, 20).map(c => (
-                            <button key={c.id} type="button"
-                              className="w-full text-left px-3 py-2.5 hover:bg-zinc-50 flex items-center gap-3 border-b border-zinc-50 last:border-0"
-                              onMouseDown={() => selectContact(c)}>
-                              <div className="w-8 h-8 rounded-lg bg-[#c8a96e]/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                                {c.companies?.logo_url ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={c.companies.logo_url} alt="" className="w-8 h-8 object-cover rounded-lg"
-                                    onError={e => { e.currentTarget.style.display = 'none' }} />
-                                ) : (
-                                  <span className="text-xs font-bold text-[#c8a96e]">
-                                    {(c.companies?.name ?? c.first_name)[0]?.toUpperCase()}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium text-[#1a1918] truncate">
-                                  {c.first_name} {c.last_name ?? ''}
-                                  {c.job_title && <span className="text-zinc-400 font-normal"> — {c.job_title}</span>}
-                                </p>
-                                <p className="text-xs text-zinc-400 truncate">{c.companies?.name ?? '—'}</p>
-                                {c.companies?.industry && (
-                                  <p className="text-[10px] text-zinc-300 truncate">{c.companies.industry}</p>
-                                )}
-                              </div>
-                              {c.companies?.description && (
-                                <span className="text-[9px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded flex-shrink-0">
-                                  auto-fill
-                                </span>
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    {prefilledFrom && (
-                      <p className="text-xs text-[#0d9e75] mt-1 flex items-center gap-1">
-                        ✓ Champs pré-remplis depuis la fiche <strong>{prefilledFrom}</strong>
-                      </p>
-                    )}
-                    {form.company_name && <p className="text-xs text-zinc-400 mt-1">Entreprise : <span className="font-medium text-[#1a1918]">{form.company_name}</span></p>}
-                    {form.company_id && (
-                      <a href={`/${locale}/companies/${form.company_id}`} target="_blank" rel="noreferrer"
-                        className="text-xs text-[#c8a96e] hover:underline flex items-center gap-1 mt-1">
-                        🏢 Voir la fiche entreprise ↗
-                      </a>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1">Département / Métier *</label>
-                    <select className={inputCls} value={form.job_department_id} onChange={e => {
-                      const dept = jobDepartments.find(d => d.id === e.target.value)
-                      setForm(p => ({ ...p, job_department_id: e.target.value, department: dept?.name ?? p.department }))
-                    }}>
-                      <option value="">— Sélectionner —</option>
-                      {jobDepartments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                    </select>
-                  </div>
+              <div className="border-t border-zinc-100" />
 
-                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider pt-2">Modalités</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-600 mb-1">Durée (mois)</label>
-                      <select className={inputCls} value={form.wished_duration_months} onChange={e => setForm(p => ({ ...p, wished_duration_months: e.target.value }))}>
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => <option key={n} value={n}>{n}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-600 mb-1">Démarrage</label>
-                      <input type="date" className={inputCls} value={form.wished_start_date} onChange={e => setForm(p => ({ ...p, wished_start_date: e.target.value }))} />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-600 mb-1">Niveau</label>
-                      <select className={inputCls} value={form.required_level} onChange={e => setForm(p => ({ ...p, required_level: e.target.value }))}>
-                        <option value="">—</option>
-                        {['Bac', 'Bac+2', 'Bac+3', 'Bac+4', 'Bac+5'].map(l => <option key={l} value={l}>{l}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-600 mb-1">Lieu</label>
-                      <input className={inputCls} value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} />
-                    </div>
-                  </div>
+              {/* ÉTAPE 2 — Identification du poste */}
+              <div className="space-y-3">
+                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">③ Identification du poste</p>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Titre interne *</label>
+                  <input required className={inputCls} value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Ex: Stage Social Media Manager" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
+                    <span>Titre public *</span>
+                    <button type="button" disabled={aiLoading || !form.title} onClick={async () => {
+                      const r = await assist('generate_public_title', { title: form.title, company_name: form.company_name, department: form.department })
+                      if (r) setForm(p => ({ ...p, public_title: r }))
+                    }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
+                  </label>
+                  <input className={inputCls} value={form.public_title} onChange={e => setForm(p => ({ ...p, public_title: e.target.value }))} placeholder="Visible par les candidats" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Département / Métier *</label>
+                  <select className={inputCls} value={form.job_department_id} onChange={e => {
+                    const dept = jobDepartments.find(d => d.id === e.target.value)
+                    setForm(p => ({ ...p, job_department_id: e.target.value, department: dept?.name ?? p.department }))
+                  }}>
+                    <option value="">— Sélectionner —</option>
+                    {jobDepartments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="border-t border-zinc-100" />
+
+              {/* ÉTAPE 3 — Contenu */}
+              <div className="space-y-3">
+                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">④ Contenu</p>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Missions</label>
+                  {form.missions.map((m, i) => (
+                    <input key={i} className={`${inputCls} mb-1`} placeholder={`Mission ${i + 1}`} value={m} onChange={e => {
+                      const next = [...form.missions]; next[i] = e.target.value
+                      setForm(p => ({ ...p, missions: next }))
+                    }} />
+                  ))}
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
+                    <span>Profil recherché</span>
+                    <button type="button" disabled={aiLoading || !form.title} onClick={async () => {
+                      const r = await assist('generate_profile', { title: form.title, department: form.department, required_level: form.required_level, tools: form.tools_required.join(', '), languages: form.required_languages.join(', ') })
+                      if (r) setForm(p => ({ ...p, profile_sought: r }))
+                    }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
+                  </label>
+                  <textarea className={inputCls} rows={2} value={form.profile_sought} onChange={e => setForm(p => ({ ...p, profile_sought: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
+                    <span>Description interne</span>
+                    <button type="button" disabled={aiLoading || !form.title} onClick={async () => {
+                      const r = await assist('generate_description', { title: form.title, company_name: form.company_name, missions: form.missions.join(', '), profile_sought: form.profile_sought, tools: form.tools_required.join(', ') })
+                      if (r) setForm(p => ({ ...p, description: r }))
+                    }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
+                  </label>
+                  <textarea className={inputCls} rows={2} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} />
+                  {form.description && form.description === selectedContact?.companies?.description && (
+                    <p className="text-[10px] text-zinc-400 mt-1">📋 Importé depuis la fiche entreprise — modifiable</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
+                    <span>Description publique</span>
+                    <button type="button" disabled={aiLoading || !form.title} onClick={async () => {
+                      const r = form.public_description
+                        ? await assist('improve_text', { text: form.public_description, context: `Offre ${form.title} à Bali` })
+                        : await assist('generate_public_description', { title: form.title, public_title: form.public_title, company_type: form.company_type, missions: form.missions.join(','), tools: form.tools_required.join(', ') })
+                      if (r) setForm(p => ({ ...p, public_description: r }))
+                    }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
+                  </label>
+                  <textarea className={inputCls} rows={3} value={form.public_description} onChange={e => setForm(p => ({ ...p, public_description: e.target.value }))} />
+                </div>
+              </div>
+
+              <div className="border-t border-zinc-100" />
+
+              {/* ÉTAPE 4 — Outils */}
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">⑤ Outils maîtrisés requis</p>
+                <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-1 border border-zinc-100 rounded-lg">
+                  {ALL_TOOLS.map(tool => (
+                    <button key={tool} type="button" onClick={() => toggleTool(tool)}
+                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${form.tools_required.includes(tool)
+                        ? 'bg-[#c8a96e] text-white border-[#c8a96e]'
+                        : 'bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300'}`}>
+                      {tool}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-zinc-100" />
+
+              {/* ÉTAPE 5 — Modalités */}
+              <div className="space-y-3">
+                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">⑥ Modalités</p>
+                <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1">Langues</label>
-                    <div className="flex flex-wrap gap-1.5">
-                      {['FR', 'EN', 'ES', 'DE', 'IT', 'PT', 'ZH'].map(lang => (
-                        <button key={lang} type="button"
-                          onClick={() => setForm(p => ({
-                            ...p,
-                            required_languages: p.required_languages.includes(lang)
-                              ? p.required_languages.filter(l => l !== lang)
-                              : [...p.required_languages, lang]
-                          }))}
-                          className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${form.required_languages.includes(lang)
-                            ? 'bg-[#c8a96e] text-white border-[#c8a96e]'
-                            : 'bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300'}`}>
-                          {lang}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={form.remote_ok} onChange={e => setForm(p => ({ ...p, remote_ok: e.target.checked, is_remote: e.target.checked }))} />
-                      <span className="text-xs">Remote OK</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={form.is_recurring} onChange={e => setForm(p => ({ ...p, is_recurring: e.target.checked }))} />
-                      <span className="text-xs">Récurrent</span>
-                    </label>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1">Statut</label>
-                    <select className={inputCls} value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))}>
-                      <option value="open">🟢 Cherche stagiaire</option>
-                      <option value="staffed">🔵 Pourvu</option>
-                      <option value="cancelled">⚫ Annulé</option>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1">Durée (mois) *</label>
+                    <select className={inputCls} value={form.wished_duration_months} onChange={e => setForm(p => ({ ...p, wished_duration_months: e.target.value }))}>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => <option key={n} value={n}>{n}</option>)}
                     </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1">Démarrage</label>
+                    <input type="date" className={inputCls} value={form.wished_start_date} onChange={e => setForm(p => ({ ...p, wished_start_date: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1">Niveau requis</label>
+                    <select className={inputCls} value={form.required_level} onChange={e => setForm(p => ({ ...p, required_level: e.target.value }))}>
+                      <option value="">—</option>
+                      {['Bac', 'Bac+2', 'Bac+3', 'Bac+4', 'Bac+5'].map(l => <option key={l} value={l}>{l}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1">Lieu</label>
+                    <input className={inputCls} value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} />
                   </div>
                 </div>
-
-                {/* RIGHT COL */}
-                <div className="space-y-3">
-                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Contenu</p>
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1">Missions</label>
-                    {form.missions.map((m, i) => (
-                      <input key={i} className={`${inputCls} mb-1`} placeholder={`Mission ${i + 1}`} value={m} onChange={e => {
-                        const next = [...form.missions]; next[i] = e.target.value
-                        setForm(p => ({ ...p, missions: next }))
-                      }} />
-                    ))}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
-                      <span>Description interne</span>
-                      <button type="button" disabled={aiLoading || !form.title} onClick={async () => {
-                        const r = await assist('generate_description', { title: form.title, company_name: form.company_name, missions: form.missions.join(', '), profile_sought: form.profile_sought, tools: form.tools_required.join(', ') })
-                        if (r) setForm(p => ({ ...p, description: r }))
-                      }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
-                    </label>
-                    <textarea className={inputCls} rows={2} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} />
-                    {form.description && form.description === selectedContact?.companies?.description && (
-                      <p className="text-[10px] text-zinc-400 mt-1">
-                        📋 Importé depuis la fiche entreprise — modifiable
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
-                      <span>Description publique</span>
-                      <button type="button" disabled={aiLoading || !form.title} onClick={async () => {
-                        const r = form.public_description
-                          ? await assist('improve_text', { text: form.public_description, context: `Offre ${form.title} à Bali` })
-                          : await assist('generate_public_description', { title: form.title, public_title: form.public_title, company_type: form.company_type, missions: form.missions.join(','), tools: form.tools_required.join(', ') })
-                        if (r) setForm(p => ({ ...p, public_description: r }))
-                      }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
-                    </label>
-                    <textarea className={inputCls} rows={3} value={form.public_description} onChange={e => setForm(p => ({ ...p, public_description: e.target.value }))} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
-                      <span>Profil recherché</span>
-                      <button type="button" disabled={aiLoading || !form.title} onClick={async () => {
-                        const r = await assist('generate_profile', { title: form.title, department: form.department, required_level: form.required_level, tools: form.tools_required.join(', '), languages: form.required_languages.join(', ') })
-                        if (r) setForm(p => ({ ...p, profile_sought: r }))
-                      }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
-                    </label>
-                    <textarea className={inputCls} rows={2} value={form.profile_sought} onChange={e => setForm(p => ({ ...p, profile_sought: e.target.value }))} />
-                  </div>
-
-                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider pt-2">Outils maîtrisés requis</p>
-                  <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-1 border border-zinc-100 rounded-lg">
-                    {ALL_TOOLS.map(tool => (
-                      <button key={tool} type="button" onClick={() => toggleTool(tool)}
-                        className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${form.tools_required.includes(tool)
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Langues</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {['FR', 'EN', 'ES', 'DE', 'IT', 'PT', 'ZH'].map(lang => (
+                      <button key={lang} type="button"
+                        onClick={() => setForm(p => ({
+                          ...p,
+                          required_languages: p.required_languages.includes(lang)
+                            ? p.required_languages.filter(l => l !== lang)
+                            : [...p.required_languages, lang]
+                        }))}
+                        className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${form.required_languages.includes(lang)
                           ? 'bg-[#c8a96e] text-white border-[#c8a96e]'
                           : 'bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300'}`}>
-                        {tool}
+                        {lang}
                       </button>
                     ))}
                   </div>
-
-                  <details className="pt-2">
-                    <summary className="text-xs font-bold text-zinc-400 uppercase tracking-wider cursor-pointer">Social (avancé)</summary>
-                    <div className="space-y-2 mt-2">
-                      <div>
-                        <label className="block text-xs font-medium text-zinc-600 mb-1">Type d&apos;entreprise</label>
-                        <input className={inputCls} value={form.company_type} onChange={e => setForm(p => ({ ...p, company_type: e.target.value }))} />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-zinc-600 mb-1">Image de fond (URL)</label>
-                        <input className={inputCls} value={form.background_image_url} onChange={e => setForm(p => ({ ...p, background_image_url: e.target.value }))} />
-                      </div>
-                    </div>
-                  </details>
+                </div>
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={form.remote_ok} onChange={e => setForm(p => ({ ...p, remote_ok: e.target.checked, is_remote: e.target.checked }))} />
+                    <span className="text-xs">Remote OK</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={form.is_recurring} onChange={e => setForm(p => ({ ...p, is_recurring: e.target.checked }))} />
+                    <span className="text-xs">Récurrent</span>
+                  </label>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Statut</label>
+                  <select className={inputCls} value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))}>
+                    <option value="open">🟢 Cherche stagiaire</option>
+                    <option value="staffed">🔵 Pourvu</option>
+                    <option value="cancelled">⚫ Annulé</option>
+                  </select>
                 </div>
               </div>
+
+              {/* ÉTAPE 6 — Social (collapsible) */}
+              <details className="pt-2 border-t border-zinc-100">
+                <summary className="text-xs font-bold text-zinc-400 uppercase tracking-wider cursor-pointer py-2">⑦ Social (avancé, optionnel)</summary>
+                <div className="space-y-2 mt-2">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1">Type d&apos;entreprise</label>
+                    <input className={inputCls} value={form.company_type} onChange={e => setForm(p => ({ ...p, company_type: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1">Image de fond (URL)</label>
+                    <input className={inputCls} value={form.background_image_url} onChange={e => setForm(p => ({ ...p, background_image_url: e.target.value }))} />
+                  </div>
+                </div>
+              </details>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-zinc-100">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm rounded-lg border border-zinc-200 text-zinc-600">Annuler</button>
