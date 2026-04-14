@@ -40,6 +40,8 @@ export async function POST(request: Request) {
     if (error) throw error
     return NextResponse.json(data, { status: 201 })
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    const msg = e instanceof Error ? e.message : (typeof e === 'object' ? JSON.stringify(e) : String(e))
+    console.error('[POST /api/companies]', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
