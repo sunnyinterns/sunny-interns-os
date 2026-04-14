@@ -102,6 +102,13 @@ export default function CompaniesPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [logoUploading, setLogoUploading] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
+  const [cities, setCities] = useState<{id:string; name:string; area:string}[]>([])
+  const [companyTypes, setCompanyTypes] = useState<{id:string; code:string; name:string; country:string}[]>([])
+
+  useEffect(() => {
+    fetch('/api/internship-cities').then(r => r.json()).then(d => setCities(Array.isArray(d) ? d : [])).catch(() => null)
+    fetch('/api/company-types').then(r => r.json()).then(d => setCompanyTypes(Array.isArray(d) ? d : [])).catch(() => null)
+  }, [])
 
   function toast(msg: string) {
     setToastMsg(msg)
@@ -476,6 +483,27 @@ export default function CompaniesPage() {
                   <label className="block text-xs font-medium text-zinc-600 mb-1">Description</label>
                   <textarea value={form.description} onChange={e => setForm(p => ({...p, description: e.target.value}))} className={inputCls} rows={2} placeholder="Activité de l'entreprise…" />
                 </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Type de société</label>
+                  <select value={form.company_type} onChange={e => setForm(p => ({...p, company_type: e.target.value}))} className={inputCls}>
+                    <option value="">— Type de société —</option>
+                    <optgroup label="Indonésie">
+                      {companyTypes.filter(t => t.country === 'Indonesia').map(t => (
+                        <option key={t.id} value={t.code}>{t.name}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="France">
+                      {companyTypes.filter(t => t.country === 'France').map(t => (
+                        <option key={t.id} value={t.code}>{t.name}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="International">
+                      {companyTypes.filter(t => !['Indonesia','France'].includes(t.country)).map(t => (
+                        <option key={t.id} value={t.code}>{t.name} ({t.country})</option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
               </div>
 
               <div className="border-t border-zinc-100" />
@@ -505,7 +533,17 @@ export default function CompaniesPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-zinc-600 mb-1">Ville du stage</label>
-                    <input value={form.internship_city} onChange={e => setForm(p => ({...p, internship_city: e.target.value}))} className={inputCls} placeholder="Canggu, Seminyak, Ubud…" />
+                    <select value={form.internship_city} onChange={e => setForm(p => ({...p, internship_city: e.target.value}))} className={inputCls}>
+                      <option value="">— Sélectionner —</option>
+                      {Object.entries(cities.reduce((acc, c) => {
+                        (acc[c.area] = acc[c.area] || []).push(c)
+                        return acc
+                      }, {} as Record<string, typeof cities>)).map(([area, areaCities]) => (
+                        <optgroup key={area} label={area}>
+                          {areaCities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                        </optgroup>
+                      ))}
+                    </select>
                   </div>
                 </div>
                 <div>
