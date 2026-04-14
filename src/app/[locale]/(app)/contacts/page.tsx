@@ -56,9 +56,13 @@ export default function ContactsPage() {
   const [editValue, setEditValue] = useState('')
   const [creatingJob, setCreatingJob] = useState(false)
   const [jobForm, setJobForm] = useState({ title: '', wished_start_date: '', wished_duration_months: '4' })
+  const [waCode, setWaCode] = useState('+33')
+  const [waNumber, setWaNumber] = useState('')
+  const [waError, setWaError] = useState<string | null>(null)
+  const [createError, setCreateError] = useState<string | null>(null)
   const [form, setForm] = useState({
     first_name: '', last_name: '', job_title: '', email: '', whatsapp: '',
-    company_id: '', contact_type: 'employer',
+    company_id: '',
   })
 
   async function load() {
@@ -84,16 +88,33 @@ export default function ContactsPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
+    setCreateError(null)
+    const digits = waNumber.replace(/\D/g, '')
+    if (waNumber && digits.length < 6) { setWaError('Numéro trop court'); return }
+    setWaError(null)
     setSaving(true)
+    const whatsapp = waNumber ? `${waCode}${digits}` : null
+    const body = {
+      first_name: form.first_name,
+      last_name: form.last_name || null,
+      job_title: form.job_title || null,
+      email: form.email || null,
+      whatsapp,
+      company_id: form.company_id || null,
+    }
     const res = await fetch('/api/contacts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify(body),
     })
     if (res.ok) {
       setShowModal(false)
-      setForm({ first_name: '', last_name: '', job_title: '', email: '', whatsapp: '', company_id: '', contact_type: 'employer' })
+      setForm({ first_name: '', last_name: '', job_title: '', email: '', whatsapp: '', company_id: '' })
+      setWaCode('+33'); setWaNumber(''); setWaError(null); setCreateError(null)
       void load()
+    } else {
+      const err = await res.json().catch(() => ({})) as { error?: string }
+      setCreateError(err.error ?? 'Erreur création contact')
     }
     setSaving(false)
   }
@@ -401,9 +422,43 @@ export default function ContactsPage() {
                   <label className="block text-xs font-medium text-zinc-600 mb-1">Email</label>
                   <input type="email" className={inputCls} value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} />
                 </div>
-                <div>
+                <div className="col-span-2">
                   <label className="block text-xs font-medium text-zinc-600 mb-1">WhatsApp</label>
-                  <input className={inputCls} placeholder="+62…" value={form.whatsapp} onChange={e => setForm(p => ({...p, whatsapp: e.target.value}))} />
+                  <div className="flex gap-2">
+                    <select value={waCode} onChange={e => { setWaCode(e.target.value); setWaError(null) }}
+                      className="px-2 py-2 border border-zinc-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e] w-28 flex-shrink-0">
+                      <option value="+33">+33 🇫🇷</option>
+                      <option value="+32">+32 🇧🇪</option>
+                      <option value="+41">+41 🇨🇭</option>
+                      <option value="+1">+1 🇺🇸</option>
+                      <option value="+44">+44 🇬🇧</option>
+                      <option value="+49">+49 🇩🇪</option>
+                      <option value="+34">+34 🇪🇸</option>
+                      <option value="+39">+39 🇮🇹</option>
+                      <option value="+351">+351 🇵🇹</option>
+                      <option value="+31">+31 🇳🇱</option>
+                      <option value="+62">+62 🇮🇩</option>
+                      <option value="+66">+66 🇹🇭</option>
+                      <option value="+84">+84 🇻🇳</option>
+                      <option value="+60">+60 🇲🇾</option>
+                      <option value="+65">+65 🇸🇬</option>
+                      <option value="+61">+61 🇦🇺</option>
+                      <option value="+81">+81 🇯🇵</option>
+                      <option value="+91">+91 🇮🇳</option>
+                      <option value="+55">+55 🇧🇷</option>
+                      <option value="+52">+52 🇲🇽</option>
+                      <option value="+212">+212 🇲🇦</option>
+                      <option value="+216">+216 🇹🇳</option>
+                      <option value="+221">+221 🇸🇳</option>
+                    </select>
+                    <div className="flex-1">
+                      <input type="tel" value={waNumber}
+                        onChange={e => { setWaNumber(e.target.value); setWaError(null) }}
+                        className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 ${waError ? 'border-red-400 focus:ring-red-300' : 'border-zinc-200 focus:ring-[#c8a96e]'}`}
+                        placeholder="6 12 34 56 78" />
+                      {waError && <p className="text-xs text-red-500 mt-0.5">{waError}</p>}
+                    </div>
+                  </div>
                 </div>
               </div>
               <div>
@@ -425,6 +480,9 @@ export default function ContactsPage() {
                 />
               </div>
               <div className="flex justify-end gap-2 pt-2 border-t border-zinc-100">
+                {createError && (
+                  <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{createError}</p>
+                )}
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm rounded-lg border border-zinc-200 text-zinc-600 hover:bg-zinc-50">Annuler</button>
                 <button type="submit" disabled={saving} className="px-4 py-2 text-sm font-medium rounded-lg bg-[#c8a96e] text-white hover:bg-[#b8945a] disabled:opacity-50">
                   {saving ? 'Création…' : 'Créer'}
