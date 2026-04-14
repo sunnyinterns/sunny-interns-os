@@ -58,6 +58,14 @@ interface Company {
   siret?: string | null
   tax_id?: string | null
   state_of_incorporation?: string | null
+  // rôles
+  is_employer?: boolean | null
+  is_partner?: boolean | null
+  is_supplier?: boolean | null
+  partner_timing?: string | null
+  partner_category?: string | null
+  partner_deal?: string | null
+  partner_visible_from?: string | null
   // social
   instagram_url?: string | null
   tiktok_url?: string | null
@@ -516,6 +524,11 @@ export default function CompanyDetailPage() {
                 <h1 className="text-xl font-bold text-[#1a1918]">{company.name}</h1>
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${destinationColor}`}>{destinationLabel}</span>
               </div>
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {company.is_employer && <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">🏢 Employeur</span>}
+                {company.is_partner && <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-medium">🤝 Partenaire</span>}
+                {company.is_supplier && <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full font-medium">📦 Fournisseur</span>}
+              </div>
               {company.sector && <p className="text-sm text-zinc-500">{company.sector}</p>}
               {company.website && (
                 <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-sm text-[#c8a96e] hover:underline mt-1 inline-block">
@@ -586,6 +599,32 @@ export default function CompanyDetailPage() {
             <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">📝 Notes internes</h3>
             <p className="text-sm text-zinc-600 whitespace-pre-wrap">{company.notes ?? <span className="text-zinc-400 italic">Aucune note</span>}</p>
           </div>
+
+          {company.is_partner && (
+            <div className="bg-white border border-zinc-100 rounded-xl p-4 md:col-span-2 space-y-2">
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">🤝 Partenariat</p>
+              {company.partner_category && (
+                <p className="text-sm"><span className="text-zinc-400">Catégorie:</span> {company.partner_category}</p>
+              )}
+              {company.partner_timing && (
+                <p className="text-sm"><span className="text-zinc-400">Disponible:</span> {
+                  company.partner_timing === 'pre_arrival' ? 'Avant départ' :
+                  company.partner_timing === 'on_site' ? 'Sur l\'île' : 'Avant départ + Sur l\'île'
+                }</p>
+              )}
+              {company.partner_visible_from && (
+                <p className="text-sm"><span className="text-zinc-400">Portail:</span> {
+                  company.partner_visible_from === 'payment' ? 'Dès paiement (Welcome Kit)' : 'À l\'arrivée'
+                }</p>
+              )}
+              {company.partner_deal && (
+                <div>
+                  <p className="text-xs text-zinc-400 mb-1">Offre</p>
+                  <p className="text-sm text-[#1a1918] bg-amber-50 rounded-lg px-3 py-2">{company.partner_deal}</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
