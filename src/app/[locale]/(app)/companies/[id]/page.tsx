@@ -6,9 +6,15 @@ import Link from 'next/link'
 
 interface Contact {
   id: string
-  name: string
+  name?: string | null
+  first_name?: string | null
+  last_name?: string | null
+  job_title?: string | null
   email?: string | null
   phone?: string | null
+  whatsapp?: string | null
+  linkedin_url?: string | null
+  gender?: string | null
   role?: string | null
 }
 
