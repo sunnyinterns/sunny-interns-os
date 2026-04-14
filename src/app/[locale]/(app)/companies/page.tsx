@@ -14,6 +14,9 @@ interface Company {
   city?: string | null
   sector?: string | null
   industry?: string | null
+  legal_type?: string | null
+  logo_url?: string | null
+  internship_city?: string | null
   is_active: boolean
   is_employer?: boolean | null
   is_partner?: boolean | null
@@ -89,6 +92,7 @@ export default function CompaniesPage() {
   const router = useRouter()
   const { assist, loading: aiLoading } = useAIAssist()
   const [companies, setCompanies] = useState<Company[]>([])
+  const [sponsors, setSponsors] = useState<{id:string;company_name:string;city:string|null;npwp:string|null}[]>([])
   const [q, setQ] = useState("")
   const [filterSector, setFilterSector] = useState("")
   const [filterRole, setFilterRole] = useState<'all' | 'employer' | 'partner'>('all')
@@ -97,7 +101,6 @@ export default function CompaniesPage() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [prefilling, setPrefilling] = useState(false)
   const [toastMsg, setToastMsg] = useState<string | null>(null)
-  const [sponsorOptions, setSponsorOptions] = useState<{ id: string; name: string }[]>([])
   const [logoMode, setLogoMode] = useState<'url' | 'upload'>('url')
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
@@ -135,13 +138,6 @@ export default function CompaniesPage() {
     }).catch(() => setLoading(false))
   }, [])
 
-  useEffect(() => {
-    const idCompanies = companies
-      .filter(c => c.is_employer !== false)
-      .map(c => ({ id: c.id, name: c.name }))
-    setSponsorOptions(idCompanies)
-  }, [companies])
-
   const filtered = companies.filter(c => {
     const matchQ = c.name.toLowerCase().includes(q.toLowerCase())
     const matchSector = !filterSector || (c.industry ?? c.sector ?? c.category ?? '') === filterSector
@@ -153,6 +149,15 @@ export default function CompaniesPage() {
   })
 
   const needsSponsor = form.is_employer && form.registration_country && form.registration_country !== 'ID'
+
+  const sponsorItems: SearchableSelectItem[] = companies
+    .filter(c => c.id !== undefined)
+    .map(c => ({
+      id: c.id,
+      label: c.name,
+      sublabel: c.legal_type ?? c.company_type ?? c.city ?? undefined,
+      avatar: c.logo_url ?? c.name[0]?.toUpperCase(),
+    }))
 
   async function prefillFromWebsite() {
     if (!form.website) return
@@ -203,7 +208,6 @@ export default function CompaniesPage() {
       website: form.website || null,
       logo_url: finalLogoUrl || null,
       industry: form.industry || null,
-      sector: form.industry || null,
       category: form.industry || null,
       company_size: form.company_size || null,
       description: form.description || null,
@@ -587,14 +591,11 @@ export default function CompaniesPage() {
                         </p>
                         <SearchableSelect
                           label="Entreprise sponsor (PT locale)"
-                          items={sponsorOptions.map<SearchableSelectItem>(c => ({
-                            id: c.id,
-                            label: c.name,
-                            avatar: c.name[0]?.toUpperCase(),
-                          }))}
+                          items={sponsorItems}
                           value={form.sponsor_company_id || null}
                           onChange={item => setForm(p => ({...p, sponsor_company_id: item?.id ?? ''}))}
-                          placeholder="Sélectionner une entreprise sponsor…"
+                          placeholder={sponsorItems.length > 0 ? "Sélectionner un sponsor…" : "Aucun sponsor configuré — voir Paramètres > Administratif > Sponsors"}
+                          searchPlaceholder="Rechercher une entreprise…"
                         />
                       </div>
                     )}
@@ -722,15 +723,12 @@ export default function CompaniesPage() {
                   </p>
                   <div>
                     <SearchableSelect
-                      label="Société sponsor (PT locale)"
-                      items={sponsorOptions.map<SearchableSelectItem>(s => ({
-                        id: s.id,
-                        label: s.name,
-                        avatar: s.name[0]?.toUpperCase(),
-                      }))}
+                      label="Entreprise sponsor (PT locale)"
+                      items={sponsorItems}
                       value={form.sponsor_company_id || null}
                       onChange={item => setForm(p => ({...p, sponsor_company_id: item?.id ?? ''}))}
-                      placeholder="Sélectionner une société sponsor…"
+                      placeholder="Sélectionner une entreprise PT locale…"
+                      searchPlaceholder="Rechercher une entreprise…"
                     />
                   </div>
                   <button type="button" className="text-xs text-[#c8a96e] hover:underline">📄 Générer le template d&apos;accord de parrainage</button>

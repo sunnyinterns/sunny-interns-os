@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { SearchableSelect, type SearchableSelectItem } from '@/components/ui/SearchableSelect'
 
 interface VisaType { id: string; code: string; name: string }
-interface VisaAgent { id: string; company_name: string | null; name: string | null }
+interface VisaAgent { id: string; company_name: string | null; name: string | null; email?: string | null }
 
 interface Package {
   id: string
@@ -247,11 +248,21 @@ export default function PackagesPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1">Agent visa</label>
-                    <select className={inputCls} value={form.visa_agent_id} onChange={e => setForm(p => ({...p, visa_agent_id: e.target.value}))}>
-                      <option value="">—</option>
-                      {visaAgents.map(a => <option key={a.id} value={a.id}>{a.company_name ?? a.name}</option>)}
-                    </select>
+                    <SearchableSelect
+                      label="Agent visa *"
+                      items={visaAgents.map<SearchableSelectItem>(a => {
+                        const name = a.company_name ?? a.name ?? '—'
+                        return {
+                          id: a.id,
+                          label: name,
+                          sublabel: a.email ?? undefined,
+                          avatar: name[0]?.toUpperCase(),
+                        }
+                      })}
+                      value={form.visa_agent_id || null}
+                      onChange={item => setForm(p => ({...p, visa_agent_id: item?.id ?? ''}))}
+                      placeholder="Sélectionner un agent visa…"
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
