@@ -5,7 +5,26 @@ import { useParams, useRouter } from 'next/navigation'
 import { JOB_TEMPLATES, ALL_TOOLS, type JobTemplate } from '@/lib/job-templates'
 import { useAIAssist } from '@/hooks/useAIAssist'
 
-interface Contact { id: string; first_name: string; last_name: string | null; job_title: string | null; companies: { id: string; name: string } | null }
+interface Contact {
+  id: string
+  first_name: string
+  last_name: string | null
+  job_title: string | null
+  email?: string | null
+  whatsapp?: string | null
+  company_id?: string | null
+  companies: {
+    id: string
+    name: string
+    description?: string | null
+    industry?: string | null
+    company_type?: string | null
+    location?: string | null
+    internship_city?: string | null
+    logo_url?: string | null
+    website?: string | null
+  } | null
+}
 interface JobDept { id: string; name: string; slug: string }
 interface Job {
   id: string
@@ -87,13 +106,37 @@ export default function JobsPage() {
   const [contactSearch, setContactSearch] = useState('')
   const [showContactDropdown, setShowContactDropdown] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
+  const [prefilledFrom, setPrefilledFrom] = useState<string | null>(null)
 
   const selectedContact = contacts.find(c => c.id === form.contact_id)
-  useEffect(() => {
-    if (selectedContact?.companies) {
-      setForm(p => ({ ...p, company_id: selectedContact.companies!.id, company_name: selectedContact.companies!.name }))
+
+  function selectContact(c: Contact) {
+    const co = c.companies
+    setForm(prev => {
+      const next = {
+        ...prev,
+        contact_id: c.id,
+        company_id: co?.id ?? '',
+        company_name: co?.name ?? '',
+      }
+      if (!prev.location || prev.location === 'Bali, Indonesie') {
+        next.location = co?.internship_city ?? co?.location ?? 'Bali, Indonesie'
+      }
+      if (!prev.company_type && co?.company_type) {
+        next.company_type = co.company_type
+      }
+      if (!prev.description && co?.description) {
+        next.description = co.description
+      }
+      return next
+    })
+    setContactSearch('')
+    setShowContactDropdown(false)
+    if (co?.name) {
+      setPrefilledFrom(co.name)
+      setTimeout(() => setPrefilledFrom(null), 3000)
     }
-  }, [form.contact_id, selectedContact])
+  }
 
   const filteredContacts = contacts.filter(c => {
     const q = contactSearch.toLowerCase()
@@ -446,22 +489,54 @@ export default function JobsPage() {
                         onChange={e => { setContactSearch(e.target.value); setForm(p => ({ ...p, contact_id: '', company_id: '', company_name: '' })) }}
                       />
                       {showContactDropdown && filteredContacts.length > 0 && (
-                        <div className="absolute z-10 mt-1 w-full bg-white border border-zinc-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        <div className="absolute z-10 mt-1 w-full bg-white border border-zinc-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
                           {filteredContacts.slice(0, 20).map(c => (
                             <button key={c.id} type="button"
-                              className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-50"
-                              onMouseDown={() => {
-                                setForm(p => ({ ...p, contact_id: c.id, company_id: c.companies?.id ?? '', company_name: c.companies?.name ?? '' }))
-                                setContactSearch(''); setShowContactDropdown(false)
-                              }}>
-                              <span className="font-medium">{c.first_name} {c.last_name ?? ''}</span>
-                              {c.companies && <span className="text-zinc-400"> — {c.companies.name}</span>}
+                              className="w-full text-left px-3 py-2.5 hover:bg-zinc-50 flex items-center gap-3 border-b border-zinc-50 last:border-0"
+                              onMouseDown={() => selectContact(c)}>
+                              <div className="w-8 h-8 rounded-lg bg-[#c8a96e]/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                {c.companies?.logo_url ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={c.companies.logo_url} alt="" className="w-8 h-8 object-cover rounded-lg"
+                                    onError={e => { e.currentTarget.style.display = 'none' }} />
+                                ) : (
+                                  <span className="text-xs font-bold text-[#c8a96e]">
+                                    {(c.companies?.name ?? c.first_name)[0]?.toUpperCase()}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-[#1a1918] truncate">
+                                  {c.first_name} {c.last_name ?? ''}
+                                  {c.job_title && <span className="text-zinc-400 font-normal"> — {c.job_title}</span>}
+                                </p>
+                                <p className="text-xs text-zinc-400 truncate">{c.companies?.name ?? '—'}</p>
+                                {c.companies?.industry && (
+                                  <p className="text-[10px] text-zinc-300 truncate">{c.companies.industry}</p>
+                                )}
+                              </div>
+                              {c.companies?.description && (
+                                <span className="text-[9px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded flex-shrink-0">
+                                  auto-fill
+                                </span>
+                              )}
                             </button>
                           ))}
                         </div>
                       )}
                     </div>
+                    {prefilledFrom && (
+                      <p className="text-xs text-[#0d9e75] mt-1 flex items-center gap-1">
+                        ✓ Champs pré-remplis depuis la fiche <strong>{prefilledFrom}</strong>
+                      </p>
+                    )}
                     {form.company_name && <p className="text-xs text-zinc-400 mt-1">Entreprise : <span className="font-medium text-[#1a1918]">{form.company_name}</span></p>}
+                    {form.company_id && (
+                      <a href={`/${locale}/companies/${form.company_id}`} target="_blank" rel="noreferrer"
+                        className="text-xs text-[#c8a96e] hover:underline flex items-center gap-1 mt-1">
+                        🏢 Voir la fiche entreprise ↗
+                      </a>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-zinc-600 mb-1">Département / Métier *</label>
@@ -558,6 +633,11 @@ export default function JobsPage() {
                       }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
                     </label>
                     <textarea className={inputCls} rows={2} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} />
+                    {form.description && form.description === selectedContact?.companies?.description && (
+                      <p className="text-[10px] text-zinc-400 mt-1">
+                        📋 Importé depuis la fiche entreprise — modifiable
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
