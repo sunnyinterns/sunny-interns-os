@@ -80,6 +80,9 @@ export async function POST(request: Request) {
       touchpoint: d.touchpoints?.join(', ') ?? d.touchpoint ?? null,
       touchpoints: d.touchpoints ?? [],
       referred_by_code: d.referred_by_code ?? null,
+      extra_docs_urls: Array.isArray((d as any).extra_docs_names) && (d as any).extra_docs_names.length > 0
+        ? ((d as any).extra_docs_names as string[]).map((_, i) => (d as any)[`extra_doc_url_${i}`] ?? null).filter(Boolean)
+        : null,
       commitment_price_accepted: d.commitment_price_accepted ?? true,
       commitment_budget_accepted: d.commitment_budget_accepted ?? true,
       commitment_terms_accepted: d.commitment_terms_accepted ?? true,

@@ -194,6 +194,7 @@ export async function GET(
           flight_departure_date, flight_return_date, flight_departure_city, flight_number,
           desired_start_date, desired_end_date, desired_duration_months,
           return_plane_ticket_url, bank_statement_url, passport_page4_url,
+          extra_docs_urls,
           private_comment_for_employer, referred_by_code, preferred_language,
           commitment_price_accepted, commitment_budget_accepted,
           commitment_terms_accepted, commitment_accepted_at,
