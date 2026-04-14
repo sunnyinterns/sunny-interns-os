@@ -436,6 +436,7 @@ export default function ApplyPage() {
   const [cvLocalUploading, setCvLocalUploading] = useState(false)
   const [price, setPrice] = useState(990)
   const [phoneDropOpen, setPhoneDropOpen] = useState(false)
+  const [filloutOverlay, setFilloutOverlay] = useState(true) // masque page Fields Fillout
   const [emailExists, setEmailExists] = useState(false)
   const [emailChecking, setEmailChecking] = useState(false)
   const [phoneError, setPhoneError] = useState('')
@@ -599,7 +600,8 @@ export default function ApplyPage() {
   }, [step, form.first_name, form.last_name, form.email])
 
   useEffect(() => {
-    if (step !== 5) return
+    if (step !== 5) { setFilloutOverlay(true); return }
+    setFilloutOverlay(true) // reset à chaque fois qu'on arrive step 5
 
     // Mettre les params dans l'URL pour compatibilité
     const params = new URLSearchParams()
@@ -619,8 +621,7 @@ export default function ApplyPage() {
         router.push(`/apply/confirmation?name=${encodeURIComponent(form.first_name)}&email=${encodeURIComponent(form.email)}&lang=${lang}&rdv=1`)
       }
 
-      // Auto-avance la page Fields (page cachée) dès qu'elle est chargée
-      // Fillout émet 'fillout:pageChange' ou 'fillout:loaded' quand une page est affichée
+      // Fillout events — détecter quand on quitte la page Fields (page 0)
       if (
         e.data?.type === 'fillout:pageChange' ||
         e.data?.type === 'fillout:loaded' ||
@@ -628,23 +629,24 @@ export default function ApplyPage() {
         e.data?.event === 'page_change' ||
         (e.data?.type && typeof e.data.type === 'string' && e.data.type.startsWith('fillout:'))
       ) {
-        // Si on est sur la page 0 (Fields page), avancer automatiquement
         const pageIndex = e.data?.pageIndex ?? e.data?.page ?? e.data?.currentPage
         if (pageIndex === 0 || pageIndex === undefined) {
-          // Envoyer un message à l'iframe pour avancer à la page suivante
+          // Encore sur la page Fields — tenter d'avancer
           const iframe = document.querySelector('iframe[src*="fillout"]') as HTMLIFrameElement | null
           if (iframe?.contentWindow) {
-            // Tenter plusieurs formats de message supportés par Fillout
             iframe.contentWindow.postMessage({ type: 'fillout:next' }, '*')
             iframe.contentWindow.postMessage({ type: 'fillout:navigate', page: 1 }, '*')
             iframe.contentWindow.postMessage({ action: 'next' }, '*')
           }
+        } else {
+          // Page > 0 = calendrier visible → cacher l'overlay
+          setFilloutOverlay(false)
         }
       }
     }
     window.addEventListener('message', handleMessage)
 
-    // Fallback: après 1.5s, tenter de cliquer sur le bouton Next de l'iframe via postMessage
+    // Fallback: tenter plusieurs fois d'avancer + fallback final à 5s
     const autoAdvanceTimer = setTimeout(() => {
       const iframe = document.querySelector('iframe[src*="fillout"]') as HTMLIFrameElement | null
       if (iframe?.contentWindow) {
@@ -652,10 +654,21 @@ export default function ApplyPage() {
         iframe.contentWindow.postMessage({ action: 'next' }, '*')
         iframe.contentWindow.postMessage({ type: 'fillout:navigate', direction: 'next' }, '*')
       }
-    }, 1500)
+    }, 1000)
+    const autoAdvanceTimer2 = setTimeout(() => {
+      const iframe = document.querySelector('iframe[src*="fillout"]') as HTMLIFrameElement | null
+      if (iframe?.contentWindow) {
+        iframe.contentWindow.postMessage({ type: 'fillout:next' }, '*')
+        iframe.contentWindow.postMessage({ action: 'next' }, '*')
+      }
+    }, 2000)
+    // Fallback absolu : cacher l'overlay après 5s quoi qu'il arrive
+    const fallbackTimer = setTimeout(() => setFilloutOverlay(false), 5000)
 
     return () => {
       clearTimeout(autoAdvanceTimer)
+      clearTimeout(autoAdvanceTimer2)
+      clearTimeout(fallbackTimer)
       window.removeEventListener('message', handleMessage)
       window.history.replaceState({}, '', window.location.pathname)
     }
@@ -1773,36 +1786,21 @@ export default function ApplyPage() {
                 2. overlay qui masque le bouton Next pendant 2s (UX) */}
             {filloutIframeSrc && (
               <div style={{ position: 'relative', width: '100%', minHeight: '600px' }}>
-                {/* Overlay qui masque la page Fields pendant le skip automatique */}
-                <div
-                  id="fillout-loading-overlay"
-                  style={{
+                {/* Overlay React-controlled — masque page Fields jusqu'à événement Fillout page>0 ou fallback 5s */}
+                {filloutOverlay && (
+                  <div style={{
                     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                     background: '#fafaf9', zIndex: 10, display: 'flex',
                     alignItems: 'center', justifyContent: 'center',
                     borderRadius: '12px', flexDirection: 'column', gap: '12px'
-                  }}
-                >
-                  <div style={{ width: 32, height: 32, border: '3px solid #c8a96e', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                  <p style={{ fontSize: 13, color: '#8a7d6d', margin: 0 }}>
-                    {lang === 'fr' ? 'Chargement du calendrier...' : 'Loading calendar...'}
-                  </p>
-                </div>
-                {/* CSS pour masquer le bouton Next de la page Fields Fillout */}
-                <style>{`#fillout-loading-overlay ~ iframe { pointer-events: none; }
-                button[data-testid="next-button"], 
-                [class*="next-button"], 
-                [class*="NextButton"] { opacity: 0 !important; pointer-events: none !important; }`}</style>
+                  }}>
+                    <div style={{ width: 32, height: 32, border: '3px solid #c8a96e', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                    <p style={{ fontSize: 13, color: '#8a7d6d', margin: 0 }}>
+                      {lang === 'fr' ? 'Chargement du calendrier...' : 'Loading calendar...'}
+                    </p>
+                  </div>
+                )}
                 <iframe
-                  ref={(el) => {
-                    if (el) {
-                      // Cacher l'overlay après 2.5s (temps que l'iframe skip la page Fields)
-                      setTimeout(() => {
-                        const overlay = el.parentElement?.querySelector('#fillout-loading-overlay') as HTMLElement | null
-                        if (overlay) overlay.style.display = 'none'
-                      }, 3500)
-                    }
-                  }}
                   src={filloutIframeSrc}
                   style={{ width: '100%', minHeight: '600px', height: '700px', border: 'none', borderRadius: '12px' }}
                   title="Prendre un rendez-vous"
