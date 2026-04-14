@@ -268,15 +268,35 @@ export function TabVisa({ caseData, schoolName, onStatusChange }: TabVisaProps) 
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const canSendToAgent = !!caseData.billet_avion && !!caseData.papiers_visas
+  const cd = caseData as unknown as Record<string, unknown>
+  const paymentOk = !!cd.payment_received_at || caseData.status === 'payment_received' || !!cd.payment_date
+  const allDocsOk = !!(intern?.passport_page4_url && intern?.photo_id_url && intern?.bank_statement_url && intern?.return_plane_ticket_url)
+  const allFieldsOk = !!(intern?.passport_number && intern?.passport_expiry && intern?.mother_first_name && intern?.mother_last_name)
+  const canSendToAgent = paymentOk && allDocsOk && allFieldsOk
+  const [showSendConfirm, setShowSendConfirm] = useState(false)
+  const [agentEmails, setAgentEmails] = useState<string[]>([])
+  const [sentInfo, setSentInfo] = useState<{ agent_name?: string; portal_url?: string } | null>(null)
+
+  useEffect(() => {
+    if (showSendConfirm && agentEmails.length === 0) {
+      fetch('/api/settings/visa-agents').then(r => r.ok ? r.json() : [])
+        .then((agents: Array<{ contact_emails?: string[]; email?: string; is_default?: boolean }>) => {
+          const def = agents.find(a => a.is_default) ?? agents[0]
+          if (def) setAgentEmails((def.contact_emails && def.contact_emails.length > 0) ? def.contact_emails : (def.email ? [def.email] : []))
+        })
+    }
+  }, [showSendConfirm, agentEmails.length])
 
   async function handleSendToAgent() {
     if (!canSendToAgent || sentToAgent) return
     setSendingToAgent(true)
     try {
-      const res = await fetch(`/api/cases/${caseData.id}/send-to-agent`, { method: 'POST' })
+      const res = await fetch(`/api/cases/${caseData.id}/send-visa-to-agent`, { method: 'POST' })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json() as { agent_name?: string; portal_url?: string }
+      setSentInfo(data)
       setSentToAgent(true)
+      setShowSendConfirm(false)
       onStatusChange?.()
     } finally {
       setSendingToAgent(false)
@@ -705,47 +725,71 @@ export function TabVisa({ caseData, schoolName, onStatusChange }: TabVisaProps) 
         </div>
       </SectionCard>
 
-      {/* Transmission à FAZZA */}
-      <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-3">
-        <h4 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Transmission à FAZZA</h4>
-        {!canSendToAgent && (
-          <div className="flex items-start gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
-            <span className="text-[#d97706] text-xs flex-shrink-0 mt-0.5">⚠</span>
-            <p className="text-xs text-amber-900">
-              Requis avant envoi :
-              {!caseData.billet_avion && <span className="font-medium"> billet avion</span>}
-              {!caseData.billet_avion && !caseData.papiers_visas && ' +'}
-              {!caseData.papiers_visas && <span className="font-medium"> papiers visa</span>}
-            </p>
+      {/* Envoi à l'agent visa */}
+      <div className="bg-white border border-zinc-100 rounded-xl p-4">
+        <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Envoi à l'agent visa</p>
+
+        <div className="space-y-1.5 mb-4">
+          <div className="flex items-center gap-2 text-xs">
+            <span>{paymentOk ? '✅' : '⏳'}</span>
+            <span className={paymentOk ? 'text-[#0d9e75]' : 'text-zinc-400'}>Paiement validé</span>
           </div>
-        )}
-        {sentToAgent ? (
-          <div className="flex items-center gap-2 text-sm text-[#0d9e75] font-medium">
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-            Dossier envoyé à FAZZA
+          <div className="flex items-center gap-2 text-xs">
+            <span>{allDocsOk ? '✅' : '⏳'}</span>
+            <span className={allDocsOk ? 'text-[#0d9e75]' : 'text-zinc-400'}>Tous les documents fournis</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs">
+            <span>{allFieldsOk ? '✅' : '⏳'}</span>
+            <span className={allFieldsOk ? 'text-[#0d9e75]' : 'text-zinc-400'}>Tous les champs remplis</span>
+          </div>
+        </div>
+
+        {!sentToAgent ? (
+          <button
+            disabled={!canSendToAgent}
+            onClick={() => setShowSendConfirm(true)}
+            className={`w-full py-3 text-sm font-bold rounded-xl transition-colors ${
+              canSendToAgent ? 'bg-[#c8a96e] text-white hover:bg-[#b8945a]' : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
+            }`}>
+            Envoyer le dossier à l'agent visa →
+          </button>
+        ) : (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-center">
+            <p className="text-sm font-bold text-[#0d9e75]">✅ Dossier envoyé</p>
             {caseData.visa_submitted_to_agent_at && (
-              <span className="text-zinc-400 font-normal text-xs">
-                le {new Date(caseData.visa_submitted_to_agent_at).toLocaleDateString('fr-FR')}
-              </span>
+              <p className="text-xs text-zinc-500 mt-1">
+                Le {new Date(caseData.visa_submitted_to_agent_at).toLocaleDateString('fr-FR')}
+                {sentInfo?.agent_name ? ` à ${sentInfo.agent_name}` : ''}
+              </p>
+            )}
+            {sentInfo?.portal_url && (
+              <a href={sentInfo.portal_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#c8a96e] hover:underline">
+                Voir le portail agent →
+              </a>
             )}
           </div>
-        ) : (
-          <button
-            onClick={() => { void handleSendToAgent() }}
-            disabled={!canSendToAgent || sendingToAgent}
-            className={[
-              'w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-colors',
-              canSendToAgent
-                ? 'bg-[#c8a96e] hover:bg-[#b8945a] text-white'
-                : 'bg-zinc-100 text-zinc-400 cursor-not-allowed',
-            ].join(' ')}
-          >
-            {sendingToAgent ? 'Envoi en cours…' : 'Envoyer à FAZZA'}
-          </button>
         )}
       </div>
+
+      {showSendConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+            <h3 className="font-bold text-base mb-2">Confirmer l'envoi du dossier</h3>
+            <p className="text-sm text-zinc-600 mb-4">
+              Un email sera envoyé à <strong>{agentEmails.length > 0 ? agentEmails.join(', ') : "l'agent visa par défaut"}</strong> avec le dossier complet et le lien du portail.
+            </p>
+            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+              ⚠️ Cette action est irréversible. Vérifiez que tous les documents sont bien ceux de la bonne personne.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowSendConfirm(false)} className="flex-1 py-2 border border-zinc-200 rounded-xl text-sm">Annuler</button>
+              <button onClick={() => { void handleSendToAgent() }} disabled={sendingToAgent} className="flex-1 py-2 bg-[#c8a96e] text-white rounded-xl text-sm font-bold disabled:opacity-50">
+                {sendingToAgent ? 'Envoi…' : 'Envoyer →'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
