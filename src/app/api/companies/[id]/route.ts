@@ -12,13 +12,15 @@ export async function GET(
   try {
     const { data, error } = await supabase
       .from('companies')
-      .select('*, contacts(id, first_name, last_name, job_title, email, whatsapp, phone, linkedin_url, gender), jobs(id, title, status), cases(id, status, interns(first_name, last_name))')
+      .select('*, contacts(id, first_name, last_name, job_title, email, whatsapp, phone, linkedin_url, gender), jobs(id, title, status)')
       .eq('id', id)
       .single()
     if (error) throw error
     return NextResponse.json(data)
-  } catch {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : JSON.stringify(e)
+    console.error('[GET /api/companies/[id]]', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
 
