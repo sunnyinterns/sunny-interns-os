@@ -149,9 +149,10 @@ export default function CompaniesPage() {
     return matchQ && matchSector && matchRole
   })
 
-  // PT PMA = sponsor toujours requis. PT Local avec can_host_directly = pas de sponsor.
+  // TOUTES les entreprises employeurs ont besoin d'un sponsor pour le VITAS
+  // SAUF les PT PMA qui cochent 'accueil direct' (cas exceptionnel)
   const isPMA = form.registration_country === 'ID' && form.legal_type === 'PT_PMA'
-  const needsSponsor = isPMA && !form.can_host_directly
+  const needsSponsor = form.is_employer && !(isPMA && form.can_host_directly)
 
   const sponsorItems: SearchableSelectItem[] = companies
     .filter(c => c.id !== undefined)
@@ -588,36 +589,7 @@ export default function CompaniesPage() {
                       <input value={form.vat_number} onChange={e => setForm(p => ({...p, vat_number: e.target.value}))}
                         className={inputCls} placeholder="Optionnel" />
                     </div>
-                    {form.legal_type === 'PT_PMA' && (
-                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-3">
-                        <p className="text-xs font-medium text-amber-800">
-                          PT PMA — un sponsor PT local est requis pour le VITAS stagiaire
-                        </p>
-                        <label className="flex items-start gap-2 cursor-pointer">
-                          <input type="checkbox" checked={form.can_host_directly}
-                            onChange={e => setForm(p => ({...p, can_host_directly: e.target.checked, sponsor_company_id: e.target.checked ? '' : p.sponsor_company_id}))}
-                            className="mt-0.5 rounded" />
-                          <span className="text-xs text-amber-700">
-                            Cette société indonésienne peut accueillir des stagiaires directement (PT locale — pas de sponsor requis)
-                          </span>
-                        </label>
-                        {!form.can_host_directly && (
-                          <SearchableSelect
-                            label="Entreprise sponsor (PT locale) *"
-                            items={sponsorItems}
-                            value={form.sponsor_company_id || null}
-                            onChange={item => setForm(p => ({...p, sponsor_company_id: item?.id ?? ''}))}
-                            placeholder={sponsorItems.length > 0 ? "Sélectionner un sponsor…" : "Aucun sponsor configuré — voir Paramètres > Administratif > Sponsors"}
-                            searchPlaceholder="Rechercher un sponsor…"
-                          />
-                        )}
-                        {!form.can_host_directly && sponsorItems.length === 0 && (
-                          <p className="text-xs text-amber-600">
-                            → Configurer les sponsors dans Paramètres › Administratif › Sponsors PT
-                          </p>
-                        )}
-                      </div>
-                    )}
+
                   </div>
                 )}
 
@@ -732,6 +704,43 @@ export default function CompaniesPage() {
                 )}
               </div>
 
+
+
+              {/* SECTION 5 — Sponsor (toutes entreprises employeurs) */}
+              {needsSponsor && (
+                <>
+                  <div className="border-t border-zinc-100" />
+                  <div className="space-y-3">
+                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">⑤ Sponsor VITAS</p>
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-3">
+                      <p className="text-xs text-blue-700">
+                        Un accord de parrainage avec une société PT locale indonésienne est requis pour le VITAS stagiaire. Valable pour toutes les entreprises étrangères et les PT PMA.
+                      </p>
+                      <SearchableSelect
+                        label="Entreprise sponsor (PT locale) *"
+                        items={sponsorItems}
+                        value={form.sponsor_company_id || null}
+                        onChange={item => setForm(p => ({...p, sponsor_company_id: item?.id ?? ''}))}
+                        placeholder={sponsorItems.length > 0 ? "Sélectionner un sponsor…" : "Aucun sponsor configuré — voir Paramètres › Administratif › Sponsors PT"}
+                        searchPlaceholder="Rechercher un sponsor PT…"
+                      />
+                      {sponsorItems.length === 0 && (
+                        <p className="text-xs text-blue-600">→ Configurer les sponsors dans Paramètres › Administratif › Sponsors PT</p>
+                      )}
+                    </div>
+                    {isPMA && (
+                      <label className="flex items-start gap-2 cursor-pointer">
+                        <input type="checkbox" checked={form.can_host_directly}
+                          onChange={e => setForm(p => ({...p, can_host_directly: e.target.checked, sponsor_company_id: e.target.checked ? '' : p.sponsor_company_id}))}
+                          className="mt-0.5 rounded" />
+                        <span className="text-xs text-zinc-600">
+                          Exception PT PMA — peut accueillir des stagiaires directement sans sponsor (modifie le workflow documents)
+                        </span>
+                      </label>
+                    )}
+                  </div>
+                </>
+              )}
 
               {/* SECTION 6 — Partenaire */}
               {form.is_partner && (
