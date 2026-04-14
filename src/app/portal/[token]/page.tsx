@@ -93,6 +93,17 @@ interface PortalData {
   }> | null
 }
 
+interface PortalPartner {
+  id: string
+  name: string
+  logo_url: string | null
+  partner_category: string | null
+  partner_deal: string | null
+  partner_timing: string | null
+  partner_visible_from: string | null
+  website: string | null
+}
+
 interface PortalJobItem {
   submission_id: string
   job_id: string
@@ -293,11 +304,44 @@ function JobCommentCard({ sub, token }: { sub: PortalJobItem; token: string }) {
   )
 }
 
+function PartnerCard({ partner }: { partner: PortalPartner }) {
+  return (
+    <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ width: 40, height: 40, borderRadius: 10, background: '#f4f4f5', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+        {partner.logo_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={partner.logo_url} alt="" style={{ width: 40, height: 40, objectFit: 'cover' }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+        ) : (
+          <span style={{ fontSize: 14, fontWeight: 700, color: '#9ca3af' }}>{partner.name[0]}</span>
+        )}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#1a1918', margin: 0 }}>{partner.name}</p>
+          {partner.partner_category && (
+            <span style={{ fontSize: 10, background: '#f4f4f5', color: '#6b7280', padding: '1px 6px', borderRadius: 10 }}>{partner.partner_category}</span>
+          )}
+        </div>
+        {partner.partner_deal && (
+          <p style={{ fontSize: 12, color: '#4b5563', marginTop: 2, margin: 0 }}>{partner.partner_deal}</p>
+        )}
+      </div>
+      {partner.website && (
+        <a href={partner.website} target="_blank" rel="noopener noreferrer"
+          style={{ fontSize: 11, padding: '6px 12px', background: '#c8a96e', color: 'white', borderRadius: 8, fontWeight: 600, textDecoration: 'none', flexShrink: 0 }}>
+          Voir →
+        </a>
+      )}
+    </div>
+  )
+}
+
 export default function PortalPage() {
   const params = useParams()
   const token = typeof params?.token === 'string' ? params.token : ''
   const [data, setData] = useState<PortalData | null>(null)
   const [portalJobs, setPortalJobs] = useState<PortalJobItem[]>([])
+  const [partners, setPartners] = useState<PortalPartner[]>([])
   const [loading, setLoading] = useState(true)
 
   const loadData = useCallback(() => {
@@ -309,6 +353,12 @@ export default function PortalPage() {
       setData(portalData)
       setPortalJobs(jobs ?? [])
       setLoading(false)
+      if (portalData?.status) {
+        fetch(`/api/portal/partners?status=${portalData.status}`)
+          .then(r => r.ok ? r.json() as Promise<PortalPartner[]> : [])
+          .then(p => setPartners(p ?? []))
+          .catch(() => null)
+      }
     }).catch(() => setLoading(false))
   }, [token])
 
@@ -761,6 +811,36 @@ export default function PortalPage() {
               </a>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Partenaires */}
+      {partners.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1918', marginBottom: 4 }}>Nos partenaires</h2>
+          <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 12 }}>Des deals exclusifs pour les stagiaires Bali Interns.</p>
+
+          {partners.filter(p => p.partner_timing === 'pre_arrival' || p.partner_timing === 'both').length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <p style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>✈️ Avant le départ</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {partners.filter(p => p.partner_timing === 'pre_arrival' || p.partner_timing === 'both').map(p => (
+                  <PartnerCard key={p.id} partner={p} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {['active','alumni','completed'].includes(data.status) && partners.filter(p => p.partner_timing === 'on_site' || p.partner_timing === 'both').length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <p style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>🌴 Sur l&apos;île</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {partners.filter(p => p.partner_timing === 'on_site' || p.partner_timing === 'both').map(p => (
+                  <PartnerCard key={p.id} partner={p} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
