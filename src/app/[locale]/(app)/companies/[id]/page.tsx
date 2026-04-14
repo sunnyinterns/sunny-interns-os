@@ -121,6 +121,11 @@ export default function CompanyDetailPage() {
   const [contactEmail, setContactEmail] = useState('')
   const [contactPhone, setContactPhone] = useState('')
   const [contactRole, setContactRole] = useState('')
+  const [contactFirstName, setContactFirstName] = useState('')
+  const [contactLastName, setContactLastName] = useState('')
+  const [contactWhatsApp, setContactWhatsApp] = useState('')
+  const [contactLinkedin, setContactLinkedin] = useState('')
+  const [contactGender, setContactGender] = useState('')
   const [addingContact, setAddingContact] = useState(false)
 
   const load = useCallback(async () => {
@@ -210,18 +215,36 @@ export default function CompanyDetailPage() {
 
   async function handleAddContact(e: React.FormEvent) {
     e.preventDefault()
-    if (!contactName.trim()) return
+    const fName = contactFirstName.trim() || contactName.split(' ')[0] || contactName.trim()
+    const lName = contactLastName.trim() || contactName.split(' ').slice(1).join(' ') || ''
+    if (!fName) return
     setAddingContact(true)
     try {
       await fetch('/api/contacts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ company_id: companyId, name: contactName, email: contactEmail, phone: contactPhone, role: contactRole }),
+        body: JSON.stringify({
+          company_id: companyId,
+          first_name: contactFirstName.trim() || contactName.split(' ')[0] || contactName.trim(),
+          last_name: contactLastName.trim() || contactName.split(' ').slice(1).join(' ') || null,
+          job_title: contactRole || null,
+          email: contactEmail || null,
+          phone: contactPhone || null,
+          whatsapp: contactWhatsApp || null,
+          linkedin_url: contactLinkedin || null,
+          gender: contactGender || null,
+          is_primary: false,
+        }),
       })
       setShowContactForm(false)
       setContactName('')
+      setContactFirstName('')
+      setContactLastName('')
       setContactEmail('')
       setContactPhone('')
+      setContactWhatsApp('')
+      setContactLinkedin('')
+      setContactGender('')
       setContactRole('')
       void load()
     } catch {
@@ -607,20 +630,41 @@ export default function CompanyDetailPage() {
             <form onSubmit={handleAddContact} className="bg-white border border-zinc-200 rounded-xl p-4 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1">Nom *</label>
-                  <input type="text" value={contactName} onChange={(e) => setContactName(e.target.value)} required className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c8a96e]" />
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Prénom *</label>
+                  <input type="text" value={contactFirstName} onChange={e => setContactFirstName(e.target.value)} required placeholder="Jean" className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c8a96e]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1">Rôle</label>
-                  <input type="text" value={contactRole} onChange={(e) => setContactRole(e.target.value)} placeholder="Ex: DRH, Manager…" className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c8a96e]" />
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Nom</label>
+                  <input type="text" value={contactLastName} onChange={e => setContactLastName(e.target.value)} placeholder="Dupont" className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c8a96e]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Poste / Rôle</label>
+                  <input type="text" value={contactRole} onChange={e => setContactRole(e.target.value)} placeholder="Ex: DRH, Manager, CEO…" className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c8a96e]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Genre</label>
+                  <select value={contactGender} onChange={e => setContactGender(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c8a96e]">
+                    <option value="">— Non précisé —</option>
+                    <option value="male">Homme</option>
+                    <option value="female">Femme</option>
+                    <option value="other">Autre</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-zinc-600 mb-1">Email</label>
-                  <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c8a96e]" />
+                  <input type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c8a96e]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1">Téléphone</label>
-                  <input type="tel" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c8a96e]" />
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">WhatsApp</label>
+                  <input type="tel" value={contactWhatsApp} onChange={e => setContactWhatsApp(e.target.value)} placeholder="+62…" className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c8a96e]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Téléphone fixe</label>
+                  <input type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c8a96e]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">LinkedIn</label>
+                  <input type="url" value={contactLinkedin} onChange={e => setContactLinkedin(e.target.value)} placeholder="linkedin.com/in/…" className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c8a96e]" />
                 </div>
               </div>
               <div className="flex gap-2">

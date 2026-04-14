@@ -103,12 +103,16 @@ export default function CompaniesPage() {
   const [logoUploading, setLogoUploading] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
   const [cities, setCities] = useState<{id:string; name:string; area:string}[]>([])
-  const [companyTypes, setCompanyTypes] = useState<{id:string; code:string; name:string; country:string}[]>([])
+  const isFirstRender = useRef(true)
 
   useEffect(() => {
     fetch('/api/internship-cities').then(r => r.json()).then(d => setCities(Array.isArray(d) ? d : [])).catch(() => null)
-    fetch('/api/company-types').then(r => r.json()).then(d => setCompanyTypes(Array.isArray(d) ? d : [])).catch(() => null)
   }, [])
+
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return }
+    setForm(p => ({ ...p, legal_type: '', company_type: '' }))
+  }, [form.registration_country])
 
   function toast(msg: string) {
     setToastMsg(msg)
@@ -202,8 +206,9 @@ export default function CompaniesPage() {
       category: form.industry || null,
       company_size: form.company_size || null,
       description: form.description || null,
-      company_type: form.company_type || null,
-      type: form.company_type || null,
+      company_type: form.legal_type || form.company_type || null,
+      type: form.legal_type || form.company_type || null,
+      legal_type: form.legal_type || null,
       is_employer: form.is_employer,
       is_partner: form.is_partner,
       instagram_url: form.instagram_url || null,
@@ -215,7 +220,6 @@ export default function CompaniesPage() {
       city: form.internship_city || null,
       legal_address: form.legal_address || null,
       google_maps_url: form.google_maps_url || null,
-      legal_type: form.legal_type || null,
       nib: form.nib || null,
       npwp: form.npwp || null,
       vat_number: form.vat_number || null,
@@ -389,6 +393,28 @@ export default function CompaniesPage() {
                   <label className="block text-xs font-medium text-zinc-600 mb-1">Nom *</label>
                   <input required value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} className={inputCls} placeholder="Ex: Potato Head Bali" />
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1">Pays d&apos;immatriculation *</label>
+                    <select value={form.registration_country} onChange={e => setForm(p => ({...p, registration_country: e.target.value}))} className={inputCls}>
+                      {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1">Ville du stage</label>
+                    <select value={form.internship_city} onChange={e => setForm(p => ({...p, internship_city: e.target.value}))} className={inputCls}>
+                      <option value="">— Sélectionner —</option>
+                      {Object.entries(cities.reduce((acc, c) => {
+                        (acc[c.area] = acc[c.area] || []).push(c)
+                        return acc
+                      }, {} as Record<string, typeof cities>)).map(([area, areaCities]) => (
+                        <optgroup key={area} label={area}>
+                          {areaCities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </div>
+                </div>
                 <div>
                   <label className="block text-xs font-medium text-zinc-600 mb-1">Site web</label>
                   <div className="flex gap-2">
@@ -483,27 +509,6 @@ export default function CompaniesPage() {
                   <label className="block text-xs font-medium text-zinc-600 mb-1">Description</label>
                   <textarea value={form.description} onChange={e => setForm(p => ({...p, description: e.target.value}))} className={inputCls} rows={2} placeholder="Activité de l'entreprise…" />
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1">Type de société</label>
-                  <select value={form.company_type} onChange={e => setForm(p => ({...p, company_type: e.target.value}))} className={inputCls}>
-                    <option value="">— Type de société —</option>
-                    <optgroup label="Indonésie">
-                      {companyTypes.filter(t => t.country === 'Indonesia').map(t => (
-                        <option key={t.id} value={t.code}>{t.name}</option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="France">
-                      {companyTypes.filter(t => t.country === 'France').map(t => (
-                        <option key={t.id} value={t.code}>{t.name}</option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="International">
-                      {companyTypes.filter(t => !['Indonesia','France'].includes(t.country)).map(t => (
-                        <option key={t.id} value={t.code}>{t.name} ({t.country})</option>
-                      ))}
-                    </optgroup>
-                  </select>
-                </div>
               </div>
 
               <div className="border-t border-zinc-100" />
@@ -524,28 +529,6 @@ export default function CompaniesPage() {
               {/* SECTION 3 — Localisation */}
               <div className="space-y-3">
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">④ Localisation</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1">Pays d&apos;immatriculation *</label>
-                    <select value={form.registration_country} onChange={e => setForm(p => ({...p, registration_country: e.target.value}))} className={inputCls}>
-                      {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1">Ville du stage</label>
-                    <select value={form.internship_city} onChange={e => setForm(p => ({...p, internship_city: e.target.value}))} className={inputCls}>
-                      <option value="">— Sélectionner —</option>
-                      {Object.entries(cities.reduce((acc, c) => {
-                        (acc[c.area] = acc[c.area] || []).push(c)
-                        return acc
-                      }, {} as Record<string, typeof cities>)).map(([area, areaCities]) => (
-                        <optgroup key={area} label={area}>
-                          {areaCities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                        </optgroup>
-                      ))}
-                    </select>
-                  </div>
-                </div>
                 <div>
                   <label className="block text-xs font-medium text-zinc-600 mb-1">Adresse complète</label>
                   <input value={form.legal_address} onChange={e => setForm(p => ({...p, legal_address: e.target.value}))} className={inputCls} placeholder="Adresse légale…" />
@@ -563,105 +546,164 @@ export default function CompaniesPage() {
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">⑤ Informations légales</p>
 
                 {form.registration_country === 'ID' && (
-                  <>
+                  <div className="space-y-3">
                     <div>
                       <label className="block text-xs font-medium text-zinc-600 mb-1">Type de société *</label>
-                      <select value={form.legal_type} onChange={e => setForm(p => ({...p, legal_type: e.target.value}))} className={inputCls}>
-                        <option value="">—</option>
-                        <option value="PT_LOCAL">PT Local (société indonésienne)</option>
-                        <option value="PT_PMA">PT PMA (investissement étranger)</option>
-                        <option value="CV">CV (commandite)</option>
-                        <option value="YAYASAN">Yayasan (fondation/ONG)</option>
-                        <option value="UD">UD (entreprise individuelle)</option>
+                      <select value={form.legal_type}
+                        onChange={e => setForm(p => ({...p, legal_type: e.target.value, company_type: e.target.value}))}
+                        className={inputCls}>
+                        <option value="">— Sélectionner —</option>
+                        <option value="PT_LOCAL">PT Local — société indonésienne</option>
+                        <option value="PT_PMA">PT PMA — investissement étranger</option>
+                        <option value="CV">CV — Commanditaire Vennootschap</option>
+                        <option value="YAYASAN">Yayasan — Fondation / ONG</option>
+                        <option value="UD">UD — Entreprise individuelle</option>
                       </select>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-zinc-600 mb-1">NIB</label>
-                        <input value={form.nib} onChange={e => setForm(p => ({...p, nib: e.target.value}))} className={inputCls} placeholder="Nomor Induk Berusaha" />
+                        <input value={form.nib} onChange={e => setForm(p => ({...p, nib: e.target.value}))}
+                          className={inputCls} placeholder="Nomor Induk Berusaha" />
+                        <p className="text-[10px] text-zinc-400 mt-0.5">N° d&apos;identification commerciale unique</p>
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-zinc-600 mb-1">NPWP</label>
-                        <input value={form.npwp} onChange={e => setForm(p => ({...p, npwp: e.target.value}))} className={inputCls} placeholder="XX.XXX.XXX.X-XXX.XXX" />
+                        <input value={form.npwp} onChange={e => setForm(p => ({...p, npwp: e.target.value}))}
+                          className={inputCls} placeholder="XX.XXX.XXX.X-XXX.XXX" />
+                        <p className="text-[10px] text-zinc-400 mt-0.5">N° fiscal indonésien</p>
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-zinc-600 mb-1">Numéro de TVA (VAT)</label>
-                      <input value={form.vat_number} onChange={e => setForm(p => ({...p, vat_number: e.target.value}))} className={inputCls} />
+                      <label className="block text-xs font-medium text-zinc-600 mb-1">N° TVA (PKP)</label>
+                      <input value={form.vat_number} onChange={e => setForm(p => ({...p, vat_number: e.target.value}))}
+                        className={inputCls} placeholder="Optionnel" />
                     </div>
-                  </>
+                    {form.legal_type === 'PT_PMA' && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                        <p className="text-xs font-medium text-amber-800 mb-2">
+                          PT PMA — Sponsor requis pour le VITAS
+                        </p>
+                        <label className="block text-xs font-medium text-zinc-600 mb-1">Entreprise sponsor (PT locale)</label>
+                        <select value={form.sponsor_company_id}
+                          onChange={e => setForm(p => ({...p, sponsor_company_id: e.target.value}))}
+                          className={inputCls}>
+                          <option value="">— Sélectionner une entreprise sponsor —</option>
+                          {sponsorOptions.map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 {(form.registration_country === 'FR' || form.registration_country === 'BE' || form.registration_country === 'CH') && (
-                  <>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-600 mb-1">Forme juridique *</label>
+                      <select value={form.legal_type}
+                        onChange={e => setForm(p => ({...p, legal_type: e.target.value, company_type: e.target.value}))}
+                        className={inputCls}>
+                        <option value="">— Sélectionner —</option>
+                        <option value="SASU">SASU — Société par actions simplifiée unipersonnelle</option>
+                        <option value="SAS">SAS — Société par actions simplifiée</option>
+                        <option value="SARL">SARL — Société à responsabilité limitée</option>
+                        <option value="EURL">EURL — Entreprise unipersonnelle à responsabilité limitée</option>
+                        <option value="SA">SA — Société anonyme</option>
+                        <option value="SCI">SCI — Société civile immobilière</option>
+                        <option value="EI">EI — Entreprise individuelle</option>
+                        <option value="AE">Auto-entrepreneur / Micro-entreprise</option>
+                      </select>
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-medium text-zinc-600 mb-1">SIRET/SIREN</label>
-                        <input value={form.siret} onChange={e => setForm(p => ({...p, siret: e.target.value}))} className={inputCls} />
+                        <label className="block text-xs font-medium text-zinc-600 mb-1">SIRET</label>
+                        <input value={form.siret} onChange={e => setForm(p => ({...p, siret: e.target.value}))}
+                          className={inputCls} placeholder="14 chiffres" />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-zinc-600 mb-1">TVA intracommunautaire</label>
-                        <input value={form.vat_number} onChange={e => setForm(p => ({...p, vat_number: e.target.value}))} className={inputCls} placeholder="FRXX XXXXXXXXX" />
+                        <label className="block text-xs font-medium text-zinc-600 mb-1">N° TVA intracommunautaire</label>
+                        <input value={form.vat_number} onChange={e => setForm(p => ({...p, vat_number: e.target.value}))}
+                          className={inputCls} placeholder="FR XX XXXXXXXXX" />
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-600 mb-1">Forme juridique</label>
-                      <input value={form.legal_type} onChange={e => setForm(p => ({...p, legal_type: e.target.value}))} className={inputCls} placeholder="SARL, SAS, SA, SASU…" />
-                    </div>
-                  </>
+                  </div>
                 )}
 
                 {(form.registration_country === 'US' || form.registration_country === 'GB' || form.registration_country === 'AU') && (
-                  <>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-600 mb-1">Entity type *</label>
+                      <select value={form.legal_type}
+                        onChange={e => setForm(p => ({...p, legal_type: e.target.value, company_type: e.target.value}))}
+                        className={inputCls}>
+                        <option value="">— Select —</option>
+                        <option value="LLC">LLC — Limited Liability Company</option>
+                        <option value="CORP">Corporation (C-Corp)</option>
+                        <option value="SCORP">S-Corporation</option>
+                        <option value="LTD">Ltd — Private Limited Company</option>
+                        <option value="PARTNERSHIP">Partnership</option>
+                        <option value="SOLE">Sole proprietorship</option>
+                      </select>
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-zinc-600 mb-1">EIN / Tax ID</label>
-                        <input value={form.tax_id} onChange={e => setForm(p => ({...p, tax_id: e.target.value}))} className={inputCls} />
+                        <input value={form.tax_id} onChange={e => setForm(p => ({...p, tax_id: e.target.value}))}
+                          className={inputCls} />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-zinc-600 mb-1">État d&apos;incorporation</label>
-                        <input value={form.state_of_incorporation} onChange={e => setForm(p => ({...p, state_of_incorporation: e.target.value}))} className={inputCls} placeholder="Delaware, California…" />
+                        <label className="block text-xs font-medium text-zinc-600 mb-1">State of incorporation</label>
+                        <input value={form.state_of_incorporation}
+                          onChange={e => setForm(p => ({...p, state_of_incorporation: e.target.value}))}
+                          className={inputCls} placeholder="Delaware, California…" />
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-600 mb-1">Entity type</label>
-                      <input value={form.legal_type} onChange={e => setForm(p => ({...p, legal_type: e.target.value}))} className={inputCls} placeholder="LLC, Corp, S-Corp…" />
-                    </div>
-                  </>
+                  </div>
                 )}
 
                 {form.registration_country === 'TH' && (
-                  <>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-600 mb-1">Type</label>
+                      <select value={form.legal_type}
+                        onChange={e => setForm(p => ({...p, legal_type: e.target.value, company_type: e.target.value}))}
+                        className={inputCls}>
+                        <option value="">—</option>
+                        <option value="CO_LTD">Co., Ltd.</option>
+                        <option value="BOI">BOI Company</option>
+                        <option value="REP_OFFICE">Representative Office</option>
+                      </select>
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-medium text-zinc-600 mb-1">DBD Registration Number</label>
-                        <input value={form.registration_number} onChange={e => setForm(p => ({...p, registration_number: e.target.value}))} className={inputCls} />
+                        <label className="block text-xs font-medium text-zinc-600 mb-1">DBD Registration</label>
+                        <input value={form.registration_number}
+                          onChange={e => setForm(p => ({...p, registration_number: e.target.value}))}
+                          className={inputCls} />
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-zinc-600 mb-1">Tax ID</label>
-                        <input value={form.tax_id} onChange={e => setForm(p => ({...p, tax_id: e.target.value}))} className={inputCls} />
+                        <input value={form.tax_id} onChange={e => setForm(p => ({...p, tax_id: e.target.value}))}
+                          className={inputCls} />
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-600 mb-1">Type</label>
-                      <input value={form.legal_type} onChange={e => setForm(p => ({...p, legal_type: e.target.value}))} className={inputCls} placeholder="Co., Ltd. / BOI Company…" />
-                    </div>
-                  </>
+                  </div>
                 )}
 
-                {(form.registration_country === 'SG' || form.registration_country === 'OTHER') && (
-                  <div className="grid grid-cols-3 gap-3">
+                {!['ID','FR','BE','CH','US','GB','AU','TH'].includes(form.registration_country) && (
+                  <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-medium text-zinc-600 mb-1">Tax ID</label>
-                      <input value={form.tax_id} onChange={e => setForm(p => ({...p, tax_id: e.target.value}))} className={inputCls} />
+                      <label className="block text-xs font-medium text-zinc-600 mb-1">Type de structure</label>
+                      <input value={form.legal_type} onChange={e => setForm(p => ({...p, legal_type: e.target.value}))}
+                        className={inputCls} placeholder="Ex: LLC, GmbH, SA, Ltda…" />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-zinc-600 mb-1">Registration Number</label>
-                      <input value={form.registration_number} onChange={e => setForm(p => ({...p, registration_number: e.target.value}))} className={inputCls} />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-600 mb-1">Company Type</label>
-                      <input value={form.legal_type} onChange={e => setForm(p => ({...p, legal_type: e.target.value}))} className={inputCls} />
+                      <label className="block text-xs font-medium text-zinc-600 mb-1">N° d&apos;enregistrement</label>
+                      <input value={form.registration_number}
+                        onChange={e => setForm(p => ({...p, registration_number: e.target.value}))}
+                        className={inputCls} />
                     </div>
                   </div>
                 )}
