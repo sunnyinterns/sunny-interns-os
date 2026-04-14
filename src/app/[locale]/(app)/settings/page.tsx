@@ -28,6 +28,7 @@ const SECTIONS: Record<string, { title: string; items: SectionItem[] }> = {
       { href: 'packages', icon: '📦', label: 'Packages', desc: 'Packages Standard, Express, Visa Only' },
       { href: 'visa-types', icon: '🛂', label: 'Types de visa', desc: 'VOA, KITAS, visa touristique' },
       { href: 'visa-agents', icon: '🏢', label: 'Agents visa', desc: 'FAZZA et autres agents partenaires' },
+      { href: 'sponsors', icon: '🏛️', label: 'Sponsors PT', desc: 'PT locales pour parrainer les PT PMA' },
       { href: 'templates', icon: '📄', label: 'Templates', desc: 'Modèles emails et templates de jobs' },
     ],
   },
