@@ -11,20 +11,18 @@ function getServiceClient() {
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get('q') ?? ''
   const country = request.nextUrl.searchParams.get('country') ?? ''
-  if (q.length < 2) return NextResponse.json([])
+  if (q.length < 2 && !country) return NextResponse.json([])
 
   const supabase = getServiceClient()
   let query = supabase
     .from('schools')
     .select('id, name, city, country')
-    .ilike('name', `%${q}%`)
+    .order('name')
 
-  // Filtrer par pays si fourni
-  if (country) {
-    query = query.ilike('country', `%${country}%`)
-  }
+  if (q.length >= 2) query = query.ilike('name', `%${q}%`)
+  if (country) query = query.ilike('country', `%${country}%`)
 
-  const { data, error } = await query.limit(10)
+  const { data, error } = await query.limit(15)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data ?? [])
 }

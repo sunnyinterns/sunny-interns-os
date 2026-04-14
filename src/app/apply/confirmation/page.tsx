@@ -139,26 +139,33 @@ function ConfirmationContent() {
               </p>
             </div>
           </div>
-          <div className="flex items-start gap-3 bg-white border border-zinc-200 rounded-xl p-4">
-            <span className="text-xl flex-shrink-0">{'ℹ️'}</span>
-            <div>
-              <p className="text-sm font-medium text-[#1a1918]">
-                {isFr ? "Pas d'email reçu ?" : "No confirmation email?"}
-              </p>
-              <p className="text-xs text-zinc-500">
-                {isFr
-                  ? <span>Contacte-nous à <a href="mailto:team@bali-interns.com" className="text-[#c8a96e] underline">team@bali-interns.com</a></span>
-                  : <span>Contact us at <a href="mailto:team@bali-interns.com" className="text-[#c8a96e] underline">team@bali-interns.com</a></span>
-                }
-              </p>
+          <div className="bg-white border border-zinc-200 rounded-xl p-4 space-y-2.5">
+            <p className="text-sm font-medium text-[#1a1918]">
+              {isFr ? "Une question ou pas d'email reçu ?" : "Questions or no confirmation email?"}
+            </p>
+            <div className="flex flex-col gap-2">
+              <a href="mailto:team@bali-interns.com"
+                className="flex items-center gap-2 text-xs text-zinc-600 hover:text-[#c8a96e] transition-colors">
+                <span className="text-sm">📧</span>
+                <span>team@bali-interns.com</span>
+              </a>
+              <a href="https://wa.me/33643487736?text=Bonjour%2C%20j%27ai%20soumis%20ma%20candidature%20Bali%20Interns%20%F0%9F%8C%B4"
+                target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2 text-xs text-zinc-600 hover:text-[#25d366] transition-colors">
+                <span className="text-sm">💬</span>
+                <span>WhatsApp +33 6 43 48 77 36</span>
+              </a>
             </div>
+            <p className="text-xs text-zinc-400">
+              {isFr ? "Pense aussi à vérifier tes spams." : "Also check your spam folder."}
+            </p>
           </div>
         </div>
 
         {/* Signature */}
         <div className="mb-6 text-center text-sm text-zinc-500">
-          <p>Questions ? <a href="mailto:team@bali-interns.com" className="text-[#c8a96e] underline font-medium">team@bali-interns.com</a></p>
-          <p className="mt-1 font-medium text-zinc-600">{isFr ? 'À très vite,' : 'See you soon,'} <br /><span className="text-[#c8a96e]">{isFr ? "L'équipe Bali Interns" : "The Bali Interns Team"}</span></p>
+          <p className="font-medium text-zinc-600">{isFr ? 'À très vite,' : 'See you soon,'}</p>
+          <p className="text-[#c8a96e] font-medium">{isFr ? "L'équipe Bali Interns" : "The Bali Interns Team"}</p>
         </div>
 
         {/* WhatsApp */}

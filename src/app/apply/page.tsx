@@ -532,16 +532,26 @@ export default function ApplyPage() {
   const searchSchoolsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const searchSchools = useCallback((q: string) => {
     if (searchSchoolsTimeout.current) clearTimeout(searchSchoolsTimeout.current)
-    if (q.length < 2) { setSchoolResults([]); setIsSearchingSchool(false); return }
+    const countryParam = form.school_country ? `&country=${encodeURIComponent(form.school_country)}` : ''
+    if (q.length < 2 && !form.school_country) { setSchoolResults([]); setIsSearchingSchool(false); return }
     setIsSearchingSchool(true)
     searchSchoolsTimeout.current = setTimeout(() => {
-      const countryParam = form.school_country ? `&country=${encodeURIComponent(form.school_country)}` : ''
       fetch(`/api/public/schools?q=${encodeURIComponent(q)}${countryParam}`)
         .then(r => r.ok ? r.json() : [])
         .then((data: School[]) => { setSchoolResults(Array.isArray(data) ? data : []); setIsSearchingSchool(false) })
         .catch(() => { setSchoolResults([]); setIsSearchingSchool(false) })
-    }, 400)
-  }, [])
+    }, 300)
+  }, [form.school_country])
+
+  // Auto-fetch schools when country is selected
+  useEffect(() => {
+    if (form.school_country && !form.school_name) {
+      fetch(`/api/public/schools?q=&country=${encodeURIComponent(form.school_country)}`)
+        .then(r => r.ok ? r.json() : [])
+        .then((data: School[]) => setSchoolResults(Array.isArray(data) ? data : []))
+        .catch(() => setSchoolResults([]))
+    }
+  }, [form.school_country, form.school_name])
 
 
 
@@ -1762,6 +1772,11 @@ export default function ApplyPage() {
                     {lang === 'fr' ? 'Chargement du calendrier...' : 'Loading calendar...'}
                   </p>
                 </div>
+                {/* CSS pour masquer le bouton Next de la page Fields Fillout */}
+                <style>{`#fillout-loading-overlay ~ iframe { pointer-events: none; }
+                button[data-testid="next-button"], 
+                [class*="next-button"], 
+                [class*="NextButton"] { opacity: 0 !important; pointer-events: none !important; }`}</style>
                 <iframe
                   ref={(el) => {
                     if (el) {
@@ -1769,7 +1784,7 @@ export default function ApplyPage() {
                       setTimeout(() => {
                         const overlay = el.parentElement?.querySelector('#fillout-loading-overlay') as HTMLElement | null
                         if (overlay) overlay.style.display = 'none'
-                      }, 2500)
+                      }, 3500)
                     }
                   }}
                   src={filloutIframeSrc}
