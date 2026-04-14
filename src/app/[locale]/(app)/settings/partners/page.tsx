@@ -14,11 +14,21 @@ interface Partner {
   contact_email: string | null
   contact_whatsapp: string | null
   discount_percentage: number | null
+  discount_text: string | null
+  valid_for: string | null
+  booking_url: string | null
   destination_id: string | null
   is_active: boolean
 }
 
-const CATEGORIES = ['Transport', 'Sport/Wellness', 'Restauration', 'Shopping', 'Coworking', 'Banque', 'Assurance', 'Autre']
+const CATEGORIES = ['eSIM', 'Transport', 'Sport/Wellness', 'Restauration', 'Deals', 'Shopping', 'Coworking', 'Banque', 'Assurance', 'Services', 'Autre']
+const CATEGORY_TABS: Array<{ key: string; label: string; icon: string }> = [
+  { key: 'all', label: 'Tous', icon: '🌐' },
+  { key: 'eSIM', label: 'eSIM', icon: '📶' },
+  { key: 'Restauration', label: 'Restaurants', icon: '🍽️' },
+  { key: 'Deals', label: 'Deals', icon: '🎁' },
+  { key: 'Services', label: 'Services', icon: '🛠️' },
+]
 
 const inputCls = 'px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white text-[#1a1918] focus:outline-none focus:ring-2 focus:ring-[#c8a96e]'
 
@@ -39,6 +49,9 @@ function PartnerModal({
   const [contactEmail, setContactEmail] = useState(initial?.contact_email ?? '')
   const [contactWhatsapp, setContactWhatsapp] = useState(initial?.contact_whatsapp ?? '')
   const [discountPct, setDiscountPct] = useState(initial?.discount_percentage?.toString() ?? '')
+  const [discountText, setDiscountText] = useState(initial?.discount_text ?? '')
+  const [validFor, setValidFor] = useState(initial?.valid_for ?? '')
+  const [bookingUrl, setBookingUrl] = useState(initial?.booking_url ?? '')
   const [destinationId, setDestinationId] = useState(initial?.destination_id ?? 'bali')
 
   function handleSave() {
@@ -54,6 +67,9 @@ function PartnerModal({
       contact_email: contactEmail.trim() || null,
       contact_whatsapp: contactWhatsapp.trim() || null,
       discount_percentage: discountPct ? Number(discountPct) : null,
+      discount_text: discountText.trim() || null,
+      valid_for: validFor.trim() || null,
+      booking_url: bookingUrl.trim() || null,
       destination_id: destinationId || 'bali',
     })
   }
@@ -105,6 +121,20 @@ function PartnerModal({
             <label className="block text-xs font-medium text-zinc-600 mb-1">Détails de l&apos;offre</label>
             <textarea className={inputCls + ' w-full'} rows={2} value={offerDetails} onChange={e => setOfferDetails(e.target.value)} placeholder="Conditions, codes promo…" />
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-zinc-600 mb-1">Deal / remise (texte)</label>
+              <input className={inputCls + ' w-full'} value={discountText} onChange={e => setDiscountText(e.target.value)} placeholder="Ex: Apéro offert" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-600 mb-1">Valable pour</label>
+              <input className={inputCls + ' w-full'} value={validFor} onChange={e => setValidFor(e.target.value)} placeholder="Ex: Stagiaires Bali Interns" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-600 mb-1">Lien de réservation / booking</label>
+            <input className={inputCls + ' w-full'} value={bookingUrl} onChange={e => setBookingUrl(e.target.value)} placeholder="https://..." />
+          </div>
           <div>
             <label className="block text-xs font-medium text-zinc-600 mb-1">URL Logo</label>
             <input className={inputCls + ' w-full'} value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://..." />
@@ -142,6 +172,7 @@ export default function PartnersPage() {
   const [partners, setPartners] = useState<Partner[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'pre_arrival' | 'on_site'>('all')
+  const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [showModal, setShowModal] = useState(false)
   const [editingPartner, setEditingPartner] = useState<Partner | null>(null)
 
@@ -170,7 +201,10 @@ export default function PartnersPage() {
     void fetchPartners()
   }
 
-  const filtered = partners.filter(p => filter === 'all' || p.partner_type === filter)
+  const filtered = partners.filter(p =>
+    (filter === 'all' || p.partner_type === filter) &&
+    (categoryFilter === 'all' || p.category === categoryFilter)
+  )
   const preCount = partners.filter(p => p.partner_type === 'pre_arrival').length
   const onCount = partners.filter(p => p.partner_type === 'on_site').length
 
@@ -185,6 +219,18 @@ export default function PartnersPage() {
           <button onClick={() => { setEditingPartner(null); setShowModal(true) }} className="px-4 py-2 text-sm font-medium rounded-lg bg-[#c8a96e] text-white hover:bg-[#b8945a] transition-colors">
             + Nouveau partenaire
           </button>
+        </div>
+
+        <div className="flex flex-wrap gap-2 mb-4">
+          {CATEGORY_TABS.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setCategoryFilter(tab.key)}
+              className={['px-3 py-1.5 text-xs rounded-full transition-colors flex items-center gap-1', categoryFilter === tab.key ? 'bg-[#c8a96e] text-white' : 'bg-white border border-zinc-200 text-zinc-600 hover:border-[#c8a96e]'].join(' ')}
+            >
+              <span>{tab.icon}</span> {tab.label}
+            </button>
+          ))}
         </div>
 
         <div className="flex gap-1 mb-6 bg-zinc-100 rounded-xl p-1 w-fit">
@@ -221,6 +267,13 @@ export default function PartnersPage() {
                     {partner.discount_percentage && <span className="text-xs font-medium text-[#0d9e75]">-{partner.discount_percentage}%</span>}
                   </div>
                   {partner.offer_short && <p className="text-xs text-zinc-500 mt-0.5 truncate">{partner.offer_short}</p>}
+                  {partner.discount_text && <p className="text-xs text-[#0d9e75] mt-0.5">🎁 {partner.discount_text}</p>}
+                  {partner.valid_for && <p className="text-[10px] text-zinc-400 mt-0.5">Valable: {partner.valid_for}</p>}
+                  {partner.booking_url && (
+                    <a href={partner.booking_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-[#c8a96e] hover:underline mt-0.5 inline-block" onClick={e => e.stopPropagation()}>
+                      Lien réservation ↗
+                    </a>
+                  )}
                   {partner.contact_name && <p className="text-xs text-zinc-400 mt-0.5">Contact: {partner.contact_name}{partner.contact_whatsapp ? ` · ${partner.contact_whatsapp}` : ''}</p>}
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
