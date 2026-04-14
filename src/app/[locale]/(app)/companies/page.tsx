@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useAIAssist } from "@/hooks/useAIAssist"
+import { SearchableSelect, type SearchableSelectItem } from "@/components/ui/SearchableSelect"
 
 interface Job { id: string; status: string }
 interface Company {
@@ -584,15 +585,17 @@ export default function CompaniesPage() {
                         <p className="text-xs font-medium text-amber-800 mb-2">
                           PT PMA — Sponsor requis pour le VITAS
                         </p>
-                        <label className="block text-xs font-medium text-zinc-600 mb-1">Entreprise sponsor (PT locale)</label>
-                        <select value={form.sponsor_company_id}
-                          onChange={e => setForm(p => ({...p, sponsor_company_id: e.target.value}))}
-                          className={inputCls}>
-                          <option value="">— Sélectionner une entreprise sponsor —</option>
-                          {sponsorOptions.map(c => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
-                          ))}
-                        </select>
+                        <SearchableSelect
+                          label="Entreprise sponsor (PT locale)"
+                          items={sponsorOptions.map<SearchableSelectItem>(c => ({
+                            id: c.id,
+                            label: c.name,
+                            avatar: c.name[0]?.toUpperCase(),
+                          }))}
+                          value={form.sponsor_company_id || null}
+                          onChange={item => setForm(p => ({...p, sponsor_company_id: item?.id ?? ''}))}
+                          placeholder="Sélectionner une entreprise sponsor…"
+                        />
                       </div>
                     )}
                   </div>
@@ -718,11 +721,17 @@ export default function CompaniesPage() {
                     Un accord de parrainage avec une société sponsor indonésienne est nécessaire.
                   </p>
                   <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1">Société sponsor (PT locale)</label>
-                    <select value={form.sponsor_company_id} onChange={e => setForm(p => ({...p, sponsor_company_id: e.target.value}))} className={inputCls}>
-                      <option value="">— Sélectionner —</option>
-                      {sponsorOptions.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
+                    <SearchableSelect
+                      label="Société sponsor (PT locale)"
+                      items={sponsorOptions.map<SearchableSelectItem>(s => ({
+                        id: s.id,
+                        label: s.name,
+                        avatar: s.name[0]?.toUpperCase(),
+                      }))}
+                      value={form.sponsor_company_id || null}
+                      onChange={item => setForm(p => ({...p, sponsor_company_id: item?.id ?? ''}))}
+                      placeholder="Sélectionner une société sponsor…"
+                    />
                   </div>
                   <button type="button" className="text-xs text-[#c8a96e] hover:underline">📄 Générer le template d&apos;accord de parrainage</button>
                 </div>
