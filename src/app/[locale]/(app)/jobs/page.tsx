@@ -107,6 +107,11 @@ export default function JobsPage() {
   const [showContactDropdown, setShowContactDropdown] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [prefilledFrom, setPrefilledFrom] = useState<string | null>(null)
+  const [cities, setCities] = useState<{id:string;name:string;area:string}[]>([])
+
+  useEffect(() => {
+    fetch('/api/internship-cities').then(r => r.json()).then(d => setCities(Array.isArray(d) ? d : [])).catch(() => null)
+  }, [])
 
   const selectedContact = contacts.find(c => c.id === form.contact_id)
 
@@ -667,7 +672,18 @@ export default function JobsPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-zinc-600 mb-1">Lieu</label>
-                    <input className={inputCls} value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} />
+                    <select className={inputCls} value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))}>
+                      <option value="">— Ville du stage —</option>
+                      {['South Bali','Central Bali','Bukit Peninsula','Capital','North Bali','East Bali'].map(area => {
+                        const areaCities = cities.filter(c => c.area === area)
+                        if (!areaCities.length) return null
+                        return (
+                          <optgroup key={area} label={area}>
+                            {areaCities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                          </optgroup>
+                        )
+                      })}
+                    </select>
                   </div>
                 </div>
                 <div>
