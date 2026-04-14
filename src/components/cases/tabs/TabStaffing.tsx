@@ -469,8 +469,8 @@ export function TabStaffing({
   // Fetch jobs
   useEffect(() => {
     fetch('/api/jobs?status=open')
-      .then(r => { console.log('[TabStaffing] jobs fetch status:', r.status); return r.ok ? r.json() as Promise<Job[]> : Promise.resolve([]) })
-      .then(data => { console.log('[TabStaffing] jobs loaded:', data.length); setAllJobs(data) })
+      .then(r => { return r.ok ? r.json() as Promise<Job[]> : Promise.resolve([]) })
+      .then(data => { setAllJobs(data) })
       .catch(e => { console.error('[TabStaffing] jobs error:', e); setAllJobs([]); setJobsError('Erreur chargement des offres') })
       .finally(() => setJobsLoading(false))
   }, [])
@@ -775,7 +775,7 @@ export function TabStaffing({
               <span className="text-[11px] text-zinc-400 font-medium">Durée souhaitée</span>
               <select
                 value={durationVal}
-                onChange={e => { setDurationVal(e.target.value); void saveCaseField('desired_duration_months', e.target.value ? Number(e.target.value) : null) }}
+                onChange={e => { setDurationVal(e.target.value); void saveInternField('desired_duration_months', e.target.value ? Number(e.target.value) : null) }}
                 className="block mt-1 text-sm text-[#1a1918] bg-transparent border-b border-zinc-200 focus:border-[#c8a96e] focus:outline-none py-1 w-full appearance-none">
                 <option value="">—</option>
                 {DURATION_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}

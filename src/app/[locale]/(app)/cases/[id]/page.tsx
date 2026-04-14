@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { NewCaseModal } from '@/components/cases/NewCaseModal'
+import { EditInternModal } from '@/components/cases/EditInternModal'
 import Link from 'next/link'
 import { TabProfil } from '@/components/cases/tabs/TabProfil'
 import { TabStaffing } from '@/components/cases/tabs/TabStaffing'
@@ -190,9 +191,9 @@ export default function CaseDetailPage() {
   const schoolName = caseData.schools?.name ?? intern.school_name ?? ''
   const mainJob = intern.main_desired_job ?? ''
   const touchpoint = intern.touchpoint ?? ''
-  const departDate = caseData.actual_start_date ?? caseData.desired_start_date
+  const departDate = caseData.actual_start_date ?? intern?.desired_start_date
   const dateDepart = departDate ? new Date(departDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
-  const durationMonths = caseData.desired_duration_months ?? ''
+  const durationMonths = intern?.desired_duration_months ?? ''
   const isVisaOnly = caseData.case_type === 'visa_only'
   const isClient = !CANDIDATE_STATUSES.includes(caseData.status)
 
@@ -471,9 +472,9 @@ export default function CaseDetailPage() {
             lastName={lastName}
             intern={intern as any}
             caseData={caseData as any}
-            desiredStartDate={caseData.desired_start_date ?? null}
+            desiredStartDate={intern?.desired_start_date ?? null}
             desiredEndDate={intern.desired_end_date ?? caseData.end_date ?? caseData.actual_end_date ?? null}
-            desiredDurationMonths={caseData.desired_duration_months ?? null}
+            desiredDurationMonths={intern?.desired_duration_months ?? null}
             cvUrl={intern.cv_url ?? null}
             cvLocalUrl={(intern as Record<string,unknown>).local_cv_url as string ?? caseData.local_cv_url ?? null}
             cvFeedback={caseData.cv_feedback ?? null}
@@ -490,10 +491,21 @@ export default function CaseDetailPage() {
         )}
       </div>
 
-      {showEditModal && (
-        <NewCaseModal
+      {showEditModal && intern && (
+        <EditInternModal
+          caseId={caseData.id}
+          internId={intern.id ?? ''}
+          initialData={{
+            first_name: intern.first_name,
+            last_name: intern.last_name,
+            email: intern.email,
+            whatsapp: intern.whatsapp,
+            school_name: intern.school_name,
+            desired_start_date: intern.desired_start_date,
+            desired_duration_months: intern.desired_duration_months,
+          }}
           onClose={() => setShowEditModal(false)}
-          onSuccess={() => { setShowEditModal(false); window.location.reload() }}
+          onSuccess={() => { setShowEditModal(false); void fetchCase() }}
         />
       )}
 
@@ -504,7 +516,7 @@ export default function CaseDetailPage() {
               caseData={{
                 id: caseData.id,
                 status: caseData.status,
-                arrival_date: caseData.actual_start_date ?? caseData.desired_start_date,
+                arrival_date: caseData.actual_start_date ?? intern?.desired_start_date,
                 return_date: caseData.actual_end_date,
                 destination: caseData.destinations?.name ?? null,
                 interns: caseData.interns ? {
