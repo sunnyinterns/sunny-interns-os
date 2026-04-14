@@ -265,21 +265,7 @@ export default function ContactDetailPage() {
             </div>
           ))}
 
-          {/* Contact type */}
-          <div>
-            <p className="text-xs text-zinc-400 mb-1">Type de contact</p>
-            <select
-              className={inputCls}
-              value={contact.contact_type}
-              onChange={e => void patchContact({ contact_type: e.target.value })}
-            >
-              <option value="employer">Employeur</option>
-              <option value="promo_partner">Partenaire promo</option>
-              <option value="visa_agent">Agent visa</option>
-              <option value="school_contact">École</option>
-              <option value="other">Autre</option>
-            </select>
-          </div>
+
 
           {/* Company */}
           <div>
