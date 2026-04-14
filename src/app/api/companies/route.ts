@@ -9,11 +9,14 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const q = searchParams.get('q')?.trim()
   const destination = searchParams.get('destination')
+  const role = searchParams.get('role')
 
   try {
     let query = supabase.from('companies').select('*, jobs(id, status)')
     if (q) query = query.ilike('name', `%${q}%`)
     if (destination && destination !== 'all') query = query.eq('destination_id', destination)
+    if (role === 'employer') query = query.eq('is_employer', true)
+    if (role === 'partner') query = query.eq('is_partner', true)
     const { data, error } = await query.order('name')
     if (error) throw error
     return NextResponse.json(data ?? [])
