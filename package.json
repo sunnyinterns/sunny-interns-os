@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "seed:demo": "tsx scripts/seed-demo.ts",
+    "seed:marie": "tsx scripts/seed-marie.ts",
     "vapid:generate": "node -e \"const wp=require('web-push'); const keys=wp.generateVAPIDKeys(); console.log(JSON.stringify(keys))\""
   },
   "dependencies": {
