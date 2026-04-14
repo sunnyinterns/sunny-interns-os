@@ -65,6 +65,12 @@ interface Company {
   siret?: string | null
   tax_id?: string | null
   state_of_incorporation?: string | null
+  // identité
+  company_size?: string | null
+  // adresse séparée
+  address_street?: string | null
+  address_postal_code?: string | null
+  address_city?: string | null
   // rôles
   is_employer?: boolean | null
   is_partner?: boolean | null
