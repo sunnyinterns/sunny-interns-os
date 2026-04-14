@@ -559,83 +559,70 @@ export default function CompanyDetailPage() {
       {/* Info panel (read-only sections) */}
       {!editing && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
           <div className="bg-white border border-zinc-100 rounded-xl p-4">
-            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">📍 Localisation</h3>
+            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Identité</h3>
+            <dl className="text-sm space-y-1.5">
+              <div className="flex justify-between gap-3"><dt className="text-zinc-500">Secteur</dt><dd className="text-[#1a1918]">{company.sector ?? company.industry ?? '—'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-zinc-500">Taille</dt><dd className="text-[#1a1918]">{company.company_size ?? '—'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-zinc-500">Site web</dt><dd>{company.website ? (<a href={company.website} target="_blank" rel="noopener noreferrer" className="text-[#c8a96e] hover:underline text-xs">{company.website}</a>) : <span className="text-zinc-300">—</span>}</dd></div>
+            </dl>
+            {company.description && <p className="text-xs text-zinc-500 mt-2 pt-2 border-t border-zinc-50">{company.description}</p>}
+          </div>
+
+          <div className="bg-white border border-zinc-100 rounded-xl p-4">
+            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Localisation</h3>
             <dl className="text-sm space-y-1.5">
               <div className="flex justify-between gap-3"><dt className="text-zinc-500">Ville du stage</dt><dd className="text-[#1a1918] font-medium">{company.internship_city ?? company.city ?? '—'}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-zinc-500">Pays</dt><dd className="text-[#1a1918]">{company.registration_country ?? company.country ?? '—'}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-zinc-500">Adresse</dt><dd className="text-[#1a1918] text-right max-w-[60%] truncate">{company.legal_address ?? '—'}</dd></div>
-              {company.google_maps_url && (
-                <div><a href={company.google_maps_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#c8a96e] hover:underline">🗺️ Voir sur Google Maps</a></div>
-              )}
+              <div className="flex justify-between gap-3"><dt className="text-zinc-500">Pays immat.</dt><dd className="text-[#1a1918]">{company.registration_country ?? company.country ?? '—'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-zinc-500">Adresse</dt><dd className="text-[#1a1918] text-right max-w-[60%] text-xs">{[company.address_street, company.address_postal_code, company.address_city].filter(Boolean).join(', ') || company.legal_address || '—'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-zinc-500">Google Maps</dt><dd>{company.google_maps_url ? (<a href={company.google_maps_url} target="_blank" rel="noopener noreferrer" className="text-[#c8a96e] hover:underline text-xs">Voir →</a>) : <span className="text-zinc-300">—</span>}</dd></div>
             </dl>
           </div>
 
           <div className="bg-white border border-zinc-100 rounded-xl p-4">
-            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">🏛️ Légal</h3>
+            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Légal</h3>
             <dl className="text-sm space-y-1.5">
-              <div className="flex justify-between gap-3"><dt className="text-zinc-500">Type</dt><dd className="text-[#1a1918] font-medium">{company.company_type ?? company.type ?? company.legal_type ?? '—'}</dd></div>
-              {(company.registration_country === 'ID' || !company.registration_country) && (
-                <>
-                  <div className="flex justify-between gap-3"><dt className="text-zinc-500">NIB</dt><dd className="text-[#1a1918] font-mono text-xs">{company.nib ?? '—'}</dd></div>
-                  <div className="flex justify-between gap-3"><dt className="text-zinc-500">NPWP</dt><dd className="text-[#1a1918] font-mono text-xs">{company.npwp ?? '—'}</dd></div>
-                </>
-              )}
-              {company.registration_country === 'FR' && (
-                <>
-                  <div className="flex justify-between gap-3"><dt className="text-zinc-500">SIRET</dt><dd className="text-[#1a1918] font-mono text-xs">{company.siret ?? '—'}</dd></div>
-                </>
-              )}
-              {company.vat_number && <div className="flex justify-between gap-3"><dt className="text-zinc-500">TVA</dt><dd className="text-[#1a1918] font-mono text-xs">{company.vat_number}</dd></div>}
-              {company.registration_number && <div className="flex justify-between gap-3"><dt className="text-zinc-500">Reg. number</dt><dd className="text-[#1a1918] font-mono text-xs">{company.registration_number}</dd></div>}
-              {company.tax_id && <div className="flex justify-between gap-3"><dt className="text-zinc-500">Tax ID</dt><dd className="text-[#1a1918] font-mono text-xs">{company.tax_id}</dd></div>}
+              <div className="flex justify-between gap-3"><dt className="text-zinc-500">Type légal</dt><dd className="text-[#1a1918] font-medium">{company.legal_type ?? company.company_type ?? company.type ?? '—'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-zinc-500">NIB</dt><dd className="text-[#1a1918] font-mono text-xs">{company.nib ?? '—'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-zinc-500">NPWP</dt><dd className="text-[#1a1918] font-mono text-xs">{company.npwp ?? '—'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-zinc-500">SIRET</dt><dd className="text-[#1a1918] font-mono text-xs">{company.siret ?? '—'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-zinc-500">TVA</dt><dd className="text-[#1a1918] font-mono text-xs">{company.vat_number ?? '—'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-zinc-500">Tax ID / EIN</dt><dd className="text-[#1a1918] font-mono text-xs">{company.tax_id ?? '—'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-zinc-500">Reg. number</dt><dd className="text-[#1a1918] font-mono text-xs">{company.registration_number ?? '—'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-zinc-500">État incorp.</dt><dd className="text-[#1a1918] text-xs">{company.state_of_incorporation ?? '—'}</dd></div>
             </dl>
           </div>
 
           <div className="bg-white border border-zinc-100 rounded-xl p-4">
-            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">🔗 Réseaux sociaux</h3>
-            <div className="flex flex-wrap gap-2 text-xs">
-              {company.instagram_url && <a href={company.instagram_url} target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-pink-50 text-pink-600 rounded-md hover:bg-pink-100">Instagram</a>}
-              {company.tiktok_url && <a href={company.tiktok_url} target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-zinc-900 text-white rounded-md hover:bg-zinc-700">TikTok</a>}
-              {company.linkedin_url && <a href={company.linkedin_url} target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100">LinkedIn</a>}
-              {company.facebook_url && <a href={company.facebook_url} target="_blank" rel="noopener noreferrer" className="px-2 py-1 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100">Facebook</a>}
-              {!company.instagram_url && !company.tiktok_url && !company.linkedin_url && !company.facebook_url && <span className="text-xs text-zinc-400">Aucun réseau renseigné</span>}
-            </div>
-          </div>
-
-          <div className="bg-white border border-zinc-100 rounded-xl p-4">
-            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">📝 Notes internes</h3>
-            <p className="text-sm text-zinc-600 whitespace-pre-wrap">{company.notes ?? <span className="text-zinc-400 italic">Aucune note</span>}</p>
+            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Réseaux sociaux</h3>
+            <dl className="text-sm space-y-1.5">
+              <div className="flex justify-between gap-3"><dt className="text-zinc-500">Instagram</dt><dd>{company.instagram_url ? (<a href={company.instagram_url} target="_blank" rel="noopener noreferrer" className="text-pink-500 hover:underline text-xs">Voir →</a>) : <span className="text-zinc-300">—</span>}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-zinc-500">TikTok</dt><dd>{company.tiktok_url ? (<a href={company.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-zinc-700 hover:underline text-xs">Voir →</a>) : <span className="text-zinc-300">—</span>}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-zinc-500">LinkedIn</dt><dd>{company.linkedin_url ? (<a href={company.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-xs">Voir →</a>) : <span className="text-zinc-300">—</span>}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-zinc-500">Facebook</dt><dd>{company.facebook_url ? (<a href={company.facebook_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-xs">Voir →</a>) : <span className="text-zinc-300">—</span>}</dd></div>
+            </dl>
           </div>
 
           {company.is_partner && (
-            <div className="bg-white border border-zinc-100 rounded-xl p-4 md:col-span-2 space-y-2">
-              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">🤝 Partenariat</p>
-              {company.partner_category && (
-                <p className="text-sm"><span className="text-zinc-400">Catégorie:</span> {company.partner_category}</p>
-              )}
-              {company.partner_timing && (
-                <p className="text-sm"><span className="text-zinc-400">Disponible:</span> {
-                  company.partner_timing === 'pre_arrival' ? 'Avant départ' :
-                  company.partner_timing === 'on_site' ? 'Sur l\'île' : 'Avant départ + Sur l\'île'
-                }</p>
-              )}
-              {company.partner_visible_from && (
-                <p className="text-sm"><span className="text-zinc-400">Portail:</span> {
-                  company.partner_visible_from === 'payment' ? 'Dès paiement (Welcome Kit)' : 'À l\'arrivée'
-                }</p>
-              )}
-              {company.partner_deal && (
-                <div>
-                  <p className="text-xs text-zinc-400 mb-1">Offre</p>
-                  <p className="text-sm text-[#1a1918] bg-amber-50 rounded-lg px-3 py-2">{company.partner_deal}</p>
-                </div>
-              )}
+            <div className="bg-white border border-amber-100 rounded-xl p-4 md:col-span-2">
+              <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Partenariat</h3>
+              <dl className="text-sm space-y-1.5">
+                <div className="flex justify-between gap-3"><dt className="text-zinc-500">Catégorie</dt><dd className="text-[#1a1918]">{company.partner_category ?? '—'}</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-zinc-500">Timing</dt><dd className="text-[#1a1918]">{company.partner_timing === 'pre_arrival' ? 'Avant départ' : company.partner_timing === 'on_site' ? "Sur l'île" : company.partner_timing === 'both' ? 'Les deux' : '—'}</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-zinc-500">Visible depuis</dt><dd className="text-[#1a1918]">{company.partner_visible_from === 'payment' ? 'Paiement (Welcome Kit)' : company.partner_visible_from === 'arrival' ? "Arrivée" : '—'}</dd></div>
+              </dl>
+              {company.partner_deal && <div className="mt-3 bg-amber-50 rounded-lg px-3 py-2 text-sm">{company.partner_deal}</div>}
             </div>
           )}
+
+          <div className="bg-white border border-zinc-100 rounded-xl p-4 md:col-span-2">
+            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Notes internes</h3>
+            <p className="text-sm text-zinc-600 whitespace-pre-wrap">{company.notes ?? ''}{!company.notes && <span className="text-zinc-300 italic">Aucune note</span>}</p>
+          </div>
+
         </div>
       )}
-
       {/* Tabs */}
       <div className="flex gap-1 border-b border-zinc-100 mb-5">
         {tabs.map((tab) => (
