@@ -29,7 +29,7 @@ interface Company {
   info_validated_by_contact?: boolean | null
   onboarding_completed_at?: string | null
   jobs?: Job[]
-  contacts?: { id: string }[]
+  contacts?: { id: string; first_name: string | null; last_name: string | null; job_title: string | null }[]
   active_interns_count?: number
 }
 
@@ -382,6 +382,14 @@ export default function CompaniesPage() {
                         <div>
                           <p className="font-semibold text-[#1a1918]">{c.name}</p>
                           <p className="text-xs text-zinc-400">{c.legal_type ?? c.company_type ?? c.type ?? ''}</p>
+                          {(c.contacts ?? []).length > 0 && (
+                            <p className="text-xs text-zinc-400 mt-0.5">
+                              {(c.contacts ?? []).slice(0, 2).map(ct =>
+                                [ct.first_name, ct.last_name].filter(Boolean).join(' ')
+                              ).join(' · ')}
+                              {(c.contacts ?? []).length > 2 && <span className="text-zinc-300"> +{(c.contacts ?? []).length - 2}</span>}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </td>

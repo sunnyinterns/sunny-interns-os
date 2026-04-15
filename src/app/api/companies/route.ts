@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const role = searchParams.get('role')
 
   try {
-    let query = supabase.from('companies').select('*, jobs(id, status)')
+    let query = supabase.from('companies').select('*, jobs(id, status), contacts!company_id(id, first_name, last_name, job_title)')
     if (q) query = query.ilike('name', `%${q}%`)
     if (destination && destination !== 'all') query = query.eq('destination_id', destination)
     if (role === 'employer') query = query.eq('is_employer', true)
