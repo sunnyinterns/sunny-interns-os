@@ -30,6 +30,7 @@ export async function GET(
       id,
       job_id,
       intern_interested,
+      intern_priority,
       status,
       jobs (
         id,
@@ -37,7 +38,8 @@ export async function GET(
         public_title,
         public_description,
         department,
-        job_departments (name)
+        job_departments (name),
+        companies (name)
       )
     `)
     .eq('case_id', caseData.id)
@@ -53,6 +55,7 @@ export async function GET(
       public_description?: string | null
       department?: string | null
       job_departments?: { name: string } | null
+      companies?: { name: string } | null
     } | null
 
     return {
@@ -62,6 +65,8 @@ export async function GET(
       sector: (job?.job_departments as { name: string } | null)?.name ?? job?.department ?? null,
       public_description: job?.public_description ?? null,
       intern_interested: sub.intern_interested,
+      intern_priority: (sub as unknown as { intern_priority?: number | null }).intern_priority ?? null,
+      company_name: (job?.companies as { name?: string } | null)?.name ?? null,
       status: sub.status,
     }
   })
