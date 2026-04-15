@@ -38,7 +38,7 @@ export async function GET(
       if (submissions) {
         // Dédupliquer par case_id
         const seen = new Set<string>()
-        for (const s of submissions as Array<{ case_id: string; cases: { id: string; status: string; interns: { first_name: string; last_name: string } | null } | null }>) {
+        for (const s of (submissions as unknown) as Array<{ case_id: string; cases: { id: string; status: string; interns: { first_name: string; last_name: string } | null } | null }>) {
           if (s.cases && !seen.has(s.case_id)) {
             seen.add(s.case_id)
             stagiaires.push({
