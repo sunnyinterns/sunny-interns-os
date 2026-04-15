@@ -125,6 +125,23 @@ export default function CaseDetailPage() {
   }
   const [sendingRecap, setSendingRecap] = useState(false)
   const [recapSent, setRecapSent] = useState(false)
+  const [sendingPortal, setSendingPortal] = useState(false)
+  const [portalSent, setPortalSent] = useState(false)
+
+  async function sendPortal() {
+    if (!id) return
+    setSendingPortal(true)
+    try {
+      const r = await fetch(`/api/cases/${id}/send-portal`, { method: 'POST' })
+      if (r.ok) {
+        setPortalSent(true)
+        setTimeout(() => setPortalSent(false), 4000)
+        fetchCase()
+      }
+    } finally {
+      setSendingPortal(false)
+    }
+  }
 
   async function sendRecapEmail() {
     if (!id) return
@@ -307,6 +324,15 @@ export default function CaseDetailPage() {
                   {sendingRecap ? 'Envoi…' : recapSent ? '✓ Envoyé' : '📧 Récap entretien'}
                 </button>
               )}
+              {(caseData.status === 'qualification_done' || caseData.status === 'rdv_booked') && caseData.portal_token && (
+                <button
+                  onClick={() => { void sendPortal() }}
+                  disabled={sendingPortal}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-[#c8a96e] text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
+                >
+                  {sendingPortal ? 'Envoi…' : portalSent ? '✓ Portail envoyé' : caseData.portal_sent_at ? '🔁 Renvoyer portail' : '🌴 Envoyer portail'}
+                </button>
+              )}
               {caseData.status === 'active' && (
                 <button
                   onClick={() => setShowInternCard(true)}
@@ -452,6 +478,35 @@ export default function CaseDetailPage() {
                   </button>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Alerte paiement notifié par le candidat */}
+          {caseData.payment_notified_by_intern_at && !headerCompact && (
+            <div className="mb-2 px-4 py-3 bg-yellow-50 border border-yellow-300 rounded-xl flex items-start gap-3">
+              <span className="text-lg flex-shrink-0">💰</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-yellow-800">Le candidat indique avoir payé — à vérifier</p>
+                <p className="text-xs text-yellow-700">
+                  Notifié le {new Date(caseData.payment_notified_by_intern_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  {caseData.payment_notified_by_intern_note ? ` · ${caseData.payment_notified_by_intern_note}` : ''}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Badge engagement letter */}
+          {(caseData.engagement_letter_signed_at || (!caseData.engagement_letter_signed_at && caseData.portal_sent_at)) && !headerCompact && (
+            <div className="mb-2 flex items-center gap-2">
+              {caseData.engagement_letter_signed_at ? (
+                <span className="text-xs px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full font-semibold">
+                  ✅ Lettre d&apos;engagement signée le {new Date(caseData.engagement_letter_signed_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
+              ) : (
+                <span className="text-xs px-2.5 py-1 bg-orange-50 text-orange-600 border border-orange-200 rounded-full">
+                  ⏳ Lettre d&apos;engagement en attente de signature
+                </span>
+              )}
             </div>
           )}
 
