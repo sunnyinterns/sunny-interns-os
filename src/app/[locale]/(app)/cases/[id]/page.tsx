@@ -128,6 +128,10 @@ export default function CaseDetailPage() {
   const [sendingPortal, setSendingPortal] = useState(false)
   const [portalSent, setPortalSent] = useState(false)
   const [openingDriverWA, setOpeningDriverWA] = useState(false)
+  const [sendingQualif, setSendingQualif] = useState(false)
+  const [qualifSent, setQualifSent] = useState(false)
+  const [sendingVisaAgent, setSendingVisaAgent] = useState(false)
+  const [visaAgentSent, setVisaAgentSent] = useState(false)
 
   async function sendPortal() {
     if (!id) return
@@ -156,6 +160,53 @@ export default function CaseDetailPage() {
       }
     } finally {
       setSendingRecap(false)
+    }
+  }
+
+  async function sendQualificationEmail() {
+    if (!id) return
+    setSendingQualif(true)
+    try {
+      const r = await fetch(`/api/cases/${id}/send-qualification-email`, { method: 'POST' })
+      if (r.ok) {
+        setQualifSent(true)
+        setTimeout(() => setQualifSent(false), 3000)
+      }
+    } finally {
+      setSendingQualif(false)
+    }
+  }
+
+  function visaDocsMissing(): string[] {
+    if (!caseData) return []
+    const missing: string[] = []
+    if (!caseData.interns?.photo_id_url) missing.push('📸 Photo ID fond blanc')
+    if (!caseData.interns?.passport_page4_url) missing.push('🛂 Passeport page 4')
+    if (!caseData.interns?.bank_statement_url) missing.push('🏦 Relevé bancaire')
+    if (!caseData.flight_number) missing.push('✈️ Numéro de vol')
+    if (!caseData.flight_arrival_time_local) missing.push('⏰ Heure d\'arrivée')
+    if (!caseData.actual_start_date) missing.push('📅 Date de début de stage')
+    if (!caseData.actual_end_date) missing.push('📅 Date de fin de stage')
+    return missing
+  }
+
+  async function sendVisaToAgent() {
+    if (!id) return
+    const missing = visaDocsMissing()
+    if (missing.length > 0) {
+      const ok = window.confirm(`Documents manquants:\n${missing.join('\n')}\n\nEnvoyer quand même ?`)
+      if (!ok) return
+    }
+    setSendingVisaAgent(true)
+    try {
+      const r = await fetch(`/api/cases/${id}/send-visa-to-agent`, { method: 'POST' })
+      if (r.ok) {
+        setVisaAgentSent(true)
+        setTimeout(() => setVisaAgentSent(false), 4000)
+        fetchCase()
+      }
+    } finally {
+      setSendingVisaAgent(false)
     }
   }
 
@@ -360,6 +411,24 @@ export default function CaseDetailPage() {
                   className="text-xs px-3 py-1.5 rounded-lg bg-[#0d9e75] text-white font-semibold hover:bg-[#0a8a65] transition-colors disabled:opacity-60"
                 >
                   {sendingRecap ? 'Envoi…' : recapSent ? '✓ Envoyé' : '📧 Récap entretien'}
+                </button>
+              )}
+              {caseData.status === 'qualification_done' && (
+                <button
+                  onClick={() => { void sendQualificationEmail() }}
+                  disabled={sendingQualif}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700 transition-colors disabled:opacity-60"
+                >
+                  {sendingQualif ? 'Envoi…' : qualifSent ? '✓ Envoyé' : '📧 Email qualif'}
+                </button>
+              )}
+              {caseData.status === 'job_retained' && (
+                <button
+                  onClick={() => { void sendRecapEmail() }}
+                  disabled={sendingRecap}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-[#0d9e75] text-white font-semibold hover:bg-[#0a8a65] transition-colors disabled:opacity-60"
+                >
+                  {sendingRecap ? 'Envoi…' : recapSent ? '✓ Envoyé' : '📋 Récap candidat'}
                 </button>
               )}
               {(caseData.status === 'qualification_done' || caseData.status === 'rdv_booked') && caseData.portal_token && (
@@ -594,6 +663,52 @@ export default function CaseDetailPage() {
       {/* ── TAB CONTENT ── */}
       <div ref={scrollContainerRef} className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex-1 overflow-y-auto w-full pb-20 md:pb-6">
         {/* TabProcess supprimé - changement de statut dans la timeline */}
+
+        {/* ── DOSSIER VISA — visible pour statuts clients après payment_received ── */}
+        {['payment_received', 'visa_docs_sent', 'visa_submitted', 'visa_in_progress', 'visa_received', 'arrival_prep', 'active'].includes(caseData.status) && (
+          <div className="bg-white border border-zinc-100 rounded-2xl p-5 mb-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-[#1a1918]">Dossier Visa</h2>
+              {caseData.visa_submitted_to_agent_at ? (
+                <span className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-full">
+                  ✅ Envoyé le {new Date(caseData.visa_submitted_to_agent_at as string).toLocaleDateString('fr-FR')}
+                </span>
+              ) : (
+                <button
+                  onClick={() => { void sendVisaToAgent() }}
+                  disabled={sendingVisaAgent}
+                  className="text-xs px-3 py-1.5 bg-[#c8a96e] text-white rounded-lg font-medium hover:opacity-90 disabled:opacity-50"
+                >
+                  {sendingVisaAgent ? 'Envoi…' : visaAgentSent ? '✓ Envoyé' : '📨 Envoyer à l\'agent'}
+                </button>
+              )}
+            </div>
+            <div className="space-y-2">
+              {([
+                { label: 'Photo ID fond blanc', ok: !!caseData.interns?.photo_id_url },
+                { label: 'Passeport page 4', ok: !!caseData.interns?.passport_page4_url },
+                { label: 'Relevé bancaire', ok: !!caseData.interns?.bank_statement_url },
+                { label: `Vol ${(caseData.flight_number ?? '—') as string}`, ok: !!caseData.flight_number },
+                { label: `Arrivée ${caseData.flight_arrival_time_local ? new Date(caseData.flight_arrival_time_local as string).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}`, ok: !!caseData.flight_arrival_time_local },
+                { label: `Début stage ${(caseData.actual_start_date ?? '—') as string}`, ok: !!caseData.actual_start_date },
+                { label: `Fin stage ${(caseData.actual_end_date ?? '—') as string}`, ok: !!caseData.actual_end_date },
+              ] as { label: string; ok: boolean }[]).map((item, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] flex-shrink-0 ${item.ok ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-500'}`}>
+                    {item.ok ? '✓' : '✗'}
+                  </span>
+                  <span className={`text-xs ${item.ok ? 'text-zinc-600' : 'text-red-500 font-medium'}`}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+            {caseData.visa_recu && (
+              <div className="mt-3 pt-3 border-t border-zinc-100">
+                <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full">🛂 Visa reçu !</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'profil' && (
           <TabProfil
             intern={(caseData as any).interns ?? null}

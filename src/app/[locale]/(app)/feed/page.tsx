@@ -27,6 +27,18 @@ interface PendingPaymentCase {
   payment_amount: number | null
 }
 
+interface UpcomingDepartureCase {
+  id: string
+  flight_arrival_time_local: string | null
+  flight_number: string | null
+  interns: { first_name: string; last_name: string } | null
+}
+
+interface SimpleCase {
+  id: string
+  interns: { first_name: string; last_name: string } | null
+}
+
 export default function FeedPage() {
   const params = useParams()
   const locale = typeof params?.locale === 'string' ? params.locale : 'fr'
@@ -35,6 +47,9 @@ export default function FeedPage() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [pendingLeads, setPendingLeads] = useState<LeadItem[]>([])
   const [pendingPayments, setPendingPayments] = useState<PendingPaymentCase[]>([])
+  const [upcomingDepartures, setUpcomingDepartures] = useState<UpcomingDepartureCase[]>([])
+  const [pendingPaymentNotifs, setPendingPaymentNotifs] = useState<SimpleCase[]>([])
+  const [pendingEngagement, setPendingEngagement] = useState<SimpleCase[]>([])
 
   useEffect(() => {
     // Leads en attente de conversion (status = new ou contacted)
@@ -47,6 +62,24 @@ export default function FeedPage() {
     fetch('/api/cases?status=payment_pending&limit=10')
       .then(r => r.ok ? r.json() : [])
       .then(d => setPendingPayments(Array.isArray(d) ? d : []))
+      .catch(() => null)
+
+    // Départs imminents (dans les 7 jours)
+    fetch('/api/cases?flight_soon=true&limit=5')
+      .then(r => r.ok ? r.json() : [])
+      .then(d => setUpcomingDepartures(Array.isArray(d) ? d : []))
+      .catch(() => null)
+
+    // Paiements notifiés par candidat (à vérifier)
+    fetch('/api/cases?payment_notified=true&limit=10')
+      .then(r => r.ok ? r.json() : [])
+      .then(d => setPendingPaymentNotifs(Array.isArray(d) ? d : []))
+      .catch(() => null)
+
+    // Lettre engagement en attente (qualification_done)
+    fetch('/api/cases?missing_engagement=true&limit=10')
+      .then(r => r.ok ? r.json() : [])
+      .then(d => setPendingEngagement(Array.isArray(d) ? d : []))
       .catch(() => null)
   }, [])
 
@@ -80,6 +113,71 @@ export default function FeedPage() {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         <FunnelKPIs locale={locale} />
+
+        {/* ── ACTIONS URGENTES DU JOUR ── */}
+        {(upcomingDepartures.length > 0 || pendingPaymentNotifs.length > 0 || pendingEngagement.length > 0) && (
+          <section>
+            <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-3 flex items-center gap-2">
+              🔴 Actions urgentes
+              {(upcomingDepartures.length + pendingPaymentNotifs.length + pendingEngagement.length) > 0 && (
+                <span className="w-5 h-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold">
+                  {upcomingDepartures.length + pendingPaymentNotifs.length + pendingEngagement.length}
+                </span>
+              )}
+            </h2>
+            <div className="space-y-2">
+              {upcomingDepartures.map(c => {
+                const daysLeft = c.flight_arrival_time_local
+                  ? Math.ceil((new Date(c.flight_arrival_time_local).getTime() - Date.now()) / 86400000)
+                  : null
+                return (
+                  <Link key={c.id} href={`/${locale}/cases/${c.id}`}
+                    className="flex items-center gap-3 p-3 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-colors">
+                    <span className="text-lg">✈️</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-red-800">
+                        {c.interns?.first_name} {c.interns?.last_name}
+                      </p>
+                      <p className="text-xs text-red-600">
+                        {daysLeft !== null ? (daysLeft === 0 ? "Départ aujourd'hui" : daysLeft === 1 ? 'Départ demain' : `Départ dans ${daysLeft}j`) : 'Départ imminent'}
+                        {c.flight_number ? ` — ${c.flight_number}` : ''}
+                      </p>
+                    </div>
+                    <span className="text-xs text-red-400">→</span>
+                  </Link>
+                )
+              })}
+
+              {pendingPaymentNotifs.map(c => (
+                <Link key={c.id} href={`/${locale}/cases/${c.id}`}
+                  className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-100 rounded-xl hover:bg-amber-100 transition-colors">
+                  <span className="text-lg">💰</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-amber-800">
+                      {c.interns?.first_name} {c.interns?.last_name}
+                    </p>
+                    <p className="text-xs text-amber-600">Indique avoir payé — à vérifier</p>
+                  </div>
+                  <span className="text-xs text-amber-500">→</span>
+                </Link>
+              ))}
+
+              {pendingEngagement.map(c => (
+                <Link key={c.id} href={`/${locale}/cases/${c.id}`}
+                  className="flex items-center gap-3 p-3 bg-purple-50 border border-purple-100 rounded-xl hover:bg-purple-100 transition-colors">
+                  <span className="text-lg">📄</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-purple-800">
+                      {c.interns?.first_name} {c.interns?.last_name}
+                    </p>
+                    <p className="text-xs text-purple-600">Lettre d&apos;engagement non signée</p>
+                  </div>
+                  <span className="text-xs text-purple-500">→</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Grid 2x2 desktop, stack mobile */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 
@@ -383,6 +383,25 @@ export default function PortalPage() {
   const currentStepIdx = PORTAL_STEPS.findIndex(s => s.statuses.includes(data.status))
   const qualificationDone = currentStep >= 2 && data.status !== 'lead' && data.status !== 'rdv_booked'
 
+  // Actions requises urgentes (useMemo)
+  const requiredActions = useMemo(() => {
+    if (!data) return []
+    const acts: { href: string; icon: string; label: string }[] = []
+    if (!data.engagement_letter_sent) {
+      acts.push({ href: `/portal/${token}/engagement`, icon: '📄', label: "Signer la lettre d'engagement" })
+    }
+    if (['convention_signed', 'payment_pending'].includes(data.status) && !data.payment_amount) {
+      acts.push({ href: `/portal/${token}/facture`, icon: '💳', label: 'Voir la facture et notifier le paiement' })
+    }
+    if (['payment_received', 'visa_in_progress', 'visa_docs_sent'].includes(data.status) && !data.interns?.photo_id_url) {
+      acts.push({ href: `/portal/${token}/visa`, icon: '🛂', label: 'Uploader vos documents visa' })
+    }
+    if (['payment_received', 'visa_in_progress', 'visa_docs_sent'].includes(data.status) && !data.flight_number) {
+      acts.push({ href: `/portal/${token}/billet`, icon: '✈️', label: 'Renseigner votre billet d\'avion' })
+    }
+    return acts
+  }, [data, token])
+
   // Pending actions
   const actions: { label: string; href: string; done: boolean; urgent?: boolean }[] = []
   if (currentStep >= 5) {
@@ -488,6 +507,22 @@ export default function PortalPage() {
           <div style={{ height: '100%', width: `${((currentStep - 1) / 7) * 100}%`, background: 'linear-gradient(90deg, #c8a96e, #d4b87a)', transition: 'width 0.6s ease', borderRadius: 3 }} />
         </div>
       </div>
+
+      {/* ── ACTIONS REQUISES URGENTES ── */}
+      {requiredActions.length > 0 && (
+        <div style={{ background: '#fef3c7', border: '1.5px solid #fcd34d', borderRadius: 14, padding: 16, marginBottom: 24 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>⚡ Action requise</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {requiredActions.map(action => (
+              <Link key={action.href} href={action.href} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: '#78350f' }}>
+                <span style={{ fontSize: 18, flexShrink: 0 }}>{action.icon}</span>
+                <span style={{ fontSize: 14, fontWeight: 500, flex: 1 }}>{action.label}</span>
+                <span style={{ fontSize: 13, color: '#c8a96e', fontWeight: 700 }}>→</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Notes de qualification */}
       {qualificationDone && data.qualification_notes_for_intern && (

@@ -114,6 +114,8 @@ export async function GET(request: Request) {
         convention_signee_check, chauffeur_reserve,
         portal_token, intern_first_meeting_date, google_meet_link,
         package_id, payment_amount, payment_date,
+        flight_arrival_time_local, flight_number,
+        payment_notified_by_intern_at, engagement_letter_signed_at,
         interns(first_name, last_name, email, nationality, nationalities, school_country, main_desired_job, cv_url, whatsapp, spoken_languages, birth_date, linkedin_url, avatar_url, passport_expiry),
         schools(name),
         packages(name, price_eur)
@@ -137,6 +139,37 @@ export async function GET(request: Request) {
       const start = `${month}-01`
       const end = `${month}-31`
       query = query.gte('desired_start_date', start).lte('desired_start_date', end)
+    }
+
+    // Départs imminents (vol dans les 7 prochains jours)
+    if (searchParams.get('flight_soon') === 'true') {
+      const now = new Date().toISOString()
+      const soon = new Date(); soon.setDate(soon.getDate() + 7)
+      query = query
+        .not('flight_arrival_time_local', 'is', null)
+        .gte('flight_arrival_time_local', now)
+        .lte('flight_arrival_time_local', soon.toISOString())
+    }
+
+    // Paiement notifié par le candidat, non encore validé
+    if (searchParams.get('payment_notified') === 'true') {
+      query = query
+        .not('payment_notified_by_intern_at', 'is', null)
+        .is('payment_amount', null)
+    }
+
+    // Lettre d'engagement manquante (status qualification_done)
+    if (searchParams.get('missing_engagement') === 'true') {
+      query = query
+        .is('engagement_letter_signed_at', null)
+        .eq('status', 'qualification_done')
+    }
+
+    // Limit optionnel
+    const limitParam = searchParams.get('limit')
+    if (limitParam) {
+      const n = parseInt(limitParam, 10)
+      if (!isNaN(n) && n > 0) query = query.limit(n)
     }
 
     const { data, error } = await query

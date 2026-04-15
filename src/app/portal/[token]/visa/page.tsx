@@ -14,9 +14,14 @@ interface DocSection {
 interface PortalData {
   id: string
   portal_token: string
+  status?: string | null
   papiers_visas?: boolean | null
   flight_number?: string | null
   flight_departure_city?: string | null
+  actual_start_date?: string | null
+  actual_end_date?: string | null
+  visa_submitted_to_agent_at?: string | null
+  visa_recu?: boolean | null
   interns?: {
     passport_page4_url?: string | null
     photo_id_url?: string | null
@@ -207,6 +212,77 @@ export default function PortalVisaPage() {
       >
         {savingExtras ? 'Enregistrement…' : extrasSaved ? '✓ Enregistré !' : 'Enregistrer les informations'}
       </button>
+
+      {/* ── DATES DE STAGE ── */}
+      {(data.actual_start_date || data.actual_end_date) ? (
+        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>Dates de votre stage</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <p style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>Début</p>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#1a1918' }}>
+                {data.actual_start_date ? new Date(data.actual_start_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
+              </p>
+            </div>
+            <div>
+              <p style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>Fin</p>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#1a1918' }}>
+                {data.actual_end_date ? new Date(data.actual_end_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
+              </p>
+            </div>
+          </div>
+          {data.actual_start_date && data.actual_end_date && (
+            <p style={{ fontSize: 12, color: '#6b7280', marginTop: 8 }}>
+              Durée : {Math.round((new Date(data.actual_end_date).getTime() - new Date(data.actual_start_date).getTime()) / (1000 * 60 * 60 * 24 * 30.5))} mois
+            </p>
+          )}
+        </div>
+      ) : (
+        <div style={{ background: '#f9fafb', border: '1px dashed #e5e7eb', borderRadius: 12, padding: 14, marginBottom: 16 }}>
+          <p style={{ fontSize: 13, color: '#6b7280', textAlign: 'center' }}>📅 Dates de stage en attente de confirmation par votre conseiller</p>
+        </div>
+      )}
+
+      {/* ── STATUT DU VISA ── */}
+      <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>Statut du visa</h3>
+        {data.visa_recu ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: '#f0fdf4', borderRadius: 10, border: '1.5px solid #0d9e75' }}>
+            <span style={{ fontSize: 20 }}>🛂</span>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 700, color: '#0d9e75', margin: 0 }}>Visa reçu !</p>
+              <p style={{ fontSize: 12, color: '#166534', margin: 0 }}>Votre visa est prêt. Bon voyage !</p>
+            </div>
+          </div>
+        ) : data.visa_submitted_to_agent_at ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: '#eff6ff', borderRadius: 10, border: '1px solid #bfdbfe' }}>
+            <span style={{ fontSize: 20 }}>⏳</span>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#1d4ed8', margin: 0 }}>Dossier en cours de traitement</p>
+              <p style={{ fontSize: 12, color: '#3730a3', margin: 0 }}>Soumis le {new Date(data.visa_submitted_to_agent_at).toLocaleDateString('fr-FR')} — délai ~1 mois</p>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: '#fef3c7', borderRadius: 10, border: '1px solid #fcd34d' }}>
+            <span style={{ fontSize: 20 }}>📋</span>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#92400e', margin: 0 }}>En attente de vos documents</p>
+              <p style={{ fontSize: 12, color: '#78350f', margin: 0 }}>Uploadez vos documents ci-dessus pour débloquer votre visa</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── RÈGLES VISA IMPORTANTES ── */}
+      <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 12, padding: 16, marginBottom: 24 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: '#92400e', marginBottom: 10 }}>⚠️ Règles importantes pour votre visa</h3>
+        <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <li style={{ fontSize: 13, color: '#78350f' }}>Le visa est valide <strong>maximum 175 jours</strong> après la date d&apos;arrivée en Indonésie</li>
+          <li style={{ fontSize: 13, color: '#78350f' }}>Le traitement prend <strong>environ 1 mois</strong> après réception de votre billet d&apos;avion</li>
+          <li style={{ fontSize: 13, color: '#78350f' }}>N&apos;achetez pas votre billet trop à l&apos;avance — attendez la validation de votre dossier</li>
+          <li style={{ fontSize: 13, color: '#78350f' }}>Votre passeport doit être valide <strong>au moins 6 mois</strong> après votre arrivée</li>
+        </ul>
+      </div>
 
       <p style={{ color: '#9ca3af', fontSize: 12, textAlign: 'center' }}>
         Questions ? <a href="mailto:team@bali-interns.com" style={{ color: '#c8a96e' }}>team@bali-interns.com</a>

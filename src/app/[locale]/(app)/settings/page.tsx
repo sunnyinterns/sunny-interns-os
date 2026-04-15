@@ -32,6 +32,12 @@ const SECTIONS: Record<string, { title: string; items: SectionItem[] }> = {
       { href: 'templates', icon: '📄', label: 'Templates', desc: 'Modèles emails et templates de jobs' },
     ],
   },
+  communication: {
+    title: '📣 Communication',
+    items: [
+      { href: 'email-templates', icon: '✉️', label: 'Templates emails', desc: 'Éditeur WYSIWYG des emails automatiques' },
+    ],
+  },
   partenaires: {
     title: '🤝 Partenaires',
     items: [
@@ -178,6 +184,7 @@ export default function SettingsPage() {
       </div>
 
       <SettingsSection title={SECTIONS.administratif.title} items={SECTIONS.administratif.items} locale={locale} />
+      <SettingsSection title={SECTIONS.communication.title} items={SECTIONS.communication.items} locale={locale} />
       <SettingsSection title={SECTIONS.partenaires.title} items={SECTIONS.partenaires.items} locale={locale} />
       <SettingsSection title={SECTIONS.equipe.title} items={SECTIONS.equipe.items} locale={locale} />
     </div>
