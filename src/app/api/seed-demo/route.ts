@@ -88,13 +88,15 @@ export async function POST() {
     if (i >= 6) {
       const subStatus = i >= 8 ? 'retained' : 'proposed'
       const internInterested = i !== 7 ? true : null
-      await sb.from('job_submissions').upsert({
-        case_id: `seed-case-${num}`,
-        job_id: JOB_ID,
-        status: subStatus,
-        intern_interested: internInterested,
-        intern_priority: 1,
-      }, { onConflict: 'case_id,job_id', ignoreDuplicates: true }).catch(() => null)
+      try {
+        await sb.from('job_submissions').upsert({
+          case_id: `seed-case-${num}`,
+          job_id: JOB_ID,
+          status: subStatus,
+          intern_interested: internInterested,
+          intern_priority: 1,
+        }, { onConflict: 'case_id,job_id', ignoreDuplicates: true })
+      } catch { /* ignore duplicate */ }
     }
   }
 
@@ -106,7 +108,7 @@ export async function POST() {
   ]
 
   for (const lead of LEADS) {
-    await sb.from('leads').insert(lead).catch(() => null)
+    try { await sb.from('leads').insert(lead) } catch { /* ignore */ }
   }
 
   return NextResponse.json({
