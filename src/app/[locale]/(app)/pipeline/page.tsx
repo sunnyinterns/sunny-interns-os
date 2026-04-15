@@ -27,6 +27,8 @@ interface InternSub {
 interface CaseRow {
   id: string
   status: string
+  updated_at?: string | null
+  last_contacted_at?: string | null
   interns?: InternSub | null
 }
 
@@ -54,7 +56,13 @@ export default function PipelinePage() {
 
   useEffect(() => { void fetchCases() }, [fetchCases])
 
-  const byStatus = (key: string) => cases.filter((c) => c.status === key)
+  const byStatus = (key: string) => cases
+    .filter((c) => c.status === key)
+    .sort((a, b) => {
+      const da = a.updated_at ? new Date(a.updated_at).getTime() : 0
+      const db = b.updated_at ? new Date(b.updated_at).getTime() : 0
+      return da - db // ASC: les plus anciens en haut (plus urgents)
+    })
 
   return (
     <div className="h-full flex flex-col">
@@ -116,6 +124,26 @@ export default function PipelinePage() {
                             <span className="text-[10px] bg-zinc-50 text-zinc-500 px-2 py-0.5 rounded-full">🌐 {intern.spoken_languages.join('/')}</span>
                           )}
                         </div>
+                        {/* Timing badge */}
+                        {(() => {
+                          const dInStage = c.updated_at ? Math.floor((Date.now() - new Date(c.updated_at).getTime()) / 86400000) : null
+                          if (dInStage === null || dInStage <= 5) return null
+                          return (
+                            <div className={`mt-1.5 text-[10px] px-2 py-0.5 rounded-full font-semibold inline-block ${dInStage > 10 ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'}`}>
+                              {dInStage > 10 ? '🔴' : '🟠'} {dInStage}j dans ce stade
+                            </div>
+                          )
+                        })()}
+                        {/* Dernier contact */}
+                        {c.last_contacted_at && (() => {
+                          const d = Math.floor((Date.now() - new Date(c.last_contacted_at).getTime()) / 86400000)
+                          if (d < 7) return null
+                          return (
+                            <div className={`mt-0.5 text-[10px] ${d > 14 ? 'text-red-500 font-bold' : 'text-amber-500'}`}>
+                              {d > 14 ? '⚠️' : '🕒'} Contact: il y a {d}j
+                            </div>
+                          )
+                        })()}
                       </div>
                     </Link>
                   )

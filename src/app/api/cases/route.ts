@@ -109,7 +109,7 @@ export async function GET(request: Request) {
       .from('cases')
       .select(`
         id, status, desired_start_date, actual_start_date, actual_end_date,
-        created_at, assigned_manager_name, desired_duration_months,
+        created_at, updated_at, assigned_manager_name, desired_duration_months,
         billet_avion, papiers_visas, visa_recu,
         convention_signee_check, chauffeur_reserve,
         portal_token, intern_first_meeting_date, google_meet_link,
