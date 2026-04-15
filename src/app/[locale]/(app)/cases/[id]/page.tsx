@@ -127,6 +127,7 @@ export default function CaseDetailPage() {
   const [recapSent, setRecapSent] = useState(false)
   const [sendingPortal, setSendingPortal] = useState(false)
   const [portalSent, setPortalSent] = useState(false)
+  const [openingDriverWA, setOpeningDriverWA] = useState(false)
 
   async function sendPortal() {
     if (!id) return
@@ -250,6 +251,43 @@ export default function CaseDetailPage() {
     return baseAction
   })()
 
+  interface TransportProvider {
+    id: string
+    name: string
+    whatsapp: string | null
+    contact_name: string | null
+    is_default: boolean
+    wa_message_template: string | null
+  }
+
+  async function openDriverWhatsApp() {
+    if (openingDriverWA || !caseData) return
+    setOpeningDriverWA(true)
+    try {
+      const r = await fetch('/api/settings/transport')
+      if (!r.ok) { alert('Erreur chargement chauffeurs'); return }
+      const transport = await r.json() as TransportProvider[]
+      const provider = transport.find(t => t.is_default) ?? transport[0]
+      if (!provider?.whatsapp) { alert('Aucun chauffeur configuré dans les paramètres.'); return }
+
+      const cd = caseData
+      const photoUrl = (cd.interns?.photo_id_url ?? cd.interns?.avatar_url ?? '') as string
+      const msg = (provider.wa_message_template ?? '')
+        .replace('{{intern_name}}', `${(cd.interns?.first_name ?? '')} ${(cd.interns?.last_name ?? '')}`.trim())
+        .replace('{{arrival_date}}', cd.flight_arrival_time_local ? new Date(cd.flight_arrival_time_local as string).toLocaleDateString('fr-FR') : (cd.interns?.flight_departure_date ? new Date(cd.interns.flight_departure_date as string).toLocaleDateString('fr-FR') : '?'))
+        .replace('{{arrival_time}}', cd.flight_arrival_time_local ? new Date(cd.flight_arrival_time_local as string).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}) : '?')
+        .replace('{{flight_number}}', (cd.interns?.flight_number ?? cd.flight_number ?? '?') as string)
+        .replace('{{departure_city}}', (cd.interns?.flight_departure_city ?? '?') as string)
+        .replace('{{dropoff_address}}', (cd.dropoff_address ?? '?') as string)
+        .replace('{{photo_url}}', photoUrl)
+
+      const wa = provider.whatsapp.replace(/\D/g, '')
+      window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank')
+    } finally {
+      setOpeningDriverWA(false)
+    }
+  }
+
   const handleCtaClick = () => {
     if (!actionInfo?.action) return
     switch (actionInfo.action) {
@@ -339,6 +377,16 @@ export default function CaseDetailPage() {
                   className="text-xs px-3 py-1.5 rounded-lg bg-[#c8a96e] text-white hover:opacity-90 transition-opacity"
                 >
                   Carte stagiaire
+                </button>
+              )}
+              {/* WA Chauffeur — visible quand infos vol présentes */}
+              {(caseData.interns?.flight_number || caseData.flight_arrival_time_local) && (
+                <button
+                  onClick={() => { void openDriverWhatsApp() }}
+                  disabled={openingDriverWA}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-[#25d366] text-white font-semibold hover:bg-[#1da851] transition-colors disabled:opacity-60"
+                >
+                  🚗 Chauffeur WA
                 </button>
               )}
               <button
