@@ -21,7 +21,10 @@ interface Contact {
 interface Job {
   id: string
   title: string
+  public_title?: string | null
   status: string
+  location?: string | null
+  created_at?: string | null
 }
 
 interface Intern {
@@ -75,6 +78,8 @@ interface Company {
   is_employer?: boolean | null
   is_partner?: boolean | null
   is_supplier?: boolean | null
+  // associations calculées côté API
+  stagiaires?: Array<{ id: string; status: string; intern: { first_name: string; last_name: string } | null }>
   partner_timing?: string | null
   partner_category?: string | null
   partner_deal?: string | null
@@ -331,7 +336,7 @@ export default function CompanyDetailPage() {
   const tabs: { key: Tab; label: string }[] = [
     { key: 'contacts', label: `Contacts (${company.contacts?.length ?? 0})` },
     { key: 'jobs', label: `Jobs liés (${company.jobs?.length ?? 0})` },
-    { key: 'stagiaires', label: `Stagiaires (${company.cases?.length ?? 0})` },
+    { key: 'stagiaires', label: `Stagiaires (${company.stagiaires?.length ?? 0})` },
   ]
 
   return (
@@ -735,7 +740,10 @@ export default function CompanyDetailPage() {
           )}
           {company.jobs?.map((job) => (
             <Link key={job.id} href={`/${locale}/jobs`} className="bg-white border border-zinc-100 rounded-xl px-4 py-3 flex items-center justify-between hover:border-[#c8a96e] hover:shadow-sm transition-all block">
-              <p className="text-sm font-medium text-[#1a1918]">{job.title ?? 'Offre sans titre'}</p>
+              <div>
+                <p className="text-sm font-medium text-[#1a1918]">{job.public_title ?? job.title ?? 'Offre sans titre'}</p>
+                {job.location && <p className="text-xs text-zinc-400">{job.location}</p>}
+              </div>
               <div className="flex items-center gap-2">
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${job.status === 'open' ? 'bg-green-100 text-[#0d9e75]' : 'bg-zinc-100 text-zinc-500'}`}>
                   {job.status === 'open' ? 'Ouverte' : job.status}
@@ -749,15 +757,26 @@ export default function CompanyDetailPage() {
 
       {activeTab === 'stagiaires' && (
         <div className="space-y-2">
-          {company.cases?.length === 0 && (
-            <p className="text-sm text-zinc-400 py-4 text-center">Aucun stagiaire pour cette entreprise.</p>
+          {(!company.stagiaires || company.stagiaires.length === 0) && (
+            <p className="text-sm text-zinc-400 py-4 text-center">Aucun stagiaire associé à cette entreprise.</p>
           )}
-          {company.cases?.map((c) => (
-            <Link key={c.id} href={`/${locale}/cases/${c.id}`} className="bg-white border border-zinc-100 rounded-xl px-4 py-3 flex items-center justify-between hover:border-[#c8a96e] hover:shadow-sm transition-all block">
-              <p className="text-sm font-medium text-[#1a1918]">
-                {c.interns ? `${c.interns.first_name} ${c.interns.last_name}` : 'Stagiaire inconnu'}
-              </p>
-              <div className="flex items-center gap-2"><span className="text-xs text-zinc-500">{c.status}</span><span className="text-zinc-300">→</span></div>
+          {company.stagiaires?.map((s) => (
+            <Link key={s.id} href={`/${locale}/cases/${s.id}`}
+              className="bg-white border border-zinc-100 rounded-xl px-4 py-3 flex items-center justify-between hover:border-[#c8a96e] hover:shadow-sm transition-all block">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center flex-shrink-0">
+                  <span className="text-xs font-semibold text-zinc-500">
+                    {(s.intern?.first_name?.[0] ?? '?').toUpperCase()}
+                  </span>
+                </div>
+                <p className="text-sm font-medium text-[#1a1918]">
+                  {s.intern ? `${s.intern.first_name} ${s.intern.last_name}` : 'Stagiaire inconnu'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-zinc-100 text-zinc-500 px-2 py-0.5 rounded-full">{s.status}</span>
+                <span className="text-zinc-300">→</span>
+              </div>
             </Link>
           ))}
         </div>
