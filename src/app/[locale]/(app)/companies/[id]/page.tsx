@@ -9,8 +9,6 @@ interface Contact {
   id: string
   left_company?: boolean | null
   left_company_at?: string | null
-  left_company?: boolean | null
-  left_company_at?: string | null
   name?: string | null
   first_name?: string | null
   last_name?: string | null
