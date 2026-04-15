@@ -7,6 +7,10 @@ import { SearchableSelect, type SearchableSelectItem } from '@/components/ui/Sea
 
 interface Contact {
   id: string
+  left_company?: boolean | null
+  left_company_at?: string | null
+  left_company?: boolean | null
+  left_company_at?: string | null
   name?: string | null
   first_name?: string | null
   last_name?: string | null
@@ -435,7 +439,7 @@ export default function CompanyDetailPage() {
   ]
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className={`p-6 max-w-4xl mx-auto${company.collaboration_status === "fin_collaboration" ? " opacity-70" : ""}`}>
       {/* Back */}
       <button onClick={() => router.push(`/${locale}/companies`)} className="text-sm text-zinc-500 hover:text-[#1a1918] flex items-center gap-1 mb-5 transition-colors">
         ← Retour aux entreprises
@@ -715,7 +719,13 @@ export default function CompanyDetailPage() {
                 {company.is_partner && <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-medium">🤝 Partenaire</span>}
                 {company.is_supplier && <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full font-medium">📦 Fournisseur</span>}
               </div>
-                            {company.sector && <p className="text-sm text-zinc-500 mt-1">{company.sector}</p>}
+                            {/* Statut collaboration */}
+              {company.collaboration_status === 'fin_collaboration' && (
+                <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-full border border-red-200 mt-1">
+                  🚫 Fin de collaboration
+                </span>
+              )}
+              {company.sector && <p className="text-sm text-zinc-500 mt-1">{company.sector}</p>}
               {company.website && (
                 <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-sm text-[#c8a96e] hover:underline mt-1 inline-block">
                   {company.website}
@@ -726,6 +736,22 @@ export default function CompanyDetailPage() {
               <button onClick={() => setEditing(true)} className="px-3 py-1.5 text-sm text-zinc-600 bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors">
                 Modifier
               </button>
+              {company.collaboration_status !== 'fin_collaboration' ? (
+                <button
+                  onClick={() => void fetch(`/api/companies/${companyId}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ collaboration_status: 'fin_collaboration' }) }).then(() => void load())}
+                  className="px-3 py-1.5 text-sm text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors"
+                  title="Marquer cette entreprise comme fin de collaboration"
+                >
+                  🚫 Fin de collab
+                </button>
+              ) : (
+                <button
+                  onClick={() => void fetch(`/api/companies/${companyId}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ collaboration_status: 'active' }) }).then(() => void load())}
+                  className="px-3 py-1.5 text-sm text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+                >
+                  ✓ Réactiver
+                </button>
+              )}
               <button onClick={() => setShowDeleteModal(true)} className="px-3 py-1.5 text-sm text-[#dc2626] bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
                 Supprimer
               </button>
@@ -754,7 +780,7 @@ export default function CompanyDetailPage() {
       {activeTab === 'contacts' && (
         <div className="space-y-3">
           {company.contacts?.map((contact) => (
-            <Link key={contact.id} href={`/${locale}/contacts/${contact.id}`} className="bg-white border border-zinc-100 rounded-xl px-4 py-3 flex items-center gap-4 hover:border-[#c8a96e] hover:shadow-sm transition-all block">
+            <Link key={contact.id} href={`/${locale}/contacts/${contact.id}`} className={`bg-white border rounded-xl px-4 py-3 flex items-center gap-4 transition-all block ${contact.left_company ? "border-zinc-100 opacity-50" : "border-zinc-100 hover:border-[#c8a96e] hover:shadow-sm"}`}>
               <div className="w-8 h-8 rounded-full bg-[#c8a96e]/20 flex items-center justify-center flex-shrink-0">
                 <span className="text-[#c8a96e] text-xs font-semibold">
                   {((contact.first_name ?? contact.name ?? '?')[0] ?? '?').toUpperCase()}

@@ -21,6 +21,7 @@ interface Company {
   is_employer?: boolean | null
   is_partner?: boolean | null
   is_supplier?: boolean | null
+  collaboration_status?: string | null
   partner_timing?: string | null
   partner_category?: string | null
   partner_deal?: string | null
@@ -369,7 +370,7 @@ export default function CompaniesPage() {
                 return (
                   <tr key={c.id}
                     onClick={() => router.push(`/${locale as string}/companies/${c.id}`)}
-                    className="hover:bg-zinc-50/70 cursor-pointer transition-colors">
+                    className={`hover:bg-zinc-50/70 cursor-pointer transition-colors${c.collaboration_status === 'fin_collaboration' ? ' opacity-50' : ''}`}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         {c.logo_url ? (
@@ -399,6 +400,7 @@ export default function CompaniesPage() {
                         {c.is_employer && <span className="text-[10px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">🏢 Employeur</span>}
                         {c.is_partner && <span className="text-[10px] bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded-full font-medium">🤝 Partenaire</span>}
                         {c.is_supplier && <span className="text-[10px] bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded-full font-medium">📦 Fournisseur</span>}
+                        {c.collaboration_status === 'fin_collaboration' && <span className="text-[10px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded-full font-medium">🚫 Fin collab</span>}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-center hidden md:table-cell">

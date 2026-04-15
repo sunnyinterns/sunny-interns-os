@@ -18,6 +18,8 @@ interface Contact {
   linkedin_url?: string | null
   contact_type: string
   is_active: boolean
+  left_company?: boolean | null
+  left_company_at?: string | null
   companies: Company | null
   jobs?: Job[]
 }
@@ -202,7 +204,7 @@ export default function ContactDetailPage() {
       </button>
 
       {/* Header */}
-      <div className="bg-white border border-zinc-100 rounded-xl p-5 mb-5">
+      <div className={`bg-white border rounded-xl p-5 mb-5 ${contact.left_company ? "border-zinc-100 opacity-60" : "border-zinc-100"}`}>
         <div className="flex items-start gap-4">
           <div className="w-14 h-14 rounded-full bg-[#c8a96e]/20 flex items-center justify-center flex-shrink-0">
             <span className="text-[#c8a96e] text-lg font-bold">{initials}</span>
@@ -214,11 +216,28 @@ export default function ContactDetailPage() {
               <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">
                 {TYPE_LABELS[contact.contact_type] ?? contact.contact_type}
               </span>
-              {!contact.is_active && <span className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-medium">Inactif</span>}
+              {contact.left_company && <span className="text-xs px-1.5 py-0.5 rounded-full bg-zinc-100 text-zinc-500 font-medium">🚪 Ne travaille plus ici</span>}
               {contact.companies && (
                 <span className="text-xs text-zinc-500">{contact.companies.name}</span>
               )}
             </div>
+          </div>
+          <div className="flex-shrink-0 self-start">
+            {contact.left_company ? (
+              <button
+                onClick={() => void patchContact({ left_company: false, left_company_at: null })}
+                className="text-xs px-2 py-1.5 bg-green-50 text-green-700 rounded-lg border border-green-200 hover:bg-green-100 transition-colors whitespace-nowrap"
+              >
+                ✓ Travaille encore ici
+              </button>
+            ) : contact.companies ? (
+              <button
+                onClick={() => void patchContact({ left_company: true, left_company_at: new Date().toISOString() })}
+                className="text-xs px-2 py-1.5 bg-zinc-50 text-zinc-400 rounded-lg border border-zinc-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors whitespace-nowrap"
+              >
+                🚪 Ne travaille plus ici
+              </button>
+            ) : null}
           </div>
         </div>
       </div>
