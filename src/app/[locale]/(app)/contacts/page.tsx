@@ -272,9 +272,7 @@ export default function ContactsPage() {
                           return TYPE_LABELS[t] ?? t
                         })()}
                       </span>
-                      {!c.is_active && (
-                        <span className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-medium">Inactif</span>
-                      )}
+
                     </div>
                     <p className="text-xs text-zinc-500 mt-0.5">
                       {[c.job_title, c.companies?.name].filter(Boolean).join(' · ')}
