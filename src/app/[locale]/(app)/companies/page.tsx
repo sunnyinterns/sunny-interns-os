@@ -128,6 +128,7 @@ export default function CompaniesPage() {
 
   useEffect(() => {
     fetch('/api/internship-cities').then(r => r.json()).then(d => setCities(Array.isArray(d) ? d : [])).catch(() => null)
+    fetch('/api/sponsors').then(r => r.json()).then(d => setSponsors(Array.isArray(d) ? d : [])).catch(() => null)
   }, [])
 
   useEffect(() => {
@@ -787,10 +788,10 @@ export default function CompaniesPage() {
                 <>
                   <div className="border-t border-zinc-100" />
                   <div className="space-y-3">
-                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">⑤ Sponsor VITAS</p>
+                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">⑤ Sponsor visa</p>
                     <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-3">
                       <p className="text-xs text-blue-700">
-                        Un accord de parrainage avec une société PT locale indonésienne est requis pour le VITAS stagiaire. Valable pour toutes les entreprises étrangères et les PT PMA.
+                        Un accord de parrainage avec une société PT locale indonésienne est requis pour le visa stagiaire. Valable pour toutes les entreprises étrangères et les PT PMA.
                       </p>
                       <SearchableSelect
                         label="Entreprise sponsor (PT locale) *"

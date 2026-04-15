@@ -176,6 +176,7 @@ export default function CompanyDetailPage() {
   const [showContactForm, setShowContactForm] = useState(false)
   const [sendingForm, setSendingForm] = useState<string | null>(null)
   const [sentForms, setSentForms] = useState<Set<string>>(new Set())
+  const [sponsors, setSponsors] = useState<{id:string;company_name:string;city:string|null}[]>([])
   const [showLinkContact, setShowLinkContact] = useState(false)
   const [allContacts, setAllContacts] = useState<Array<{id:string;first_name:string|null;last_name:string|null;job_title:string|null;email:string|null;company_id:string|null}>>([])
   const [linkingContact, setLinkingContact] = useState(false)
@@ -193,7 +194,7 @@ export default function CompanyDetailPage() {
 
   // Charger les contacts disponibles à lier
   const loadAllContacts = async () => {
-    const r = await fetch('/api/contacts?unlinked=true')
+    const r = await fetch('/api/contacts?unlinked=true&exclude_left=true')
     if (r.ok) setAllContacts(await r.json())
   }
 
@@ -254,7 +255,7 @@ export default function CompanyDetailPage() {
     e.preventDefault()
     setSaving(true)
     try {
-      await fetch(`/api/companies/${companyId}`, {
+      const res = await fetch(`/api/companies/${companyId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -299,10 +300,15 @@ export default function CompanyDetailPage() {
           partner_visible_from: editIsPartner ? (editPartnerVisible || 'payment') : null,
         }),
       })
+      if (!res.ok) {
+        const errData = await res.json() as { error?: string }
+        throw new Error(errData.error ?? `HTTP ${res.status}`)
+      }
       setEditing(false)
       void load()
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error('[handleSaveEdit]', err)
+      alert(`Erreur lors de la sauvegarde: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setSaving(false)
     }
@@ -393,21 +399,48 @@ export default function CompanyDetailPage() {
 
   async function handleDeactivate() {
     try {
+      // 1. Désactiver la company + fin de collaboration
       await fetch(`/api/companies/${companyId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_active: false }),
+        body: JSON.stringify({
+          is_active: false,
+          collaboration_status: 'fin_collaboration',
+          collaboration_ended_at: new Date().toISOString(),
+        }),
       })
-      // Désactiver les contacts liés si l'option est cochée
+      // 2. Archiver tous les jobs actifs
+      const jobsRes = await fetch(`/api/jobs?company_id=${companyId}`)
+      if (jobsRes.ok) {
+        const allJobs = await jobsRes.json() as Array<{id: string; status: string}>
+        const openJobs = allJobs.filter((j: {id: string; status: string}) => j.status === 'open')
+        await Promise.all(openJobs.map((j: {id: string}) =>
+          fetch(`/api/jobs/${j.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'archived' }),
+          })
+        ))
+      }
+      // 3. Désactiver les contacts liés si coché
       if (deactivateContacts && company?.contacts) {
         await Promise.all(company.contacts.map(c =>
           fetch(`/api/contacts/${c.id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ company_id: null }),
+            body: JSON.stringify({ left_company: true, left_company_at: new Date().toISOString() }),
           })
         ))
       }
+      // 4. Notif email équipe (non-bloquant)
+      fetch('/api/notifications/internal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: `Fin de collaboration — ${company?.name ?? 'Entreprise'}`,
+          message: `L'entreprise "${company?.name ?? ''}" a été marquée en fin de collaboration. ${company?.contacts?.length ?? 0} contact(s) lié(s).${deactivateContacts ? ' Contacts marqués "Ne travaille plus ici".' : ''}`,
+        }),
+      }).catch(() => null)
       setShowDeleteModal(false)
       setDeactivateContacts(false)
       void load()
@@ -440,9 +473,11 @@ export default function CompanyDetailPage() {
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'contacts', label: `Contacts (${company.contacts?.length ?? 0})` },
-    { key: 'jobs', label: `Jobs liés (${company.jobs?.length ?? 0})` },
-    { key: 'stagiaires', label: `Stagiaires (${company.stagiaires?.length ?? 0})` },
-    { key: 'candidats', label: `Candidats (${(company.jobs ?? []).reduce((s, j) => s + (j.submissions_count ?? 0), 0)})` },
+    ...(company.is_employer ? [
+      { key: 'jobs' as Tab, label: `Jobs liés (${company.jobs?.length ?? 0})` },
+      { key: 'stagiaires' as Tab, label: `Stagiaires (${company.stagiaires?.length ?? 0})` },
+      { key: 'candidats' as Tab, label: `Candidats (${(company.jobs ?? []).reduce((s, j) => s + (j.submissions_count ?? 0), 0)})` },
+    ] : []),
   ]
 
   return (
@@ -515,6 +550,26 @@ export default function CompanyDetailPage() {
                 📦 Fournisseur — suivi comptabilité interne
               </label>
             </div>
+            {/* Sponsor visa — visible si employeur */}
+            {editIsEmployer && (
+              <div>
+                <label className="block text-xs font-medium text-zinc-600 mb-1">Sponsor visa *</label>
+                <SearchableSelect
+                  items={sponsors.map((s): SearchableSelectItem => ({
+                    id: s.id,
+                    label: s.company_name,
+                    sublabel: s.city ?? undefined,
+                    avatar: s.company_name[0]?.toUpperCase() ?? 'S',
+                  }))}
+                  value={editSponsorId || null}
+                  onChange={item => setEditSponsorId(item?.id ?? '')}
+                  placeholder={sponsors.length > 0 ? 'Sélectionner un sponsor…' : 'Aucun sponsor configuré'}
+                  searchPlaceholder="Rechercher un sponsor PT…"
+                  emptyText="Aucun sponsor. Configurer dans Paramètres › Administratif › Sponsors PT"
+                />
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-zinc-600 mb-1">Taille</label>

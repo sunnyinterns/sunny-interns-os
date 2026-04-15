@@ -35,6 +35,9 @@ interface Case {
 interface Access {
   sent_at: string
   viewed_at: string | null
+  agent_status?: string | null
+  comments?: string | null
+  received_at?: string | null
   cases: Case | null
   visa_agents: { company_name: string | null; name: string | null } | null
 }
@@ -55,6 +58,9 @@ type PortalData = DossierResp | AgentResp
 export default function AgentPortalPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params)
   const [data, setData] = useState<PortalData | null>(null)
+  const [comment, setComment] = useState('')
+  const [savingComment, setSavingComment] = useState(false)
+  const [updatingStatus, setUpdatingStatus] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -70,6 +76,31 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
       .then((d: PortalData | null) => { if (d) setData(d) })
       .finally(() => setLoading(false))
   }, [token])
+
+
+  async function updateStatus(status: string) {
+    setUpdatingStatus(true)
+    await fetch(`/api/portal/agent/${token}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        agent_status: status,
+        ...(status === 'received' ? { received_at: new Date().toISOString() } : {}),
+      }),
+    })
+    setUpdatingStatus(false)
+    void load()
+  }
+
+  async function saveComment() {
+    setSavingComment(true)
+    await fetch(`/api/portal/agent/${token}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ comments: comment }),
+    })
+    setSavingComment(false)
+  }
 
   if (loading) return <div className="min-h-screen bg-[#fafaf7] flex items-center justify-center text-zinc-400">Chargement…</div>
   if (error || !data) return (
@@ -184,6 +215,64 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
                 )}
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* Statut + Actions agent */}
+        <section className="bg-white border border-zinc-100 rounded-2xl p-6 mb-4">
+          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Statut du dossier</h2>
+          <div className="flex items-center gap-2 mb-4 flex-wrap">
+            <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+              a.agent_status === 'received' ? 'bg-green-50 text-green-700' :
+              a.agent_status === 'in_progress' ? 'bg-blue-50 text-blue-700' :
+              a.agent_status === 'completed' ? 'bg-[#c8a96e]/10 text-[#c8a96e]' :
+              a.agent_status === 'issue' ? 'bg-red-50 text-red-600' :
+              'bg-zinc-100 text-zinc-500'
+            }`}>
+              {a.agent_status === 'received' ? '✅ Dossier reçu' :
+               a.agent_status === 'in_progress' ? '⏳ En cours de traitement' :
+               a.agent_status === 'completed' ? '🎉 Traitement terminé' :
+               a.agent_status === 'issue' ? '⚠️ Problème signalé' :
+               '📋 En attente de confirmation'}
+            </span>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {(!a.agent_status || a.agent_status === 'pending') && (
+              <button disabled={updatingStatus} onClick={() => void updateStatus('received')}
+                className="text-xs px-3 py-1.5 bg-green-50 text-green-700 rounded-lg border border-green-200 hover:bg-green-100 disabled:opacity-50">
+                ✅ Marquer comme reçu
+              </button>
+            )}
+            {a.agent_status === 'received' && (
+              <button disabled={updatingStatus} onClick={() => void updateStatus('in_progress')}
+                className="text-xs px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 hover:bg-blue-100 disabled:opacity-50">
+                ⏳ Mettre en cours
+              </button>
+            )}
+            {a.agent_status === 'in_progress' && (
+              <button disabled={updatingStatus} onClick={() => void updateStatus('completed')}
+                className="text-xs px-3 py-1.5 bg-[#c8a96e]/10 text-[#c8a96e] rounded-lg border border-[#c8a96e]/30 hover:bg-[#c8a96e]/20 disabled:opacity-50">
+                🎉 Marquer terminé
+              </button>
+            )}
+            <button disabled={updatingStatus} onClick={() => void updateStatus('issue')}
+              className="text-xs px-3 py-1.5 bg-red-50 text-red-600 rounded-lg border border-red-200 hover:bg-red-100 disabled:opacity-50">
+              ⚠️ Signaler un problème
+            </button>
+          </div>
+
+          <div className="mt-4">
+            <p className="text-xs font-medium text-zinc-600 mb-1">Message pour Bali Interns</p>
+            <textarea
+              value={comment}
+              onChange={e => setComment(e.target.value)}
+              placeholder="Document manquant, information incorrecte, demande complémentaire..."
+              className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c8a96e] min-h-[80px]"
+            />
+            <button disabled={savingComment} onClick={() => void saveComment()}
+              className="mt-2 px-4 py-2 bg-[#c8a96e] text-white text-sm rounded-xl disabled:opacity-40 hover:bg-[#b8945a]">
+              {savingComment ? 'Envoi…' : 'Envoyer le message'}
+            </button>
           </div>
         </section>
 
