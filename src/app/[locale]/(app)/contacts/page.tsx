@@ -11,9 +11,16 @@ interface Contact {
   job_title: string | null
   email: string | null
   whatsapp: string | null
-  contact_type: 'employer' | 'promo_partner' | 'visa_agent' | 'school_contact'
-  is_active: boolean
-  companies: { id: string; name: string } | null
+  contact_type: string
+  companies: {
+    id: string
+    name: string
+    logo_url?: string | null
+    is_employer?: boolean | null
+    is_partner?: boolean | null
+    is_supplier?: boolean | null
+    internship_city?: string | null
+  } | null
   jobs?: { id: string; title: string; status: string }[]
 }
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { SearchableSelect, type SearchableSelectItem } from '@/components/ui/SearchableSelect'
 import { useAIAssist } from '@/hooks/useAIAssist'
 
 function daysUntil(date: string | null | undefined): number {
@@ -488,6 +489,116 @@ export default function JobDetailPage() {
         </div>
       )}
 
+      {/* ═══ CANDIDATURES EN COURS ═══ */}
+      <div className="bg-white border border-zinc-100 rounded-xl p-5">
+        <h2 className="text-sm font-semibold text-[#1a1918] mb-3">
+          Candidatures en cours <span className="text-zinc-400 font-normal">({(job.job_submissions ?? []).length})</span>
+        </h2>
+
+        {(job.job_submissions ?? []).length === 0 ? (
+          <p className="text-sm text-zinc-400 italic">Aucun candidat propose pour ce job.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-zinc-100">
+                  <th className="text-left text-xs font-medium text-zinc-400 pb-2">Candidat</th>
+                  <th className="text-left text-xs font-medium text-zinc-400 pb-2">Statut</th>
+                  <th className="text-left text-xs font-medium text-zinc-400 pb-2">Reponse</th>
+                  <th className="text-left text-xs font-medium text-zinc-400 pb-2">CV</th>
+                  <th className="text-left text-xs font-medium text-zinc-400 pb-2">Date</th>
+                  <th className="text-left text-xs font-medium text-zinc-400 pb-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-50">
+                {(job.job_submissions ?? []).map(sub => {
+                  const subBadge = SUB_STATUS[sub.status] ?? { bg: '#f3f4f6', color: '#374151', label: sub.status }
+                  const internName = sub.cases?.interns
+                    ? `${sub.cases.interns.first_name} ${sub.cases.interns.last_name}`
+                    : 'Candidat inconnu'
+                  return (
+                    <tr key={sub.id}>
+                      <td className="py-2 pr-3">
+                        {sub.cases?.id ? (
+                          <Link href={`/${locale}/cases/${sub.cases.id}`} className="font-medium text-[#1a1918] hover:text-[#c8a96e] transition-colors">
+                            {internName}
+                          </Link>
+                        ) : (
+                          <span className="text-zinc-500">{internName}</span>
+                        )}
+                      </td>
+                      <td className="py-2 pr-3">
+                        <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{ background: subBadge.bg, color: subBadge.color }}>
+                          {subBadge.label}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-3">
+                        {sub.intern_interested === true && <span className="text-xs px-1.5 py-0.5 rounded bg-green-100 text-[#0d9e75] font-medium">Interesse</span>}
+                        {sub.intern_interested === false && <span className="text-xs px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500 font-medium">Pas interesse</span>}
+                        {(sub.intern_interested === null || sub.intern_interested === undefined) && <span className="text-xs text-zinc-300">—</span>}
+                      </td>
+                      <td className="py-2 pr-3">
+                        <span className={`text-xs ${sub.cv_sent ? 'text-[#0d9e75]' : 'text-zinc-300'}`}>{sub.cv_sent ? 'Oui' : '—'}</span>
+                      </td>
+                      <td className="py-2 pr-3 text-xs text-zinc-400">
+                        {sub.created_at ? new Date(sub.created_at).toLocaleDateString('fr-FR') : '—'}
+                      </td>
+                      <td className="py-2">
+                        <div className="flex gap-1">
+                          {sub.status === 'submitted' && (
+                            <>
+                              <button
+                                onClick={() => void updateSubmission(sub.id, 'retained')}
+                                className="text-xs px-2 py-1 bg-green-100 text-[#0d9e75] rounded-lg hover:bg-green-200 font-medium transition-colors"
+                              >
+                                Retenu
+                              </button>
+                              <button
+                                onClick={() => void updateSubmission(sub.id, 'rejected')}
+                                className="text-xs px-2 py-1 bg-red-50 text-[#dc2626] rounded-lg hover:bg-red-100 font-medium transition-colors"
+                              >
+                                Refuse
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Ajouter un candidat */}
+        <div className="mt-4 pt-4 border-t border-zinc-50">
+          <p className="text-xs font-medium text-zinc-500 mb-2">Proposer un candidat (qualification_done)</p>
+          <div className="space-y-2">
+            <SearchableSelect
+              items={qualifiedCases.map((c): SearchableSelectItem => ({
+                id: c.id,
+                label: c.interns ? `${c.interns.first_name} ${c.interns.last_name}` : 'Candidat inconnu',
+                sublabel: c.status ?? undefined,
+                avatar: c.interns?.first_name?.[0]?.toUpperCase() ?? '?',
+                avatarColor: '#f0ebe2',
+              }))}
+              value={selectedCaseId || null}
+              onChange={item => setSelectedCaseId(item?.id ?? '')}
+              placeholder="Rechercher un candidat…"
+              searchPlaceholder="Nom, prénom, statut…"
+              emptyText="Aucun candidat en qualification"
+            />
+            <button
+              onClick={() => void addCandidate()}
+              disabled={!selectedCaseId || addingCandidate}
+              className="w-full px-3 py-2 text-sm font-medium bg-[#c8a96e] text-white rounded-xl hover:bg-[#b8945a] disabled:opacity-50 transition-colors"
+            >
+              {addingCandidate ? 'Proposition en cours…' : '→ Proposer ce candidat'}
+            </button>
+          </div>
+        </div>
+      </div>
       {/* ═══ DESCRIPTIONS ═══ */}
       <div className="bg-white border border-zinc-100 rounded-xl p-5 space-y-4">
         <h2 className="text-sm font-semibold text-[#1a1918]">Description</h2>
@@ -655,114 +766,5 @@ export default function JobDetailPage() {
         </div>
       )}
 
-      {/* ═══ CANDIDATURES EN COURS ═══ */}
-      <div className="bg-white border border-zinc-100 rounded-xl p-5">
-        <h2 className="text-sm font-semibold text-[#1a1918] mb-3">
-          Candidatures en cours <span className="text-zinc-400 font-normal">({(job.job_submissions ?? []).length})</span>
-        </h2>
-
-        {(job.job_submissions ?? []).length === 0 ? (
-          <p className="text-sm text-zinc-400 italic">Aucun candidat propose pour ce job.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-zinc-100">
-                  <th className="text-left text-xs font-medium text-zinc-400 pb-2">Candidat</th>
-                  <th className="text-left text-xs font-medium text-zinc-400 pb-2">Statut</th>
-                  <th className="text-left text-xs font-medium text-zinc-400 pb-2">Reponse</th>
-                  <th className="text-left text-xs font-medium text-zinc-400 pb-2">CV</th>
-                  <th className="text-left text-xs font-medium text-zinc-400 pb-2">Date</th>
-                  <th className="text-left text-xs font-medium text-zinc-400 pb-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-50">
-                {(job.job_submissions ?? []).map(sub => {
-                  const subBadge = SUB_STATUS[sub.status] ?? { bg: '#f3f4f6', color: '#374151', label: sub.status }
-                  const internName = sub.cases?.interns
-                    ? `${sub.cases.interns.first_name} ${sub.cases.interns.last_name}`
-                    : 'Candidat inconnu'
-                  return (
-                    <tr key={sub.id}>
-                      <td className="py-2 pr-3">
-                        {sub.cases?.id ? (
-                          <Link href={`/${locale}/cases/${sub.cases.id}`} className="font-medium text-[#1a1918] hover:text-[#c8a96e] transition-colors">
-                            {internName}
-                          </Link>
-                        ) : (
-                          <span className="text-zinc-500">{internName}</span>
-                        )}
-                      </td>
-                      <td className="py-2 pr-3">
-                        <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{ background: subBadge.bg, color: subBadge.color }}>
-                          {subBadge.label}
-                        </span>
-                      </td>
-                      <td className="py-2 pr-3">
-                        {sub.intern_interested === true && <span className="text-xs px-1.5 py-0.5 rounded bg-green-100 text-[#0d9e75] font-medium">Interesse</span>}
-                        {sub.intern_interested === false && <span className="text-xs px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500 font-medium">Pas interesse</span>}
-                        {(sub.intern_interested === null || sub.intern_interested === undefined) && <span className="text-xs text-zinc-300">—</span>}
-                      </td>
-                      <td className="py-2 pr-3">
-                        <span className={`text-xs ${sub.cv_sent ? 'text-[#0d9e75]' : 'text-zinc-300'}`}>{sub.cv_sent ? 'Oui' : '—'}</span>
-                      </td>
-                      <td className="py-2 pr-3 text-xs text-zinc-400">
-                        {sub.created_at ? new Date(sub.created_at).toLocaleDateString('fr-FR') : '—'}
-                      </td>
-                      <td className="py-2">
-                        <div className="flex gap-1">
-                          {sub.status === 'submitted' && (
-                            <>
-                              <button
-                                onClick={() => void updateSubmission(sub.id, 'retained')}
-                                className="text-xs px-2 py-1 bg-green-100 text-[#0d9e75] rounded-lg hover:bg-green-200 font-medium transition-colors"
-                              >
-                                Retenu
-                              </button>
-                              <button
-                                onClick={() => void updateSubmission(sub.id, 'rejected')}
-                                className="text-xs px-2 py-1 bg-red-50 text-[#dc2626] rounded-lg hover:bg-red-100 font-medium transition-colors"
-                              >
-                                Refuse
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Ajouter un candidat */}
-        <div className="mt-4 pt-4 border-t border-zinc-50">
-          <p className="text-xs font-medium text-zinc-500 mb-2">Proposer un candidat (qualification_done)</p>
-          <div className="flex gap-2">
-            <select
-              value={selectedCaseId}
-              onChange={e => setSelectedCaseId(e.target.value)}
-              className="flex-1 px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-            >
-              <option value="">— Selectionner un candidat —</option>
-              {qualifiedCases.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.interns ? `${c.interns.first_name} ${c.interns.last_name}` : c.id}
-                </option>
-              ))}
-            </select>
-            <button
-              onClick={() => void addCandidate()}
-              disabled={!selectedCaseId || addingCandidate}
-              className="px-3 py-2 text-sm font-medium bg-[#c8a96e] text-white rounded-lg hover:bg-[#b8945a] disabled:opacity-50 transition-colors"
-            >
-              {addingCandidate ? 'Ajout...' : 'Proposer'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
   )
 }
