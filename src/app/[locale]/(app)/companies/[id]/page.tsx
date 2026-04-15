@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { SearchableSelect, type SearchableSelectItem } from '@/components/ui/SearchableSelect'
 
 interface Contact {
   id: string
@@ -144,6 +145,10 @@ export default function CompanyDetailPage() {
 
   // New contact form
   const [showContactForm, setShowContactForm] = useState(false)
+  const [showLinkContact, setShowLinkContact] = useState(false)
+  const [allContacts, setAllContacts] = useState<Array<{id:string;first_name:string|null;last_name:string|null;job_title:string|null;email:string|null;company_id:string|null}>>([])
+  const [linkingContact, setLinkingContact] = useState(false)
+  const [selectedContactId, setSelectedContactId] = useState<string|null>(null)
   const [contactName, setContactName] = useState('')
   const [contactEmail, setContactEmail] = useState('')
   const [contactPhone, setContactPhone] = useState('')
@@ -154,6 +159,12 @@ export default function CompanyDetailPage() {
   const [contactLinkedin, setContactLinkedin] = useState('')
   const [contactGender, setContactGender] = useState('')
   const [addingContact, setAddingContact] = useState(false)
+
+  // Charger les contacts disponibles à lier
+  const loadAllContacts = async () => {
+    const r = await fetch('/api/contacts?unlinked=true')
+    if (r.ok) setAllContacts(await r.json())
+  }
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -238,6 +249,20 @@ export default function CompanyDetailPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  async function handleLinkContact() {
+    if (!selectedContactId) return
+    setLinkingContact(true)
+    await fetch(\`/api/contacts/\${selectedContactId}\`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company_id: companyId }),
+    })
+    setShowLinkContact(false)
+    setSelectedContactId(null)
+    setLinkingContact(false)
+    void load()
   }
 
   async function handleAddContact(e: React.FormEvent) {
@@ -723,12 +748,50 @@ export default function CompanyDetailPage() {
               </div>
             </form>
           ) : (
-            <button
-              onClick={() => setShowContactForm(true)}
-              className="w-full py-3 border-2 border-dashed border-zinc-200 rounded-xl text-sm text-zinc-400 hover:border-[#c8a96e] hover:text-[#c8a96e] transition-colors"
-            >
-              + Ajouter un contact
-            </button>
+            <div className="space-y-2">
+              {/* Lier un contact existant */}
+              {showLinkContact ? (
+                <div className="bg-white border border-zinc-200 rounded-xl p-4 space-y-3">
+                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Lier un contact existant</p>
+                  <SearchableSelect
+                    items={allContacts.map((c): SearchableSelectItem => ({
+                      id: c.id,
+                      label: [c.first_name, c.last_name].filter(Boolean).join(' ') || 'Sans nom',
+                      sublabel: c.job_title ?? c.email ?? undefined,
+                      avatar: (c.first_name?.[0] ?? '?').toUpperCase(),
+                      avatarColor: '#f0ebe2',
+                    }))}
+                    value={selectedContactId}
+                    onChange={item => setSelectedContactId(item?.id ?? null)}
+                    placeholder="Rechercher un contact…"
+                    searchPlaceholder="Nom, email, poste…"
+                    emptyText="Aucun contact disponible"
+                  />
+                  <div className="flex gap-2">
+                    <button type="button" disabled={!selectedContactId || linkingContact}
+                      onClick={() => void handleLinkContact()}
+                      className="px-3 py-1.5 bg-[#c8a96e] text-white text-sm font-medium rounded-lg disabled:opacity-50">
+                      {linkingContact ? 'Liaison…' : 'Lier ce contact'}
+                    </button>
+                    <button type="button" onClick={() => { setShowLinkContact(false); setSelectedContactId(null) }}
+                      className="px-3 py-1.5 bg-zinc-100 text-[#1a1918] text-sm font-medium rounded-lg">
+                      Annuler
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={() => { setShowLinkContact(true); void loadAllContacts() }}
+                    className="py-3 border-2 border-dashed border-zinc-200 rounded-xl text-sm text-zinc-400 hover:border-[#c8a96e] hover:text-[#c8a96e] transition-colors">
+                    🔗 Lier un contact existant
+                  </button>
+                  <button onClick={() => setShowContactForm(true)}
+                    className="py-3 border-2 border-dashed border-zinc-200 rounded-xl text-sm text-zinc-400 hover:border-[#c8a96e] hover:text-[#c8a96e] transition-colors">
+                    + Créer un nouveau contact
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}

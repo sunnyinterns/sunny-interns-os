@@ -17,6 +17,8 @@ export async function GET(request: Request) {
     .order('first_name')
 
   if (companyId) query = query.eq('company_id', companyId)
+  const unlinked = searchParams.get('unlinked')
+  if (unlinked === 'true') query = query.is('company_id', null)
 
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
