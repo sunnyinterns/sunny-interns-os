@@ -37,6 +37,9 @@ export function Sidebar() {
   const [activeClientsCount, setActiveClientsCount] = useState<number | null>(null)
   const [candidatsCount, setCandidatsCount] = useState<number | null>(null)
   const [todoCount, setTodoCount] = useState<number>(0)
+  const [notifCount, setNotifCount] = useState<number>(0)
+  const [calendarNotifCount, setCalendarNotifCount] = useState<number>(0)
+  const [enAttenteCount, setEnAttenteCount] = useState<number>(0)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
 
@@ -80,6 +83,21 @@ export function Sidebar() {
     fetch('/api/cases?type=candidate')
       .then(r => r.ok ? r.json() : [])
       .then((d: unknown[]) => setCandidatsCount(Array.isArray(d) ? d.length : 0))
+      .catch(() => {})
+
+    fetch('/api/notifications/unread-count')
+      .then(r => r.ok ? r.json() : { count: 0 })
+      .then((d: { count?: number }) => setNotifCount(d.count ?? 0))
+      .catch(() => {})
+
+    fetch('/api/notifications/unread-count?type=calendar')
+      .then(r => r.ok ? r.json() : { count: 0 })
+      .then((d: { count: number }) => setCalendarNotifCount(d.count))
+      .catch(() => {})
+
+    fetch('/api/en-attente/count')
+      .then(r => r.ok ? r.json() : { count: 0 })
+      .then((d: { count?: number }) => setEnAttenteCount(d.count ?? 0))
       .catch(() => {})
   }, [])
 
@@ -135,6 +153,8 @@ export function Sidebar() {
     schools: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /></svg>,
     finances: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
     settings: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><circle cx="12" cy="12" r="3" /></svg>,
+    notifs: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>,
+    clock: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   }
 
   return (
@@ -155,11 +175,13 @@ export function Sidebar() {
       <nav className="flex-1 px-2 pb-4 space-y-0.5">
 
         <NavLink href="/fr/feed" label="Dashboard" icon={icons.dashboard} badge={todoCount} urgent={todoCount > 0} />
+        <NavLink href="/fr/notifications" label="Notifications" icon={icons.notifs} badge={notifCount} urgent={notifCount > 0} />
+        <NavLink href="/fr/en-attente" label="En Attente" icon={icons.clock} badge={enAttenteCount} urgent={false} />
         <NavLink href="/fr/activity" label="Activité" icon={icons.activity} />
         <NavLink href="/fr/todo" label="To Do" icon={icons.todo} badge={todoCount} urgent={todoCount > 0} />
-        <NavLink href="/fr/calendar" label="Calendrier" icon={icons.calendar} />
+        <NavLink href="/fr/calendar" label="Calendrier" icon={icons.calendar} badge={calendarNotifCount} urgent={calendarNotifCount > 0} />
         <NavLink href="/fr/pipeline" label="Pipeline" icon={icons.kanban} />
-        <NavLink href="/fr/leads" label="Leads" icon={icons.leads} badge={newLeadsCount} urgent={(newLeadsCount ?? 0) > 0} />
+        <NavLink href="/fr/leads" label="Leads" icon={icons.leads} badge={newLeadsCount} urgent={false} />
         <NavLink href="/fr/cases" label="Candidats" icon={icons.candidats} badge={candidatsCount} />
         <NavLink href="/fr/clients" label="Clients" icon={icons.clients} badge={activeClientsCount} />
 

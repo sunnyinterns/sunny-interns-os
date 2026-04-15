@@ -379,6 +379,8 @@ export default function CalendarPage() {
   // Sync Google Calendar
   useEffect(() => {
     fetch('/api/calendar/google-sync', { method: 'POST' }).catch(() => {})
+    // Marquer les notifications calendrier comme vues
+    fetch('/api/notifications/unread-count?type=calendar', { method: 'POST' }).catch(() => null)
   }, [])
 
   // Grouper par Aujourd'hui / Demain / À venir
