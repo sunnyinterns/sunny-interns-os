@@ -59,7 +59,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ to
       const corrUpd: Record<string, unknown> = {}
       for (const k of allowedCorrections) if (k in corrections) corrUpd[k] = corrections[k]
       if (Object.keys(corrUpd).length) {
-        await sb.from('companies').update(corrUpd).eq('id', (access as Record<string, string>).company_id)
+        await sb.from('companies').update(corrUpd).eq('id', (access as unknown as Record<string, string>).company_id)
       }
     }
 
@@ -92,8 +92,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ to
   if (Object.keys(upd).length) {
     upd.info_validated_by_contact = true
     upd.info_validated_at = new Date().toISOString()
-    upd.info_validated_contact_id = (access as Record<string, string>).contact_id
-    await sb.from('companies').update(upd).eq('id', (access as Record<string, string>).company_id)
+    upd.info_validated_contact_id = (access as unknown as Record<string, string>).contact_id
+    await sb.from('companies').update(upd).eq('id', (access as unknown as Record<string, string>).company_id)
     await sb
       .from('employer_portal_access')
       .update({ company_info_validated: true, company_info_validated_at: new Date().toISOString(), last_active_at: new Date().toISOString() })
