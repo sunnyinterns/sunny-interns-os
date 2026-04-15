@@ -28,6 +28,13 @@ interface Job {
   status: string
   location?: string | null
   created_at?: string | null
+  submissions_count?: number
+  submissions?: Array<{
+    id: string
+    status: string
+    interns?: { first_name: string; last_name: string } | null
+    cases?: { id: string } | null
+  }>
 }
 
 interface Intern {
@@ -102,7 +109,7 @@ interface Company {
   cases?: Case[]
 }
 
-type Tab = 'contacts' | 'jobs' | 'stagiaires'
+type Tab = 'contacts' | 'jobs' | 'stagiaires' | 'candidats'
 
 export default function CompanyDetailPage() {
   const params = useParams()
@@ -435,6 +442,7 @@ export default function CompanyDetailPage() {
     { key: 'contacts', label: `Contacts (${company.contacts?.length ?? 0})` },
     { key: 'jobs', label: `Jobs liés (${company.jobs?.length ?? 0})` },
     { key: 'stagiaires', label: `Stagiaires (${company.stagiaires?.length ?? 0})` },
+    { key: 'candidats', label: `Candidats (${(company.jobs ?? []).reduce((s, j) => s + (j.submissions_count ?? 0), 0)})` },
   ]
 
   return (
@@ -706,7 +714,7 @@ export default function CompanyDetailPage() {
           </div>
         </form>
       ) : (
-        <div className="bg-white border border-zinc-100 rounded-xl p-5 mb-6">
+        <div className="bg-white border border-zinc-100 rounded-xl p-5 mb-3">
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-3 mb-1">
@@ -969,6 +977,47 @@ export default function CompanyDetailPage() {
       )}
 
       {/* Delete modal */}
+      {activeTab === 'candidats' && (
+        <div className="space-y-3">
+          {(company.jobs ?? []).length === 0 ? (
+            <p className="text-sm text-zinc-400 py-4 text-center">Aucune offre liée à cette entreprise.</p>
+          ) : (company.jobs ?? []).map(job => (
+            <div key={job.id} className="bg-white border border-zinc-100 rounded-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-50">
+                <div>
+                  <p className="text-sm font-semibold text-[#1a1918]">{job.public_title ?? job.title ?? 'Offre sans titre'}</p>
+                  <p className="text-xs text-zinc-400">{job.location ?? ''}</p>
+                </div>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${job.status === 'open' ? 'bg-green-50 text-[#0d9e75]' : 'bg-zinc-100 text-zinc-500'}`}>
+                  {job.status === 'open' ? 'Ouverte' : job.status}
+                </span>
+              </div>
+              {job.submissions && job.submissions.length > 0 ? (
+                <div className="divide-y divide-zinc-50">
+                  {job.submissions.map((sub: { id: string; status: string; interns?: { first_name: string; last_name: string } | null; cases?: { id: string } | null }) => (
+                    <Link key={sub.id} href={`/${locale}/cases/${sub.cases?.id ?? ''}`}
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-zinc-50/70 transition-colors block">
+                      <div className="w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-semibold text-zinc-400">
+                          {(sub.interns?.first_name?.[0] ?? '?').toUpperCase()}
+                        </span>
+                      </div>
+                      <p className="text-sm text-[#1a1918] flex-1">
+                        {sub.interns ? `${sub.interns.first_name} ${sub.interns.last_name}` : 'Candidat'}
+                      </p>
+                      <span className="text-xs text-zinc-400">{sub.status}</span>
+                      <span className="text-zinc-300 text-xs">→</span>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-zinc-300 px-4 py-3 italic">Aucun candidat pour cette offre</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Info panel (read-only sections) */}
       {!editing && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -980,7 +1029,7 @@ export default function CompanyDetailPage() {
               <div className="flex justify-between gap-3"><dt className="text-zinc-500">Taille</dt><dd className="text-[#1a1918]">{company.company_size ?? '—'}</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-zinc-500">Site web</dt><dd>{company.website ? (<a href={company.website} target="_blank" rel="noopener noreferrer" className="text-[#c8a96e] hover:underline text-xs">{company.website}</a>) : <span className="text-zinc-300">—</span>}</dd></div>
             </dl>
-            {company.description && <p className="text-xs text-zinc-500 mt-2 pt-2 border-t border-zinc-50">{company.description}</p>}
+            <p className="text-xs text-zinc-500 mt-2 pt-2 border-t border-zinc-50">{company.description ?? <span className="text-zinc-300 italic">Aucune description</span>}</p>
           </div>
 
           <div className="bg-white border border-zinc-100 rounded-xl p-4">
@@ -997,13 +1046,28 @@ export default function CompanyDetailPage() {
             <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Légal</h3>
             <dl className="text-sm space-y-1.5">
               <div className="flex justify-between gap-3"><dt className="text-zinc-500">Type légal</dt><dd className="text-[#1a1918] font-medium">{company.legal_type ?? company.company_type ?? company.type ?? '—'}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-zinc-500">NIB</dt><dd className="text-[#1a1918] font-mono text-xs">{company.nib ?? '—'}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-zinc-500">NPWP</dt><dd className="text-[#1a1918] font-mono text-xs">{company.npwp ?? '—'}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-zinc-500">SIRET</dt><dd className="text-[#1a1918] font-mono text-xs">{company.siret ?? '—'}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-zinc-500">TVA</dt><dd className="text-[#1a1918] font-mono text-xs">{company.vat_number ?? '—'}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-zinc-500">Tax ID / EIN</dt><dd className="text-[#1a1918] font-mono text-xs">{company.tax_id ?? '—'}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-zinc-500">Reg. number</dt><dd className="text-[#1a1918] font-mono text-xs">{company.registration_number ?? '—'}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-zinc-500">État incorp.</dt><dd className="text-[#1a1918] text-xs">{company.state_of_incorporation ?? '—'}</dd></div>
+              {/* Champs spécifiques selon le pays */}
+              {(company.registration_country === 'ID' || (!company.registration_country && (company.nib || company.npwp))) && (<>
+                <div className="flex justify-between gap-3"><dt className="text-zinc-500">NIB</dt><dd className="text-[#1a1918] font-mono text-xs">{company.nib ?? '—'}</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-zinc-500">NPWP</dt><dd className="text-[#1a1918] font-mono text-xs">{company.npwp ?? '—'}</dd></div>
+                {company.vat_number && <div className="flex justify-between gap-3"><dt className="text-zinc-500">TVA (PKP)</dt><dd className="text-[#1a1918] font-mono text-xs">{company.vat_number}</dd></div>}
+              </>)}
+              {(company.registration_country === 'FR' || company.registration_country === 'BE' || company.registration_country === 'CH') && (<>
+                <div className="flex justify-between gap-3"><dt className="text-zinc-500">SIRET</dt><dd className="text-[#1a1918] font-mono text-xs">{company.siret ?? '—'}</dd></div>
+                {company.vat_number && <div className="flex justify-between gap-3"><dt className="text-zinc-500">TVA intra</dt><dd className="text-[#1a1918] font-mono text-xs">{company.vat_number}</dd></div>}
+              </>)}
+              {(company.registration_country === 'US' || company.registration_country === 'GB' || company.registration_country === 'AU') && (<>
+                <div className="flex justify-between gap-3"><dt className="text-zinc-500">EIN / Tax ID</dt><dd className="text-[#1a1918] font-mono text-xs">{company.tax_id ?? '—'}</dd></div>
+                {company.state_of_incorporation && <div className="flex justify-between gap-3"><dt className="text-zinc-500">État incorp.</dt><dd className="text-[#1a1918] text-xs">{company.state_of_incorporation}</dd></div>}
+              </>)}
+              {company.registration_country === 'TH' && (<>
+                <div className="flex justify-between gap-3"><dt className="text-zinc-500">DBD Reg.</dt><dd className="text-[#1a1918] font-mono text-xs">{company.registration_number ?? '—'}</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-zinc-500">Tax ID</dt><dd className="text-[#1a1918] font-mono text-xs">{company.tax_id ?? '—'}</dd></div>
+              </>)}
+              {company.registration_country && !['ID','FR','BE','CH','US','GB','AU','TH'].includes(company.registration_country) && (<>
+                {company.registration_number && <div className="flex justify-between gap-3"><dt className="text-zinc-500">Reg. number</dt><dd className="text-[#1a1918] font-mono text-xs">{company.registration_number}</dd></div>}
+                {company.tax_id && <div className="flex justify-between gap-3"><dt className="text-zinc-500">Tax ID</dt><dd className="text-[#1a1918] font-mono text-xs">{company.tax_id}</dd></div>}
+              </>)}
             </dl>
           </div>
 
