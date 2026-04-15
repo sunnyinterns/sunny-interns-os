@@ -27,6 +27,7 @@ interface CaseRow {
   id: string
   status: CaseStatus
   created_at: string
+  updated_at: string
   desired_start_date: string | null
   intern_first_meeting_date: string | null
   interns: {
@@ -36,6 +37,8 @@ interface CaseRow {
     main_desired_job: string | null
     linkedin_url?: string | null
     avatar_url?: string | null
+    school_name?: string | null
+    whatsapp?: string | null
   } | null
 }
 
@@ -183,50 +186,75 @@ export default function CasesPage() {
             filtered.map((c) => {
               const intern = c.interns
               return (
-                <Link
-                  key={c.id}
-                  href={`/${locale}/cases/${c.id}`}
-                  className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-zinc-100 hover:shadow-sm hover:border-zinc-200 transition-all"
-                >
-                  {(() => {
-                    const avatarSrc = getAvatarSrc(c.interns ?? {})
-                    return (
-                      <div className="relative w-10 h-10 flex-shrink-0">
-                        {avatarSrc && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={avatarSrc} alt={`${c.interns?.first_name} ${c.interns?.last_name}`}
-                            className="w-10 h-10 rounded-full object-cover border border-zinc-100"
-                            onError={(e) => { e.currentTarget.style.display = 'none' }}
-                          />
-                        )}
-                        <div className={`w-10 h-10 rounded-full bg-[#c8a96e]/20 flex items-center justify-center text-sm font-bold text-[#c8a96e] ${avatarSrc ? 'absolute inset-0' : ''}`}
-                          style={avatarSrc ? { zIndex: -1 } : {}}>
-                          {(c.interns?.first_name?.[0] ?? '?')}{(c.interns?.last_name?.[0] ?? '')}
+                <div key={c.id} className="flex items-center gap-2">
+                  <Link
+                    href={`/${locale}/cases/${c.id}`}
+                    className="flex-1 flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-zinc-100 hover:shadow-sm hover:border-zinc-200 transition-all"
+                  >
+                    {(() => {
+                      const avatarSrc = getAvatarSrc(c.interns ?? {})
+                      return (
+                        <div className="relative w-10 h-10 flex-shrink-0">
+                          {avatarSrc && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={avatarSrc} alt={`${c.interns?.first_name} ${c.interns?.last_name}`}
+                              className="w-10 h-10 rounded-full object-cover border border-zinc-100"
+                              onError={(e) => { e.currentTarget.style.display = 'none' }}
+                            />
+                          )}
+                          <div className={`w-10 h-10 rounded-full bg-[#c8a96e]/20 flex items-center justify-center text-sm font-bold text-[#c8a96e] ${avatarSrc ? 'absolute inset-0' : ''}`}
+                            style={avatarSrc ? { zIndex: -1 } : {}}>
+                            {(c.interns?.first_name?.[0] ?? '?')}{(c.interns?.last_name?.[0] ?? '')}
+                          </div>
                         </div>
-                      </div>
-                    )
-                  })()}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[#1a1918]">
-                      {intern?.first_name} {intern?.last_name}
-                    </p>
-                    <p className="text-xs text-zinc-400 truncate">
-                      {intern?.email ?? '\u2014'}
-                      {intern?.main_desired_job ? ` \u00b7 ${intern.main_desired_job}` : ''}
-                    </p>
-                  </div>
-                  {c.intern_first_meeting_date && (
-                    <span className="text-xs text-blue-500 flex-shrink-0">
-                      📅 {new Date(c.intern_first_meeting_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                      )
+                    })()}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-[#1a1918]">
+                        {intern?.first_name} {intern?.last_name}
+                      </p>
+                      <p className="text-xs text-zinc-400 truncate">
+                        {intern?.email ?? '\u2014'}
+                        {intern?.main_desired_job ? ` \u00b7 ${intern.main_desired_job}` : ''}
+                      </p>
+                      {c.interns?.school_name && (
+                        <p className="text-xs text-zinc-400 truncate">🎓 {c.interns.school_name}</p>
+                      )}
+                      {c.desired_start_date && (
+                        <span className="text-xs text-[#c8a96e] font-medium">
+                          📅 {new Date(c.desired_start_date).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+                        </span>
+                      )}
+                    </div>
+                    {c.intern_first_meeting_date && (
+                      <span className="text-xs text-blue-500 flex-shrink-0">
+                        📅 {new Date(c.intern_first_meeting_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                      </span>
+                    )}
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[c.status] ?? 'bg-zinc-100 text-zinc-600'}`}>
+                      {STATUS_LABELS[c.status] ?? c.status}
                     </span>
+                    {(() => {
+                      const dInStage = Math.floor((Date.now() - new Date(c.updated_at).getTime()) / 86400000)
+                      const cls = dInStage > 14 ? 'text-red-500 font-bold' : dInStage > 7 ? 'text-amber-500' : 'text-zinc-400'
+                      return <span className={`text-xs flex-shrink-0 ${cls}`}>{dInStage}j</span>
+                    })()}
+                    <span className="text-xs text-zinc-400 flex-shrink-0">
+                      {new Date(c.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                    </span>
+                  </Link>
+                  {c.interns?.whatsapp && (
+                    <a
+                      href={`https://wa.me/${c.interns.whatsapp.replace(/[^0-9]/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-xl bg-[#25d366] text-white text-xs font-bold hover:bg-[#1da851] transition-colors"
+                      title="WhatsApp"
+                    >
+                      WA
+                    </a>
                   )}
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[c.status] ?? 'bg-zinc-100 text-zinc-600'}`}>
-                    {STATUS_LABELS[c.status] ?? c.status}
-                  </span>
-                  <span className="text-xs text-zinc-400 flex-shrink-0">
-                    {new Date(c.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                  </span>
-                </Link>
+                </div>
               )
             })
           )}

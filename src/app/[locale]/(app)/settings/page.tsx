@@ -38,6 +38,7 @@ const SECTIONS: Record<string, { title: string; items: SectionItem[] }> = {
       { href: 'partners', icon: '🌐', label: 'Partenaires officiels', desc: 'eSIM, restaurants, deals avant/après' },
       { href: 'housing', icon: '🏠', label: 'Logements', desc: 'Villas, colocations, résidences à Bali' },
       { href: 'scooters', icon: '🛵', label: 'Scooters', desc: 'Location scooter partenaires' },
+      { href: 'transport', icon: '🚗', label: 'Chauffeurs', desc: 'Sociétés de chauffeur + message WA préformaté' },
     ],
   },
 
