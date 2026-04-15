@@ -34,6 +34,18 @@ function substituteVariables(text: string): string {
 function categoryLabel(cat: string | null | undefined): string {
   if (!cat) return '—'
   const map: Record<string, string> = {
+    intern_lead: '👤 Intern — Lead & Booking',
+    intern_qualification: '🎙️ Intern — Qualification & Portal',
+    intern_jobs: '💼 Intern — Jobs & Matching',
+    intern_convention: '📝 Intern — Convention & Client',
+    intern_payment: '💳 Intern — Payment & Invoice',
+    intern_visa: '🛂 Intern — Visa & Documents',
+    intern_departure: '✈️ Intern — Pre-departure',
+    intern_internship: '🌴 Intern — During & After',
+    employer: '🏢 Employer',
+    agent: '🔏 Visa Agent',
+    internal: '🔔 Internal (Manager)',
+    // legacy
     onboarding: 'Onboarding',
     billing: 'Facturation',
     arrival: 'Arrivée',
