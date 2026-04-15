@@ -163,11 +163,9 @@ export function Sidebar() {
 
       {/* Logo */}
       <div className="px-4 pt-5 pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-[#c8a96e] flex items-center justify-center">
-            <span className="text-white text-xs font-bold">BI</span>
-          </div>
-          <span className="font-bold text-[#1a1918] text-sm">Bali Interns</span>
+        <div className="flex items-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-dark.svg" alt="Bali Interns" style={{ height: '22px' }} />
         </div>
       </div>
 
