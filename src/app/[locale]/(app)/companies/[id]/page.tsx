@@ -272,7 +272,7 @@ export default function CompanyDetailPage() {
 
   async function sendInfoForm(contactId: string) {
     setSendingForm(contactId)
-    const r = await fetch(`/api/companies/${companyId}/send-info-form`, {
+    const r = await fetch(`/api/companies/${companyId}/send-onboarding`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contact_id: contactId }),
@@ -590,33 +590,7 @@ export default function CompanyDetailPage() {
                 {company.is_partner && <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-medium">🤝 Partenaire</span>}
                 {company.is_supplier && <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full font-medium">📦 Fournisseur</span>}
               </div>
-              {/* Compteurs associations */}
-              <div className="flex items-center gap-3 mt-2 flex-wrap">
-                <button onClick={() => setActiveTab('contacts')}
-                  className="flex items-center gap-1 text-sm text-zinc-400 hover:text-[#c8a96e] transition-colors">
-                  <span>👤</span>
-                  <span>{company.contacts?.length ?? 0} contact{(company.contacts?.length ?? 0) !== 1 ? 's' : ''}</span>
-                </button>
-                <span className="text-zinc-200">·</span>
-                <button onClick={() => setActiveTab('jobs')}
-                  className="flex items-center gap-1 text-sm text-zinc-400 hover:text-[#c8a96e] transition-colors">
-                  <span>💼</span>
-                  <span>{company.jobs?.length ?? 0} offre{(company.jobs?.length ?? 0) !== 1 ? 's' : ''}</span>
-                </button>
-                <span className="text-zinc-200">·</span>
-                <button onClick={() => setActiveTab('stagiaires')}
-                  className="flex items-center gap-1 text-sm text-zinc-400 hover:text-[#c8a96e] transition-colors">
-                  <span>🎓</span>
-                  <span>{company.stagiaires?.length ?? 0} stagiaire{(company.stagiaires?.length ?? 0) !== 1 ? 's' : ''}</span>
-                </button>
-                {company.info_validated_by_contact && (
-                  <span className="text-xs bg-green-50 text-[#0d9e75] px-2 py-0.5 rounded-full border border-green-200">✅ Infos validées</span>
-                )}
-              </div>
-              {!company.info_validated_by_contact && (company.contacts?.length ?? 0) > 0 && (
-                <p className="text-xs text-amber-600 mt-1">⚠️ Informations non validées par le contact</p>
-              )}
-              {company.sector && <p className="text-sm text-zinc-500 mt-1">{company.sector}</p>}
+                            {company.sector && <p className="text-sm text-zinc-500 mt-1">{company.sector}</p>}
               {company.website && (
                 <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-sm text-[#c8a96e] hover:underline mt-1 inline-block">
                   {company.website}

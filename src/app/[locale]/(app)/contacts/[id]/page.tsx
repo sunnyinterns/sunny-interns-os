@@ -280,16 +280,7 @@ export default function ContactDetailPage() {
             </select>
           </div>
 
-          {/* Active status */}
-          <div className="flex items-center justify-between pt-3 border-t border-zinc-50">
-            <p className="text-sm text-[#1a1918]">Contact actif</p>
-            <button
-              onClick={() => void patchContact({ is_active: !contact.is_active })}
-              className={['w-10 h-6 rounded-full transition-colors relative', contact.is_active ? 'bg-[#0d9e75]' : 'bg-zinc-200'].join(' ')}
-            >
-              <div className={['absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform', contact.is_active ? 'translate-x-5' : 'translate-x-1'].join(' ')} />
-            </button>
-          </div>
+
         </div>
       )}
 
@@ -325,37 +316,13 @@ export default function ContactDetailPage() {
             </div>
           )}
 
-          {/* Create job */}
-          {showJobForm ? (
-            <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 space-y-3">
-              <p className="text-xs font-semibold text-zinc-600">Nouveau job pour {contact.first_name}</p>
-              <input
-                placeholder="Titre du poste *"
-                value={jobTitle}
-                onChange={e => setJobTitle(e.target.value)}
-                className={inputCls}
-              />
-              <div className="grid grid-cols-2 gap-2">
-                <input type="date" value={jobDate} onChange={e => setJobDate(e.target.value)} className={inputCls} />
-                <select value={jobDuration} onChange={e => setJobDuration(e.target.value)} className={inputCls}>
-                  {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} mois</option>)}
-                </select>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => void createJob()} disabled={creatingJob || !jobTitle} className="px-3 py-1.5 bg-[#c8a96e] text-white text-sm font-medium rounded-lg disabled:opacity-50">
-                  {creatingJob ? 'Création…' : 'Créer'}
-                </button>
-                <button onClick={() => setShowJobForm(false)} className="px-3 py-1.5 bg-zinc-100 text-[#1a1918] text-sm rounded-lg">Annuler</button>
-              </div>
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowJobForm(true)}
-              className="w-full py-3 border-2 border-dashed border-zinc-200 rounded-xl text-sm text-zinc-400 hover:border-[#c8a96e] hover:text-[#c8a96e] transition-colors"
-            >
-              + Créer un job pour ce contact
-            </button>
-          )}
+          {/* Create job — redirige vers la page Jobs avec ce contact pré-sélectionné */}
+          <Link
+            href={`/${locale}/jobs?contact_id=${contactId}`}
+            className="w-full py-3 border-2 border-dashed border-zinc-200 rounded-xl text-sm text-zinc-400 hover:border-[#c8a96e] hover:text-[#c8a96e] transition-colors flex items-center justify-center gap-2 block text-center"
+          >
+            + Créer une offre pour ce contact →
+          </Link>
         </div>
       )}
 
