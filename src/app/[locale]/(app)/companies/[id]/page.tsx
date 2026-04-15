@@ -79,6 +79,9 @@ interface Company {
   is_employer?: boolean | null
   is_partner?: boolean | null
   is_supplier?: boolean | null
+  info_validated_by_contact?: boolean | null
+  info_validated_at?: string | null
+  info_validated_contact_id?: string | null
   // associations calculées côté API
   stagiaires?: Array<{ id: string; status: string; intern: { first_name: string; last_name: string } | null }>
   partner_timing?: string | null
@@ -145,6 +148,8 @@ export default function CompanyDetailPage() {
 
   // New contact form
   const [showContactForm, setShowContactForm] = useState(false)
+  const [sendingForm, setSendingForm] = useState<string | null>(null)
+  const [sentForms, setSentForms] = useState<Set<string>>(new Set())
   const [showLinkContact, setShowLinkContact] = useState(false)
   const [allContacts, setAllContacts] = useState<Array<{id:string;first_name:string|null;last_name:string|null;job_title:string|null;email:string|null;company_id:string|null}>>([])
   const [linkingContact, setLinkingContact] = useState(false)
@@ -263,6 +268,18 @@ export default function CompanyDetailPage() {
     setSelectedContactId(null)
     setLinkingContact(false)
     void load()
+  }
+
+  async function sendInfoForm(contactId: string) {
+    setSendingForm(contactId)
+    const r = await fetch(`/api/companies/${companyId}/send-info-form`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact_id: contactId }),
+    })
+    if (r.ok) setSentForms(prev => new Set([...prev, contactId]))
+    else alert('Erreur envoi — vérifiez que le contact a un email')
+    setSendingForm(null)
   }
 
   async function handleAddContact(e: React.FormEvent) {
@@ -573,7 +590,33 @@ export default function CompanyDetailPage() {
                 {company.is_partner && <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-medium">🤝 Partenaire</span>}
                 {company.is_supplier && <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full font-medium">📦 Fournisseur</span>}
               </div>
-              {company.sector && <p className="text-sm text-zinc-500">{company.sector}</p>}
+              {/* Compteurs associations */}
+              <div className="flex items-center gap-3 mt-2 flex-wrap">
+                <button onClick={() => setActiveTab('contacts')}
+                  className="flex items-center gap-1 text-sm text-zinc-400 hover:text-[#c8a96e] transition-colors">
+                  <span>👤</span>
+                  <span>{company.contacts?.length ?? 0} contact{(company.contacts?.length ?? 0) !== 1 ? 's' : ''}</span>
+                </button>
+                <span className="text-zinc-200">·</span>
+                <button onClick={() => setActiveTab('jobs')}
+                  className="flex items-center gap-1 text-sm text-zinc-400 hover:text-[#c8a96e] transition-colors">
+                  <span>💼</span>
+                  <span>{company.jobs?.length ?? 0} offre{(company.jobs?.length ?? 0) !== 1 ? 's' : ''}</span>
+                </button>
+                <span className="text-zinc-200">·</span>
+                <button onClick={() => setActiveTab('stagiaires')}
+                  className="flex items-center gap-1 text-sm text-zinc-400 hover:text-[#c8a96e] transition-colors">
+                  <span>🎓</span>
+                  <span>{company.stagiaires?.length ?? 0} stagiaire{(company.stagiaires?.length ?? 0) !== 1 ? 's' : ''}</span>
+                </button>
+                {company.info_validated_by_contact && (
+                  <span className="text-xs bg-green-50 text-[#0d9e75] px-2 py-0.5 rounded-full border border-green-200">✅ Infos validées</span>
+                )}
+              </div>
+              {!company.info_validated_by_contact && (company.contacts?.length ?? 0) > 0 && (
+                <p className="text-xs text-amber-600 mt-1">⚠️ Informations non validées par le contact</p>
+              )}
+              {company.sector && <p className="text-sm text-zinc-500 mt-1">{company.sector}</p>}
               {company.website && (
                 <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-sm text-[#c8a96e] hover:underline mt-1 inline-block">
                   {company.website}
@@ -693,7 +736,30 @@ export default function CompanyDetailPage() {
                 {contact.email && <p>{contact.email}</p>}
                 {contact.whatsapp && <p>{contact.whatsapp}</p>}
               </div>
-              <span className="text-zinc-300 ml-2">→</span>
+              <button
+                type="button"
+                disabled={!contact.email || sendingForm === contact.id}
+                onClick={e => { e.preventDefault(); void sendInfoForm(contact.id) }}
+                className={`text-[10px] px-2 py-1 rounded-lg border transition-colors flex-shrink-0 ${
+                  company.info_validated_by_contact && company.info_validated_contact_id === contact.id
+                    ? 'bg-green-50 text-[#0d9e75] border-green-200'
+                    : sentForms.has(contact.id)
+                    ? 'bg-blue-50 text-blue-600 border-blue-200'
+                    : contact.email
+                    ? 'bg-zinc-50 text-zinc-500 border-zinc-200 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300'
+                    : 'bg-zinc-50 text-zinc-300 border-zinc-100 cursor-not-allowed'
+                }`}>
+                {company.info_validated_by_contact && company.info_validated_contact_id === contact.id
+                  ? '✅ Validé'
+                  : sentForms.has(contact.id)
+                  ? '📨 Envoyé'
+                  : sendingForm === contact.id
+                  ? '…'
+                  : contact.email
+                  ? '📧 Formulaire'
+                  : 'Email requis'}
+              </button>
+              <span className="text-zinc-300 ml-1">→</span>
             </Link>
           ))}
 
