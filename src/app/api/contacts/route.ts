@@ -11,10 +11,9 @@ export async function GET(request: Request) {
   let query = supabase
     .from('contacts')
     .select(`
-      id, first_name, last_name, job_title, email, phone, whatsapp, linkedin_url, gender, company_id,
-      contact_type, last_contacted_at, temperature, linked_job_id,
-      companies!company_id(id, name, is_employer, is_partner, is_supplier, logo_url, internship_city),
-      linked_job:jobs!linked_job_id(id,title,public_title)
+      id, first_name, last_name, email, whatsapp, job_title,
+      temperature, last_contacted_at, notes, created_at, updated_at, company_id,
+      companies(id, name, logo_url)
     `)
     .order('first_name')
 

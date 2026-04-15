@@ -15,15 +15,10 @@ export async function GET(request: Request) {
   let query = supabase
     .from('jobs')
     .select(`
-      id, title, public_title, department, status, wished_duration_months,
-      wished_start_date, required_level, created_at, updated_at, job_department_id, is_active,
-      remote_ok, remote_work, is_remote, location, description,
-      actual_end_date, company_type, tools_required, missions, profile_sought,
-      is_recurring, parent_job_id, background_image_url,
-      companies(id, name, contact_name, contact_email, contact_whatsapp, whatsapp_number),
-      contacts(id, first_name, last_name),
-      job_submissions(id, status),
-      job_departments(id, name, slug)
+      id, title, public_title, status, location, wished_duration_months,
+      description, created_at, updated_at, company_id,
+      companies(id, name, logo_url, website),
+      contacts(id, first_name, last_name, email, whatsapp, job_title)
     `)
     .order('created_at', { ascending: false })
 
@@ -41,12 +36,10 @@ export async function GET(request: Request) {
 
   const jobs = (data ?? []).map(j => ({
     ...j,
-    submissions_count: Array.isArray(j.job_submissions)
-      ? j.job_submissions.filter((s: Record<string, unknown>) => !['rejected', 'cancelled'].includes(s.status as string)).length
-      : 0,
+    submissions_count: 0,
     company_name: (j.companies as unknown as { name: string } | null)?.name ?? null,
     contact_name: j.contacts ? `${(j.contacts as unknown as { first_name: string; last_name: string | null }).first_name} ${(j.contacts as unknown as { first_name: string; last_name: string | null }).last_name ?? ''}`.trim() : null,
-    department_name: (j.job_departments as unknown as { name: string } | null)?.name ?? j.department ?? null,
+    department_name: null,
   }))
 
   return NextResponse.json(jobs)

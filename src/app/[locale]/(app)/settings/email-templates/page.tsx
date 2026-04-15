@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 interface EmailTemplate {
   id: string
   name: string
+  slug?: string | null
   category?: string | null
   subject: string
   body_html: string
@@ -42,6 +43,21 @@ function normalizeCategory(cat: string | null | undefined): string {
   }
   if (!cat) return 'internal'
   return legacyMap[cat] ?? cat
+}
+
+// Derive category from slug (DB has slug, not category)
+function getCategoryFromSlug(slug: string | null | undefined): string {
+  if (!slug) return 'internal'
+  if (slug.startsWith('employer_') || slug === 'job_submitted_employer') return 'employer'
+  if (slug.startsWith('visa_')) return 'intern_visa'
+  if (slug.startsWith('touchpoint_') || slug === 'alumni_welcome' || slug === 'ugc_thank_you') return 'intern_internship'
+  if (slug === 'arrival_prep' || slug === 'welcome_kit') return 'intern_departure'
+  if (slug === 'invoice_sent' || slug === 'payment_request' || slug === 'payment_confirmed') return 'intern_payment'
+  if (slug === 'new_job_alert') return 'intern_jobs'
+  if (slug === 'booking_confirmation' || slug === 'rdv_confirmation' || slug === 'rdv_reminder') return 'intern_lead'
+  if (slug === 'convention_request') return 'intern_convention'
+  if (slug === 'driver_notification' || slug === 'new_lead_internal' || slug === 'intern_card_ready' || slug === 'partner_welcome') return 'internal'
+  return 'intern_qualification'
 }
 
 // Recipient for a normalized category
@@ -190,7 +206,7 @@ export default function EmailTemplatesPage() {
     grouped.set(group.id, new Map(group.stages.map(s => [s.id, []])))
   }
   for (const tpl of templates) {
-    const norm = normalizeCategory(tpl.category)
+    const norm = getCategoryFromSlug(tpl.slug)
     const recipient = getRecipient(norm)
     const recipientMap = grouped.get(recipient)
     if (recipientMap) {
@@ -203,7 +219,7 @@ export default function EmailTemplatesPage() {
   const previewBody = substituteVariables(editBody)
 
   // Find recipient + stage info for selected template
-  const selectedNorm = selected ? normalizeCategory(selected.category) : null
+  const selectedNorm = selected ? getCategoryFromSlug(selected.slug) : null
   const selectedRecipient = selectedNorm ? RECIPIENT_GROUPS.find(g => g.id === getRecipient(selectedNorm)) : null
   const selectedStage = selectedRecipient?.stages.find(s => s.id === selectedNorm)
 

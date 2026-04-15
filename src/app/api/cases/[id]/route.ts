@@ -200,42 +200,28 @@ export async function GET(
     const { data, error } = await supabase
       .from('cases')
       .select(`
-        *, school_id,
-        interns (
-          id, first_name, last_name, email, whatsapp, whatsapp_number, phone,
-          nationality, nationalities, gender, sexe, birth_date,
-          passport_number, passport_expiry, passport_issue_city, passport_issue_date,
-          linkedin_url, avatar_url, cv_url, cv_en_url, local_cv_url, photo_id_url,
-          portfolio_url, examples_url,
-          spoken_languages, english_level,
-          main_desired_job, desired_sectors, desired_jobs, stage_ideal, touchpoint, touchpoints, source,
-          intern_level, education_level, intern_level_notes, diploma_track, qualification_debrief,
-          school_name, school_country,
-          school_contact_name, school_contact_email, school_contact_first_name, school_contact_last_name, school_contact_phone,
-          emergency_contact_name, emergency_contact_phone, emergency_contact_email, insurance_company,
-          intern_address, intern_signing_city, mother_first_name, mother_last_name,
-          housing_budget, housing_city, wants_scooter, intern_bank_name, intern_bank_iban,
-          flight_departure_date, flight_return_date, flight_departure_city, flight_number,
-          desired_start_date, desired_end_date, desired_duration_months,
-          return_plane_ticket_url, bank_statement_url, passport_page4_url,
-          extra_docs_urls,
-          private_comment_for_employer, referred_by_code, preferred_language,
-          commitment_price_accepted, commitment_budget_accepted,
-          commitment_terms_accepted, commitment_accepted_at,
-          intern_bali_bank_name, intern_bali_bank_number
-        ),
-        schools ( id, name ),
-        packages ( id, name, price_eur, visa_cost_idr, validity_label, processing_days ),
-        visa_types ( id, code, name ),
-        destinations ( id, name ),
-        activity_feed ( id, type, title, description, created_at, metadata ),
-        job_submissions (
-          id, status, intern_interested, cv_revision_requested, notes_charly,
-          jobs ( id, title, public_title, wished_start_date, wished_duration_months,
-            companies ( id, name ),
-            contacts ( id, first_name, last_name, email, whatsapp )
-          )
-        )
+        id, intern_id, destination_id, status, case_type,
+        desired_start_date, actual_start_date, actual_end_date,
+        school_id, intern_level, diploma_track, desired_sectors, desired_duration_months,
+        qualification_notes, qualification_notes_for_intern,
+        intern_first_meeting_date, intern_first_meeting_link, google_meet_link, fillout_booking_link,
+        portal_token, portal_sent_at, portal_activated_at,
+        employer_contact_id, package_id, assigned_manager_name,
+        payment_amount, payment_date, payment_type, payment_notified_by_intern_at,
+        convention_signed, convention_signed_at, convention_pdf_url,
+        engagement_letter_signed_at, engagement_letter_sent,
+        sponsor_contract_sent_at, sponsor_contract_signed_at,
+        flight_number, flight_departure_city, flight_arrival_time_local, flight_last_stopover,
+        dropoff_address, driver_phone,
+        billet_avion, papiers_visas, visa_recu, chauffeur_reserve,
+        form_language, visa_submitted_to_agent_at, note_for_agent, visa_type_id,
+        cv_feedback, cv_status, cv_revision_requested, cv_revision_notes,
+        created_at, updated_at,
+        interns(*),
+        destinations(name,country),
+        packages(name,price_eur),
+        job_submissions(id,status,intern_interested,intern_priority,employer_response,jobs(id,title,public_title,location,companies(id,name,logo_url))),
+        contacts(id,first_name,last_name,email,whatsapp,job_title,companies(id,name))
       `)
       .eq('id', id)
       .single()
