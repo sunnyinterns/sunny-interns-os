@@ -81,6 +81,7 @@ interface Company {
   is_employer?: boolean | null
   is_partner?: boolean | null
   is_supplier?: boolean | null
+  collaboration_status?: string | null
   sponsor_company_id?: string | null
   info_validated_by_contact?: boolean | null
   info_validated_at?: string | null
