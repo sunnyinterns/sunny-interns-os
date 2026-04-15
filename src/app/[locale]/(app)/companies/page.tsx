@@ -444,7 +444,7 @@ export default function CompaniesPage() {
             )}
             <form onSubmit={createCompany} className="px-6 py-5 space-y-5 max-h-[75vh] overflow-y-auto">
 
-              {/* SECTION 0 — Rôles */}
+              {/* SECTION 0 — Rôles : les sections du formulaire s'adaptent au(x) rôle(s) choisi(s) */}
               <div className="space-y-2">
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">① Rôle(s) de cette entreprise</p>
                 <label className="flex items-center gap-2 cursor-pointer text-sm text-zinc-700">
@@ -470,15 +470,16 @@ export default function CompaniesPage() {
                   <label className="block text-xs font-medium text-zinc-600 mb-1">Nom *</label>
                   <input required value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} className={inputCls} placeholder="Ex: Potato Head Bali" />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Pays d&apos;immatriculation *</label>
+                  <select value={form.registration_country} onChange={e => setForm(p => ({...p, registration_country: e.target.value}))} className={inputCls}>
+                    {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                  </select>
+                </div>
+                {/* Ville de stage — employeur uniquement */}
+                {form.is_employer && (
                   <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1">Pays d&apos;immatriculation *</label>
-                    <select value={form.registration_country} onChange={e => setForm(p => ({...p, registration_country: e.target.value}))} className={inputCls}>
-                      {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1">Ville du stage</label>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1">Ville du stage <span className="text-[#c8a96e]">*</span></label>
                     <select value={form.internship_city} onChange={e => setForm(p => ({...p, internship_city: e.target.value}))} className={inputCls}>
                       <option value="">— Sélectionner —</option>
                       {Object.entries(cities.reduce((acc, c) => {
@@ -491,7 +492,7 @@ export default function CompaniesPage() {
                       ))}
                     </select>
                   </div>
-                </div>
+                )}
                 <div>
                   <label className="block text-xs font-medium text-zinc-600 mb-1">Site web</label>
                   <div className="flex gap-2">
@@ -582,15 +583,20 @@ export default function CompaniesPage() {
                     </select>
                   </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1">Description</label>
-                  <textarea value={form.description} onChange={e => setForm(p => ({...p, description: e.target.value}))} className={inputCls} rows={2} placeholder="Activité de l'entreprise…" />
-                </div>
+                {(form.is_employer || form.is_partner) && (
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1">Description
+                      <span className="text-zinc-400 font-normal"> — visible dans le portail étudiant</span>
+                    </label>
+                    <textarea value={form.description} onChange={e => setForm(p => ({...p, description: e.target.value}))} className={inputCls} rows={2} placeholder="Activité de l'entreprise…" />
+                  </div>
+                )}
               </div>
 
               <div className="border-t border-zinc-100" />
 
-              {/* SECTION 2 — Social */}
+              {/* SECTION 2 — Social (employeur ou partenaire) */}
+              {(form.is_employer || form.is_partner) && (
               <div className="space-y-3">
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">③ Réseaux sociaux <span className="text-zinc-300 font-normal normal-case">— optionnel</span></p>
                 <div className="grid grid-cols-2 gap-3">
@@ -600,6 +606,7 @@ export default function CompaniesPage() {
                   <input value={form.facebook_url} onChange={e => setForm(p => ({...p, facebook_url: e.target.value}))} className={inputCls} placeholder="Facebook URL" />
                 </div>
               </div>
+              )}
 
               <div className="border-t border-zinc-100" />
 
@@ -628,7 +635,8 @@ export default function CompaniesPage() {
 
               <div className="border-t border-zinc-100" />
 
-              {/* SECTION 4 — Légal dynamique par pays */}
+              {/* SECTION 4 — Légal dynamique par pays — employeur et partenaire */}
+              {(form.is_employer || form.is_partner) && (
               <div className="space-y-3">
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">⑤ Informations légales</p>
 
@@ -780,7 +788,7 @@ export default function CompaniesPage() {
                   </div>
                 )}
               </div>
-
+              )}
 
 
               {/* SECTION 5 — Sponsor (toutes entreprises employeurs) */}

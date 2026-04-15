@@ -1,4 +1,13 @@
-'use client'
+'use 
+              {editIsEmployer && (
+              <div>
+                <label className="block text-xs font-medium text-zinc-600 mb-1">Ville de stage <span className="text-[#c8a96e]">*</span></label>
+                <select value={editInternshipCity} onChange={e => setEditInternshipCity(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm bg-white">
+                  <option value="">— Sélectionner —</option>
+                  {cities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                </select>
+              </div>
+              )}client'
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
@@ -603,8 +612,9 @@ export default function CompanyDetailPage() {
                   <option value="OTHER">🌍 Autre</option>
                 </select>
               </div>
+              {editIsEmployer && (
               <div>
-                <label className="block text-xs font-medium text-zinc-600 mb-1">Ville du stage</label>
+                <label className="block text-xs font-medium text-zinc-600 mb-1">Ville de stage <span className="text-[#c8a96e]">*</span></label>
                 <select value={editInternshipCity} onChange={(e) => setEditInternshipCity(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm bg-white">
                   <option value="">— Sélectionner —</option>
                   {Object.entries(cities.reduce((acc, c) => { (acc[c.area] = acc[c.area] || []).push(c); return acc }, {} as Record<string, typeof cities>)).map(([area, areaCities]) => (
@@ -614,6 +624,7 @@ export default function CompanyDetailPage() {
                   ))}
                 </select>
               </div>
+              )}
               <div className="col-span-2">
                 <label className="block text-xs font-medium text-zinc-600 mb-1">Adresse (rue, numéro)</label>
                 <input type="text" value={editAddressStreet} onChange={e => setEditAddressStreet(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm" placeholder="Jl. Raya Canggu No. 12…" />
