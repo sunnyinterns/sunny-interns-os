@@ -55,7 +55,7 @@ const COUNTRIES = [
 
 const EMPTY_FORM = {
   // rôles
-  is_employer: true,
+  is_employer: false,
   is_partner: false,
   is_supplier: false,
   partner_timing: 'both' as 'pre_arrival' | 'on_site' | 'both',
