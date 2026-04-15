@@ -29,7 +29,7 @@ export async function GET(
       .select(`
         *,
         contacts!company_id(id, first_name, last_name, job_title, email, whatsapp, phone, linkedin_url, gender, left_company, left_company_at),
-        jobs(id, title, public_title, status, location, created_at, submissions_count)
+        jobs(id, title, public_title, status, location, created_at)
       `)
       .eq('id', id)
       .single()
