@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 interface NotifCase {
   id: string
-  intern?: { first_name: string; last_name: string }
+  interns?: { first_name: string; last_name: string } | null
   status: string
   payment_notified_by_intern_at?: string
   engagement_letter_signed_at?: string
@@ -37,7 +37,7 @@ export default function NotificationsPage() {
   const total = leads.length + paymentNotifs.length + missingEngagement.length
 
   function internName(c: NotifCase) {
-    return c.intern ? `${c.intern.first_name} ${c.intern.last_name}` : c.id
+    return c.interns ? `${c.interns.first_name} ${c.interns.last_name}` : c.id
   }
 
   return (

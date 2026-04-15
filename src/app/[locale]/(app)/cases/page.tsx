@@ -88,11 +88,10 @@ export default function CasesPage() {
 
   const STATUS_FILTERS: { value: string; label: string }[] = [
     { value: 'all', label: 'Tous' },
-    { value: 'lead', label: 'Lead' },
     { value: 'rdv_booked', label: 'RDV booké' },
     { value: 'qualification_done', label: 'Qualifié' },
     { value: 'job_submitted,job_retained', label: 'Matché' },
-    { value: 'convention_signed,payment_pending,payment_received', label: 'Paiement' },
+    { value: 'convention_signed', label: 'Convention' },
   ]
 
   const fetchCases = useCallback(async () => {
