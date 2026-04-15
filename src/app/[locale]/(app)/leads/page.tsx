@@ -24,6 +24,14 @@ interface Lead {
   converted_case_id: string | null
   converted_at: string | null
   last_contacted_at: string | null
+  deadline_to_apply?: string | null
+  r1_at?: string | null
+  r2_at?: string | null
+  r3_at?: string | null
+  r4_at?: string | null
+  stage_entered_at?: string | null
+  next_followup_at?: string | null
+  temperature?: 'hot' | 'warm' | 'cold' | null
   created_at: string
   updated_at: string | null
 }
@@ -67,6 +75,23 @@ const STATUS_COLORS: Record<string, string> = {
   converted: 'bg-green-100 text-[#0d9e75]',
   dead: 'bg-red-50 text-red-600',
 }
+
+const STADE: Record<string, { label: string; color: string; bg: string }> = {
+  new: { label: 'Nouveau', color: '#1a1918', bg: '#f4f3f1' },
+  contacted: { label: 'Contacté', color: '#0d9e75', bg: '#f0fdf9' },
+  in_progress: { label: 'En cours', color: '#c8a96e', bg: '#fdf8f0' },
+  form_sent: { label: 'Formulaire envoyé', color: '#6366f1', bg: '#eeefff' },
+  form_started: { label: 'Formulaire démarré', color: '#f59e0b', bg: '#fffbeb' },
+  form_completed: { label: 'Formulaire complet', color: '#0d9e75', bg: '#f0fdf9' },
+  rdv_planned: { label: 'RDV planifié', color: '#7c3aed', bg: '#f5f3ff' },
+  qualified: { label: 'Qualifié', color: '#0d9e75', bg: '#dcfce7' },
+  converted: { label: 'Converti', color: '#16a34a', bg: '#dcfce7' },
+  lost: { label: 'Perdu', color: '#6b7280', bg: '#f4f3f1' },
+  abandoned: { label: 'Abandonné', color: '#ef4444', bg: '#fef2f2' },
+  nurturing: { label: 'En nurturing', color: '#7c3aed', bg: '#f5f3ff' },
+  dead: { label: 'Mort', color: '#6b7280', bg: '#f4f3f1' },
+}
+function daysAgo(d?: string | null) { return d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : 999 }
 
 function initials(first: string | null, last: string | null, email: string): string {
   if (first || last) {
@@ -114,6 +139,7 @@ export default function LeadsPage() {
   const filtered = useMemo(() => {
     if (sourceFilter === 'all') return activeLeads
     if (sourceFilter === 'in_progress') return activeLeads.filter(l => getFormLeadStatus(l) === 'in_progress')
+    if (sourceFilter === 'relancer') return activeLeads.filter(l => !l.last_contacted_at || daysAgo(l.last_contacted_at) > 7)
     if (sourceFilter === 'other') return activeLeads.filter(l => !MAIN_SOURCES.has(l.source))
     if (sourceFilter === 'facebook') return activeLeads.filter(l => ['facebook', 'facebook_group'].includes(l.source))
     return activeLeads.filter(l => l.source === sourceFilter)
@@ -126,10 +152,12 @@ export default function LeadsPage() {
     facebook: activeLeads.filter(l => ['facebook', 'facebook_group'].includes(l.source)).length,
     other: activeLeads.filter(l => !MAIN_SOURCES.has(l.source)).length,
     in_progress: activeLeads.filter(l => getFormLeadStatus(l) === 'in_progress').length,
+    relancer: activeLeads.filter(l => !l.last_contacted_at || daysAgo(l.last_contacted_at) > 7).length,
   }), [activeLeads, MAIN_SOURCES])
 
   const filters: { key: string; label: string; count: number }[] = [
     { key: 'all', label: 'Tous', count: counts.all },
+    { key: 'relancer', label: '⚠️ À relancer', count: counts.relancer },
     { key: 'in_progress', label: '⏳ En cours', count: counts.in_progress },
     { key: 'website_form_unfinished', label: 'Formulaire abandonné', count: counts.website },
     { key: 'linkedin', label: 'LinkedIn', count: counts.linkedin },
@@ -254,11 +282,10 @@ export default function LeadsPage() {
                         </span>
                       )
                       return null
-                    })() : (
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[lead.status] ?? 'bg-zinc-100 text-zinc-600'}`}>
-                        {STATUS_LABELS[lead.status] ?? lead.status}
-                      </span>
-                    )}
+                    })() : (() => {
+                      const st = STADE[lead.status] ?? { label: STATUS_LABELS[lead.status] ?? lead.status, color: '#6b7280', bg: '#f4f3f1' }
+                      return <span style={{ background: st.bg, color: st.color }} className="text-xs px-2 py-0.5 rounded-full font-semibold">{st.label}</span>
+                    })()}
                     <span className="text-xs text-zinc-400">
                       {new Date(lead.created_at).toLocaleDateString('fr-FR')}
                     </span>
@@ -275,6 +302,30 @@ export default function LeadsPage() {
                       </a>
                     )}
                   </div>
+                  {/* Timing row */}
+                  {(() => {
+                    const lastContactDays = daysAgo(lead.last_contacted_at)
+                    const deadlineDays = lead.deadline_to_apply ? daysAgo(new Date(lead.deadline_to_apply + 'T23:59:59').toISOString()) * -1 : null
+                    const hasInfo = lead.last_contacted_at || (deadlineDays !== null && deadlineDays <= 14) || (lead.r1_at && !lead.r2_at)
+                    if (!hasInfo) return null
+                    return (
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {lead.last_contacted_at && (
+                          <span className={`text-[10px] ${lastContactDays > 14 ? 'text-red-500 font-bold' : lastContactDays > 7 ? 'text-amber-500' : 'text-zinc-400'}`}>
+                            🕒 {lastContactDays > 14 ? `⚠️ ${lastContactDays}j sans contact` : lastContactDays === 0 ? "Aujourd'hui" : lastContactDays === 1 ? 'Hier' : `${lastContactDays}j`}
+                          </span>
+                        )}
+                        {deadlineDays !== null && deadlineDays <= 14 && (
+                          <span className={`text-[10px] ${deadlineDays < 0 ? 'text-red-600 font-bold' : deadlineDays <= 7 ? 'text-red-500' : 'text-amber-500'}`}>
+                            {deadlineDays < 0 ? '🚨 Deadline dépassée' : `⏰ Deadline dans ${deadlineDays}j`}
+                          </span>
+                        )}
+                        {lead.r1_at && !lead.r2_at && (
+                          <span className="text-[10px] text-zinc-400">🔔 R1: {new Date(lead.r1_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
 
                 <button
