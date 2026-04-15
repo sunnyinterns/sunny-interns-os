@@ -1,13 +1,4 @@
-'use 
-              {editIsEmployer && (
-              <div>
-                <label className="block text-xs font-medium text-zinc-600 mb-1">Ville de stage <span className="text-[#c8a96e]">*</span></label>
-                <select value={editInternshipCity} onChange={e => setEditInternshipCity(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm bg-white">
-                  <option value="">— Sélectionner —</option>
-                  {cities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                </select>
-              </div>
-              )}client'
+'use client'
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
