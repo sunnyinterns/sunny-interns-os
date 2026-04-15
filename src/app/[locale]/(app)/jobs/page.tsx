@@ -225,6 +225,14 @@ export default function JobsPage() {
     setSaving(false)
   }
 
+
+  async function deleteJob(jobId: string, jobTitle: string) {
+    if (!confirm(`Supprimer l'offre "${jobTitle}" ? Cette action est irréversible.`)) return
+    const r = await fetch('/api/jobs/' + jobId, { method: 'DELETE' })
+    if (r.ok) setJobs(prev => prev.filter(j => j.id !== jobId))
+    else alert('Erreur lors de la suppression')
+  }
+
   function duplicateJob(j: Job) {
     setForm({
       ...EMPTY_FORM,
@@ -420,6 +428,12 @@ export default function JobsPage() {
                       🔄 Nouvelle instance
                     </button>
                   )}
+                  <button
+                    onClick={e => { e.stopPropagation(); void deleteJob(j.id, j.public_title ?? j.title ?? '') }}
+                    className="text-[10px] text-red-400 hover:text-red-600 ml-auto"
+                  >
+                    🗑 Supprimer
+                  </button>
                 </div>
               </div>
             )

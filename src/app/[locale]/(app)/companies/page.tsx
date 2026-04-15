@@ -349,43 +349,73 @@ export default function CompaniesPage() {
           <button onClick={() => setShowModal(true)} className="mt-2 px-4 py-2 bg-[#c8a96e] text-white text-sm font-medium rounded-lg">Créer une company</button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filtered.map(c => {
-            const openJobs = (c.jobs ?? []).filter(j => j.status === 'open').length
-            const totalJobs = (c.jobs ?? []).length
-            const activeInterns = c.active_interns_count ?? 0
-            const onboardingDone = !!c.onboarding_completed_at
-            const onboardingSent = !!c.onboarding_form_sent_at
-            return (
-              <button
-                key={c.id}
-                onClick={() => router.push(`/${locale as string}/companies/${c.id}`)}
-                className="bg-white border border-zinc-100 rounded-xl p-4 text-left hover:border-zinc-200 hover:shadow-sm transition-all"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-[#111110] flex items-center justify-center flex-shrink-0">
-                    <span className="text-[#c8a96e] font-bold text-sm">{c.name[0]?.toUpperCase()}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                    {c.is_employer && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-medium">🏢</span>}
-                    {c.is_partner && <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 font-medium">🤝</span>}
-                    {onboardingDone ? (
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-green-100 text-[#0d9e75] font-medium">OK</span>
-                    ) : onboardingSent ? (
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-[#d97706] font-medium">Attente</span>
-                    ) : null}
-                  </div>
-                </div>
-                <p className="font-semibold text-sm text-[#1a1918] mb-0.5">{c.name}</p>
-                <p className="text-xs text-zinc-400">{[c.type ?? c.company_type, c.city].filter(Boolean).join(' · ')}</p>
-                <div className="flex gap-3 mt-3 pt-3 border-t border-zinc-50 text-xs text-zinc-500 flex-wrap">
-                  <span className={openJobs > 0 ? 'text-[#c8a96e] font-medium' : ''}>{openJobs} job{openJobs !== 1 ? 's' : ''} ouvert{openJobs !== 1 ? 's' : ''}</span>
-                  {totalJobs > openJobs && <span>{totalJobs - openJobs} autre{(totalJobs - openJobs) > 1 ? 's' : ''}</span>}
-                  {activeInterns > 0 && <span className="text-[#0d9e75] font-medium">{activeInterns} stagiaire{activeInterns > 1 ? 's' : ''} actif{activeInterns > 1 ? 's' : ''}</span>}
-                </div>
-              </button>
-            )
-          })}
+        <div className="bg-white border border-zinc-100 rounded-2xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-zinc-50 border-b border-zinc-100">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wider">Entreprise</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wider hidden sm:table-cell">Ville</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wider">Types</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wider hidden md:table-cell">Jobs</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-zinc-400 uppercase tracking-wider hidden md:table-cell">Infos</th>
+                <th className="px-4 py-3" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-50">
+              {filtered.map(c => {
+                const openJobs = (c.jobs ?? []).filter(j => j.status === 'open').length
+                const onboardingDone = !!c.onboarding_completed_at
+                return (
+                  <tr key={c.id}
+                    onClick={() => router.push(`/${locale as string}/companies/${c.id}`)}
+                    className="hover:bg-zinc-50/70 cursor-pointer transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        {c.logo_url ? (
+                          <img src={c.logo_url} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display='none' }} />
+                        ) : (
+                          <div className="w-8 h-8 rounded-lg bg-[#111110] flex items-center justify-center flex-shrink-0">
+                            <span className="text-[#c8a96e] font-bold text-xs">{c.name[0]?.toUpperCase()}</span>
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-semibold text-[#1a1918]">{c.name}</p>
+                          <p className="text-xs text-zinc-400">{c.legal_type ?? c.company_type ?? c.type ?? ''}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-zinc-500 text-xs hidden sm:table-cell">{c.internship_city ?? c.city ?? '—'}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1 flex-wrap">
+                        {c.is_employer && <span className="text-[10px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">🏢 Employeur</span>}
+                        {c.is_partner && <span className="text-[10px] bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded-full font-medium">🤝 Partenaire</span>}
+                        {c.is_supplier && <span className="text-[10px] bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded-full font-medium">📦 Fournisseur</span>}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center hidden md:table-cell">
+                      {openJobs > 0 ? (
+                        <span className="text-xs font-medium text-[#c8a96e]">{openJobs} ouvert{openJobs > 1 ? 's' : ''}</span>
+                      ) : (
+                        <span className="text-xs text-zinc-300">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center hidden md:table-cell">
+                      {onboardingDone ? (
+                        <span className="text-xs bg-green-50 text-[#0d9e75] px-2 py-0.5 rounded-full">✅ Validé</span>
+                      ) : c.info_validated_by_contact ? (
+                        <span className="text-xs bg-green-50 text-[#0d9e75] px-2 py-0.5 rounded-full">✅ Validé</span>
+                      ) : (
+                        <span className="text-xs text-zinc-300">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className="text-zinc-300 text-sm">→</span>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
       )}
 

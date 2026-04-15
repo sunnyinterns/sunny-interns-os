@@ -19,15 +19,17 @@ interface Contact {
 
 const TYPE_LABELS: Record<string, string> = {
   employer: 'Employeur',
-  promo_partner: 'Partenaire promo',
-  visa_agent: 'Agent visa',
+  partner: 'Partenaire',
+  supplier: 'Fournisseur',
   school_contact: 'École',
+  other: 'Autre',
 }
 const TYPE_COLORS: Record<string, string> = {
   employer: 'bg-blue-100 text-blue-700',
-  promo_partner: 'bg-purple-100 text-purple-700',
-  visa_agent: 'bg-amber-100 text-amber-700',
+  partner: 'bg-purple-100 text-purple-700',
+  supplier: 'bg-orange-100 text-orange-700',
   school_contact: 'bg-green-100 text-green-700',
+  other: 'bg-zinc-100 text-zinc-600',
 }
 
 const JOB_STATUS_LABELS: Record<string, string> = {
@@ -156,7 +158,13 @@ export default function ContactsPage() {
   }
 
   const filtered = contacts.filter((c) => {
-    const matchType = filterType === 'all' || c.contact_type === filterType
+    // Le type est hérité de l'entreprise liée ou du contact_type stocké
+    const inferredType = c.companies?.is_supplier ? 'supplier'
+      : c.companies?.is_partner && !c.companies?.is_employer ? 'partner'
+      : c.companies?.is_employer ? 'employer'
+      : c.contact_type === 'school_contact' ? 'school_contact'
+      : 'other'
+    const matchType = filterType === 'all' || inferredType === filterType || c.contact_type === filterType
     const matchCompany = !filterCompany || c.companies?.id === filterCompany
     const q = search.toLowerCase()
     const matchSearch = !q ||
@@ -206,7 +214,7 @@ export default function ContactsPage() {
             {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
           <div className="flex gap-1 bg-zinc-100 rounded-xl p-1">
-            {(['all', 'employer', 'promo_partner', 'visa_agent', 'school_contact'] as const).map((t) => (
+            {(['all', 'employer', 'partner', 'supplier', 'school_contact'] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setFilterType(t)}
@@ -248,7 +256,14 @@ export default function ContactsPage() {
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium text-[#1a1918]">{c.first_name} {c.last_name ?? ''}</p>
                       <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${TYPE_COLORS[c.contact_type] ?? 'bg-zinc-100 text-zinc-600'}`}>
-                        {TYPE_LABELS[c.contact_type] ?? c.contact_type}
+                        {(() => {
+                          const t = c.companies?.is_supplier ? 'supplier'
+                            : c.companies?.is_partner && !c.companies?.is_employer ? 'partner'
+                            : c.companies?.is_employer ? 'employer'
+                            : c.contact_type === 'school_contact' ? 'school_contact'
+                            : c.contact_type ?? 'other'
+                          return TYPE_LABELS[t] ?? t
+                        })()}
                       </span>
                       {!c.is_active && (
                         <span className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-medium">Inactif</span>

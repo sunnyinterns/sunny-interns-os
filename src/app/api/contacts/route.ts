@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     .from('contacts')
     .select(`
       id, first_name, last_name, job_title, email, phone, whatsapp, linkedin_url, gender, company_id,
-      companies!company_id(id, name, description, industry, company_type, location, internship_city, logo_url, website, contact_whatsapp)
+      companies!company_id(id, name, is_employer, is_partner, is_supplier, logo_url, internship_city)
     `)
     .order('first_name')
 
