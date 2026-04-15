@@ -89,7 +89,7 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
       }),
     })
     setUpdatingStatus(false)
-    void load()
+    window.location.reload()
   }
 
   async function saveComment() {
