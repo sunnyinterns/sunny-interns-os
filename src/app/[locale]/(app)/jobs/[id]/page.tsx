@@ -706,64 +706,33 @@ export default function JobDetailPage() {
       </div>
 
       {/* ═══ CONTACT EMPLOYEUR ═══ */}
-      {job.contacts && (
-        <div className="bg-white border border-zinc-100 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-[#1a1918] mb-3">Contact employeur</h2>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium text-[#1a1918]">{job.contacts.first_name} {job.contacts.last_name ?? ''}</p>
-              {job.contacts.job_title && <p className="text-xs text-zinc-500 mt-0.5">{job.contacts.job_title}</p>}
-              <div className="mt-2 space-y-1">
-                {job.contacts.email && (
-                  <a href={`mailto:${job.contacts.email}`} className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-[#c8a96e] transition-colors">
-                    <span className="w-4 text-center">@</span> {job.contacts.email}
-                  </a>
-                )}
-                {job.contacts.whatsapp && (
-                  <a href={`https://wa.me/${job.contacts.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-[#0d9e75] transition-colors">
-                    <span className="w-4 text-center">WA</span> {job.contacts.whatsapp}
-                  </a>
-                )}
+      {(job.contacts || job.companies?.contact_email) && (
+        <section className="bg-white border border-zinc-100 rounded-2xl p-5 mb-4">
+          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Contact employeur</h2>
+          {job.contacts ? (
+            <div className="space-y-2">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full bg-[#c8a96e]/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-[#c8a96e] font-bold text-sm">{(job.contacts.first_name?.[0] ?? '?').toUpperCase()}</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-[#1a1918]">{job.contacts.first_name} {job.contacts.last_name ?? ''}</p>
+                  {job.contacts.job_title && <p className="text-xs text-zinc-400">{job.contacts.job_title}</p>}
+                </div>
               </div>
-              <div className="flex items-center gap-2 mt-2">
-                {job.contacts.email && (
-                  <a href={`mailto:${job.contacts.email}`} className="text-xs px-3 py-1.5 bg-zinc-100 text-zinc-600 rounded-lg hover:bg-zinc-200">
-                    📧 Email
-                  </a>
-                )}
-                {job.contacts.whatsapp && (
-                  <a href={`https://wa.me/${job.contacts.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"
-                    className="text-xs px-3 py-1.5 bg-[#25d366] text-white rounded-lg hover:bg-[#20bd5a]">
-                    WhatsApp
-                  </a>
-                )}
+              <div className="space-y-1.5">
+                {job.contacts.email && <a href={`mailto:${job.contacts.email}`} className="flex items-center gap-2 text-xs text-zinc-600 hover:text-[#c8a96e]"><span className="w-4 text-center text-zinc-400">@</span>{job.contacts.email}</a>}
+                {job.contacts.whatsapp && <a href={`https://wa.me/${job.contacts.whatsapp.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-zinc-600 hover:text-[#0d9e75]"><span className="w-4 text-center text-zinc-400">WA</span>{job.contacts.whatsapp}</a>}
               </div>
+              <Link href={`/${locale}/contacts/${job.contacts.id}`} className="text-xs text-[#c8a96e] hover:underline mt-2 block">Voir fiche contact →</Link>
             </div>
-            <Link href={`/${locale}/contacts/${job.contacts.id}`} className="text-xs px-2 py-1 bg-zinc-100 text-zinc-600 rounded-lg hover:bg-zinc-200 transition-colors flex-shrink-0">
-              Voir fiche
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* Fallback: contact depuis companies */}
-      {!job.contacts && job.companies?.contact_email && (
-        <div className="bg-white border border-zinc-100 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-[#1a1918] mb-3">Contact employeur</h2>
-          <p className="text-sm font-medium">{job.companies.contact_name ?? ''}</p>
-          <div className="mt-2 space-y-1">
-            {job.companies.contact_email && (
-              <a href={`mailto:${job.companies.contact_email}`} className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-[#c8a96e] transition-colors">
-                <span className="w-4 text-center">@</span> {job.companies.contact_email}
-              </a>
-            )}
-            {(job.companies.contact_whatsapp || job.companies.whatsapp_number) && (
-              <a href={`https://wa.me/${(job.companies.contact_whatsapp ?? job.companies.whatsapp_number ?? '').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-[#0d9e75] transition-colors">
-                <span className="w-4 text-center">WA</span> {job.companies.contact_whatsapp ?? job.companies.whatsapp_number}
-              </a>
-            )}
-          </div>
-        </div>
+          ) : (
+            <div className="space-y-1.5">
+              <p className="text-sm font-medium text-[#1a1918]">{job.companies?.contact_name ?? job.companies?.name}</p>
+              {job.companies?.contact_email && <a href={`mailto:${job.companies.contact_email}`} className="flex items-center gap-2 text-xs text-zinc-600 hover:text-[#c8a96e]"><span className="w-4 text-center text-zinc-400">@</span>{job.companies.contact_email}</a>}
+            </div>
+          )}
+        </section>
       )}
     </div>
   )
