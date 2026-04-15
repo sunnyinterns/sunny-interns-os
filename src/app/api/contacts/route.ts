@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     .from('contacts')
     .select(`
       id, first_name, last_name, job_title, email, phone, whatsapp, linkedin_url, gender, company_id,
-      companies(id, name, description, industry, company_type, location, internship_city, logo_url, website, contact_whatsapp)
+      companies!company_id(id, name, description, industry, company_type, location, internship_city, logo_url, website, contact_whatsapp)
     `)
     .order('first_name')
 
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   const { data, error } = await supabase
     .from('contacts')
     .insert(body)
-    .select('*, companies(id, name)')
+    .select('*, companies!company_id(id, name)')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

@@ -15,7 +15,7 @@ export async function GET(
       .from('companies')
       .select(`
         *,
-        contacts(id, first_name, last_name, job_title, email, whatsapp, phone, linkedin_url, gender),
+        contacts!company_id(id, first_name, last_name, job_title, email, whatsapp, phone, linkedin_url, gender),
         jobs(id, title, public_title, status, location, created_at)
       `)
       .eq('id', id)

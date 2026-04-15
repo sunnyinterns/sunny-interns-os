@@ -11,7 +11,7 @@ export async function GET(
   const { id } = await params
   const { data, error } = await supabase
     .from('contacts')
-    .select('*, companies(id, name), jobs(id, title, status)')
+    .select('*, companies!company_id(id, name), jobs(id, title, status)')
     .eq('id', id)
     .single()
   if (error) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -31,7 +31,7 @@ export async function PATCH(
     .from('contacts')
     .update(body)
     .eq('id', id)
-    .select('*, companies(id, name)')
+    .select('*, companies!company_id(id, name)')
     .single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)
