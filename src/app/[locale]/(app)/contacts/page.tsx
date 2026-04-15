@@ -46,7 +46,7 @@ export default function ContactsPage() {
   const router = useRouter()
   const locale = typeof params?.locale === 'string' ? params.locale : 'fr'
   const [contacts, setContacts] = useState<Contact[]>([])
-  const [companies, setCompanies] = useState<{ id: string; name: string; logo_url?: string | null; internship_city?: string | null; legal_type?: string | null; company_type?: string | null }[]>([])
+  const [companies, setCompanies] = useState<{ id: string; name: string; logo_url?: string | null; internship_city?: string | null; legal_type?: string | null; company_type?: string | null; is_employer?: boolean | null; is_partner?: boolean | null; is_supplier?: boolean | null }[]>([])
   const [loading, setLoading] = useState(true)
   const [filterType, setFilterType] = useState<string>('all')
   const [filterCompany, setFilterCompany] = useState('')

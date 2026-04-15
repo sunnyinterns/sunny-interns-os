@@ -26,6 +26,7 @@ interface Company {
   partner_deal?: string | null
   partner_visible_from?: string | null
   onboarding_form_sent_at?: string | null
+  info_validated_by_contact?: boolean | null
   onboarding_completed_at?: string | null
   jobs?: Job[]
   contacts?: { id: string }[]
