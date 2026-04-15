@@ -1,6 +1,16 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
+const ALLOWED = [
+  'title', 'public_title', 'description', 'missions', 'tools_required',
+  'required_level', 'required_languages', 'wished_duration_months', 'location',
+  'status', 'contact_id', 'company_id', 'profile_sought', 'is_recurring', 'wished_start_date',
+  'job_private_name', 'public_description', 'department', 'remote_ok', 'remote_work',
+  'wished_end_date', 'notes_internal', 'is_active', 'job_department_id', 'max_candidates',
+  'compensation_type', 'compensation_amount', 'skills_required', 'actual_end_date',
+  'company_type', 'background_image_url', 'parent_job_id',
+]
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -54,23 +64,16 @@ export async function PATCH(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  try {
-    const body = await request.json() as Record<string, unknown>
-    const { data, error } = await supabase
-      .from('jobs')
-      .update({ ...body, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single()
-    if (error) throw error
-    return NextResponse.json(data)
-  } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
-  }
+  const body = await request.json() as Record<string, unknown>
+  const update: Record<string, unknown> = { updated_at: new Date().toISOString() }
+  for (const k of ALLOWED) if (k in body) update[k] = body[k]
+  const { data, error } = await supabase.from('jobs').update(update).eq('id', id).select().single()
+  if (error) return NextResponse.json({ error: JSON.stringify(error) }, { status: 500 })
+  return NextResponse.json(data)
 }
 
 export async function DELETE(
-  _request: Request,
+  _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createClient()
@@ -78,11 +81,6 @@ export async function DELETE(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  try {
-    const { error } = await supabase.from('jobs').delete().eq('id', id)
-    if (error) throw error
-    return NextResponse.json({ success: true })
-  } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
-  }
+  await supabase.from('jobs').update({ status: 'archived' }).eq('id', id)
+  return NextResponse.json({ success: true })
 }
