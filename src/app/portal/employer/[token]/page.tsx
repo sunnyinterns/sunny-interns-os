@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import { SignaturePad } from '@/components/portal/SignaturePad'
 
 type Company = {
   id: string
@@ -17,7 +18,15 @@ type Company = {
 }
 type Contact = { first_name: string | null; last_name: string | null; job_title: string | null; email: string | null }
 type Job = { id: string; public_title: string | null; title: string | null; wished_duration_months: number | null; location: string | null; description: string | null }
-type Data = { access: { company_info_validated: boolean | null; companies: Company; contacts: Contact | null }; jobs: Job[] }
+type ContractData = {
+  sponsor_contract_signed_at?: string | null
+  sponsor_contract_signed_by?: string | null
+  sponsor_contract_signature_data?: string | null
+}
+type Data = {
+  access: { company_info_validated: boolean | null; companies: Company; contacts: Contact | null } & ContractData
+  jobs: Job[]
+}
 
 const inp = 'w-full px-3 py-2.5 border border-zinc-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e]'
 
@@ -29,14 +38,32 @@ export default function EmployerPortal() {
   const [form, setForm] = useState<Partial<Company>>({})
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [tab, setTab] = useState<'infos' | 'offres'>('infos')
+  const [tab, setTab] = useState<'infos' | 'contrat' | 'offres'>('infos')
+
+  // Contrat state
+  const [contractSigned, setContractSigned] = useState(false)
+  const [contractSignedAt, setContractSignedAt] = useState<string | null>(null)
+  const [contractSignedBy, setContractSignedBy] = useState<string | null>(null)
+  const [contractSignatureData, setContractSignatureData] = useState<string | null>(null)
+  const [contractCorrections, setContractCorrections] = useState<Partial<Company>>({})
+  const [signingContract, setSigningContract] = useState(false)
+  const [contractError, setContractError] = useState<string | null>(null)
 
   useEffect(() => {
     fetch(`/api/portal/employer/${token}`)
       .then(r => r.json())
       .then((d: Data & { error?: string }) => {
         if (d.error) { setError(d.error); setLoading(false); return }
-        setData(d); setForm({ ...d.access.companies }); setLoading(false)
+        setData(d)
+        setForm({ ...d.access.companies })
+        setContractCorrections({ name: d.access.companies.name, nib: d.access.companies.nib ?? '', npwp: d.access.companies.npwp ?? '', siret: d.access.companies.siret ?? '', address_street: d.access.companies.address_street ?? '' })
+        if (d.access.sponsor_contract_signed_at) {
+          setContractSigned(true)
+          setContractSignedAt(d.access.sponsor_contract_signed_at)
+          setContractSignedBy(d.access.sponsor_contract_signed_by ?? null)
+          setContractSignatureData(d.access.sponsor_contract_signature_data ?? null)
+        }
+        setLoading(false)
       })
       .catch(() => { setError('Erreur réseau'); setLoading(false) })
   }, [token])
@@ -50,6 +77,33 @@ export default function EmployerPortal() {
     })
     if (r.ok) { setSaved(true); setTimeout(() => setSaved(false), 4000) }
     setSaving(false)
+  }
+
+  async function handleSignContract(signatureData: string) {
+    setSigningContract(true)
+    setContractError(null)
+    try {
+      const r = await fetch(`/api/portal/employer/${token}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'sign_contract',
+          signature_data: signatureData,
+          company_corrections: contractCorrections,
+        }),
+      })
+      if (!r.ok) throw new Error('Erreur lors de la signature')
+      const ct = data?.access.contacts
+      const signedBy = [ct?.first_name, ct?.last_name].filter(Boolean).join(' ') || 'Inconnu'
+      setContractSigned(true)
+      setContractSignedAt(new Date().toISOString())
+      setContractSignedBy(signedBy)
+      setContractSignatureData(signatureData)
+    } catch (err) {
+      setContractError(err instanceof Error ? err.message : 'Erreur')
+    } finally {
+      setSigningContract(false)
+    }
   }
 
   if (loading) return (
@@ -85,18 +139,23 @@ export default function EmployerPortal() {
               <p className="text-xs text-zinc-400">Espace partenaire</p>
             </div>
           </div>
-          {validated && (
-            <span className="text-xs bg-green-50 text-[#0d9e75] border border-green-200 px-2.5 py-1 rounded-full">✅ Validé</span>
-          )}
+          <div className="flex items-center gap-2">
+            {contractSigned && (
+              <span className="text-xs bg-green-50 text-[#0d9e75] border border-green-200 px-2.5 py-1 rounded-full">📝 Contrat signé</span>
+            )}
+            {validated && (
+              <span className="text-xs bg-green-50 text-[#0d9e75] border border-green-200 px-2.5 py-1 rounded-full">✅ Validé</span>
+            )}
+          </div>
         </div>
         <div className="max-w-2xl mx-auto px-4 flex border-t border-zinc-50">
-          {(['infos', 'offres'] as const).map(t => (
+          {(['infos', 'contrat', 'offres'] as const).map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${tab === t ? 'border-[#c8a96e] text-[#c8a96e]' : 'border-transparent text-zinc-500'}`}
             >
-              {t === 'infos' ? `Informations${validated ? ' ✅' : ''}` : `Offres (${data.jobs.length})`}
+              {t === 'infos' ? `Informations${validated ? ' ✅' : ''}` : t === 'contrat' ? `Contrat${contractSigned ? ' ✅' : ''}` : `Offres (${data.jobs.length})`}
             </button>
           ))}
         </div>
@@ -178,6 +237,100 @@ export default function EmployerPortal() {
             </button>
             <p className="text-center text-xs text-zinc-400 pb-2">En soumettant, vous confirmez l&apos;exactitude des informations.</p>
           </form>
+        )}
+
+        {tab === 'contrat' && (
+          <div className="space-y-4">
+            {contractSigned ? (
+              <div className="bg-white border border-green-200 rounded-2xl p-6 text-center">
+                <p className="text-4xl mb-3">✅</p>
+                <h2 className="text-lg font-bold text-[#1a1918] mb-1">Contrat Sponsor signé</h2>
+                {contractSignedAt && (
+                  <p className="text-sm text-zinc-500 mb-1">
+                    Signé le {new Date(contractSignedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    {contractSignedBy ? ` par ${contractSignedBy}` : ''}
+                  </p>
+                )}
+                {contractSignatureData && (
+                  <div className="mt-4 flex flex-col items-center gap-2">
+                    <p className="text-xs text-zinc-400">Signature :</p>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={contractSignatureData} alt="signature" className="max-h-16 max-w-[200px] object-contain border border-zinc-200 rounded-lg p-2 bg-white" />
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                {/* Texte du contrat */}
+                <div className="bg-white border border-zinc-100 rounded-2xl p-5">
+                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-4">Contrat Sponsor — Sunny Interns</p>
+                  <div className="text-sm text-zinc-700 leading-relaxed space-y-3">
+                    <p>Entre <strong>Bali Interns</strong> (ci-après &quot;Sunny Interns&quot;) et <strong>{co.name}</strong> (ci-après &quot;l&apos;Entreprise&quot;),</p>
+                    <p>Il est convenu ce qui suit :</p>
+                    <ul className="list-disc pl-5 space-y-2">
+                      <li>L&apos;Entreprise accepte d&apos;accueillir un stagiaire mis à disposition par Sunny Interns pour une durée convenue.</li>
+                      <li>L&apos;Entreprise s&apos;engage à fournir un encadrement professionnel et des missions en adéquation avec le profil du stagiaire.</li>
+                      <li>L&apos;Entreprise s&apos;engage à informer Sunny Interns de toute difficulté ou incident dans les 48 heures.</li>
+                      <li>Sunny Interns assure le suivi du stagiaire tout au long du stage et reste l&apos;interlocuteur principal.</li>
+                      <li>Les conditions de rémunération, si applicable, sont définies dans la convention de stage.</li>
+                    </ul>
+                    <p className="text-xs text-zinc-400 mt-4">En signant ce contrat, l&apos;Entreprise confirme avoir lu et accepté les termes ci-dessus.</p>
+                  </div>
+                </div>
+
+                {/* Corrections entreprise */}
+                <div className="bg-white border border-zinc-100 rounded-2xl p-5 space-y-3">
+                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Vérifier les informations entreprise</p>
+                  <p className="text-xs text-zinc-500">Ces informations apparaîtront dans le contrat. Corrigez si nécessaire.</p>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1">Nom de la société</label>
+                    <input
+                      value={contractCorrections.name ?? ''}
+                      onChange={e => setContractCorrections(f => ({ ...f, name: e.target.value }))}
+                      className={inp}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1">Adresse</label>
+                    <input
+                      value={contractCorrections.address_street ?? ''}
+                      onChange={e => setContractCorrections(f => ({ ...f, address_street: e.target.value }))}
+                      className={inp}
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-600 mb-1">NIB</label>
+                      <input value={contractCorrections.nib ?? ''} onChange={e => setContractCorrections(f => ({ ...f, nib: e.target.value }))} className={inp} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-600 mb-1">NPWP</label>
+                      <input value={contractCorrections.npwp ?? ''} onChange={e => setContractCorrections(f => ({ ...f, npwp: e.target.value }))} className={inp} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-600 mb-1">SIRET</label>
+                      <input value={contractCorrections.siret ?? ''} onChange={e => setContractCorrections(f => ({ ...f, siret: e.target.value }))} className={inp} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Signature */}
+                <div className="bg-white border border-zinc-100 rounded-2xl p-5">
+                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-4">Signature du contrat</p>
+                  {contractError && <p className="text-red-600 text-sm mb-3">{contractError}</p>}
+                  {signingContract ? (
+                    <div className="text-center py-6 text-zinc-500 text-sm">Signature en cours…</div>
+                  ) : (
+                    <SignaturePad
+                      onSign={(data) => { void handleSignContract(data) }}
+                      label={`Signature — ${ct?.first_name ?? ''} ${ct?.last_name ?? ''}`}
+                      disabled={signingContract}
+                    />
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         )}
 
         {tab === 'offres' && (
