@@ -27,15 +27,17 @@ const SECTIONS: Record<string, { title: string; items: SectionItem[] }> = {
       { href: 'company-types', icon: '🏛️', label: 'Types de sociétés', desc: 'PT, CV, SARL, SAS... infos légales' },
       { href: 'packages', icon: '📦', label: 'Packages', desc: 'Packages Standard, Express, Visa Only' },
       { href: 'visa-types', icon: '🛂', label: 'Types de visa', desc: 'VOA, KITAS, visa touristique' },
-      { href: 'visa-agents', icon: '🏢', label: 'Agents visa', desc: 'FAZZA et autres agents partenaires' },
+      { href: 'visa-agents', icon: '🏢', label: 'Agents', desc: 'FAZZA et autres agents partenaires' },
       { href: 'sponsors', icon: '🏛️', label: 'Sponsors PT', desc: 'PT locales pour parrainer les PT PMA' },
       { href: 'templates', icon: '📄', label: 'Templates', desc: 'Modèles emails et templates de jobs' },
     ],
   },
-  communication: {
-    title: '📣 Communication',
+  documents: {
+    title: '📋 Documents & Marque',
     items: [
-      { href: 'email-templates', icon: '✉️', label: 'Templates emails', desc: 'Éditeur WYSIWYG des emails automatiques' },
+      { href: 'contact-templates', icon: '📄', label: 'Templates documents', desc: 'Lettre engagement, Agreement Letter, Contrat Sponsor' },
+      { href: 'email-templates', icon: '✉️', label: 'Templates emails', desc: 'Emails automatiques organisés par étape' },
+      { href: 'media-kit', icon: '🎨', label: 'Media Kit', desc: 'Logos Bali Interns pour portails, factures, emails' },
     ],
   },
   partenaires: {
@@ -47,12 +49,10 @@ const SECTIONS: Record<string, { title: string; items: SectionItem[] }> = {
       { href: 'transport', icon: '🚗', label: 'Chauffeurs', desc: 'Sociétés de chauffeur + message WA préformaté' },
     ],
   },
-
   equipe: {
     title: '👥 Équipe & Accès',
     items: [
       { href: 'users', icon: '👤', label: 'Utilisateurs', desc: 'Gestion des accès et rôles équipe' },
-      { href: 'notifications', icon: '🔔', label: 'Notifications', desc: 'Emails automatiques et alertes' },
     ],
   },
 }
@@ -184,7 +184,7 @@ export default function SettingsPage() {
       </div>
 
       <SettingsSection title={SECTIONS.administratif.title} items={SECTIONS.administratif.items} locale={locale} />
-      <SettingsSection title={SECTIONS.communication.title} items={SECTIONS.communication.items} locale={locale} />
+      <SettingsSection title={SECTIONS.documents.title} items={SECTIONS.documents.items} locale={locale} />
       <SettingsSection title={SECTIONS.partenaires.title} items={SECTIONS.partenaires.items} locale={locale} />
       <SettingsSection title={SECTIONS.equipe.title} items={SECTIONS.equipe.items} locale={locale} />
     </div>
