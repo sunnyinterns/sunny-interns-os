@@ -379,13 +379,15 @@ export default function ContactsPage() {
               </div>
             )}
 
-            {/* Créer un job → page Jobs */
+            {/* Créer un job → page Jobs */}
             <Link
               href={`/${locale}/jobs?contact_id=${selectedContact.id}`}
               className="mt-1 w-full py-2.5 border-2 border-dashed border-zinc-200 rounded-xl text-xs text-zinc-400 hover:border-[#c8a96e] hover:text-[#c8a96e] transition-colors flex items-center justify-center"
             >
               + Créer une offre pour ce contact →
             </Link>
+          </div>
+        </div>
       )}
 
       {/* Modal créer contact */}
