@@ -177,6 +177,8 @@ export default function CompanyDetailPage() {
   const [showContactForm, setShowContactForm] = useState(false)
   const [sendingForm, setSendingForm] = useState<string | null>(null)
   const [sentForms, setSentForms] = useState<Set<string>>(new Set())
+  const [sendingPortal, setSendingPortal] = useState<string | null>(null)
+  const [sentPortals, setSentPortals] = useState<Set<string>>(new Set())
   const [sponsors, setSponsors] = useState<{id:string;company_name:string;city:string|null}[]>([])
   const [showLinkContact, setShowLinkContact] = useState(false)
   const [allContacts, setAllContacts] = useState<Array<{id:string;first_name:string|null;last_name:string|null;job_title:string|null;email:string|null;company_id:string|null}>>([])
@@ -339,6 +341,20 @@ export default function CompanyDetailPage() {
     if (r.ok) setSentForms(prev => new Set([...prev, contactId]))
     else alert('Erreur envoi — vérifiez que le contact a un email')
     setSendingForm(null)
+  }
+
+  async function sendEmployerPortal(contactId: string) {
+    setSendingPortal(contactId)
+    try {
+      const r = await fetch(`/api/companies/${companyId}/send-employer-portal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contact_id: contactId }),
+      })
+      if (r.ok) setSentPortals(prev => new Set([...prev, contactId]))
+      else { const d = await r.json() as { error?: string }; alert(d.error ?? 'Erreur envoi') }
+    } catch { alert('Erreur réseau') }
+    setSendingPortal(null)
   }
 
   async function handleAddContact(e: React.FormEvent) {
@@ -881,6 +897,18 @@ export default function CompanyDetailPage() {
                   : contact.email
                   ? '📧 Formulaire'
                   : 'Email requis'}
+              </button>
+              <button
+                type="button"
+                disabled={!contact.email || sendingPortal === contact.id}
+                onClick={e => { e.preventDefault(); void sendEmployerPortal(contact.id) }}
+                className={[
+                  'text-[10px] px-2 py-1 rounded-lg border transition-colors flex-shrink-0',
+                  sentPortals.has(contact.id) ? 'bg-purple-50 text-purple-600 border-purple-200' :
+                  contact.email ? 'bg-zinc-50 text-zinc-500 border-zinc-200 hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200' :
+                  'bg-zinc-50 text-zinc-300 border-zinc-100 cursor-not-allowed opacity-50',
+                ].join(' ')}>
+                {sentPortals.has(contact.id) ? '🏢 Envoyé' : sendingPortal === contact.id ? '…' : '🏢 Portail'}
               </button>
               <span className="text-zinc-300 ml-1">→</span>
             </Link>
