@@ -379,40 +379,13 @@ export default function ContactsPage() {
               </div>
             )}
 
-            {/* Créer un job pour ce contact */}
-            <div className="bg-zinc-50 rounded-xl p-3 space-y-2">
-              <p className="text-xs font-medium text-zinc-600">Créer un job pour ce contact</p>
-              <input
-                placeholder="Titre du poste *"
-                value={jobForm.title}
-                onChange={e => setJobForm(p => ({...p, title: e.target.value}))}
-                className="w-full px-2 py-1.5 text-sm border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#c8a96e]"
-              />
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="date"
-                  value={jobForm.wished_start_date}
-                  onChange={e => setJobForm(p => ({...p, wished_start_date: e.target.value}))}
-                  className="px-2 py-1.5 text-xs border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#c8a96e]"
-                />
-                <input
-                  type="number"
-                  placeholder="Durée (mois)"
-                  value={jobForm.wished_duration_months}
-                  onChange={e => setJobForm(p => ({...p, wished_duration_months: e.target.value}))}
-                  className="px-2 py-1.5 text-xs border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#c8a96e]"
-                />
-              </div>
-              <button
-                onClick={() => void createJobForContact()}
-                disabled={creatingJob || !jobForm.title}
-                className="w-full py-2 text-xs font-medium bg-[#c8a96e] text-white rounded-lg hover:bg-[#b8945a] disabled:opacity-50 transition-colors"
-              >
-                {creatingJob ? 'Création…' : 'Créer l\'offre'}
-              </button>
-            </div>
-          </div>
-        </div>
+            {/* Créer un job → page Jobs */
+            <Link
+              href={`/${locale}/jobs?contact_id=${selectedContact.id}`}
+              className="mt-1 w-full py-2.5 border-2 border-dashed border-zinc-200 rounded-xl text-xs text-zinc-400 hover:border-[#c8a96e] hover:text-[#c8a96e] transition-colors flex items-center justify-center"
+            >
+              + Créer une offre pour ce contact →
+            </Link>
       )}
 
       {/* Modal créer contact */}

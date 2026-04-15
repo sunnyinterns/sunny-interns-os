@@ -1093,7 +1093,7 @@ export default function CompanyDetailPage() {
           <div className="bg-white border border-zinc-100 rounded-xl p-4">
             <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Localisation</h3>
             <dl className="text-sm space-y-1.5">
-              <div className="flex justify-between gap-3"><dt className="text-zinc-500">Ville du stage</dt><dd className="text-[#1a1918] font-medium">{company.internship_city ?? company.city ?? '—'}</dd></div>
+              {company.is_employer && <div className="flex justify-between gap-3"><dt className="text-zinc-500">Ville du stage</dt><dd className="text-[#1a1918] font-medium">{company.internship_city ?? company.city ?? '—'}</dd></div>}
               <div className="flex justify-between gap-3"><dt className="text-zinc-500">Pays immat.</dt><dd className="text-[#1a1918]">{company.registration_country ?? company.country ?? '—'}</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-zinc-500">Adresse</dt><dd className="text-[#1a1918] text-right max-w-[60%] text-xs">{[company.address_street, company.address_postal_code, company.address_city].filter(Boolean).join(', ') || company.legal_address || '—'}</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-zinc-500">Google Maps</dt><dd>{company.google_maps_url ? (<a href={company.google_maps_url} target="_blank" rel="noopener noreferrer" className="text-[#c8a96e] hover:underline text-xs">Voir →</a>) : <span className="text-zinc-300">—</span>}</dd></div>
