@@ -79,6 +79,7 @@ interface Company {
   is_employer?: boolean | null
   is_partner?: boolean | null
   is_supplier?: boolean | null
+  sponsor_company_id?: string | null
   info_validated_by_contact?: boolean | null
   info_validated_at?: string | null
   info_validated_contact_id?: string | null
@@ -138,6 +139,20 @@ export default function CompanyDetailPage() {
   const [editLinkedin, setEditLinkedin] = useState('')
   const [editFacebook, setEditFacebook] = useState('')
   const [editNotes, setEditNotes] = useState('')
+  // États manquants
+  const [editDescription, setEditDescription] = useState('')
+  const [editSize, setEditSize] = useState('')
+  const [editIsEmployer, setEditIsEmployer] = useState(false)
+  const [editIsPartner, setEditIsPartner] = useState(false)
+  const [editIsSupplier, setEditIsSupplier] = useState(false)
+  const [editAddressStreet, setEditAddressStreet] = useState('')
+  const [editAddressPostal, setEditAddressPostal] = useState('')
+  const [editAddressCity, setEditAddressCity] = useState('')
+  const [editSponsorId, setEditSponsorId] = useState('')
+  const [editPartnerTiming, setEditPartnerTiming] = useState('both')
+  const [editPartnerCategory, setEditPartnerCategory] = useState('')
+  const [editPartnerDeal, setEditPartnerDeal] = useState('')
+  const [editPartnerVisible, setEditPartnerVisible] = useState('payment')
   const [cities, setCities] = useState<{id:string;name:string;area:string}[]>([])
   const [companyTypes, setCompanyTypes] = useState<{id:string;code:string;name:string;country:string}[]>([])
 
@@ -201,6 +216,19 @@ export default function CompanyDetailPage() {
         setEditLinkedin(data.linkedin_url ?? '')
         setEditFacebook(data.facebook_url ?? '')
         setEditNotes(data.notes ?? '')
+        setEditDescription(data.description ?? '')
+        setEditSize(data.company_size ?? '')
+        setEditIsEmployer(data.is_employer ?? false)
+        setEditIsPartner(data.is_partner ?? false)
+        setEditIsSupplier(data.is_supplier ?? false)
+        setEditAddressStreet(data.address_street ?? '')
+        setEditAddressPostal(data.address_postal_code ?? '')
+        setEditAddressCity(data.address_city ?? '')
+        setEditSponsorId(data.sponsor_company_id ?? '')
+        setEditPartnerTiming(data.partner_timing ?? 'both')
+        setEditPartnerCategory(data.partner_category ?? '')
+        setEditPartnerDeal(data.partner_deal ?? '')
+        setEditPartnerVisible(data.partner_visible_from ?? 'payment')
       }
     } catch {
       // ignore
@@ -229,7 +257,6 @@ export default function CompanyDetailPage() {
           type: editCompanyType || null,
           internship_city: editInternshipCity || null,
           city: editInternshipCity || null,
-          legal_address: editLegalAddress || null,
           google_maps_url: editGoogleMaps || null,
           registration_country: editRegCountry || null,
           legal_type: editLegalType || null,
@@ -245,6 +272,20 @@ export default function CompanyDetailPage() {
           linkedin_url: editLinkedin || null,
           facebook_url: editFacebook || null,
           notes: editNotes || null,
+          description: editDescription || null,
+          company_size: editSize || null,
+          is_employer: editIsEmployer,
+          is_partner: editIsPartner,
+          is_supplier: editIsSupplier,
+          address_street: editAddressStreet || null,
+          address_postal_code: editAddressPostal || null,
+          address_city: editAddressCity || null,
+          legal_address: [editAddressStreet, editAddressPostal, editAddressCity].filter(Boolean).join(', ') || editLegalAddress || null,
+          sponsor_company_id: editSponsorId || null,
+          partner_timing: editIsPartner ? (editPartnerTiming || 'both') : null,
+          partner_category: editIsPartner ? (editPartnerCategory || null) : null,
+          partner_deal: editIsPartner ? (editPartnerDeal || null) : null,
+          partner_visible_from: editIsPartner ? (editPartnerVisible || 'payment') : null,
         }),
       })
       setEditing(false)
@@ -332,7 +373,7 @@ export default function CompanyDetailPage() {
         return
       }
       if (res.ok) {
-        router.push('/fr/companies')
+        router.push(`/${locale}/companies`)
       }
     } catch {
       // ignore
@@ -365,7 +406,7 @@ export default function CompanyDetailPage() {
     return (
       <div className="p-6 text-center text-zinc-400">
         <p>Entreprise introuvable.</p>
-        <button onClick={() => router.push('/fr/companies')} className="mt-2 text-sm text-[#c8a96e] underline">
+        <button onClick={() => router.push(`/${locale}/companies`)} className="mt-2 text-sm text-[#c8a96e] underline">
           Retour
         </button>
       </div>
@@ -384,7 +425,7 @@ export default function CompanyDetailPage() {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       {/* Back */}
-      <button onClick={() => router.push('/fr/companies')} className="text-sm text-zinc-500 hover:text-[#1a1918] flex items-center gap-1 mb-5 transition-colors">
+      <button onClick={() => router.push(`/${locale}/companies`)} className="text-sm text-zinc-500 hover:text-[#1a1918] flex items-center gap-1 mb-5 transition-colors">
         ← Retour aux entreprises
       </button>
 
@@ -435,6 +476,35 @@ export default function CompanyDetailPage() {
                 </select>
               </div>
             </div>
+            {/* Rôles */}
+            <div className="space-y-2 pt-2">
+              <p className="text-xs font-medium text-zinc-600">Rôles</p>
+              <label className="flex items-center gap-2 cursor-pointer text-sm text-zinc-700">
+                <input type="checkbox" checked={editIsEmployer} onChange={e => setEditIsEmployer(e.target.checked)} className="rounded" />
+                🏢 Employeur — recrute des stagiaires
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer text-sm text-zinc-700">
+                <input type="checkbox" checked={editIsPartner} onChange={e => setEditIsPartner(e.target.checked)} className="rounded" />
+                🤝 Partenaire — offre des deals aux étudiants
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer text-sm text-zinc-700">
+                <input type="checkbox" checked={editIsSupplier} onChange={e => setEditIsSupplier(e.target.checked)} className="rounded" />
+                📦 Fournisseur — suivi comptabilité interne
+              </label>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-zinc-600 mb-1">Taille</label>
+                <select value={editSize} onChange={e => setEditSize(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm bg-white">
+                  <option value="">—</option>
+                  <option>1-5</option><option>6-20</option><option>21-50</option><option>51-200</option><option>200+</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-600 mb-1">Description</label>
+              <textarea value={editDescription} onChange={e => setEditDescription(e.target.value)} rows={2} className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm" placeholder="Activité principale…" />
+            </div>
           </div>
 
           <div className="space-y-3">
@@ -467,8 +537,16 @@ export default function CompanyDetailPage() {
                 </select>
               </div>
               <div className="col-span-2">
-                <label className="block text-xs font-medium text-zinc-600 mb-1">Adresse complète</label>
-                <input type="text" value={editLegalAddress} onChange={(e) => setEditLegalAddress(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm" />
+                <label className="block text-xs font-medium text-zinc-600 mb-1">Adresse (rue, numéro)</label>
+                <input type="text" value={editAddressStreet} onChange={e => setEditAddressStreet(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm" placeholder="Jl. Raya Canggu No. 12…" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-600 mb-1">Code postal</label>
+                <input type="text" value={editAddressPostal} onChange={e => setEditAddressPostal(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-600 mb-1">Ville</label>
+                <input type="text" value={editAddressCity} onChange={e => setEditAddressCity(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm" />
               </div>
               <div className="col-span-2">
                 <label className="block text-xs font-medium text-zinc-600 mb-1">Google Maps URL</label>
@@ -563,8 +641,43 @@ export default function CompanyDetailPage() {
             </div>
           </div>
 
+          {editIsPartner && (
+            <div className="space-y-3">
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">⑤ Partenariat</p>
+              <div>
+                <label className="block text-xs font-medium text-zinc-600 mb-1">Disponible</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {([['pre_arrival',"Avant départ"],['on_site',"Sur l'île"],['both',"Les deux"]] as const).map(([val, lbl]) => (
+                    <button key={val} type="button" onClick={() => setEditPartnerTiming(val)}
+                      className={`py-2 text-xs rounded-lg border transition-colors ${editPartnerTiming === val ? 'bg-[#c8a96e] text-white border-[#c8a96e]' : 'bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300'}`}>
+                      {lbl}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-600 mb-1">Visible depuis</label>
+                <select value={editPartnerVisible} onChange={e => setEditPartnerVisible(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm bg-white">
+                  <option value="payment">Paiement validé (Welcome Kit)</option>
+                  <option value="arrival">Arrivée à Bali (statut Actif)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-600 mb-1">Catégorie</label>
+                <input value={editPartnerCategory} onChange={e => setEditPartnerCategory(e.target.value)} className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm" placeholder="eSIM, Assurance, VPN, Restaurant…" list="edit-partner-cats" />
+                <datalist id="edit-partner-cats">
+                  {['eSIM','Assurance','VPN','Transport','Restaurant','Sport & Wellness','Coworking','Shopping','Banque','Services'].map(c => <option key={c} value={c} />)}
+                </datalist>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-600 mb-1">Offre / Deal <span className="text-amber-600 text-[10px]">🇬🇧 EN</span></label>
+                <textarea value={editPartnerDeal} onChange={e => setEditPartnerDeal(e.target.value)} rows={2} className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm" placeholder="Ex: 15% off with code BALIINTERNS…" />
+              </div>
+            </div>
+          )}
+
           <div className="space-y-3">
-            <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">⑤ Notes internes</p>
+            <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">⑥ Notes internes</p>
             <textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={3} className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm" placeholder="Notes internes non visibles publiquement…" />
           </div>
 
