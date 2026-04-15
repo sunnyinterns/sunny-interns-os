@@ -18,6 +18,8 @@ export async function GET(
   return NextResponse.json(data)
 }
 
+const ALLOWED_PATCH_FIELDS = ['first_name','last_name','job_title','email','whatsapp','phone','nationality','is_primary','linkedin_url','gender','notes','left_company','left_company_at','company_id','temperature','last_contacted_at','linked_job_id']
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -27,9 +29,11 @@ export async function PATCH(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await params
   const body = await request.json() as Record<string, unknown>
+  const u: Record<string, unknown> = {}
+  for (const k of ALLOWED_PATCH_FIELDS) if (k in body) u[k] = body[k]
   const { data, error } = await supabase
     .from('contacts')
-    .update(body)
+    .update(u)
     .eq('id', id)
     .select('*, companies!company_id(id, name)')
     .single()

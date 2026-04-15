@@ -13,6 +13,10 @@ interface Contact {
   email: string | null
   whatsapp: string | null
   contact_type: string
+  temperature?: 'hot' | 'warm' | 'cold' | null
+  last_contacted_at?: string | null
+  linked_job_id?: string | null
+  linked_job?: { id: string; title: string; public_title?: string | null } | null
   companies: {
     id: string
     name: string
@@ -45,6 +49,21 @@ const JOB_STATUS_LABELS: Record<string, string> = {
   staffed: 'Pourvu',
   cancelled: 'Annulé',
   closed: 'Fermé',
+}
+
+function tempBadge(t?: string | null) {
+  if (t === 'hot') return { emoji: '🔥', cls: 'bg-red-50 text-red-500 border-red-100' }
+  if (t === 'cold') return { emoji: '❄️', cls: 'bg-blue-50 text-blue-500 border-blue-100' }
+  return { emoji: '🌡️', cls: 'bg-amber-50 text-amber-600 border-amber-100' }
+}
+function relTime(d?: string | null): string {
+  if (!d) return ''
+  const days = Math.floor((Date.now() - new Date(d).getTime()) / 86400000)
+  if (days === 0) return "Aujourd'hui"
+  if (days === 1) return 'Hier'
+  if (days < 7) return `${days}j`
+  if (days < 30) return `${Math.floor(days / 7)}sem`
+  return `${Math.floor(days / 30)}mois`
 }
 
 const inputCls = 'px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white text-[#1a1918] focus:outline-none focus:ring-2 focus:ring-[#c8a96e] w-full'
@@ -261,7 +280,7 @@ export default function ContactsPage() {
                     <span className="text-[#c8a96e] text-sm font-semibold">{initials(c)}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <p className="text-sm font-medium text-[#1a1918]">{c.first_name} {c.last_name ?? ''}</p>
                       <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${TYPE_COLORS[c.contact_type] ?? 'bg-zinc-100 text-zinc-600'}`}>
                         {(() => {
@@ -273,7 +292,15 @@ export default function ContactsPage() {
                           return TYPE_LABELS[t] ?? t
                         })()}
                       </span>
-
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${tempBadge(c.temperature).cls}`}>{tempBadge(c.temperature).emoji}</span>
+                      {c.last_contacted_at && (
+                        <span className={`text-[10px] ${Math.floor((Date.now() - new Date(c.last_contacted_at).getTime()) / 86400000) > 14 ? 'text-red-500 font-semibold' : 'text-zinc-400'}`}>
+                          🕒 {relTime(c.last_contacted_at)}
+                        </span>
+                      )}
+                      {c.linked_job && (
+                        <span className="text-[10px] text-zinc-400">💼 {c.linked_job.public_title ?? c.linked_job.title}</span>
+                      )}
                     </div>
                     <p className="text-xs text-zinc-500 mt-0.5">
                       {[c.job_title, c.companies?.name].filter(Boolean).join(' · ')}
@@ -304,6 +331,24 @@ export default function ContactsPage() {
               </div>
               <h2 className="text-base font-semibold text-[#1a1918]">{selectedContact.first_name} {selectedContact.last_name ?? ''}</h2>
               <p className="text-xs text-zinc-500">{selectedContact.job_title ?? ''}</p>
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <button
+                  onClick={() => {
+                    const nextTemp = selectedContact.temperature === 'hot' ? 'warm' : selectedContact.temperature === 'warm' ? 'cold' : 'hot'
+                    void patchContact(selectedContact.id, { temperature: nextTemp })
+                  }}
+                  className={`text-xs px-2 py-1 rounded-full border font-medium ${tempBadge(selectedContact.temperature).cls}`}
+                  title="Changer la temperature"
+                >
+                  {tempBadge(selectedContact.temperature).emoji} {selectedContact.temperature ?? 'warm'}
+                </button>
+                <button
+                  onClick={() => void patchContact(selectedContact.id, { last_contacted_at: new Date().toISOString() })}
+                  className="text-xs px-2 py-1 bg-green-50 text-green-600 rounded-lg border border-green-100 hover:bg-green-100 transition-colors"
+                >
+                  📞 Contacté maintenant
+                </button>
+              </div>
               <button
                 onClick={() => router.push(`/${locale}/contacts/${selectedContact.id}`)}
                 className="mt-2 text-xs px-2 py-1 bg-[#c8a96e]/10 text-[#c8a96e] rounded-lg hover:bg-[#c8a96e]/20 transition-colors font-medium"
