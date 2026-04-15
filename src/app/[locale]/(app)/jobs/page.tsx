@@ -392,7 +392,7 @@ export default function JobsPage() {
                     <p className="text-xs text-zinc-500 mt-0.5 truncate">
                       {j.company_name ?? j.companies?.name ?? '—'}{(j.department_name ?? j.department) ? ` • ${j.department_name ?? j.department}` : ''}
                     </p>
-                    {j.contact_name && <p className="text-[10px] text-zinc-400 truncate">👤 {j.contact_name}</p>}
+                    {j.contacts && <p className="text-[10px] text-zinc-400 truncate">👤 {j.contacts.first_name} {j.contacts.last_name ?? ''}</p>}
                   </div>
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
                     <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap" style={{ background: badge.bg, color: badge.color }}>{badge.label}</span>
