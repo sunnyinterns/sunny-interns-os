@@ -15,21 +15,30 @@ interface TransportProvider {
   wa_message_template: string | null
 }
 
-const DEFAULT_TEMPLATE = `Bonjour,
+const DEFAULT_TEMPLATE = `Hello / Halo,
 
-Je suis Charly de Bali Interns.
+I am Charly from Bali Interns / Saya Charly dari Bali Interns.
 
-Nous avons un nouveau stagiaire à récupérer à l'aéroport de Denpasar :
-- Nom : {{intern_name}}
-- Date d'arrivée : {{arrival_date}}
-- Heure d'arrivée : {{arrival_time}}
-- Vol : {{flight_number}} depuis {{departure_city}}
-- Adresse de dépose : {{dropoff_address}}
+We have a new intern to pick up at Ngurah Rai International Airport (DPS):
+Kami memiliki mahasiswa magang baru yang perlu dijemput di Bandara Internasional Ngurah Rai (DPS):
 
-Photo du stagiaire : {{photo_url}}
+• Name / Nama: {{intern_name}}
+• Arrival date / Tanggal tiba: {{arrival_date}}
+• Arrival time / Jam kedatangan: {{arrival_time}}
+• Flight / Penerbangan: {{flight_number}} from / dari {{departure_city}}
+• Drop-off address / Alamat tujuan: {{dropoff_address}}
 
-Merci de confirmer la prise en charge.
-Charly`
+✈️ Flight tracking / Lacak penerbangan:
+{{flight_tracking_url}}
+
+📸 Intern photo / Foto mahasiswa:
+{{photo_url}}
+
+Please confirm you can handle this pickup.
+Mohon konfirmasi kesanggupan penjemputan ini.
+
+Thank you / Terima kasih,
+Charly — Bali Interns`
 
 type EditingProvider = Omit<TransportProvider, 'id'> & { id: string }
 

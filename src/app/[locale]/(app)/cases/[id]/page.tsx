@@ -9,6 +9,7 @@ import { TabProfil } from '@/components/cases/tabs/TabProfil'
 import { TabStaffing } from '@/components/cases/tabs/TabStaffing'
 import { TabHistorique } from '@/components/cases/tabs/TabHistorique'
 import { InternCardDigital } from '@/components/cases/InternCardDigital'
+import { ChauffeurCard } from '@/components/cases/ChauffeurCard'
 
 const CANDIDATE_STATUSES = ['lead', 'rdv_booked', 'qualification_done', 'job_submitted', 'job_retained', 'convention_signed']
 
@@ -107,6 +108,7 @@ export default function CaseDetailPage() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [showStatusModal, setShowStatusModal] = useState(false)
   const [showInternCard, setShowInternCard] = useState(false)
+  const [showChauffeurCard, setShowChauffeurCard] = useState(false)
 
   async function changeStatus(newStatus: string) {
     if (!id) return
@@ -450,13 +452,23 @@ export default function CaseDetailPage() {
               )}
               {/* WA Chauffeur — visible quand infos vol présentes */}
               {(caseData.interns?.flight_number || caseData.flight_arrival_time_local) && (
-                <button
-                  onClick={() => { void openDriverWhatsApp() }}
-                  disabled={openingDriverWA}
-                  className="text-xs px-3 py-1.5 rounded-lg bg-[#25d366] text-white font-semibold hover:bg-[#1da851] transition-colors disabled:opacity-60"
-                >
-                  🚗 Chauffeur WA
-                </button>
+                <>
+                  <button
+                    onClick={() => { void openDriverWhatsApp() }}
+                    disabled={openingDriverWA}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-[#25d366] text-white font-semibold hover:bg-[#1da851] transition-colors disabled:opacity-60"
+                  >
+                    🚗 Chauffeur WA
+                  </button>
+                  {caseData.flight_number && caseData.flight_arrival_time_local && (
+                    <button
+                      onClick={() => setShowChauffeurCard(true)}
+                      className="text-xs px-3 py-1.5 border border-zinc-200 rounded-lg text-zinc-600 hover:bg-zinc-50 transition-colors"
+                    >
+                      🖼️ Carte
+                    </button>
+                  )}
+                </>
               )}
               <button
                 onClick={() => setShowEditModal(true)}
@@ -792,6 +804,25 @@ export default function CaseDetailPage() {
               ))}
             </div>
             <button onClick={() => setShowStatusModal(false)} className="mt-4 w-full py-2 text-sm text-zinc-400">Annuler</button>
+          </div>
+        </div>
+      )}
+
+      {showChauffeurCard && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowChauffeurCard(false)}>
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
+            <h3 className="font-bold text-[#1a1918] mb-4 text-sm">Carte chauffeur</h3>
+            <ChauffeurCard
+              internName={`${(caseData.interns?.first_name as string) ?? ''} ${(caseData.interns?.last_name as string) ?? ''}`.trim()}
+              arrivalDate={caseData.flight_arrival_time_local ? new Date(caseData.flight_arrival_time_local as string).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '?'}
+              arrivalTime={caseData.flight_arrival_time_local ? new Date(caseData.flight_arrival_time_local as string).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '?'}
+              flightNumber={(caseData.flight_number as string) ?? '?'}
+              departureCity={(caseData.interns?.flight_departure_city as string) ?? (caseData.flight_last_stopover as string) ?? '?'}
+              dropoffAddress={(caseData.dropoff_address as string) ?? '?'}
+              photoUrl={(caseData.interns?.photo_id_url as string | null) ?? (caseData.interns?.avatar_url as string | null) ?? null}
+              logoUrl={null}
+              onClose={() => setShowChauffeurCard(false)}
+            />
           </div>
         </div>
       )}
