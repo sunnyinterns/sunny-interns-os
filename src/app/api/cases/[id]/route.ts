@@ -156,6 +156,30 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       })
     }
 
+    // Auto-triggers quand convention signée
+    if (body.status === 'convention_signed' && existingCase && (existingCase as Record<string, unknown>).status !== 'convention_signed') {
+      try {
+        await supabase.from('activity_feed').insert({
+          case_id: id,
+          type: 'status_change',
+          title: 'Convention signée → Client',
+          description: 'Le dossier est maintenant en statut Client. Paiement et visa débloqués.',
+        })
+      } catch { /* non-blocking */ }
+
+      // Envoyer contrat sponsor à l'employeur si pas encore fait
+      try {
+        const { data: caseForContract } = await supabase.from('cases').select('sponsor_contract_sent_at, employer_contact_id').eq('id', id).single()
+        if (caseForContract && !caseForContract.sponsor_contract_sent_at) {
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+          void fetch(`${appUrl}/api/cases/${id}/send-sponsor-contract`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${process.env.INTERNAL_API_KEY ?? 'internal'}` },
+          }).catch(() => null)
+        }
+      } catch { /* non-blocking */ }
+    }
+
     return NextResponse.json(data)
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })

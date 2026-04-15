@@ -142,7 +142,9 @@ function SortableJobCard({
 
   return (
     <>
-    <div ref={setNodeRef} style={style} className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-zinc-100 hover:border-zinc-200 hover:shadow-sm transition-all" {...attributes}>
+    <div ref={setNodeRef} style={style} className="bg-white rounded-xl border border-zinc-100 hover:border-zinc-200 hover:shadow-sm transition-all overflow-hidden" {...attributes}>
+      {/* Main row */}
+      <div className="flex items-center gap-3 px-4 py-3">
       {/* Drag handle */}
       <div {...listeners} className="cursor-grab text-zinc-300 hover:text-zinc-500 flex-shrink-0 touch-none">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>
@@ -235,6 +237,27 @@ function SortableJobCard({
           }}
           className="text-xs flex-1 min-w-32 border border-zinc-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-[#c8a96e]"
         />
+      </div>
+      </div>
+
+      {/* Retour employeur */}
+      <div className="px-4 pb-2.5 flex items-center gap-2 flex-wrap">
+        <span className="text-[10px] text-zinc-400 font-medium">Employeur :</span>
+        <button
+          onClick={() => onUpdate(sub.id, { employer_response: 'yes' })}
+          className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${sub.employer_response === 'yes' ? 'bg-green-100 text-green-700 border-green-200' : 'border-zinc-200 text-zinc-500 hover:bg-green-50'}`}
+        >OUI</button>
+        <button
+          onClick={() => onUpdate(sub.id, { employer_response: 'no' })}
+          className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${sub.employer_response === 'no' ? 'bg-red-100 text-red-600 border-red-200' : 'border-zinc-200 text-zinc-500 hover:bg-red-50'}`}
+        >NON</button>
+        {sub.employer_response === 'yes' && sub.status !== 'retained' && (
+          <button
+            onClick={() => onUpdate(sub.id, { status: 'retained' })}
+            className="text-[10px] px-2 py-0.5 rounded-full bg-[#c8a96e] text-white ml-auto"
+          >→ Retenir ce job</button>
+        )}
+        {sub.status === 'retained' && <span className="text-[10px] text-green-700 font-bold ml-auto">🎯 JOB RETENU</span>}
       </div>
 
     </div>
