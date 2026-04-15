@@ -254,7 +254,7 @@ export default function CompanyDetailPage() {
   async function handleLinkContact() {
     if (!selectedContactId) return
     setLinkingContact(true)
-    await fetch(\`/api/contacts/\${selectedContactId}\`, {
+    await fetch(`/api/contacts/${selectedContactId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ company_id: companyId }),
