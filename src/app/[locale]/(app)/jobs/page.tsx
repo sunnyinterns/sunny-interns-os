@@ -390,16 +390,23 @@ export default function JobsPage() {
                     <p className="text-sm font-bold text-[#1a1918] truncate">{j.public_title ?? j.title}</p>
                     {j.title !== j.public_title && j.public_title && <p className="text-[10px] text-zinc-400 truncate">{j.title}</p>}
                     <p className="text-xs text-zinc-500 mt-0.5 truncate">
-                      {j.company_name ?? j.companies?.name ?? '—'} • {j.department_name ?? j.department ?? '—'}
+                      {j.company_name ?? j.companies?.name ?? '—'}{(j.department_name ?? j.department) ? ` • ${j.department_name ?? j.department}` : ''}
                     </p>
+                    {j.contact_name && <p className="text-[10px] text-zinc-400 truncate">👤 {j.contact_name}</p>}
                   </div>
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
                     <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap" style={{ background: badge.bg, color: badge.color }}>{badge.label}</span>
-                    <span className="text-[10px] text-zinc-400">{j.submissions_count ?? 0} candidature{(j.submissions_count ?? 0) > 1 ? 's' : ''}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${(j.submissions_count ?? 0) > 0 ? 'bg-blue-50 text-blue-600' : 'text-zinc-300'}`}>
+                      👤 {j.submissions_count ?? 0}
+                    </span>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap gap-1 mb-2">
+                  {j.wished_start_date && (() => {
+                    const d = new Date(j.wished_start_date)
+                    return <span className="text-[10px] bg-[#c8a96e]/10 text-[#b8945a] px-2 py-0.5 rounded-full font-medium">📅 {d.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}</span>
+                  })()}
                   {j.wished_duration_months && <span className="text-[10px] bg-zinc-50 text-zinc-500 px-2 py-0.5 rounded-full">{j.wished_duration_months} mois</span>}
                   {j.required_level && <span className="text-[10px] bg-zinc-50 text-zinc-500 px-2 py-0.5 rounded-full">{j.required_level}</span>}
                   {j.location && <span className="text-[10px] bg-zinc-50 text-zinc-500 px-2 py-0.5 rounded-full">📍 {j.location}</span>}
