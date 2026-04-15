@@ -92,7 +92,7 @@ export async function PATCH(
     }
     return NextResponse.json(data)
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e)
+    const msg = e instanceof Error ? e.message : JSON.stringify(e)
     console.error('[PATCH /api/companies/[id]]', msg)
     return NextResponse.json({ error: msg }, { status: 500 })
   }
@@ -120,6 +120,6 @@ export async function DELETE(
     if (error) throw error
     return NextResponse.json({ success: true })
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    return NextResponse.json({ error: e instanceof Error ? e.message : JSON.stringify(e) }, { status: 500 })
   }
 }
