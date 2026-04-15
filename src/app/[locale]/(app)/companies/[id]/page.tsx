@@ -61,6 +61,7 @@ interface Company {
   type?: string | null
   description?: string | null
   notes?: string | null
+  notes_internal?: string | null
   // localisation
   registration_country?: string | null
   internship_city?: string | null
@@ -227,7 +228,7 @@ export default function CompanyDetailPage() {
         setEditTiktok(data.tiktok_url ?? '')
         setEditLinkedin(data.linkedin_url ?? '')
         setEditFacebook(data.facebook_url ?? '')
-        setEditNotes(data.notes ?? '')
+        setEditNotes(data.notes_internal ?? '')
         setEditDescription(data.description ?? '')
         setEditSize(data.company_size ?? '')
         setEditIsEmployer(data.is_employer ?? false)
@@ -283,7 +284,7 @@ export default function CompanyDetailPage() {
           tiktok_url: editTiktok || null,
           linkedin_url: editLinkedin || null,
           facebook_url: editFacebook || null,
-          notes: editNotes || null,
+          notes_internal: editNotes || null,
           description: editDescription || null,
           company_size: editSize || null,
           is_employer: editIsEmployer,

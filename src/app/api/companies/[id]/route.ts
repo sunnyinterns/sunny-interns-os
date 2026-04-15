@@ -6,7 +6,7 @@ const ALLOWED_COLUMNS = new Set([
   'name','destination','sector','industry','website','logo_url','company_type','type',
   'internship_city','city','google_maps_url','registration_country','legal_type',
   'nib','npwp','vat_number','registration_number','siret','tax_id','state_of_incorporation',
-  'instagram_url','tiktok_url','linkedin_url','facebook_url','notes','description',
+  'instagram_url','tiktok_url','linkedin_url','facebook_url','notes_internal','description',
   'company_size','is_employer','is_partner','is_supplier','address_street','address_postal_code',
   'address_city','legal_address','sponsor_company_id','partner_timing','partner_category',
   'partner_deal','partner_visible_from','is_active','collaboration_status',
