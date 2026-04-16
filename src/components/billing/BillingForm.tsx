@@ -92,6 +92,7 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
   const [paymentType, setPaymentType] = useState('bank_transfer')
   const [invoiceNumber, setInvoiceNumber] = useState('')
   const [isPaidCheck, setIsPaidCheck] = useState(false)
+  const [vatRate, setVatRate] = useState<number>(0) // Default 0% — modifiable si cas particulier
 
   const selectedEntity = entities.find(e => e.id === entityId)
   const selectedPackage = packages.find(p => p.id === packageId)
@@ -99,8 +100,8 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
   // Calculs temps réel
   const remiseMontant = tarifPackage * (discount / 100)
   const prixRemise = tarifPackage - remiseMontant
-  const tva = prixRemise * 0.20
-  const montantFinal = prixRemise - tva
+  const tva = vatRate > 0 ? Number((prixRemise * vatRate / 100).toFixed(2)) : 0
+  const montantFinal = Number((prixRemise + tva).toFixed(2))
   const margebrute = selectedPackage?.visa_cost_idr
     ? montantFinal - (selectedPackage.visa_cost_idr / 16500)
     : null
@@ -136,6 +137,7 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
         setDiscountReason(billingData.discount_reason ?? '')
         setPaymentType(billingData.payment_type ?? 'bank_transfer')
         setInvoiceNumber(billingData.invoice_number ?? '')
+        setVatRate(billingData.vat_rate ?? 0)
         setIsPaidCheck(!!(billingData.paid_at))
       } else {
         const defaultEntity = entitiesData.find(e => e.is_default)
@@ -200,7 +202,7 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
           amount_ht: tarifPackage,
           discount_percent: discount,
           discount_reason: discountReason,
-          vat_rate: 20,
+          vat_rate: vatRate,
           amount_ttc: montantFinal,
           payment_type: paymentType,
           invoice_number: invoiceNumber || null,
@@ -249,7 +251,7 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
             amount_ht: tarifPackage,
             discount_percent: discount,
             discount_reason: discountReason,
-            vat_rate: 20,
+            vat_rate: vatRate,
             amount_ttc: montantFinal,
             payment_type: paymentType,
             invoice_number: inv,
@@ -358,6 +360,30 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
           </div>
         )}
 
+        {/* TVA — 0% par défaut, modifiable */}
+        <div>
+          <label className="block text-sm font-medium text-[#1a1918] mb-1.5">
+            TVA
+            <span className="ml-2 text-xs text-green-600 font-normal">0% par défaut — modifiable si cas particulier</span>
+          </label>
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              value={vatRate}
+              onChange={e => setVatRate(Math.max(0, parseFloat(e.target.value) || 0))}
+              disabled={isPaid}
+              min={0} max={100} step={0.5}
+              className="w-28 px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#c8a96e] disabled:opacity-50"
+            />
+            <span className="text-sm text-zinc-500">%</span>
+            {vatRate === 0 && (
+              <span className="text-xs px-2 py-1 bg-green-50 text-green-700 border border-green-100 rounded-full">
+                Exonérée — services internationaux hors UE
+              </span>
+            )}
+          </div>
+        </div>
+
         {/* Tableau récapitulatif — format lignes */}
         <div className="border border-zinc-100 rounded-xl overflow-hidden">
           <table className="w-full text-sm">
@@ -375,11 +401,15 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
                 <td className="px-4 py-2.5 text-right text-sm text-[#1a1918]">{formatEUR(prixRemise)}</td>
               </tr>
               <tr>
-                <td className="px-4 py-2.5 text-xs text-zinc-500">TVA 20%</td>
-                <td className="px-4 py-2.5 text-right text-sm text-red-500">-{formatEUR(tva)}</td>
+                <td className="px-4 py-2.5 text-xs text-zinc-500">
+                  TVA {vatRate > 0 ? `${vatRate}%` : <span className="text-green-600 font-medium">0% (exonérée)</span>}
+                </td>
+                <td className="px-4 py-2.5 text-right text-sm text-zinc-400">
+                  {vatRate > 0 ? `+${formatEUR(tva)}` : '—'}
+                </td>
               </tr>
               <tr className="bg-[#c8a96e]/5">
-                <td className="px-4 py-3 text-sm font-semibold text-[#1a1918]">Montant à régler (HT)</td>
+                <td className="px-4 py-3 text-sm font-semibold text-[#1a1918]">Total à régler</td>
                 <td className="px-4 py-3 text-right text-base font-bold text-[#1a1918]">{formatEUR(montantFinal)}</td>
               </tr>
               {margebrute !== null && (

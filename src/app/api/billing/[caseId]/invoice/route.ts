@@ -15,9 +15,14 @@ async function generateInvoiceHtml(data: {
     ? new Date(String(billing.paid_at)).toLocaleDateString('fr-FR')
     : new Date().toLocaleDateString('fr-FR')
 
-  const amountHT = Number(billing.amount_ht ?? (Number(billing.amount_ttc ?? 0) / 1.20).toFixed(2))
-  const amountTVA = Number(billing.amount_tva ?? (Number(billing.amount_ttc ?? 0) - amountHT).toFixed(2))
-  const amountTTC = Number(billing.amount_ttc ?? 0)
+  const vatRate = Number(billing.vat_rate ?? 0) // Default 0% — modifiable par cas particulier
+  const amountHT = Number(
+    billing.amount_after_discount ?? billing.amount_gross ?? billing.amount_ttc ?? 0
+  )
+  const amountTVA = vatRate > 0
+    ? Number((amountHT * vatRate / 100).toFixed(2))
+    : 0
+  const amountTTC = Number((amountHT + amountTVA).toFixed(2))
 
   const packageName = String(billing.package_name ?? 'Service de placement de stage à Bali')
 
@@ -89,27 +94,29 @@ async function generateInvoiceHtml(data: {
   <table>
     <thead>
       <tr>
-        <th>Prestation</th>
-        <th style="text-align:right">Montant HT</th>
-        <th style="text-align:right">TVA 20%</th>
-        <th style="text-align:right">TTC</th>
+        <th>Description</th>
+        <th style="text-align:right">Amount excl. tax</th>
+        ${vatRate > 0 ? `<th style="text-align:right">VAT ${vatRate}%</th><th style="text-align:right">Total incl. tax</th>` : '<th style="text-align:right">Total</th>'}
       </tr>
     </thead>
     <tbody>
       <tr>
         <td>${packageName}</td>
         <td style="text-align:right">${amountHT.toFixed(2)} €</td>
-        <td style="text-align:right">${amountTVA.toFixed(2)} €</td>
-        <td style="text-align:right"><strong>${amountTTC.toFixed(2)} €</strong></td>
+        ${vatRate > 0 ? `<td style="text-align:right">${amountTVA.toFixed(2)} €</td><td style="text-align:right"><strong>${amountTTC.toFixed(2)} €</strong></td>` : `<td style="text-align:right"><strong>${amountHT.toFixed(2)} €</strong></td>`}
       </tr>
     </tbody>
   </table>
 
-  <div class="totals">
+    <div class="totals">
     <div class="totals-table">
-      <div class="totals-row"><span>Sous-total HT</span><span>${amountHT.toFixed(2)} €</span></div>
-      <div class="totals-row"><span>TVA (20%)</span><span>${amountTVA.toFixed(2)} €</span></div>
-      <div class="totals-row total"><span>Total TTC</span><span>${amountTTC.toFixed(2)} €</span></div>
+      <div class="totals-row"><span>Subtotal</span><span>${amountHT.toFixed(2)} €</span></div>
+      ${vatRate > 0
+        ? `<div class="totals-row"><span>VAT (${vatRate}%)</span><span>${amountTVA.toFixed(2)} €</span></div>
+           <div class="totals-row total"><span>Total incl. tax</span><span>${amountTTC.toFixed(2)} €</span></div>`
+        : `<div class="totals-row"><span>VAT</span><span>0% — Not applicable</span></div>
+           <div class="totals-row total"><span>Total</span><span>${amountHT.toFixed(2)} €</span></div>`
+      }
     </div>
   </div>
 
@@ -123,10 +130,13 @@ async function generateInvoiceHtml(data: {
       </div>
     </div>
     <div class="footer-block">
-      <div class="meta-label">Mentions légales</div>
+      <div class="meta-label">Legal notice</div>
       <div class="meta-value" style="margin-top:4px;color:#9ca3af;font-size:11px">
-        Paiement reçu. TVA non applicable si auto-entrepreneur, Art. 293 B du CGI.<br/>
-        Facture émise conformément aux conditions générales de service.
+        ${vatRate === 0
+          ? 'VAT exempt — International services provided outside the EU territory. VAT rate: 0%.'
+          : `VAT at ${vatRate}% included. Invoice issued in accordance with applicable regulations.`
+        }<br/>
+        Invoice issued in accordance with general terms of service.
       </div>
     </div>
   </div>
