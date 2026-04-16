@@ -3,6 +3,32 @@ import { NextResponse } from 'next/server'
 import { logActivity } from '@/lib/activity-logger'
 import * as Sentry from '@sentry/nextjs'
 
+// Whitelist of valid cases columns — strips unknowns before .update() to prevent PostgREST 500
+const VALID_CASE_COLUMNS = new Set([
+  'status', 'case_type', 'intern_id', 'destination_id',
+  'desired_start_date', 'actual_start_date', 'actual_end_date',
+  'school_id', 'intern_level', 'diploma_track', 'desired_sectors', 'desired_duration_months',
+  'qualification_notes', 'qualification_notes_for_intern',
+  'intern_first_meeting_date', 'intern_first_meeting_link', 'intern_first_meeting_reschedule_link',
+  'google_meet_link', 'fillout_booking_link',
+  'portal_token', 'portal_sent_at', 'portal_activated_at', 'temp_password',
+  'employer_contact_id', 'package_id', 'assigned_manager_name', 'visa_type_id',
+  'payment_amount', 'payment_date', 'payment_type', 'payment_notified_by_intern_at',
+  'invoice_number', 'discount_percentage', 'payment_proof_url',
+  'convention_signed', 'convention_signed_at', 'convention_pdf_url',
+  'engagement_letter_signed_at', 'engagement_letter_sent', 'engagement_letter_pdf_url',
+  'sponsor_contract_sent_at', 'sponsor_contract_signed_at',
+  'sponsor_contract_signed_by', 'sponsor_contract_signature_data',
+  'flight_number', 'flight_departure_city', 'flight_arrival_time_local', 'flight_last_stopover',
+  'dropoff_address', 'driver_phone',
+  'billet_avion', 'papiers_visas', 'visa_recu', 'chauffeur_reserve',
+  'driver_booked', 'housing_reserved',
+  'form_language', 'visa_submitted_to_agent_at', 'note_for_agent',
+  'fazza_transfer_sent', 'fazza_transfer_amount_idr',
+  'cv_feedback', 'cv_status', 'cv_revision_requested', 'cv_revision_notes',
+  'welcome_kit_sent_at',
+])
+
 const FIELD_LABELS: Record<string, string> = {
   status: 'Statut',
   qualification_notes: 'Commentaire entretien',
@@ -39,6 +65,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   try {
     const body = await request.json() as Record<string, unknown>
 
+    // Strip unknown columns to prevent PostgREST 500
+    const unknownCols = Object.keys(body).filter(k => !VALID_CASE_COLUMNS.has(k))
+    if (unknownCols.length > 0) console.log('[CASES_PATCH_WARN] Colonnes ignorées:', unknownCols)
+    const safeBody = Object.fromEntries(Object.entries(body).filter(([k]) => VALID_CASE_COLUMNS.has(k)))
+
     // Fetch existing case for change detection
     const { data: existingCase } = await supabase
       .from('cases')
@@ -48,11 +79,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     const { data, error } = await supabase
       .from('cases')
-      .update({ ...body, updated_at: new Date().toISOString() })
+      .update({ ...safeBody, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single()
-    if (error) throw error
+    if (error) {
+      console.log('[CASES_PATCH_SUPABASE]', error.message, error.details ?? '', error.hint ?? '')
+      throw error
+    }
 
     // Get author name
     const { data: appUser } = await supabase
@@ -183,7 +217,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     return NextResponse.json(data)
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    const msg = e instanceof Error ? e.message + '\n' + (e.stack ?? '') : String(e)
+    console.log('[CASES_PATCH_500]', msg)
+    Sentry.captureException(e)
+    return NextResponse.json({ error: 'Internal error', detail: msg }, { status: 500 })
   }
 }
 
