@@ -139,4 +139,59 @@ async function seed() {
   }
 }
 
-seed().catch(console.error)
+async function seedCaseLogs() {
+  console.log('\nSeeding case_logs...')
+  const { data: cases, error } = await supabase
+    .from('cases')
+    .select('id, status, created_at, interns(first_name, last_name)')
+    .order('created_at', { ascending: true })
+
+  if (error || !cases) { console.error('Failed to fetch cases:', error?.message); return }
+
+  const STATUS_FLOW = [
+    'lead', 'rdv_booked', 'qualification_done', 'job_submitted', 'job_retained',
+    'convention_signed', 'payment_pending', 'payment_received',
+    'visa_docs_sent', 'visa_submitted', 'visa_in_progress', 'visa_received',
+    'arrival_prep', 'active', 'alumni',
+  ]
+  const LABELS: Record<string, string> = {
+    lead: 'Lead', rdv_booked: 'RDV booke', qualification_done: 'Qualifie',
+    job_submitted: 'CV envoye', job_retained: 'CV retenu', convention_signed: 'Convention signee',
+    payment_pending: 'Paiement en attente', payment_received: 'Paiement recu',
+    visa_docs_sent: 'Docs visa', visa_submitted: 'Visa soumis',
+    visa_in_progress: 'Visa en cours', visa_received: 'Visa recu',
+    arrival_prep: 'Depart imminent', active: 'En stage', alumni: 'Alumni',
+  }
+
+  const logs: Record<string, unknown>[] = []
+  for (const c of cases as any[]) {
+    const statusIdx = STATUS_FLOW.indexOf(c.status)
+    if (statusIdx < 0) continue
+    const baseDate = new Date(c.created_at)
+
+    for (let i = 0; i <= statusIdx; i++) {
+      const prev = i === 0 ? null : STATUS_FLOW[i - 1]
+      const cur = STATUS_FLOW[i]
+      logs.push({
+        case_id: c.id,
+        author_name: 'Sidney Ruby',
+        author_email: 'sidney.ruby@gmail.com',
+        action: 'status_change',
+        field_name: 'status',
+        field_label: 'Statut',
+        old_value: prev ? (LABELS[prev] ?? prev) : '—',
+        new_value: LABELS[cur] ?? cur,
+        description: prev ? `Statut: ${LABELS[prev]} → ${LABELS[cur]}` : `Dossier cree (${LABELS[cur]})`,
+        created_at: new Date(baseDate.getTime() + i * 2 * 86400000).toISOString(),
+      })
+    }
+  }
+
+  if (logs.length === 0) { console.log('No logs to insert'); return }
+  console.log(`Inserting ${logs.length} case_logs...`)
+  const { error: err } = await supabase.from('case_logs').insert(logs)
+  if (err) console.error('Insert error:', err)
+  else console.log(`Seeded ${logs.length} case_logs`)
+}
+
+seed().then(() => seedCaseLogs()).catch(console.error)
