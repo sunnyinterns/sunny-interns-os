@@ -15,7 +15,7 @@ export async function GET(request: Request) {
       .select(`
         id, first_name, last_name, email, whatsapp, job_title,
         temperature, last_contacted_at, notes, created_at, updated_at, company_id,
-        companies(id, name, logo_url)
+        companies!contacts_company_id_fkey(id, name, logo_url)
       `)
       .order('first_name')
 
