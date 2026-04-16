@@ -139,6 +139,22 @@ export function Sidebar() {
     return <div className="my-2 border-t border-zinc-100" />
   }
 
+  function MarketingLink({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) {
+    const active = pathname === href || pathname.startsWith(href + '/')
+    return (
+      <Link
+        href={href}
+        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+          active ? 'bg-[#c8a96e]/15 text-[#c8a96e]' : 'text-zinc-400 hover:text-zinc-500 hover:bg-zinc-100'
+        }`}
+      >
+        <span className="flex-shrink-0">{icon}</span>
+        <span className="flex-1 truncate">{label}</span>
+        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-400">Bientot</span>
+      </Link>
+    )
+  }
+
   const icons = {
     dashboard: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
     activity: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
@@ -200,6 +216,14 @@ export function Sidebar() {
         <Sep />
 
         <NavLink href="/fr/jobs" label="Offres de stage" icon={icons.offres} badge={openJobsCount} />
+
+        <Sep />
+
+        {/* Marketing */}
+        <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-300">Marketing</p>
+        <MarketingLink href="/fr/marketing/jobs" label="Offres publiques" icon={icons.offres} />
+        <MarketingLink href="/fr/marketing/leads" label="Generateur de leads" icon={icons.leads} />
+        <MarketingLink href="/fr/marketing/social" label="Reseaux sociaux" icon={icons.activity} />
 
         <Sep />
 
