@@ -128,7 +128,7 @@ export default function FeedPage() {
     <div className="min-h-screen" style={{ backgroundColor: '#fafaf9' }}>
       {/* ── SECTION 1: Header ── */}
       <div className="bg-white border-b border-zinc-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="w-full px-4 sm:px-6">
           <div className="flex items-center justify-between py-5">
             <div>
               <h1 className="text-xl font-bold text-[#1a1918]">Bonjour Sidney</h1>
@@ -143,12 +143,12 @@ export default function FeedPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-8">
+      <div className="w-full px-4 sm:px-6 py-6 space-y-8">
 
         {/* ── SECTION 2: Grille 2 colonnes ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* COL GAUCHE (2/5) */}
-          <div className="lg:col-span-2 space-y-6">
+        <div style={{ display: 'grid', gridTemplateColumns: '42% 1fr', gap: '16px', alignItems: 'start' }} className="max-lg:grid max-lg:!grid-cols-1">
+          {/* COL GAUCHE (42%) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
             {/* A traiter */}
             <section className="bg-white rounded-xl border border-zinc-100 p-5">
@@ -224,8 +224,8 @@ export default function FeedPage() {
             </section>
           </div>
 
-          {/* COL DROITE (3/5) */}
-          <div className="lg:col-span-3 space-y-6">
+          {/* COL DROITE (58%) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
             {/* Cette semaine */}
             <section className="bg-white rounded-xl border border-zinc-100 p-5">
