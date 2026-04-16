@@ -17,6 +17,7 @@ export default function PortalFacturePage() {
   const token = typeof params?.token === 'string' ? params.token : ''
   const [data, setData] = useState<PortalData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
   const [showNoteInput, setShowNoteInput] = useState(false)
   const [note, setNote] = useState('')
   const [notifying, setNotifying] = useState(false)
@@ -25,13 +26,16 @@ export default function PortalFacturePage() {
   useEffect(() => {
     if (!token) return
     fetch(`/api/portal/${token}`)
-      .then((r) => r.ok ? r.json() as Promise<PortalData> : Promise.reject())
+      .then((r) => r.ok ? r.json() as Promise<PortalData> : Promise.reject(new Error(`HTTP ${r.status}`)))
       .then((d) => {
         setData(d)
-        setLoading(false)
         if (d.payment_notified_by_intern_at) setNotified(true)
       })
-      .catch(() => setLoading(false))
+      .catch((err: unknown) => {
+        console.error('[PORTAL_FACTURE]', err instanceof Error ? err.message : String(err))
+        setFetchError(true)
+      })
+      .finally(() => setLoading(false))
   }, [token])
 
   function openInvoice() {
@@ -66,6 +70,18 @@ export default function PortalFacturePage() {
 
       {loading ? (
         <div style={{ height: '120px', background: '#f3f4f6', borderRadius: '16px' }} />
+      ) : fetchError ? (
+        <div style={{ padding: '32px 24px', textAlign: 'center', background: '#fef2f2', borderRadius: '16px', border: '1px solid #fecaca' }}>
+          <p style={{ fontSize: '32px', marginBottom: '12px' }}>⚠️</p>
+          <p style={{ color: '#dc2626', fontSize: '14px', fontWeight: 600 }}>Impossible de charger les données.</p>
+          <p style={{ color: '#6b7280', fontSize: '13px', marginTop: '6px' }}>Réessaie dans quelques instants ou contacte notre équipe.</p>
+          <button
+            onClick={() => { setFetchError(false); setLoading(true); window.location.reload() }}
+            style={{ marginTop: '16px', padding: '10px 20px', background: '#c8a96e', color: 'white', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+          >
+            Réessayer
+          </button>
+        </div>
       ) : data?.payment_date ? (
         <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', padding: '24px', textAlign: 'center' }}>
           <p style={{ fontSize: '48px', marginBottom: '12px' }}>🧾</p>
