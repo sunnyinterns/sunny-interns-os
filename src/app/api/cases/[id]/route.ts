@@ -219,7 +219,7 @@ export async function GET(
         cv_feedback, cv_status, cv_revision_requested, cv_revision_notes,
         created_at, updated_at,
         interns(*),
-        destinations(name,country),
+        destinations(name),
         packages(name,price_eur),
         job_submissions!job_submissions_case_id_fkey(id,status,intern_interested,intern_priority,employer_response,jobs!job_submissions_job_id_fkey(id,title,public_title,location,companies!jobs_company_id_fkey(id,name,logo_url))),
         contacts!cases_employer_contact_id_fkey(id,first_name,last_name,email,whatsapp,job_title,companies!contacts_company_id_fkey(id,name))
