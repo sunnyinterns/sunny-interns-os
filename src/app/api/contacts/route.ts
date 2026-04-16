@@ -1,45 +1,66 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import * as Sentry from '@sentry/nextjs'
 
 export async function GET(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { searchParams } = new URL(request.url)
-  const companyId = searchParams.get('company_id')
-  let query = supabase
-    .from('contacts')
-    .select(`
-      id, first_name, last_name, email, whatsapp, job_title,
-      temperature, last_contacted_at, notes, created_at, updated_at, company_id,
-      companies(id, name, logo_url)
-    `)
-    .order('first_name')
+    const { searchParams } = new URL(request.url)
+    const companyId = searchParams.get('company_id')
+    let query = supabase
+      .from('contacts')
+      .select(`
+        id, first_name, last_name, email, whatsapp, job_title,
+        temperature, last_contacted_at, notes, created_at, updated_at, company_id,
+        companies(id, name, logo_url)
+      `)
+      .order('first_name')
 
-  if (companyId) query = query.eq('company_id', companyId)
-  const unlinked = searchParams.get('unlinked')
-  const excludeLeft = searchParams.get('exclude_left')
-  if (excludeLeft === 'true') query = query.or('left_company.is.null,left_company.eq.false')
-  if (unlinked === 'true') query = query.is('company_id', null)
+    if (companyId) query = query.eq('company_id', companyId)
+    const unlinked = searchParams.get('unlinked')
+    const excludeLeft = searchParams.get('exclude_left')
+    if (excludeLeft === 'true') query = query.or('left_company.is.null,left_company.eq.false')
+    if (unlinked === 'true') query = query.is('company_id', null)
 
-  const { data, error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data ?? [])
+    const { data, error } = await query
+    if (error) {
+      console.log('[CONTACTS_GET_500]', error.message, error.details ?? '', error.hint ?? '')
+      return NextResponse.json({ error: error.message, details: error.details, hint: error.hint }, { status: 500 })
+    }
+    return NextResponse.json(data ?? [])
+  } catch (err) {
+    const msg = err instanceof Error ? err.message + '\n' + (err.stack ?? '') : String(err)
+    console.log('[CONTACTS_GET_500]', msg)
+    Sentry.captureException(err)
+    return NextResponse.json({ error: 'Internal error', detail: msg }, { status: 500 })
+  }
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await request.json() as Record<string, unknown>
-  const { data, error } = await supabase
-    .from('contacts')
-    .insert(body)
-    .select('*, companies!company_id(id, name)')
-    .single()
+    const body = await request.json() as Record<string, unknown>
+    const { data, error } = await supabase
+      .from('contacts')
+      .insert(body)
+      .select('*, companies!company_id(id, name)')
+      .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data, { status: 201 })
+    if (error) {
+      console.log('[CONTACTS_POST_500]', error.message, error.details ?? '', error.hint ?? '')
+      return NextResponse.json({ error: error.message, details: error.details, hint: error.hint }, { status: 500 })
+    }
+    return NextResponse.json(data, { status: 201 })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message + '\n' + (err.stack ?? '') : String(err)
+    console.log('[CONTACTS_POST_500]', msg)
+    Sentry.captureException(err)
+    return NextResponse.json({ error: 'Internal error', detail: msg }, { status: 500 })
+  }
 }

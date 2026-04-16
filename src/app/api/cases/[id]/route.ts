@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { logActivity } from '@/lib/activity-logger'
+import * as Sentry from '@sentry/nextjs'
 
 const FIELD_LABELS: Record<string, string> = {
   status: 'Statut',
@@ -226,11 +227,16 @@ export async function GET(
       .eq('id', id)
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.log('[CASES_ID_SUPABASE]', error.message, error.details ?? '', error.hint ?? '')
+      return NextResponse.json({ error: error.message, details: error.details, hint: error.hint }, { status: 500 })
+    }
     if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     return NextResponse.json(data)
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Erreur inconnue'
-    return NextResponse.json({ error: message }, { status: 500 })
+    const msg = err instanceof Error ? err.message + '\n' + (err.stack ?? '') : String(err)
+    console.log('[CASES_ID_500]', msg)
+    Sentry.captureException(err)
+    return NextResponse.json({ error: 'Internal error', detail: msg }, { status: 500 })
   }
 }
