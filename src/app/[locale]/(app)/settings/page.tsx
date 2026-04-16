@@ -33,6 +33,7 @@ const SECTIONS: Record<string, { title: string; items: SectionItem[] }> = {
   automations: {
     title: 'Automations',
     items: [
+      { href: 'automations', icon: '⚡', label: 'Automations', desc: 'Enable/disable automatic emails and notifications by stage' },
       { href: 'email-templates', icon: '✉️', label: 'Email Templates', desc: 'Automated emails by stage and recipient' },
       { href: 'contact-templates', icon: '📄', label: 'Document Templates', desc: 'Engagement letter, Agreement, Sponsor contract' },
     ],

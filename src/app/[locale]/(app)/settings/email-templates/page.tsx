@@ -48,10 +48,11 @@ function normalizeCategory(cat: string | null | undefined): string {
 // Derive category from slug (DB has slug, not category)
 function getCategoryFromSlug(slug: string | null | undefined): string {
   if (!slug) return 'internal'
-  if (slug.startsWith('employer_') || slug === 'job_submitted_employer') return 'employer'
+  if (slug === 'visa_agent_submission') return 'agent'
+  if (slug.startsWith('employer_') || slug === 'job_submitted_employer' || slug === 'sponsor_contract_employer') return 'employer'
   if (slug.startsWith('visa_')) return 'intern_visa'
   if (slug.startsWith('touchpoint_') || slug === 'alumni_welcome' || slug === 'ugc_thank_you') return 'intern_internship'
-  if (slug === 'arrival_prep' || slug === 'welcome_kit') return 'intern_departure'
+  if (slug === 'arrival_prep' || slug === 'welcome_kit' || slug === 'all_indonesia_j3') return 'intern_departure'
   if (slug === 'invoice_sent' || slug === 'payment_request' || slug === 'payment_confirmed') return 'intern_payment'
   if (slug === 'new_job_alert') return 'intern_jobs'
   if (slug === 'booking_confirmation' || slug === 'rdv_confirmation' || slug === 'rdv_reminder') return 'intern_lead'
