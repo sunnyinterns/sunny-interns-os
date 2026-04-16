@@ -2,39 +2,81 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useParams } from 'next/navigation'
 
 interface EnAttenteItem {
   id: string
   type: string
-  case_id?: string
-  label: string
+  waiting_for?: string | null
+  case_id?: string | null
+  label?: string | null
+  due_date?: string | null
   created_at: string
-  resolved_at?: string
-  case?: {
+  resolved_at?: string | null
+  cases?: {
     id: string
-    intern?: { first_name: string; last_name: string }
     status: string
+    interns?: { first_name: string; last_name: string } | null
+  } | null
+}
+
+type WaitingForKey = 'intern' | 'employer' | 'school' | 'agent' | 'manager'
+
+const WAITING_FOR_LABELS: Record<WaitingForKey, { label: string; color: string; icon: string; badgeCls: string }> = {
+  intern:   { label: 'Waiting for intern',          color: '#f59e0b', icon: '👤', badgeCls: 'bg-amber-100 text-amber-700' },
+  employer: { label: 'Waiting for employer',         color: '#3b82f6', icon: '🏢', badgeCls: 'bg-blue-100 text-blue-700' },
+  school:   { label: 'Waiting for school',           color: '#8b5cf6', icon: '🎓', badgeCls: 'bg-purple-100 text-purple-700' },
+  agent:    { label: 'Waiting for agent',            color: '#f97316', icon: '🔏', badgeCls: 'bg-orange-100 text-orange-700' },
+  manager:  { label: 'Waiting for manager action',   color: '#ef4444', icon: '⚡', badgeCls: 'bg-red-100 text-red-700' },
+}
+
+const WAITING_TYPE_LABELS: Record<string, string> = {
+  cv:                 'CV upload',
+  engagement_letter:  'Engagement letter signature',
+  employer_response:  'Employer decision on CV',
+  convention:         'Internship agreement (convention)',
+  visa_docs:          'Visa documents',
+  flight_info:        'Flight info for airport transfer',
+  payment:            'Payment confirmation',
+  sponsor_contract:   'Sponsor contract signature',
+}
+
+// Derive waiting_for from type if column missing
+function deriveWaitingFor(item: EnAttenteItem): WaitingForKey {
+  if (item.waiting_for && item.waiting_for in WAITING_FOR_LABELS) {
+    return item.waiting_for as WaitingForKey
   }
+  const map: Record<string, WaitingForKey> = {
+    cv: 'intern', engagement_letter: 'intern', convention: 'school',
+    visa_docs: 'intern', flight_info: 'intern', payment: 'intern',
+    employer_response: 'employer', sponsor_contract: 'employer',
+    visa: 'agent',
+  }
+  return map[item.type] ?? 'manager'
 }
 
-const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  cv: { label: 'CV', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200' },
-  sponsor_contract: { label: 'Contrat sponsor', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200' },
-  employer_response: { label: 'Réponse employeur', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200' },
-  visa: { label: 'Visa', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' },
-  payment: { label: 'Paiement', color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200' },
+function isDueOverdue(dateStr: string | null | undefined): boolean {
+  if (!dateStr) return false
+  return new Date(dateStr).getTime() < Date.now()
 }
 
-function daysSince(dateStr: string) {
-  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000)
-  if (days === 0) return "Aujourd'hui"
-  if (days === 1) return 'Hier'
-  return `Il y a ${days}j`
+function formatDue(dateStr: string | null | undefined): string {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  const diff = d.getTime() - Date.now()
+  const days = Math.ceil(diff / 86400000)
+  if (days < 0) return `${Math.abs(days)}d overdue`
+  if (days === 0) return 'Due today'
+  if (days === 1) return 'Due tomorrow'
+  return `Due in ${days}d`
 }
 
 export default function EnAttentePage() {
+  const params = useParams()
+  const locale = typeof params?.locale === 'string' ? params.locale : 'fr'
   const [items, setItems] = useState<EnAttenteItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [resolving, setResolving] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/en-attente')
@@ -43,60 +85,112 @@ export default function EnAttentePage() {
       .catch(() => setLoading(false))
   }, [])
 
-  const grouped = items.reduce<Record<string, EnAttenteItem[]>>((acc, item) => {
-    const key = item.type || 'other'
-    if (!acc[key]) acc[key] = []
-    acc[key].push(item)
-    return acc
-  }, {})
+  async function handleResolve(e: React.MouseEvent, id: string) {
+    e.preventDefault()
+    e.stopPropagation()
+    setResolving(id)
+    try {
+      const res = await fetch(`/api/en-attente/${id}`, { method: 'PATCH' })
+      if (res.ok) {
+        setItems(prev => prev.filter(item => item.id !== id))
+      }
+    } finally {
+      setResolving(null)
+    }
+  }
+
+  // Group by waiting_for
+  const grouped = new Map<WaitingForKey, EnAttenteItem[]>()
+  for (const key of Object.keys(WAITING_FOR_LABELS) as WaitingForKey[]) {
+    grouped.set(key, [])
+  }
+  for (const item of items) {
+    const key = deriveWaitingFor(item)
+    grouped.get(key)!.push(item)
+  }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      <div className="flex items-center gap-3">
         <h1 className="text-xl font-bold text-[#1a1918]">En Attente</h1>
         {items.length > 0 && (
-          <span className="bg-zinc-200 text-zinc-600 text-xs font-bold px-2 py-0.5 rounded-full">{items.length}</span>
+          <span className="bg-zinc-200 text-zinc-600 text-xs font-bold px-2 py-0.5 rounded-full">
+            {items.length}
+          </span>
         )}
       </div>
-      <p className="text-xs text-zinc-500 mb-6">Éléments en attente d&apos;une action externe (candidat, employeur, agent visa...)</p>
+      <p className="text-xs text-zinc-500">
+        Items blocked on an external actor — intern, employer, school, visa agent, or manager.
+      </p>
 
-      {loading && <p className="text-zinc-400 text-sm">Chargement...</p>}
+      {loading && (
+        <div className="space-y-2">
+          {[1, 2, 3].map(i => <div key={i} className="h-16 bg-zinc-100 rounded-xl animate-pulse" />)}
+        </div>
+      )}
 
       {!loading && items.length === 0 && (
         <div className="text-center py-12 text-zinc-400">
           <p className="text-4xl mb-3">✅</p>
-          <p className="text-sm">Aucun élément en attente</p>
+          <p className="text-sm">Nothing waiting — all clear</p>
         </div>
       )}
 
-      {Object.entries(grouped).map(([type, typeItems]) => {
-        const config = TYPE_CONFIG[type] ?? { label: type, color: 'text-zinc-600', bg: 'bg-zinc-50', border: 'border-zinc-200' }
+      {!loading && (Array.from(grouped.entries()) as [WaitingForKey, EnAttenteItem[]][]).map(([key, groupItems]) => {
+        if (groupItems.length === 0) return null
+        const cfg = WAITING_FOR_LABELS[key]
         return (
-          <section key={type} className="mb-6">
-            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-3">
-              {config.label} ({typeItems.length})
-            </h2>
-            <div className="space-y-2">
-              {typeItems.map(item => {
-                const name = item.case?.intern
-                  ? `${item.case.intern.first_name} ${item.case.intern.last_name}`
+          <div key={key} className="bg-white border border-zinc-100 rounded-2xl overflow-hidden">
+            {/* Group header */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-50">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{cfg.icon}</span>
+                <span className="text-sm font-semibold text-[#1a1918]">{cfg.label}</span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cfg.badgeCls}`}>
+                  {groupItems.length}
+                </span>
+              </div>
+            </div>
+
+            <div className="divide-y divide-zinc-50">
+              {groupItems.map(item => {
+                const name = item.cases?.interns
+                  ? `${item.cases.interns.first_name} ${item.cases.interns.last_name}`
                   : item.case_id ?? item.id
-                const href = item.case_id ? `/fr/cases/${item.case_id}` : '#'
+                const typeLabel = WAITING_TYPE_LABELS[item.type] ?? item.label ?? item.type
+                const overdue = isDueOverdue(item.due_date)
+                const dueLabel = formatDue(item.due_date)
+                const href = item.case_id ? `/${locale}/cases/${item.case_id}` : '#'
+
                 return (
-                  <Link key={item.id} href={href}
-                    className={`flex items-center justify-between ${config.bg} border ${config.border} rounded-xl px-4 py-3 hover:opacity-80 transition-opacity`}>
-                    <div>
-                      <p className="text-sm font-medium text-[#1a1918]">{name}</p>
-                      <p className={`text-xs mt-0.5 ${config.color}`}>{item.label || config.label} · {daysSince(item.created_at)}</p>
+                  <Link
+                    key={item.id}
+                    href={href}
+                    className="flex items-center gap-3 px-5 py-3.5 hover:bg-zinc-50 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-[#1a1918] truncate">{name}</p>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <span className="text-xs text-zinc-500">{typeLabel}</span>
+                        {dueLabel && (
+                          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${overdue ? 'bg-red-100 text-red-600' : 'bg-zinc-100 text-zinc-500'}`}>
+                            {dueLabel}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} className="text-zinc-300 flex-shrink-0">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
+                    <button
+                      onClick={(e) => void handleResolve(e, item.id)}
+                      disabled={resolving === item.id}
+                      className="flex-shrink-0 text-xs px-3 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-600 font-medium transition-colors disabled:opacity-50"
+                    >
+                      {resolving === item.id ? '…' : 'Mark resolved'}
+                    </button>
                   </Link>
                 )
               })}
             </div>
-          </section>
+          </div>
         )
       })}
     </div>
