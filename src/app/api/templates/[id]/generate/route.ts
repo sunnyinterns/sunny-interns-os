@@ -97,6 +97,35 @@ export async function POST(
   vars.entity_bic = settingsMap.entity_bic ?? ''
   vars.entity_registration = settingsMap.entity_registration ?? ''
 
+  // Active sponsor (for liability agreement & visa templates)
+  const { data: sponsor } = await supabase
+    .from('sponsors')
+    .select('*')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+  if (sponsor) {
+    vars.sponsor_name = sponsor.company_name ?? ''
+    vars.sponsor_legal_type = sponsor.legal_type ?? 'PT'
+    vars.sponsor_registration = sponsor.registration_number ?? ''
+    vars.sponsor_nib = sponsor.nib ?? ''
+    vars.sponsor_npwp = sponsor.npwp ?? ''
+    vars.sponsor_address = [sponsor.address, sponsor.city, sponsor.country].filter(Boolean).join(', ')
+    vars.sponsor_contact_name = sponsor.contact_name ?? ''
+    vars.sponsor_contact_role = sponsor.contact_role ?? 'Director'
+    vars.sponsor_contact_email = sponsor.contact_email ?? ''
+  }
+
+  // Engagement-letter specific fields (intern signing info)
+  if (body.caseId && !vars.intern_full_name) {
+    // Already set above — ensure full_name alias exists
+  }
+  vars.intern_full_name = vars.intern_full_name || vars.intern_name || ''
+  vars.intern_passport = vars.intern_passport || ''
+  vars.signing_city = vars.intern_signing_city || 'Bali'
+  vars.signing_date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+
   // Fill template
   const filledHtml = fillTemplate(template.html_content, vars)
 
