@@ -70,6 +70,8 @@ export default function NotificationsPage() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
+  throw new Error('Test Sentry - Sunny Interns OS')
+
   useEffect(() => {
     fetch('/api/notifications')
       .then(r => r.ok ? r.json() : { notifications: [], unread_count: 0 })
