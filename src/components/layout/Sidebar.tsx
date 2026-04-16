@@ -204,7 +204,6 @@ export function Sidebar() {
         <NavLink href="/fr/feed" label="Dashboard" icon={icons.dashboard} badge={todoCount} urgent={todoCount > 0} />
         <NavLink href="/fr/notifications" label="Notifications" icon={icons.notifs} badge={notifCount} urgent={notifCount > 0} />
         <NavLink href="/fr/en-attente" label="En Attente" icon={icons.clock} badge={enAttenteCount} urgent={false} />
-        <NavLink href="/fr/activity" label="Activité" icon={icons.activity} />
         <NavLink href="/fr/todo" label="To Do" icon={icons.todo} badge={todoCount} urgent={todoCount > 0} />
         <NavLink href="/fr/calendar" label="Calendrier" icon={icons.calendar} badge={calendarNotifCount} urgent={calendarNotifCount > 0} />
         <NavLink href="/fr/pipeline" label="Pipeline" icon={icons.kanban} />
