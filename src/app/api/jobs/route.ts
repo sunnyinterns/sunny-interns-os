@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       id, title, public_title, status, location, wished_duration_months,
       description, created_at, updated_at, company_id,
       companies(id, name, logo_url, website),
-      contacts(id, first_name, last_name, email, whatsapp, job_title)
+      contacts!jobs_contact_id_fkey(id, first_name, last_name, email, whatsapp, job_title)
     `)
     .order('created_at', { ascending: false })
 
