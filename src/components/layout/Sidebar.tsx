@@ -17,6 +17,7 @@ const DRAWER_ITEMS: { href?: string; icon?: string; label?: string; separator?: 
   { href: '/fr/leads', icon: '📋', label: 'Leads' },
   { href: '/fr/cases', icon: '👤', label: 'Candidats' },
   { href: '/fr/clients', icon: '🌴', label: 'Clients' },
+  { href: '/fr/alumni', icon: '🎓', label: 'Alumni' },
   { separator: true },
   { href: '/fr/jobs', icon: '💼', label: 'Offres de stage' },
   { href: '/fr/contacts', icon: '📞', label: 'Contacts' },
@@ -169,6 +170,18 @@ export function Sidebar() {
         </div>
       </div>
 
+      {/* Search hint */}
+      <div className="px-3 pb-2">
+        <button
+          onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }))}
+          className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-zinc-400 bg-zinc-100 hover:bg-zinc-200 transition-colors"
+        >
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          <span className="flex-1 text-left">Search</span>
+          <kbd className="font-mono text-[10px] px-1 py-0.5 bg-white border border-zinc-200 rounded">⌘K</kbd>
+        </button>
+      </div>
+
       {/* Nav */}
       <nav className="flex-1 px-2 pb-4 space-y-0.5">
 
@@ -182,6 +195,7 @@ export function Sidebar() {
         <NavLink href="/fr/leads" label="Leads" icon={icons.leads} badge={newLeadsCount} urgent={false} />
         <NavLink href="/fr/cases" label="Candidats" icon={icons.candidats} badge={candidatsCount} />
         <NavLink href="/fr/clients" label="Clients" icon={icons.clients} badge={activeClientsCount} />
+        <NavLink href="/fr/alumni" label="Alumni" icon={icons.schools} />
 
         <Sep />
 

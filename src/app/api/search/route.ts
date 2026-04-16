@@ -13,16 +13,18 @@ export async function GET(request: Request) {
   const pattern = `%${q}%`
 
   try {
-    const [internsRes, companiesRes, jobsRes] = await Promise.all([
+    const [internsRes, companiesRes, jobsRes, contactsRes] = await Promise.all([
       supabase.from('interns').select('id, first_name, last_name, email').or(`first_name.ilike.${pattern},last_name.ilike.${pattern},email.ilike.${pattern}`).limit(5),
       supabase.from('companies').select('id, name, destination_id').ilike('name', pattern).limit(5),
       supabase.from('jobs').select('id, title, status').ilike('title', pattern).limit(5),
+      supabase.from('contacts').select('id, first_name, last_name, email, job_title').or(`first_name.ilike.${pattern},last_name.ilike.${pattern},email.ilike.${pattern}`).limit(5),
     ])
 
     return NextResponse.json({
       interns: internsRes.data ?? [],
       companies: companiesRes.data ?? [],
       jobs: jobsRes.data ?? [],
+      contacts: contactsRes.data ?? [],
     })
   } catch {
     return NextResponse.json({ interns: [], cases: [], companies: [], jobs: [] })

@@ -22,16 +22,26 @@ interface SearchJob {
   status: string
 }
 
+interface SearchContact {
+  id: string
+  first_name: string
+  last_name: string
+  email?: string | null
+  job_title?: string | null
+}
+
 interface SearchResults {
   interns: SearchIntern[]
   companies: SearchCompany[]
   jobs: SearchJob[]
+  contacts?: SearchContact[]
 }
 
 type ResultItem =
   | { type: 'intern'; id: string; label: string; sub: string; url: string }
   | { type: 'company'; id: string; label: string; sub: string; url: string }
   | { type: 'job'; id: string; label: string; sub: string; url: string }
+  | { type: 'contact'; id: string; label: string; sub: string; url: string }
 
 function flattenResults(data: SearchResults): ResultItem[] {
   const items: ResultItem[] = []
@@ -43,6 +53,9 @@ function flattenResults(data: SearchResults): ResultItem[] {
   )
   data.jobs.forEach((j) =>
     items.push({ type: 'job', id: j.id, label: j.title, sub: j.status, url: `/fr/jobs/${j.id}` })
+  );
+  (data.contacts ?? []).forEach((c) =>
+    items.push({ type: 'contact', id: c.id, label: `${c.first_name} ${c.last_name}`, sub: c.job_title ?? c.email ?? '', url: `/fr/contacts/${c.id}` })
   )
   return items
 }
@@ -51,12 +64,14 @@ const TYPE_ICONS: Record<string, string> = {
   intern: '👤',
   company: '🏢',
   job: '💼',
+  contact: '📞',
 }
 
 const TYPE_LABELS: Record<string, string> = {
   intern: 'Stagiaire',
   company: 'Entreprise',
   job: 'Offre',
+  contact: 'Contact',
 }
 
 export function CommandPalette() {
