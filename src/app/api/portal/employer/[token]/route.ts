@@ -9,13 +9,17 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
   const sb = svc()
   const { token } = await params
 
-  const { data: access } = await sb
+  const { data: access, error: accessError } = await sb
     .from('employer_portal_access')
-    .select('*, companies(*), contacts(id,first_name,last_name,email,whatsapp,job_title), sponsor_contract_signed_at, sponsor_contract_signed_by, sponsor_contract_signature_data')
+    .select(`
+      *,
+      companies(*),
+      contacts(id, first_name, last_name, email, whatsapp, job_title)
+    `)
     .eq('token', token)
     .single()
 
-  if (!access) return NextResponse.json({ error: 'Lien invalide' }, { status: 404 })
+  if (accessError || !access) return NextResponse.json({ error: 'Lien invalide' }, { status: 404 })
 
   if (!access.viewed_at) {
     await sb
