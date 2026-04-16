@@ -221,8 +221,8 @@ export async function GET(
         interns(*),
         destinations(name,country),
         packages(name,price_eur),
-        job_submissions(id,status,intern_interested,intern_priority,employer_response,jobs(id,title,public_title,location,companies(id,name,logo_url))),
-        contacts!cases_employer_contact_id_fkey(id,first_name,last_name,email,whatsapp,job_title,companies(id,name))
+        job_submissions!job_submissions_case_id_fkey(id,status,intern_interested,intern_priority,employer_response,jobs!job_submissions_job_id_fkey(id,title,public_title,location,companies!jobs_company_id_fkey(id,name,logo_url))),
+        contacts!cases_employer_contact_id_fkey(id,first_name,last_name,email,whatsapp,job_title,companies!contacts_company_id_fkey(id,name))
       `)
       .eq('id', id)
       .single()
