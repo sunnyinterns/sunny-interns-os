@@ -7,105 +7,84 @@ import { NewCaseModal } from '@/components/cases/NewCaseModal'
 import { Toast } from '@/components/ui/Toast'
 
 /* ── Types ── */
-interface CaseItem {
-  id: string
-  status: string
-  payment_date: string | null
-  payment_amount: number | null
-  visa_submitted_to_agent_at: string | null
-  flight_number: string | null
-  chauffeur_reserve: boolean | null
-  convention_signee_check: boolean | null
-  interns: { first_name: string; last_name: string } | null
-}
-
-interface EnAttenteItem {
-  id: string
-  type: string
-  waiting_for: string
-  due_date: string | null
-  label: string | null
-  cases: { id: string; status: string; interns: { first_name: string; last_name: string } | null } | null
-}
-
-interface NotifItem {
-  id: string
-  type: string
-  title: string
-  message: string | null
-  link: string | null
-  is_read: boolean
-  created_at: string
-}
-
-interface CalEvent {
-  id: string
-  summary: string | null
-  start_datetime: string | null
-  intern_name: string | null
-  case_id: string | null
-}
-
 interface ActionItem {
-  caseId: string
-  name: string
-  action: string
-  priority: 'red' | 'amber' | 'green'
+  case_id: string; intern_name: string; action: string
+  reason: string; priority: 'urgent' | 'today' | 'week'
+  case_status: string; days_in_stage: number | null
+}
+interface EnAttenteItem {
+  id: string; case_id: string; type: string
+  waiting_for: string; due_date: string | null; notes: string | null; intern_name: string
+}
+interface NotifItem {
+  id: string; type: string; title: string
+  message: string | null; link: string | null; is_read: boolean; created_at: string
+}
+interface CalEvent {
+  id: string; title: string; start_time: string | null
+  end_time: string | null; case_id: string | null; type: string
+}
+interface PipelineCase {
+  case_id: string; intern_name: string; status: string
+  stage_label: string; days_in_stage: number | null
+  alert?: boolean; desired_start_date?: string | null
+  actual_start_date?: string | null; actual_end_date?: string | null; created_at?: string
+}
+interface DashboardData {
+  today_actions: ActionItem[]
+  en_attente: EnAttenteItem[]
+  en_attente_total: number
+  notifications: NotifItem[]
+  notifications_unread: number
+  calendar_events: CalEvent[]
+  pipeline: { leads: PipelineCase[]; candidates: PipelineCase[]; procedure: PipelineCase[]; active: PipelineCase[]; alumni: PipelineCase[] }
+  stats: { total_active: number; leads: number; candidates: number; procedure: number; active_internships: number; alumni: number }
 }
 
 /* ── Helpers ── */
-const CANDIDATE_STATUSES = ['lead', 'rdv_booked', 'qualification_done', 'job_submitted', 'job_retained']
-const PROCEDURE_STATUSES = ['convention_signed', 'payment_pending', 'payment_received', 'visa_docs_sent', 'visa_submitted', 'visa_in_progress', 'visa_received', 'arrival_prep']
+function timeAgo(d: string): string {
+  const diff = Date.now() - new Date(d).getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 60) return `il y a ${m}min`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `il y a ${h}h`
+  return `il y a ${Math.floor(h / 24)}j`
+}
+
+function daysUntil(d: string | null): number | null {
+  if (!d) return null
+  return Math.ceil((new Date(d).getTime() - Date.now()) / 86400000)
+}
+
+const PRIORITY_STYLES = {
+  urgent: { bg: 'bg-red-50', border: 'border-red-100', dot: 'bg-red-500', text: 'text-red-700', badge: 'bg-red-100 text-red-700' },
+  today: { bg: 'bg-amber-50', border: 'border-amber-100', dot: 'bg-amber-500', text: 'text-amber-700', badge: 'bg-amber-100 text-amber-700' },
+  week: { bg: 'bg-emerald-50', border: 'border-emerald-100', dot: 'bg-emerald-500', text: 'text-emerald-700', badge: 'bg-emerald-100 text-emerald-700' },
+}
+
+const WAITING_COLORS: Record<string, string> = {
+  intern: 'bg-purple-400', school: 'bg-blue-400', agent: 'bg-orange-400', employer: 'bg-sky-400', manager: 'bg-zinc-400',
+}
+const WAITING_LABELS: Record<string, string> = {
+  intern: 'Intern', school: 'Ecole', agent: 'Agent', employer: 'Employeur', manager: 'Manager',
+}
+
+const NOTIF_COLORS: Record<string, string> = {
+  new_lead: 'bg-zinc-400', payment_received: 'bg-emerald-400', payment_notified: 'bg-emerald-300',
+  convention_signed: 'bg-purple-400', engagement_signed: 'bg-zinc-400',
+  visa_received: 'bg-blue-400', employer_response: 'bg-sky-400', rdv_cancelled: 'bg-red-400',
+}
 
 const PIPELINE_COLS = [
-  { title: 'Leads & RDV', statuses: ['lead', 'rdv_booked'] },
-  { title: 'Matching', statuses: ['qualification_done', 'job_submitted', 'job_retained'] },
-  { title: 'En procedure', statuses: ['convention_signed', 'payment_pending', 'payment_received', 'visa_docs_sent', 'visa_submitted', 'visa_in_progress', 'visa_received', 'arrival_prep'] },
-  { title: 'En stage & Alumni', statuses: ['active', 'alumni'] },
+  { key: 'leads' as const, title: 'Leads & RDV', keys: ['leads'] },
+  { key: 'candidates' as const, title: 'Matching', keys: ['candidates'] },
+  { key: 'procedure' as const, title: 'En procedure', keys: ['procedure'] },
+  { key: 'active' as const, title: 'En stage & Alumni', keys: ['active', 'alumni'] },
 ]
 
-const STATUS_LABELS: Record<string, string> = {
-  lead: 'Lead',
-  rdv_booked: 'RDV planifie',
-  qualification_done: 'Qualifie',
-  job_submitted: 'CV envoye',
-  job_retained: 'Retenu',
-  convention_signed: 'Convention signee',
-  payment_pending: 'Paiement en attente',
-  payment_received: 'Paiement recu',
-  visa_docs_sent: 'Docs visa envoyes',
-  visa_submitted: 'Visa soumis',
-  visa_in_progress: 'Visa en cours',
-  visa_received: 'Visa recu',
-  arrival_prep: 'Depart imminent',
-  active: 'En stage',
-  alumni: 'Alumni',
-}
-
-const NOTIF_ICONS: Record<string, string> = {
-  new_lead: '👤',
-  payment_received: '💰',
-  payment_notified: '💳',
-  convention_signed: '📝',
-  engagement_signed: '✍️',
-  visa_received: '🛂',
-  employer_response: '🏢',
-  rdv_cancelled: '❌',
-}
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `il y a ${mins}min`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `il y a ${hours}h`
-  const days = Math.floor(hours / 24)
-  return `il y a ${days}j`
-}
-
-function daysUntil(dateStr: string | null): number | null {
-  if (!dateStr) return null
-  return Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86400000)
+/* ── Skeleton ── */
+function Skeleton({ className = '' }: { className?: string }) {
+  return <div className={`animate-pulse bg-zinc-100 rounded ${className}`} />
 }
 
 /* ── Component ── */
@@ -114,99 +93,48 @@ export default function FeedPage() {
   const router = useRouter()
   const locale = typeof params?.locale === 'string' ? params.locale : 'fr'
 
+  const [data, setData] = useState<DashboardData | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
-  const [cases, setCases] = useState<CaseItem[]>([])
-  const [enAttente, setEnAttente] = useState<EnAttenteItem[]>([])
-  const [notifs, setNotifs] = useState<NotifItem[]>([])
-  const [calEvents, setCalEvents] = useState<CalEvent[]>([])
 
   useEffect(() => {
-    fetch('/api/cases?view=all')
-      .then(r => r.ok ? r.json() : [])
-      .then(d => setCases(Array.isArray(d) ? d : []))
-      .catch(() => null)
-
-    fetch('/api/en-attente')
-      .then(r => r.ok ? r.json() : [])
-      .then(d => setEnAttente(Array.isArray(d) ? d.slice(0, 3) : []))
-      .catch(() => null)
-
-    fetch('/api/admin-notifications')
-      .then(r => r.ok ? r.json() : [])
-      .then(d => setNotifs(Array.isArray(d) ? d.slice(0, 4) : []))
-      .catch(() => null)
-
-    fetch('/api/calendar/events?status=upcoming&days=30')
-      .then(r => r.ok ? r.json() : [])
-      .then(d => setCalEvents(Array.isArray(d) ? d.slice(0, 3) : []))
+    fetch('/api/dashboard')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d && !d.error) setData(d) })
       .catch(() => null)
   }, [])
 
-  /* ── Derive "A traiter" actions ── */
-  const actions: ActionItem[] = []
-  for (const c of cases) {
-    const name = c.interns ? `${c.interns.first_name} ${c.interns.last_name}` : '—'
-    if (c.status === 'convention_signed' && !c.payment_date) {
-      actions.push({ caseId: c.id, name, action: 'Envoyer la facture', priority: 'red' })
-    }
-    if (c.status === 'payment_received' && !c.visa_submitted_to_agent_at) {
-      actions.push({ caseId: c.id, name, action: 'Demarrer le visa', priority: 'amber' })
-    }
-    if (c.status === 'visa_received' && !c.flight_number) {
-      actions.push({ caseId: c.id, name, action: 'Confirmer le vol', priority: 'amber' })
-    }
-    if (c.status === 'visa_in_progress' && c.visa_submitted_to_agent_at) {
-      const daysSince = daysUntil(c.visa_submitted_to_agent_at)
-      if (daysSince !== null && daysSince < -10) {
-        actions.push({ caseId: c.id, name, action: 'Relancer l\'agent', priority: 'green' })
-      }
-    }
-    if (c.status === 'arrival_prep' && !c.chauffeur_reserve) {
-      actions.push({ caseId: c.id, name, action: 'Reserver le chauffeur', priority: 'amber' })
-    }
+  async function markNotifRead(n: NotifItem) {
+    fetch('/api/admin-notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: n.id }) }).catch(() => null)
+    setData(prev => prev ? { ...prev, notifications: prev.notifications.map(x => x.id === n.id ? { ...x, is_read: true } : x) } : prev)
+    if (n.link) router.push(n.link)
   }
 
-  /* ── Pipeline counts ── */
-  const leadsCount = cases.filter(c => c.status === 'lead').length
-  const candidatsCount = cases.filter(c => CANDIDATE_STATUSES.includes(c.status) && c.status !== 'lead').length
-  const procedureCount = cases.filter(c => PROCEDURE_STATUSES.includes(c.status)).length
-  const totalActive = cases.filter(c => !['alumni', 'completed', 'not_interested', 'no_job_found', 'lost'].includes(c.status)).length
-
-  /* ── Calendar: current month days with events ── */
   const now = new Date()
-  const currentMonth = now.getMonth()
-  const currentYear = now.getFullYear()
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
-  const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay()
-  const eventDays = new Set(calEvents.map(e => e.start_datetime ? new Date(e.start_datetime).getDate() : null).filter(Boolean))
-  const dayLabels = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di']
-  const firstDayOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1
+  const todayStr = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
 
-  const today = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-
-  async function markNotifRead(notif: NotifItem) {
-    await fetch('/api/admin-notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: notif.id }) }).catch(() => null)
-    setNotifs(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n))
-    if (notif.link) router.push(notif.link)
+  // Week calendar: current week + next week (14 days)
+  const weekStart = new Date(now)
+  weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7)) // Monday
+  const weekDays: Date[] = []
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(weekStart)
+    d.setDate(weekStart.getDate() + i)
+    weekDays.push(d)
   }
-
-  const priorityStyles = {
-    red: 'bg-red-50 border-red-200 text-red-700',
-    amber: 'bg-amber-50 border-amber-200 text-amber-700',
-    green: 'bg-emerald-50 border-emerald-200 text-emerald-700',
-  }
-  const priorityDot = { red: 'bg-red-400', amber: 'bg-amber-400', green: 'bg-emerald-400' }
+  const eventDates = new Set((data?.calendar_events ?? []).map(e => e.start_time ? new Date(e.start_time).toDateString() : null).filter(Boolean))
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#fafaf9' }}>
-      {/* Header */}
+      {/* ── SECTION 1: Header ── */}
       <div className="bg-white border-b border-zinc-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between py-4">
+          <div className="flex items-center justify-between py-5">
             <div>
-              <h1 className="text-xl font-bold text-[#1a1918]">Dashboard</h1>
-              <p className="text-xs text-zinc-500 capitalize">{today}</p>
+              <h1 className="text-xl font-bold text-[#1a1918]">Bonjour Sidney</h1>
+              <p className="text-sm text-zinc-400 capitalize mt-0.5">
+                {todayStr} {data ? `· ${data.today_actions.length} choses a traiter` : ''}
+              </p>
             </div>
             <button onClick={() => setShowModal(true)} className="px-3 py-1.5 text-sm font-medium bg-[#1a1918] text-white rounded-lg hover:bg-[#2a2927] transition-colors">
               + Nouveau dossier
@@ -217,29 +145,37 @@ export default function FeedPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-8">
 
-        {/* ═══ ZONE HAUTE — Focus operationnel ═══ */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* ── SECTION 2: Grille 2 colonnes ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* COL GAUCHE (2/5) */}
+          <div className="lg:col-span-2 space-y-6">
 
-          {/* COL GAUCHE */}
-          <div className="space-y-6">
-            {/* A traiter aujourd'hui */}
+            {/* A traiter */}
             <section className="bg-white rounded-xl border border-zinc-100 p-5">
-              <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-4">A traiter aujourd&apos;hui</h2>
-              {actions.length === 0 ? (
-                <p className="text-sm text-zinc-400 py-4 text-center">Tout est a jour</p>
+              <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-4">A traiter</h2>
+              {!data ? (
+                <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-16" />)}</div>
+              ) : data.today_actions.length === 0 ? (
+                <p className="text-sm text-zinc-400 py-6 text-center">Tout est a jour</p>
               ) : (
                 <div className="space-y-2">
-                  {actions.map((a, i) => (
-                    <Link key={`${a.caseId}-${i}`} href={`/${locale}/clients/${a.caseId}`}
-                      className={`flex items-center gap-3 p-3 rounded-lg border transition-colors hover:opacity-80 ${priorityStyles[a.priority]}`}>
-                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${priorityDot[a.priority]}`} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">{a.name}</p>
-                        <p className="text-xs opacity-75">{a.action}</p>
-                      </div>
-                      <span className="text-xs opacity-50">&rarr;</span>
-                    </Link>
-                  ))}
+                  {data.today_actions.map((a, i) => {
+                    const s = PRIORITY_STYLES[a.priority]
+                    return (
+                      <Link key={`${a.case_id}-${i}`} href={`/${locale}/clients/${a.case_id}`}
+                        className={`flex items-start gap-3 p-3 rounded-lg border transition-colors hover:opacity-80 ${s.bg} ${s.border}`}>
+                        <span className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${s.dot}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium ${s.text}`}>{a.intern_name}</p>
+                          <p className="text-xs text-zinc-500 mt-0.5">{a.action}</p>
+                          <p className="text-[11px] text-zinc-400 mt-0.5">{a.reason}</p>
+                        </div>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${s.badge} flex-shrink-0`}>
+                          {a.priority === 'urgent' ? 'Urgent' : a.priority === 'today' ? 'Aujourd\'hui' : 'Cette semaine'}
+                        </span>
+                      </Link>
+                    )
+                  })}
                 </div>
               )}
             </section>
@@ -247,32 +183,39 @@ export default function FeedPage() {
             {/* En attente */}
             <section className="bg-white rounded-xl border border-zinc-100 p-5">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide">En attente</h2>
-                <Link href={`/${locale}/en-attente`} className="text-xs text-[#c8a96e] font-medium hover:underline">Voir tout &rarr;</Link>
+                <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">En attente</h2>
+                <Link href={`/${locale}/en-attente`} className="text-xs text-[#c8a96e] font-medium hover:underline">
+                  Voir tout{data ? ` (${data.en_attente_total})` : ''} &rarr;
+                </Link>
               </div>
-              {enAttente.length === 0 ? (
+              {!data ? (
+                <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-14" />)}</div>
+              ) : data.en_attente.length === 0 ? (
                 <p className="text-sm text-zinc-400 py-4 text-center">Rien en attente</p>
               ) : (
                 <div className="space-y-2">
-                  {enAttente.map(item => {
-                    const name = item.cases?.interns ? `${item.cases.interns.first_name} ${item.cases.interns.last_name}` : '—'
+                  {data.en_attente.slice(0, 3).map(item => {
                     const days = daysUntil(item.due_date)
-                    const isOverdue = days !== null && days < 0
-                    const isUrgent = days !== null && days >= 0 && days <= 3
+                    const overdue = days !== null && days < 0
+                    const dotColor = WAITING_COLORS[item.waiting_for] ?? 'bg-zinc-400'
                     return (
-                      <Link key={item.id} href={`/${locale}/cases/${item.cases?.id ?? ''}`}
+                      <Link key={item.id} href={`/${locale}/cases/${item.case_id}`}
                         className="flex items-center gap-3 p-3 rounded-lg border border-zinc-100 hover:bg-zinc-50 transition-colors">
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-[#1a1918]">{name}</p>
+                          <p className="text-sm font-medium text-[#1a1918]">{item.intern_name}</p>
                           <p className="text-xs text-zinc-400">{item.type.replace(/_/g, ' ')}</p>
                         </div>
-                        {days !== null && (
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                            isOverdue ? 'bg-red-50 text-red-600' : isUrgent ? 'bg-amber-50 text-amber-600' : 'bg-zinc-100 text-zinc-500'
-                          }`}>
-                            {isOverdue ? `${Math.abs(days)}j en retard` : days === 0 ? "Aujourd'hui" : `${days}j`}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {days !== null && (
+                            <span className={`text-[11px] font-medium ${overdue ? 'text-red-500' : 'text-zinc-400'}`}>
+                              {overdue ? `${Math.abs(days)}j retard` : days === 0 ? "Auj." : `${days}j`}
+                            </span>
+                          )}
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500">
+                            {WAITING_LABELS[item.waiting_for] ?? item.waiting_for}
                           </span>
-                        )}
+                        </div>
                       </Link>
                     )
                   })}
@@ -281,144 +224,152 @@ export default function FeedPage() {
             </section>
           </div>
 
-          {/* COL DROITE */}
-          <div className="space-y-6">
-            {/* Mini calendrier */}
+          {/* COL DROITE (3/5) */}
+          <div className="lg:col-span-3 space-y-6">
+
+            {/* Cette semaine */}
             <section className="bg-white rounded-xl border border-zinc-100 p-5">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide">
-                  {now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
-                </h2>
+                <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Cette semaine</h2>
                 <Link href={`/${locale}/calendar`} className="text-xs text-[#c8a96e] font-medium hover:underline">Calendrier &rarr;</Link>
               </div>
-              {/* Mini cal grid */}
-              <div className="grid grid-cols-7 gap-0.5 text-center mb-4">
-                {dayLabels.map(d => (
-                  <div key={d} className="text-[10px] font-medium text-zinc-400 py-1">{d}</div>
+              {/* Week grid */}
+              <div className="grid grid-cols-7 gap-1 mb-4">
+                {['Lu','Ma','Me','Je','Ve','Sa','Di'].map(d => (
+                  <div key={d} className="text-[10px] font-medium text-zinc-400 text-center py-1">{d}</div>
                 ))}
-                {Array.from({ length: firstDayOffset }).map((_, i) => (
-                  <div key={`empty-${i}`} />
-                ))}
-                {Array.from({ length: daysInMonth }).map((_, i) => {
-                  const day = i + 1
-                  const isToday = day === now.getDate()
-                  const hasEvent = eventDays.has(day)
+                {weekDays.map((d, i) => {
+                  const isToday = d.toDateString() === now.toDateString()
+                  const hasEvent = eventDates.has(d.toDateString())
                   return (
-                    <div key={day} className={`relative py-1 text-xs rounded ${isToday ? 'bg-[#1a1918] text-white font-bold' : 'text-zinc-600'}`}>
-                      {day}
-                      {hasEvent && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#c8a96e]" />}
+                    <div key={i} className={`relative text-center py-1.5 rounded-lg text-xs ${isToday ? 'bg-[#1a1918] text-white font-bold' : 'text-zinc-600'}`}>
+                      {d.getDate()}
+                      {hasEvent && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#c8a96e]" />}
                     </div>
                   )
                 })}
               </div>
               {/* Prochains events */}
-              {calEvents.length > 0 && (
+              {!data ? (
+                <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-12" />)}</div>
+              ) : data.calendar_events.length > 0 ? (
                 <div className="space-y-2 border-t border-zinc-100 pt-3">
-                  {calEvents.map(ev => (
+                  {data.calendar_events.slice(0, 3).map(ev => (
                     <div key={ev.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-50 transition-colors">
-                      <div className="w-8 h-8 rounded-lg bg-[#c8a96e]/10 flex items-center justify-center text-xs font-bold text-[#c8a96e]">
-                        {ev.start_datetime ? new Date(ev.start_datetime).getDate() : '?'}
+                      <div className="w-9 h-9 rounded-lg bg-[#c8a96e]/10 flex items-center justify-center text-xs font-bold text-[#c8a96e]">
+                        {ev.start_time ? new Date(ev.start_time).getDate() : '?'}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#1a1918] truncate">{ev.intern_name ?? ev.summary ?? 'RDV'}</p>
+                        <p className="text-sm font-medium text-[#1a1918] truncate">{ev.title}</p>
                         <p className="text-xs text-zinc-400">
-                          {ev.start_datetime ? new Date(ev.start_datetime).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : ''}{' '}
-                          {ev.start_datetime ? new Date(ev.start_datetime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                          {ev.start_time ? new Date(ev.start_time).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : ''}
+                          {ev.start_time ? ` · ${new Date(ev.start_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` : ''}
                         </p>
                       </div>
                     </div>
                   ))}
                 </div>
+              ) : (
+                <p className="text-sm text-zinc-400 text-center py-3 border-t border-zinc-100">Aucun RDV prevu</p>
               )}
             </section>
 
-            {/* Notifications recentes */}
+            {/* Notifications */}
             <section className="bg-white rounded-xl border border-zinc-100 p-5">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide">Notifications</h2>
+                <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+                  Notifications
+                  {data && data.notifications_unread > 0 && (
+                    <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500 text-white">{data.notifications_unread}</span>
+                  )}
+                </h2>
                 <Link href={`/${locale}/notifications`} className="text-xs text-[#c8a96e] font-medium hover:underline">Voir tout &rarr;</Link>
               </div>
-              {notifs.length === 0 ? (
+              {!data ? (
+                <div className="space-y-2">{[1,2,3,4].map(i => <Skeleton key={i} className="h-14" />)}</div>
+              ) : data.notifications.length === 0 ? (
                 <p className="text-sm text-zinc-400 py-4 text-center">Aucune notification</p>
               ) : (
                 <div className="space-y-1">
-                  {notifs.map(n => (
-                    <button key={n.id} onClick={() => markNotifRead(n)}
-                      className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors hover:bg-zinc-50 ${!n.is_read ? 'bg-blue-50/40' : ''}`}>
-                      <span className="text-base flex-shrink-0">{NOTIF_ICONS[n.type] ?? '🔔'}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#1a1918] truncate">{n.title}</p>
-                        <p className="text-xs text-zinc-400">{timeAgo(n.created_at)}</p>
-                      </div>
-                      {!n.is_read && <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />}
-                    </button>
-                  ))}
+                  {data.notifications.slice(0, 4).map(n => {
+                    const dotColor = NOTIF_COLORS[n.type] ?? 'bg-zinc-400'
+                    const msg = n.message && n.message.length > 60 ? n.message.slice(0, 60) + '...' : n.message
+                    return (
+                      <button key={n.id} onClick={() => markNotifRead(n)}
+                        className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors hover:bg-zinc-50 ${!n.is_read ? 'bg-blue-50/30' : ''}`}>
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-[#1a1918] truncate">{n.title}</p>
+                          {msg && <p className="text-xs text-zinc-400 truncate mt-0.5">{msg}</p>}
+                        </div>
+                        <span className="text-[11px] text-zinc-400 flex-shrink-0">{timeAgo(n.created_at)}</span>
+                      </button>
+                    )
+                  })}
                 </div>
               )}
             </section>
           </div>
         </div>
 
-        {/* ═══ ZONE BASSE — Pipeline business ═══ */}
+        {/* ── SECTION 3: Stats pills ── */}
+        {data && (
+          <div className="flex flex-wrap items-center gap-2 py-3 border-t border-b border-zinc-200">
+            <span className="text-sm font-semibold text-[#1a1918]">{data.stats.total_active} dossiers actifs</span>
+            <span className="text-zinc-300">|</span>
+            <span className="text-xs text-zinc-500">{data.stats.leads} leads</span>
+            <span className="text-zinc-300">|</span>
+            <span className="text-xs text-zinc-500">{data.stats.candidates} en matching</span>
+            <span className="text-zinc-300">|</span>
+            <span className="text-xs text-zinc-500">{data.stats.procedure} en procedure</span>
+            <span className="text-zinc-300">|</span>
+            <span className="text-xs text-zinc-500">{data.stats.active_internships} en stage</span>
+            <span className="text-zinc-300">|</span>
+            <span className="text-xs text-zinc-500">{data.stats.alumni} alumni</span>
+          </div>
+        )}
+
+        {/* ── SECTION 4: Pipeline kanban ── */}
         <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-[#1a1918]">
-              Pipeline <span className="text-zinc-400 font-normal text-sm ml-1">{totalActive} dossiers actifs</span>
-            </h2>
-            <p className="text-xs text-zinc-400 capitalize">{now.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-          </div>
-
-          {/* Stats rapides */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="bg-white rounded-xl border border-zinc-100 p-4 text-center">
-              <p className="text-2xl font-bold text-[#1a1918]">{leadsCount}</p>
-              <p className="text-xs text-zinc-400 mt-1">Leads</p>
+          <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-4">Pipeline</h2>
+          {!data ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[1,2,3,4].map(i => <Skeleton key={i} className="h-48 rounded-xl" />)}
             </div>
-            <div className="bg-white rounded-xl border border-zinc-100 p-4 text-center">
-              <p className="text-2xl font-bold text-[#1a1918]">{candidatsCount}</p>
-              <p className="text-xs text-zinc-400 mt-1">Candidats actifs</p>
-            </div>
-            <div className="bg-white rounded-xl border border-zinc-100 p-4 text-center">
-              <p className="text-2xl font-bold text-[#1a1918]">{procedureCount}</p>
-              <p className="text-xs text-zinc-400 mt-1">En procedure</p>
-            </div>
-          </div>
-
-          {/* Pipeline 4 colonnes */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {PIPELINE_COLS.map(col => {
-              const colCases = cases.filter(c => col.statuses.includes(c.status))
-              return (
-                <div key={col.title} className="bg-white rounded-xl border border-zinc-100 p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-[#1a1918]">{col.title}</h3>
-                    <span className="text-xs text-zinc-400 font-medium">{colCases.length}</span>
-                  </div>
-                  {colCases.length === 0 ? (
-                    <p className="text-xs text-zinc-300 py-2">Aucun dossier</p>
-                  ) : (
-                    <div className="space-y-1.5">
-                      {colCases.slice(0, 8).map(c => {
-                        const name = c.interns ? `${c.interns.first_name} ${c.interns.last_name}` : '—'
-                        const isClient = PROCEDURE_STATUSES.includes(c.status) || c.status === 'active' || c.status === 'alumni'
-                        const href = isClient ? `/${locale}/clients/${c.id}` : `/${locale}/cases/${c.id}`
-                        return (
-                          <Link key={c.id} href={href}
-                            className="block p-2 rounded-lg hover:bg-zinc-50 transition-colors">
-                            <p className="text-sm font-medium text-[#1a1918] truncate">{name}</p>
-                            <p className="text-xs text-zinc-400 truncate">{STATUS_LABELS[c.status] ?? c.status}</p>
-                          </Link>
-                        )
-                      })}
-                      {colCases.length > 8 && (
-                        <p className="text-xs text-zinc-400 text-center pt-1">+{colCases.length - 8} autres</p>
-                      )}
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {PIPELINE_COLS.map(col => {
+                const items: PipelineCase[] = col.keys.flatMap(k => (data.pipeline as Record<string, PipelineCase[]>)[k] ?? [])
+                return (
+                  <div key={col.key} className="bg-white rounded-xl border border-zinc-100 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold text-[#1a1918]">{col.title}</h3>
+                      <span className="text-xs text-zinc-400 font-medium">{items.length}</span>
                     </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+                    {items.length === 0 ? (
+                      <p className="text-xs text-zinc-300 py-2">Aucun dossier</p>
+                    ) : (
+                      <div className="space-y-1">
+                        {items.slice(0, 10).map(c => (
+                          <Link key={c.case_id} href={`/${locale}/cases/${c.case_id}`}
+                            className="flex items-center gap-2 p-2 rounded-lg hover:bg-zinc-50 transition-colors">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-[#1a1918] truncate">{c.intern_name}</p>
+                              <p className="text-xs text-zinc-400 truncate">{c.stage_label}</p>
+                            </div>
+                            {c.alert && <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />}
+                          </Link>
+                        ))}
+                        {items.length > 10 && (
+                          <p className="text-xs text-zinc-400 text-center pt-1">+{items.length - 10} autres</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </section>
       </div>
 
