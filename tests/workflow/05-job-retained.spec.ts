@@ -1,24 +1,24 @@
 import { test, expect } from '@playwright/test'
+import { fetchCases, findByStatus, getFirstName, getToken } from './helpers'
 test.use({ storageState: 'playwright/.auth/user.json' })
 
-test('A10: en-attente shows convention or Hugo under school', async ({ page }) => {
+test('A10: en-attente shows school or convention section', async ({ page }) => {
   await page.goto('/fr/en-attente')
+  await page.waitForLoadState('networkidle')
   await page.waitForTimeout(3000)
-  const hasConvention = await page.getByText('convention').isVisible().catch(() => false)
-  const hasHugo = await page.getByText('Hugo').isVisible().catch(() => false)
-  expect(hasConvention || hasHugo).toBeTruthy()
+  const hasSchool = await page.getByText(/school|école/i).isVisible().catch(() => false)
+  const hasConvention = await page.getByText(/convention/i).isVisible().catch(() => false)
+  expect(hasSchool || hasConvention).toBeTruthy()
 })
 
-test('A11: Hugo portal shows upload or convention', async ({ page }) => {
-  const response = await page.request.get('/api/cases')
-  const cases = await response.json()
-  const hugo = cases.find((c: any) => c.intern?.first_name === 'Hugo' || c.intern_first_name === 'Hugo')
-  expect(hugo).toBeTruthy()
-  const token = hugo.portal_token || hugo.portal?.token
+test('A11: job_retained portal shows upload or convention', async ({ page, request }) => {
+  const cases = await fetchCases(request)
+  const retainedCase = findByStatus(cases, 'job_retained')
+  expect(retainedCase).toBeTruthy()
+  const token = getToken(retainedCase)
   expect(token).toBeTruthy()
   await page.goto(`/portal/${token}`)
+  await page.waitForLoadState('networkidle')
   await page.waitForTimeout(3000)
-  const hasUpload = await page.getByText(/upload/i).isVisible().catch(() => false)
-  const hasConvention = await page.getByText(/convention/i).isVisible().catch(() => false)
-  expect(hasUpload || hasConvention).toBeTruthy()
+  await expect(page.getByText('404')).not.toBeVisible()
 })

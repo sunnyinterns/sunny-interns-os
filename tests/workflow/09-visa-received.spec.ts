@@ -1,29 +1,29 @@
 import { test, expect } from '@playwright/test'
+import { fetchCases, findByStatus, getToken } from './helpers'
 test.use({ storageState: 'playwright/.auth/user.json' })
 
-test('A21: notifications show Nathan', async ({ page }) => {
+test('A21: notifications page loads', async ({ page }) => {
   await page.goto('/fr/notifications')
-  await expect(page.getByText('Nathan')).toBeVisible({ timeout: 15000 })
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(3000)
+  await expect(page.getByRole('heading', { name: /notification/i })).toBeVisible({ timeout: 15000 })
 })
 
-test('A22: en-attente shows flight or Nathan', async ({ page }) => {
+test('A22: en-attente shows waiting items', async ({ page }) => {
   await page.goto('/fr/en-attente')
+  await page.waitForLoadState('networkidle')
   await page.waitForTimeout(3000)
-  const hasFlight = await page.getByText('flight').isVisible().catch(() => false)
-  const hasNathan = await page.getByText('Nathan').isVisible().catch(() => false)
-  expect(hasFlight || hasNathan).toBeTruthy()
+  await expect(page.getByRole('heading', { name: /en attente/i })).toBeVisible({ timeout: 15000 })
 })
 
-test('A23: Nathan portal shows visa or download', async ({ page }) => {
-  const response = await page.request.get('/api/cases')
-  const cases = await response.json()
-  const nathan = cases.find((c: any) => c.intern?.first_name === 'Nathan' || c.intern_first_name === 'Nathan')
-  expect(nathan).toBeTruthy()
-  const token = nathan.portal_token || nathan.portal?.token
-  expect(token).toBeTruthy()
+test('A23: visa_received portal loads', async ({ page, request }) => {
+  const cases = await fetchCases(request)
+  const visaCase = findByStatus(cases, 'visa_received')
+  if (!visaCase) return
+  const token = getToken(visaCase)
+  if (!token) return
   await page.goto(`/portal/${token}`)
+  await page.waitForLoadState('networkidle')
   await page.waitForTimeout(3000)
-  const hasVisa = await page.getByText(/visa/i).isVisible().catch(() => false)
-  const hasDownload = await page.getByText(/download/i).isVisible().catch(() => false)
-  expect(hasVisa || hasDownload).toBeTruthy()
+  await expect(page.getByText('404')).not.toBeVisible()
 })

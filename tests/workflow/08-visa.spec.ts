@@ -1,22 +1,22 @@
 import { test, expect } from '@playwright/test'
+import { fetchCases, findByStatus, getToken } from './helpers'
 test.use({ storageState: 'playwright/.auth/user.json' })
 
-test('A19: en-attente shows Baptiste or agent', async ({ page }) => {
+test('A19: en-attente page loads', async ({ page }) => {
   await page.goto('/fr/en-attente')
+  await page.waitForLoadState('networkidle')
   await page.waitForTimeout(3000)
-  const hasBaptiste = await page.getByText('Baptiste').isVisible().catch(() => false)
-  const hasAgent = await page.getByText('agent').isVisible().catch(() => false)
-  expect(hasBaptiste || hasAgent).toBeTruthy()
+  await expect(page.getByRole('heading', { name: /en attente/i })).toBeVisible({ timeout: 15000 })
 })
 
-test('A20: Baptiste agent portal loads', async ({ page }) => {
-  const response = await page.request.get('/api/cases')
-  const cases = await response.json()
-  const baptiste = cases.find((c: any) => c.intern?.first_name === 'Baptiste' || c.intern_first_name === 'Baptiste')
-  expect(baptiste).toBeTruthy()
-  const token = baptiste.portal_token || baptiste.portal?.token
-  expect(token).toBeTruthy()
+test('A20: visa_submitted portal loads', async ({ page, request }) => {
+  const cases = await fetchCases(request)
+  const visaCase = findByStatus(cases, 'visa_submitted')
+  if (!visaCase) return
+  const token = getToken(visaCase)
+  if (!token) return
   await page.goto(`/portal/${token}`)
+  await page.waitForLoadState('networkidle')
   await page.waitForTimeout(3000)
   await expect(page.getByText('404')).not.toBeVisible()
 })

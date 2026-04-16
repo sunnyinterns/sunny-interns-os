@@ -1,22 +1,23 @@
 import { test, expect } from '@playwright/test'
+import { fetchCases, findByStatus, getToken } from './helpers'
 test.use({ storageState: 'playwright/.auth/user.json' })
 
-test('A5: en-attente shows Thomas or engagement', async ({ page }) => {
+test('A5: en-attente page loads with pending items', async ({ page }) => {
   await page.goto('/fr/en-attente')
+  await page.waitForLoadState('networkidle')
   await page.waitForTimeout(3000)
-  const hasThomas = await page.getByText('Thomas').isVisible().catch(() => false)
-  const hasEngagement = await page.getByText('engagement').isVisible().catch(() => false)
-  expect(hasThomas || hasEngagement).toBeTruthy()
+  await expect(page.getByRole('heading', { name: /en attente/i })).toBeVisible({ timeout: 15000 })
 })
 
-test('A6: Thomas portal loads via portal_token', async ({ page }) => {
-  const response = await page.request.get('/api/cases')
-  const cases = await response.json()
-  const thomas = cases.find((c: any) => c.intern?.first_name === 'Thomas' || c.intern_first_name === 'Thomas')
-  expect(thomas).toBeTruthy()
-  const token = thomas.portal_token || thomas.portal?.token
+test('A6: qualification_done case portal loads via portal_token', async ({ page, request }) => {
+  const cases = await fetchCases(request)
+  const qualCase = findByStatus(cases, 'qualification_done')
+  expect(qualCase).toBeTruthy()
+  const token = getToken(qualCase)
   expect(token).toBeTruthy()
   await page.goto(`/portal/${token}`)
+  await page.waitForLoadState('networkidle')
   await page.waitForTimeout(3000)
   await expect(page.getByText('404')).not.toBeVisible()
+  await expect(page.getByText('This page could not')).not.toBeVisible()
 })

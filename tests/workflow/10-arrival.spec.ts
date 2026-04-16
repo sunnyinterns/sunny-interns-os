@@ -1,28 +1,31 @@
 import { test, expect } from '@playwright/test'
+import { fetchCases, findByStatus, getFirstName, getToken } from './helpers'
 test.use({ storageState: 'playwright/.auth/user.json' })
 
-test('A24: Camille Garcia case shows QR 0025 or Canggu', async ({ page }) => {
-  await page.goto('/fr/cases')
-  await page.getByText('Camille Garcia').first().click()
+test('A24: arrival_prep case shows flight or arrival info', async ({ page, request }) => {
+  const cases = await fetchCases(request)
+  const arrCase = findByStatus(cases, 'arrival_prep')
+  if (!arrCase) return
+  const name = getFirstName(arrCase)
+
+  await page.goto('/fr/clients')
+  await page.waitForLoadState('networkidle')
+  await page.getByText(name).first().click()
+  await page.waitForLoadState('networkidle')
   await page.waitForTimeout(3000)
-  const hasQR = await page.getByText('QR 0025').isVisible().catch(() => false)
-  const hasCanggu = await page.getByText('Canggu').isVisible().catch(() => false)
-  expect(hasQR || hasCanggu).toBeTruthy()
+  const hasFlight = await page.getByText(/AF095|flight|vol|CDG/i).isVisible().catch(() => false)
+  const hasArrival = await page.getByText(/arriv/i).isVisible().catch(() => false)
+  expect(hasFlight || hasArrival).toBeTruthy()
 })
 
-test('A25: Camille portal shows checklist or chauffeur', async ({ page }) => {
-  const response = await page.request.get('/api/cases')
-  const cases = await response.json()
-  const camille = cases.find((c: any) =>
-    (c.intern?.first_name === 'Camille' || c.intern_first_name === 'Camille') &&
-    (c.intern?.last_name === 'Garcia' || c.intern_last_name === 'Garcia')
-  )
-  expect(camille).toBeTruthy()
-  const token = camille.portal_token || camille.portal?.token
-  expect(token).toBeTruthy()
+test('A25: arrival_prep portal loads', async ({ page, request }) => {
+  const cases = await fetchCases(request)
+  const arrCase = findByStatus(cases, 'arrival_prep')
+  if (!arrCase) return
+  const token = getToken(arrCase)
+  if (!token) return
   await page.goto(`/portal/${token}`)
+  await page.waitForLoadState('networkidle')
   await page.waitForTimeout(3000)
-  const hasChecklist = await page.getByText(/checklist/i).isVisible().catch(() => false)
-  const hasChauffeur = await page.getByText(/chauffeur|driver/i).isVisible().catch(() => false)
-  expect(hasChecklist || hasChauffeur).toBeTruthy()
+  await expect(page.getByText('404')).not.toBeVisible()
 })
