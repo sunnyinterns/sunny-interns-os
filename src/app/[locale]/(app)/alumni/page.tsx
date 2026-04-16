@@ -35,6 +35,7 @@ export default function AlumniPage() {
   const [alumni, setAlumni] = useState<AlumniCase[]>([])
   const [loading, setLoading] = useState(true)
   const [requestingSent, setRequestingSent] = useState<Set<string>>(new Set())
+  const [filterYear, setFilterYear] = useState<string>('all')
 
   useEffect(() => {
     const supabase = createClient()
@@ -78,6 +79,14 @@ export default function AlumniPage() {
     a.click()
     URL.revokeObjectURL(url)
   }
+
+  const years = Array.from(new Set(
+    alumni.map(a => a.actual_end_date ? new Date(a.actual_end_date).getFullYear().toString() : null).filter(Boolean)
+  )).sort((a, b) => Number(b) - Number(a)) as string[]
+
+  const filtered = filterYear === 'all' ? alumni : alumni.filter(a =>
+    a.actual_end_date ? new Date(a.actual_end_date).getFullYear().toString() === filterYear : false
+  )
 
   const totalAlumni = alumni.length
   const completedCount = alumni.filter(a => a.status === 'completed').length
@@ -136,7 +145,17 @@ export default function AlumniPage() {
         </div>
       )}
 
-      {!loading && alumni.length === 0 && (
+      {/* Year filter */}
+      {years.length > 1 && (
+        <div className="flex gap-1 bg-zinc-100 rounded-xl p-1 w-fit">
+          <button onClick={() => setFilterYear('all')} className={['px-3 py-1.5 text-xs rounded-lg font-medium transition-colors', filterYear === 'all' ? 'bg-white shadow-sm text-[#1a1918]' : 'text-zinc-500'].join(' ')}>All years</button>
+          {years.map(y => (
+            <button key={y} onClick={() => setFilterYear(y)} className={['px-3 py-1.5 text-xs rounded-lg font-medium transition-colors', filterYear === y ? 'bg-white shadow-sm text-[#1a1918]' : 'text-zinc-500'].join(' ')}>{y}</button>
+          ))}
+        </div>
+      )}
+
+      {!loading && filtered.length === 0 && (
         <div className="text-center py-16 text-zinc-400">
           <p className="text-5xl mb-4">🎓</p>
           <p className="text-sm font-medium">No alumni yet</p>
@@ -144,9 +163,9 @@ export default function AlumniPage() {
         </div>
       )}
 
-      {!loading && alumni.length > 0 && (
+      {!loading && filtered.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {alumni.map(a => {
+          {filtered.map(a => {
             const intern = a.interns
             const name = intern ? `${intern.first_name} ${intern.last_name}` : 'Unknown'
             const initials = intern ? internInitials(intern.first_name, intern.last_name) : '?'
