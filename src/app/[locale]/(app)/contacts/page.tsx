@@ -4,6 +4,7 @@ import { SearchableSelect, type SearchableSelectItem } from '@/components/ui/Sea
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 interface Contact {
   id: string
@@ -44,6 +45,32 @@ const TYPE_COLORS: Record<string, string> = {
   other: 'bg-zinc-100 text-zinc-600',
 }
 
+// ─── Interns as contacts ─────────────────────────────────────────────────────
+
+interface InternContact {
+  id: string
+  first_name: string
+  last_name: string
+  email: string | null
+  whatsapp: string | null
+  nationality: string | null
+  school_name: string | null
+  avatar_url: string | null
+  cases?: Array<{ id: string; status: string }> | null
+}
+
+function internCategoryLabel(status: string | null | undefined): { label: string; cls: string } {
+  if (!status) return { label: 'No case', cls: 'bg-zinc-100 text-zinc-500' }
+  if (status === 'lead') return { label: 'Lead', cls: 'bg-zinc-100 text-zinc-600' }
+  if (['rdv_booked', 'qualification_done'].includes(status)) return { label: 'Candidate', cls: 'bg-blue-100 text-blue-700' }
+  if (['job_submitted', 'job_retained', 'convention_signed', 'payment_pending', 'payment_received',
+    'visa_docs_sent', 'visa_submitted', 'visa_in_progress', 'visa_received', 'arrival_prep'].includes(status))
+    return { label: 'Client', cls: 'bg-green-100 text-green-700' }
+  if (status === 'active') return { label: 'Active', cls: 'bg-emerald-100 text-emerald-700' }
+  if (['alumni', 'completed'].includes(status)) return { label: 'Alumni', cls: 'bg-purple-100 text-purple-700' }
+  return { label: status, cls: 'bg-zinc-100 text-zinc-500' }
+}
+
 const JOB_STATUS_LABELS: Record<string, string> = {
   open: 'Cherche',
   staffed: 'Pourvu',
@@ -72,9 +99,13 @@ export default function ContactsPage() {
   const params = useParams()
   const router = useRouter()
   const locale = typeof params?.locale === 'string' ? params.locale : 'fr'
+  const [activeTab, setActiveTab] = useState<'contacts' | 'interns'>('contacts')
   const [contacts, setContacts] = useState<Contact[]>([])
   const [companies, setCompanies] = useState<{ id: string; name: string; logo_url?: string | null; internship_city?: string | null; legal_type?: string | null; company_type?: string | null; is_employer?: boolean | null; is_partner?: boolean | null; is_supplier?: boolean | null }[]>([])
   const [loading, setLoading] = useState(true)
+  const [interns, setInterns] = useState<InternContact[]>([])
+  const [internsLoading, setInternsLoading] = useState(false)
+  const [internSearch, setInternSearch] = useState('')
   const [filterType, setFilterType] = useState<string>('all')
   const [filterCompany, setFilterCompany] = useState('')
   const [search, setSearch] = useState('')
@@ -106,6 +137,21 @@ export default function ContactsPage() {
   }
 
   useEffect(() => { void load() }, [])
+
+  useEffect(() => {
+    if (activeTab !== 'interns' || interns.length > 0) return
+    setInternsLoading(true)
+    const supabase = createClient()
+    void supabase
+      .from('interns')
+      .select('id, first_name, last_name, email, whatsapp, nationality, school_name, avatar_url, cases(id, status)')
+      .order('created_at', { ascending: false })
+      .limit(200)
+      .then(({ data }) => {
+        setInterns((data ?? []) as unknown as InternContact[])
+        setInternsLoading(false)
+      })
+  }, [activeTab, interns.length])
 
   // Refresh selected contact when contacts list updates
   useEffect(() => {
@@ -210,18 +256,108 @@ export default function ContactsPage() {
       {/* Main list */}
       <div className={['flex-1 min-w-0 p-6 overflow-auto', selectedContact ? 'max-w-[calc(100%-380px)]' : ''].join(' ')}>
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-xl font-bold text-[#1a1918]">Contacts</h1>
-            <p className="text-sm text-zinc-500 mt-0.5">{contacts.length} contact{contacts.length !== 1 ? 's' : ''}</p>
+            <p className="text-sm text-zinc-500 mt-0.5">
+              {activeTab === 'contacts' ? `${contacts.length} contact${contacts.length !== 1 ? 's' : ''}` : `${interns.length} intern${interns.length !== 1 ? 's' : ''}`}
+            </p>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="px-4 py-2 bg-[#c8a96e] text-white text-sm font-medium rounded-lg hover:bg-[#b8945a] transition-colors"
-          >
-            + Nouveau contact
-          </button>
+          {activeTab === 'contacts' && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="px-4 py-2 bg-[#c8a96e] text-white text-sm font-medium rounded-lg hover:bg-[#b8945a] transition-colors"
+            >
+              + Nouveau contact
+            </button>
+          )}
         </div>
+
+        {/* Tabs */}
+        <div className="flex gap-1 bg-zinc-100 rounded-xl p-1 w-fit mb-5">
+          {(['contacts', 'interns'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={['px-4 py-1.5 text-sm rounded-lg transition-colors font-medium', activeTab === tab ? 'bg-white shadow-sm text-[#1a1918]' : 'text-zinc-500 hover:text-zinc-700'].join(' ')}
+            >
+              {tab === 'contacts' ? `Contacts (${contacts.length})` : `Interns (${interns.length})`}
+            </button>
+          ))}
+        </div>
+
+        {/* ── INTERNS TAB ───────────────────────────────────────────────── */}
+        {activeTab === 'interns' && (
+          <div>
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Search interns…"
+                value={internSearch}
+                onChange={e => setInternSearch(e.target.value)}
+                className="px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e] w-64"
+              />
+            </div>
+            {internsLoading ? (
+              <div className="space-y-2">
+                {[1,2,3,4].map(i => <div key={i} className="h-16 bg-zinc-100 rounded-xl animate-pulse" />)}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {interns
+                  .filter(i => {
+                    if (!internSearch) return true
+                    const q = internSearch.toLowerCase()
+                    return `${i.first_name} ${i.last_name}`.toLowerCase().includes(q) ||
+                      (i.email ?? '').toLowerCase().includes(q) ||
+                      (i.school_name ?? '').toLowerCase().includes(q)
+                  })
+                  .map(intern => {
+                    const cases = Array.isArray(intern.cases) ? intern.cases : []
+                    const latestCase = cases[0] ?? null
+                    const { label: statusLabel, cls: statusCls } = internCategoryLabel(latestCase?.status)
+                    const initials = `${intern.first_name[0] ?? ''}${intern.last_name?.[0] ?? ''}`.toUpperCase()
+                    return (
+                      <div key={intern.id} className="bg-white border border-zinc-100 rounded-xl px-4 py-3 flex items-center gap-4 hover:border-zinc-200 transition-colors">
+                        <div className="w-9 h-9 rounded-full bg-[#c8a96e]/20 flex items-center justify-center flex-shrink-0">
+                          <span className="text-[#c8a96e] text-sm font-semibold">{initials}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-medium text-[#1a1918]">{intern.first_name} {intern.last_name}</p>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusCls}`}>{statusLabel}</span>
+                            {intern.nationality && <span className="text-[10px] text-zinc-400">{intern.nationality}</span>}
+                          </div>
+                          <p className="text-xs text-zinc-500 mt-0.5">
+                            {[intern.email, intern.school_name].filter(Boolean).join(' · ')}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {latestCase?.id && (
+                            <Link
+                              href={`/${locale}/cases/${latestCase.id}`}
+                              className="text-xs px-2.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-600 font-medium transition-colors"
+                            >
+                              Open case →
+                            </Link>
+                          )}
+                          <Link
+                            href={`/${locale}/interns/${intern.id}`}
+                            className="text-xs px-2.5 py-1.5 rounded-lg bg-[#c8a96e]/10 hover:bg-[#c8a96e]/20 text-[#c8a96e] font-medium transition-colors"
+                          >
+                            View profile →
+                          </Link>
+                        </div>
+                      </div>
+                    )
+                  })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── CONTACTS TAB ─────────────────────────────────────────────── */}
+        {activeTab === 'contacts' && <>
 
         {/* Filtres */}
         <div className="flex gap-3 mb-5 flex-wrap">
@@ -318,6 +454,7 @@ export default function ContactsPage() {
             })}
           </div>
         )}
+        </> /* end contacts tab */}
       </div>
 
       {/* Drawer latéral */}
