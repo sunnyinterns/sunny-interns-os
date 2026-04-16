@@ -47,18 +47,43 @@ function normalizeCategory(cat: string | null | undefined): string {
 
 // Derive category from slug (DB has slug, not category)
 function getCategoryFromSlug(slug: string | null | undefined): string {
-  if (!slug) return 'internal'
+  if (!slug) return 'intern_qualification'
+
+  // 🔏 AGENT — emails vers l'agent visa uniquement
   if (slug === 'visa_agent_submission') return 'agent'
-  if (slug.startsWith('employer_') || slug === 'job_submitted_employer' || slug === 'sponsor_contract_employer') return 'employer'
-  if (slug.startsWith('visa_')) return 'intern_visa'
-  if (slug.startsWith('touchpoint_') || slug === 'alumni_welcome' || slug === 'ugc_thank_you') return 'intern_internship'
-  if (slug === 'arrival_prep' || slug === 'welcome_kit' || slug === 'all_indonesia_j3') return 'intern_departure'
-  if (slug === 'invoice_sent' || slug === 'payment_request' || slug === 'payment_confirmed') return 'intern_payment'
-  if (slug === 'new_job_alert') return 'intern_jobs'
-  if (slug === 'booking_confirmation' || slug === 'rdv_confirmation' || slug === 'rdv_reminder') return 'intern_lead'
+
+  // 🏢 EMPLOYER — emails vers les employeurs
+  if (['job_submitted_employer', 'employer_welcome', 'employer_welcome_portal',
+    'employer_document_reminder', 'sponsor_contract_employer'].includes(slug)) return 'employer'
+
+  // 🔔 INTERNAL — notifications internes manager + chauffeur + partenaires
+  if (['new_lead_internal', 'driver_notification', 'partner_welcome',
+    'password_reset', 'intern_card_ready'].includes(slug)) return 'internal'
+
+  // ✈️ INTERN PRE-DEPARTURE — J-14 et J-3 avant départ (basés sur actual_start_date)
+  if (['arrival_prep', 'all_indonesia_j3'].includes(slug)) return 'intern_departure'
+
+  // 🌴 INTERN ACTIVE/ALUMNI — pendant et après le stage
+  if (['touchpoint_j3', 'touchpoint_j30', 'touchpoint_j60', 'touchpoint_end',
+    'welcome_kit', 'alumni_welcome', 'ugc_thank_you'].includes(slug)) return 'intern_internship'
+
+  // 🛂 INTERN VISA
+  if (['visa_docs_request', 'visa_submitted', 'visa_received', 'visa_refused'].includes(slug)) return 'intern_visa'
+
+  // 💳 INTERN PAYMENT
+  if (['payment_request', 'payment_confirmed', 'invoice_sent'].includes(slug)) return 'intern_payment'
+
+  // 📝 INTERN CONVENTION
   if (slug === 'convention_request') return 'intern_convention'
-  if (slug === 'driver_notification' || slug === 'new_lead_internal' || slug === 'intern_card_ready' || slug === 'partner_welcome') return 'internal'
-  return 'intern_qualification'
+
+  // 💼 INTERN JOBS
+  if (slug === 'new_job_alert') return 'intern_jobs'
+
+  // 🎙️ INTERN QUALIFICATION
+  if (['booking_confirmation', 'rdv_confirmation', 'rdv_reminder',
+    'qualification_recap', 'welcome_portal'].includes(slug)) return 'intern_qualification'
+
+  return 'intern_qualification' // fallback
 }
 
 // Recipient for a normalized category
@@ -84,8 +109,8 @@ const RECIPIENT_GROUPS: RecipientGroup[] = [
       { id: 'intern_convention', label: 'Convention', statuses: ['convention_signed'] },
       { id: 'intern_payment', label: 'Payment', statuses: ['payment_pending', 'payment_received'] },
       { id: 'intern_visa', label: 'Visa', statuses: ['visa_in_progress', 'visa_received'] },
-      { id: 'intern_departure', label: 'Pre-departure', statuses: ['arrival_prep'] },
-      { id: 'intern_internship', label: 'During & After', statuses: ['active', 'alumni'] },
+      { id: 'intern_departure', label: 'Pre-departure (J-14 & J-3 crons — based on start date)', statuses: ['arrival_prep'] },
+      { id: 'intern_internship', label: 'During & After Internship (D+3, D+30, D+60 crons)', statuses: ['active', 'alumni'] },
     ],
   },
   {
