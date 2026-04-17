@@ -1,220 +1,257 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 
-type StepStatus = 'pending' | 'pass' | 'fail' | 'checking'
+type StepStatus = 'pending' | 'pass' | 'fail'
 
 interface TestStep {
   id: string
   status: string
-  from: string
   title: string
   action: string
   expected: string[]
   email_expected?: string
-  portal_check?: string
+  portal_url?: string
 }
 
 const CASE_ID = '8ebc87da-3de7-4f8c-82fe-fdf60995a6d4'
 const PORTAL_TOKEN = '9776c61e-152e-48fd-bc8b-f6faa13d8ed7'
+const BASE_URL = 'https://sunny-interns-os.vercel.app'
 
-const WORKFLOW: TestStep[] = [
-  { id:'lead', from:'start', status:'lead', title:'1. Dossier Lead', action:'Ouvre le dossier Test Stagiaire dans /fr/cases — vérifie le statut et les boutons disponibles', expected:['Statut "Lead" affiché','Boutons : 📅 Booker RDV + ❌ Pas intéressé','Aucun email attendu'] },
-  { id:'rdv_booked', from:'lead', status:'rdv_booked', title:'2. Booker RDV', action:'Cliquer "📅 Booker RDV" dans le panneau d\'actions du dossier', expected:['Statut → "RDV booké"','Case log créé','Bouton : ✅ Qualif faite'] },
-  { id:'qualification_done', from:'rdv_booked', status:'qualification_done', title:'3. Qualification → Email portail', action:'Cliquer "✅ Qualif faite"', expected:['Statut → "Qualification faite"','📧 Email reçu : "Entretien validé — Accès à ton espace"','Portail accessible : /portal/'+PORTAL_TOKEN], email_expected:'Entretien validé', portal_check:'/portal/'+PORTAL_TOKEN },
-  { id:'job_submitted', from:'qualification_done', status:'job_submitted', title:'4. Proposer un job', action:'Cliquer "📋 Proposer un job" → onglet Jobs → choisir une offre et la soumettre', expected:['Statut → "Jobs proposés"','Job submission créée','Offre visible dans le portail intern /jobs'] },
-  { id:'job_retained', from:'job_submitted', status:'job_retained', title:'5. Job retenu → Email intern', action:'Cliquer "🎉 Job retenu"', expected:['Statut → "Job retenu"','📧 Email : "Tu es pris chez [entreprise]"','Section "Ton stage" dans le portail'], email_expected:'Tu es pris' },
-  { id:'convention_signed', from:'job_retained', status:'convention_signed', title:'6. Convention signée → Email employer', action:'Cliquer "📝 Convention signée"', expected:['Statut → "Convention signée"','📧 Partnership Agreement envoyé à l\'employeur','Admin notif créée','Onglet Facturation : bouton 📧 Envoyer demande paiement'] },
-  { id:'payment_pending', from:'convention_signed', status:'payment_pending', title:'7. Demande paiement', action:'Onglet Facturation → cliquer "📧 Envoyer demande paiement"', expected:['Statut → "Paiement en attente"','📧 Email paiement avec IBAN SIDLYS LLC + montant 990€','Portail : section paiement visible'], email_expected:'Paiement de votre stage' },
-  { id:'payment_received', from:'payment_pending', status:'payment_received', title:'8. Paiement confirmé → Billing auto', action:'Onglet Facturation → BillingForm → cocher "✅ Paiement reçu"', expected:['Statut → "Payé"','billing_entry revenue +990€ créée en DB','Finance dashboard : CA +990€','Portail : section 🏠 logement + partenaires débloqués','2 boutons : 📋 Demander docs visa + 🚀 Envoyer à l\'agent'], portal_check:'/portal/'+PORTAL_TOKEN },
-  { id:'visa_docs', from:'payment_received', status:'payment_received', title:'9. Demande docs visa', action:'Cliquer "📋 Demander docs visa"', expected:['📧 Email : "Documents visa requis" avec lien portail /documents','Portail /visa : sections passeport, photo, relevé, billet accessibles'], email_expected:'Documents visa requis', portal_check:'/portal/'+PORTAL_TOKEN+'/visa' },
-  { id:'visa_in_progress', from:'payment_received', status:'visa_in_progress', title:'10. Envoi dossier agent', action:'Onglet Visa → "Envoyer le dossier à l\'agent visa"', expected:['Statut → "Visa en cours"','📧 Email envoyé à BIBI CONSULTANT','visa_agent_portal_access créé en DB','Boutons : ✅ Visa reçu + ❌ Visa refusé'] },
-  { id:'visa_received', from:'visa_in_progress', status:'visa_received', title:'11. Visa reçu', action:'Cliquer "✅ Visa reçu"', expected:['Statut → "Visa reçu"','Admin notif créée','Bouton : 🛫 Préparer départ'] },
-  { id:'arrival_prep', from:'visa_received', status:'arrival_prep', title:'12. Prép. arrivée', action:'Cliquer "🛫 Préparer départ"', expected:['Statut → "Prép. arrivée"','Bouton : 🌴 Stage démarré'] },
-  { id:'active', from:'arrival_prep', status:'active', title:'13. Stage démarré → Welcome kit', action:'Cliquer "🌴 Stage démarré"', expected:['Statut → "En stage"','📧 Welcome kit envoyé','Portail : carte stagiaire visible /carte'], email_expected:'Welcome Kit', portal_check:'/portal/'+PORTAL_TOKEN+'/carte' },
-  { id:'alumni', from:'active', status:'alumni', title:'14. Stage terminé → Alumni', action:'Cliquer "🎓 Stage terminé"', expected:['Statut → "Alumni"','Admin notif créée','Visible dans /fr/alumni'] },
+const STEPS: TestStep[] = [
+  { id:'lead', status:'lead', title:'1. Voir le dossier Lead', action:'Va sur /fr/cases → cliquer "Test Stagiaire" → vérifier statut "Lead" + boutons dispo', expected:['Dossier visible dans la liste','Statut "Lead" affiché','Boutons : 📅 Booker RDV + ❌ Pas intéressé'] },
+  { id:'rdv_booked', status:'rdv_booked', title:'2. Booker le RDV', action:'Cliquer "📅 Booker RDV"', expected:['Statut → RDV booké','Case log créé','Nouveau bouton : ✅ Qualif faite'] },
+  { id:'qualification_done', status:'qualification_done', title:'3. Qualification → Email portail', action:'Cliquer "✅ Qualif faite"', expected:['Statut → Qualification faite','📧 Email : "Entretien validé — Accès à ton espace" sur sidney.ruby@gmail.com','Portail accessible'], email_expected:'Entretien validé', portal_url:`${BASE_URL}/portal/${PORTAL_TOKEN}` },
+  { id:'job_submitted', status:'job_submitted', title:'4. Proposer un job', action:'Onglet Jobs → choisir une offre → "Proposer"', expected:['Statut → Jobs proposés','Job submission créée'] },
+  { id:'job_retained', status:'job_retained', title:'5. Job retenu', action:'Cliquer "🎉 Job retenu"', expected:['Statut → Job retenu','📧 Email : "Tu es pris chez [entreprise]"'], email_expected:'Tu es pris' },
+  { id:'convention_signed', status:'convention_signed', title:'6. Convention signée', action:'Cliquer "📝 Convention signée"', expected:['Statut → Convention signée','📧 Email Partnership Agreement envoyé à l\'employeur','Onglet Facturation : bouton 📧 Envoyer demande paiement'] },
+  { id:'payment_pending', status:'payment_pending', title:'7. Envoyer demande paiement', action:'Onglet Facturation → "📧 Envoyer demande paiement"', expected:['Statut → Paiement en attente','📧 Email paiement avec IBAN + montant 990€'], email_expected:'Paiement de votre stage', portal_url:`${BASE_URL}/portal/${PORTAL_TOKEN}` },
+  { id:'payment_received', status:'payment_received', title:'8. Confirmer paiement', action:'Onglet Facturation → BillingForm → cocher "✅ Paiement reçu"', expected:['Statut → Payé','Billing entry revenue 990€ créée en DB','Finance : CA +990€','Portail : section 🏠 Logement + Partenaires visible'], portal_url:`${BASE_URL}/portal/${PORTAL_TOKEN}` },
+  { id:'visa_docs', status:'payment_received', title:'9. Demander docs visa', action:'Cliquer "📋 Demander docs visa"', expected:['📧 Email : "Documents visa requis" sur sidney.ruby@gmail.com'], email_expected:'Documents visa requis', portal_url:`${BASE_URL}/portal/${PORTAL_TOKEN}/visa` },
+  { id:'visa_in_progress', status:'visa_in_progress', title:'10. Envoyer à l\'agent visa', action:'Onglet Visa → remplir les infos → "Envoyer le dossier à l\'agent visa"', expected:['Statut → Visa en cours','📧 Email envoyé à BIBI CONSULTANT','visa_agent_portal_access créé','Boutons : ✅ Visa reçu + ❌ Refusé'] },
+  { id:'visa_received', status:'visa_received', title:'11. Visa reçu', action:'Cliquer "✅ Visa reçu"', expected:['Statut → Visa reçu','Admin notif créée'] },
+  { id:'arrival_prep', status:'arrival_prep', title:'12. Préparer l\'arrivée', action:'Cliquer "🛫 Préparer départ"', expected:['Statut → Prép. arrivée'] },
+  { id:'active', status:'active', title:'13. Stage démarré → Welcome kit', action:'Cliquer "🌴 Stage démarré"', expected:['Statut → En stage','📧 Welcome kit envoyé','Portail : carte stagiaire visible'], email_expected:'Welcome Kit', portal_url:`${BASE_URL}/portal/${PORTAL_TOKEN}/carte` },
+  { id:'alumni', status:'alumni', title:'14. Stage terminé → Alumni', action:'Cliquer "🎓 Stage terminé"', expected:['Statut → Alumni','Visible dans /fr/alumni'] },
 ]
+
+const LS_KEY = 'qa_mode'
+const LS_STEP_KEY = 'qa_step'
+const LS_STATUS_KEY = 'qa_statuses'
 
 export function QAWidget() {
   const searchParams = useSearchParams()
+  const [active, setActive] = useState(false)
   const [open, setOpen] = useState(true)
-  const [currentStepIdx, setCurrentStepIdx] = useState(0)
-  const [stepStatuses, setStepStatuses] = useState<Record<string, StepStatus>>({})
+  const [stepIdx, setStepIdx] = useState(0)
+  const [statuses, setStatuses] = useState<Record<string, StepStatus>>({})
   const [checking, setChecking] = useState(false)
-  const [dbStatus, setDbStatus] = useState<string | null>(null)
+  const [dbResult, setDbResult] = useState<null | { ok: boolean; text: string; details?: Record<string, unknown> }>(null)
   const [notes, setNotes] = useState('')
-  const [bugsFound, setBugsFound] = useState<string[]>([])
 
-  const isQA = searchParams.get('qa') === '1'
-  if (!isQA) return null
+  // Activer via ?qa=1 et persister en localStorage
+  useEffect(() => {
+    if (searchParams.get('qa') === '1') {
+      localStorage.setItem(LS_KEY, '1')
+    }
+    const stored = localStorage.getItem(LS_KEY)
+    if (stored === '1') setActive(true)
+    const storedStep = localStorage.getItem(LS_STEP_KEY)
+    if (storedStep) setStepIdx(parseInt(storedStep))
+    const storedStatuses = localStorage.getItem(LS_STATUS_KEY)
+    if (storedStatuses) { try { setStatuses(JSON.parse(storedStatuses) as Record<string, StepStatus>) } catch { /* ignore */ } }
+  }, [searchParams])
 
-  const step = WORKFLOW[currentStepIdx]
-  const progress = Math.round((currentStepIdx / WORKFLOW.length) * 100)
+  function setStep(i: number) {
+    setStepIdx(i)
+    setDbResult(null)
+    setNotes('')
+    localStorage.setItem(LS_STEP_KEY, String(i))
+  }
+
+  function markStatus(s: StepStatus) {
+    const next = { ...statuses, [STEPS[stepIdx].id]: s }
+    setStatuses(next)
+    localStorage.setItem(LS_STATUS_KEY, JSON.stringify(next))
+    if (s === 'pass' && stepIdx < STEPS.length - 1) setStep(stepIdx + 1)
+  }
+
+  function quit() {
+    localStorage.removeItem(LS_KEY)
+    localStorage.removeItem(LS_STEP_KEY)
+    localStorage.removeItem(LS_STATUS_KEY)
+    setActive(false)
+  }
 
   async function checkDB() {
     setChecking(true)
-    setDbStatus(null)
+    setDbResult(null)
     try {
+      const step = STEPS[stepIdx]
       const r = await fetch(`/api/qa/check?case_id=${CASE_ID}&expected_status=${step.status}`)
-      const d = await r.json() as { status: string; match: boolean; details: string }
-      setDbStatus(d.match
-        ? `✅ DB OK — statut: ${d.status}`
-        : `❌ DB: statut="${d.status}" (attendu: "${step.status}")`)
-    } catch {
-      setDbStatus('⚠️ Erreur vérification DB')
-    }
+      const d = await r.json() as { status: string; match: boolean; details: Record<string, unknown> }
+      setDbResult({
+        ok: d.match,
+        text: d.match ? `✅ Statut DB : "${d.status}"` : `❌ DB: "${d.status}" ≠ attendu "${step.status}"`,
+        details: d.details,
+      })
+    } catch { setDbResult({ ok: false, text: '⚠️ Erreur connexion DB' }) }
     setChecking(false)
   }
 
-  function markStep(result: 'pass' | 'fail') {
-    setStepStatuses(p => ({ ...p, [step.id]: result }))
-    if (result === 'fail' && notes) {
-      setBugsFound(p => [...p, `[${step.title}] ${notes}`])
-    }
-    if (result === 'pass' && currentStepIdx < WORKFLOW.length - 1) {
-      setCurrentStepIdx(i => i + 1)
-      setDbStatus(null)
-      setNotes('')
-    }
-  }
+  if (!active) return null
 
-  const passed = Object.values(stepStatuses).filter(s => s === 'pass').length
-  const failed = Object.values(stepStatuses).filter(s => s === 'fail').length
+  const step = STEPS[stepIdx]
+  const passed = Object.values(statuses).filter(s => s === 'pass').length
+  const failed = Object.values(statuses).filter(s => s === 'fail').length
 
   if (!open) return (
     <button onClick={() => setOpen(true)}
-      className="fixed bottom-4 right-4 z-[9999] bg-[#1a1918] text-[#c8a96e] px-4 py-2 rounded-2xl text-xs font-bold shadow-2xl border border-[#c8a96e]/30">
-      🧪 QA Mode — {passed}/{WORKFLOW.length}
+      className="fixed bottom-4 right-4 z-[9999] bg-[#1a1918] text-[#c8a96e] px-4 py-2.5 rounded-2xl text-xs font-bold shadow-2xl border border-[#c8a96e]/30 flex items-center gap-2">
+      🧪 QA {passed}/{STEPS.length}
+      {failed > 0 && <span className="bg-red-500 text-white rounded-full px-1.5 py-0.5 text-[10px]">{failed}</span>}
     </button>
   )
 
   return (
-    <div className="fixed top-0 right-0 z-[9999] w-96 h-screen bg-[#111110] border-l border-zinc-800 flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed top-0 right-0 z-[9999] w-[380px] h-screen bg-[#111110] border-l border-zinc-800 flex flex-col shadow-2xl">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-[#1a1918]">
+      <div className="flex items-center justify-between px-4 py-3 bg-[#1a1918] border-b border-zinc-800 shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-sm font-bold text-[#c8a96e]">🧪 QA Mode</span>
-          <span className="text-xs bg-[#c8a96e]/20 text-[#c8a96e] px-2 py-0.5 rounded-full">{passed}/{WORKFLOW.length}</span>
-          {failed > 0 && <span className="text-xs bg-red-900/40 text-red-400 px-2 py-0.5 rounded-full">{failed} bug{failed>1?'s':''}</span>}
+          <span className="text-[11px] bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full">{passed}/{STEPS.length} ✅</span>
+          {failed > 0 && <span className="text-[11px] bg-red-900/60 text-red-400 px-2 py-0.5 rounded-full">{failed} bug{failed>1?'s':''}</span>}
         </div>
-        <button onClick={() => setOpen(false)} className="text-zinc-500 hover:text-zinc-300 text-lg">×</button>
+        <div className="flex gap-2">
+          <button onClick={() => setOpen(false)} className="text-zinc-500 hover:text-zinc-300 text-sm px-1">—</button>
+          <button onClick={quit} className="text-zinc-500 hover:text-red-400 text-sm px-1" title="Quitter QA mode">✕</button>
+        </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="h-1 bg-zinc-800">
-        <div className="h-full bg-[#c8a96e] transition-all" style={{ width: `${progress}%` }} />
+      {/* Progress */}
+      <div className="h-0.5 bg-zinc-800 shrink-0">
+        <div className="h-full bg-[#c8a96e] transition-all duration-300" style={{ width: `${(passed/STEPS.length)*100}%` }} />
       </div>
 
-      {/* Steps nav */}
-      <div className="flex overflow-x-auto gap-1 px-3 py-2 border-b border-zinc-800">
-        {WORKFLOW.map((s, i) => (
-          <button key={s.id} onClick={() => { setCurrentStepIdx(i); setDbStatus(null) }}
-            className={`flex-shrink-0 w-7 h-7 rounded-lg text-xs font-bold transition-all ${
-              stepStatuses[s.id] === 'pass' ? 'bg-green-900 text-green-400' :
-              stepStatuses[s.id] === 'fail' ? 'bg-red-900 text-red-400' :
-              i === currentStepIdx ? 'bg-[#c8a96e] text-[#1a1918]' :
-              'bg-zinc-800 text-zinc-500'
+      {/* Steps mini-nav */}
+      <div className="flex overflow-x-auto gap-1 px-3 py-2.5 border-b border-zinc-800 shrink-0">
+        {STEPS.map((s, i) => (
+          <button key={s.id} onClick={() => setStep(i)}
+            className={`flex-shrink-0 w-7 h-7 rounded-lg text-[11px] font-bold transition-all ${
+              statuses[s.id] === 'pass' ? 'bg-green-800 text-green-300' :
+              statuses[s.id] === 'fail' ? 'bg-red-900 text-red-300' :
+              i === stepIdx ? 'bg-[#c8a96e] text-black' :
+              'bg-zinc-800 text-zinc-500 hover:bg-zinc-700'
             }`}>{i+1}</button>
         ))}
       </div>
 
-      {/* Current step */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         <div>
-          <p className="text-xs text-zinc-500 mb-1">Étape {currentStepIdx+1}/{WORKFLOW.length}</p>
-          <h2 className="text-sm font-bold text-white">{step.title}</h2>
+          <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Étape {stepIdx+1}/{STEPS.length}</p>
+          <h2 className="text-sm font-bold text-white leading-snug">{step.title}</h2>
         </div>
 
         {/* Action */}
-        <div className="bg-[#c8a96e]/10 border border-[#c8a96e]/30 rounded-xl p-3">
-          <p className="text-[10px] font-bold text-[#c8a96e] uppercase tracking-wider mb-1.5">👆 Action à faire</p>
-          <p className="text-sm text-white leading-relaxed">{step.action}</p>
+        <div className="bg-[#c8a96e]/10 border border-[#c8a96e]/20 rounded-xl p-3">
+          <p className="text-[10px] font-bold text-[#c8a96e] uppercase tracking-wider mb-1.5">👆 Fais ça</p>
+          <p className="text-xs text-white leading-relaxed">{step.action}</p>
+          <a href={`/fr/cases/${CASE_ID}`} target="_blank" rel="noopener noreferrer"
+            className="text-[10px] text-[#c8a96e]/70 hover:text-[#c8a96e] mt-2 block">
+            → Ouvrir le dossier test ↗
+          </a>
         </div>
 
         {/* Expected */}
-        <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-3">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3">
           <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2">✅ Ce qui doit se passer</p>
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {step.expected.map((e, i) => (
-              <div key={i} className="flex items-start gap-2 text-xs text-zinc-300">
-                <span className="text-zinc-600 mt-0.5 flex-shrink-0">·</span>
+              <div key={i} className="flex gap-2 text-[11px] text-zinc-300 leading-relaxed">
+                <span className="text-zinc-600 mt-0.5 shrink-0">·</span>
                 <span>{e}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Email expected */}
+        {/* Email */}
         {step.email_expected && (
-          <div className="bg-blue-950 border border-blue-800/50 rounded-xl p-3">
+          <div className="bg-blue-950/60 border border-blue-800/40 rounded-xl p-3">
             <p className="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-1">📧 Email attendu</p>
-            <p className="text-xs text-blue-300">Objet contient : "{step.email_expected}"</p>
-            <p className="text-[10px] text-blue-500 mt-1">→ Vérifie sidney.ruby@gmail.com</p>
+            <p className="text-[11px] text-blue-300">Objet contient : <strong>"{step.email_expected}"</strong></p>
+            <p className="text-[10px] text-blue-500 mt-0.5">Vérifie : sidney.ruby@gmail.com</p>
           </div>
         )}
 
-        {/* Portal check */}
-        {step.portal_check && (
-          <div className="bg-purple-950 border border-purple-800/50 rounded-xl p-3">
-            <p className="text-[10px] font-bold text-purple-400 uppercase tracking-wider mb-1">🌐 Portail à vérifier</p>
-            <a href={step.portal_check} target="_blank" rel="noopener noreferrer"
-              className="text-xs text-purple-300 hover:text-purple-200 underline break-all">
-              {window.location.hostname}{step.portal_check}
-            </a>
-          </div>
+        {/* Portal */}
+        {step.portal_url && (
+          <a href={step.portal_url} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2 bg-purple-950/50 border border-purple-800/40 rounded-xl p-3 hover:bg-purple-950/80 transition-colors">
+            <span className="text-sm">🌐</span>
+            <div>
+              <p className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">Portail à vérifier</p>
+              <p className="text-[11px] text-purple-300 truncate">{step.portal_url.replace('https://sunny-interns-os.vercel.app','')}</p>
+            </div>
+            <span className="text-purple-400 ml-auto">↗</span>
+          </a>
         )}
 
         {/* DB Check */}
-        <div>
-          <button onClick={checkDB} disabled={checking}
-            className="w-full py-2 text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
-            {checking ? <><div className="w-3 h-3 border-2 border-zinc-500 border-t-transparent rounded-full animate-spin"/>Vérification…</> : '🔍 Vérifier DB'}
-          </button>
-          {dbStatus && (
-            <p className={`text-xs mt-2 px-3 py-2 rounded-lg ${dbStatus.startsWith('✅') ? 'bg-green-950 text-green-400' : 'bg-red-950 text-red-400'}`}>
-              {dbStatus}
-            </p>
-          )}
-        </div>
+        <button onClick={checkDB} disabled={checking}
+          className="w-full py-2 text-[11px] font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-40">
+          {checking
+            ? <><div className="w-3 h-3 border border-zinc-500 border-t-transparent rounded-full animate-spin"/>Vérification DB…</>
+            : '🔍 Vérifier l\'état en DB'}
+        </button>
+
+        {dbResult && (
+          <div className={`rounded-xl p-3 text-[11px] ${dbResult.ok ? 'bg-green-950/60 border border-green-800/40 text-green-300' : 'bg-red-950/60 border border-red-800/40 text-red-300'}`}>
+            <p className="font-semibold mb-1">{dbResult.text}</p>
+            {dbResult.details && (
+              <div className="space-y-0.5 text-[10px] opacity-80">
+                {Object.entries(dbResult.details).map(([k,v]) => (
+                  <div key={k} className="flex justify-between">
+                    <span className="text-zinc-400">{k}</span>
+                    <span>{String(v)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Notes */}
-        <textarea
-          value={notes}
-          onChange={e => setNotes(e.target.value)}
+        <textarea value={notes} onChange={e => setNotes(e.target.value)}
           placeholder="Notes / bug observé…"
           rows={2}
-          className="w-full px-3 py-2 text-xs bg-zinc-900 border border-zinc-700 rounded-xl text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-zinc-500 resize-none"
-        />
+          className="w-full px-3 py-2 text-[11px] bg-zinc-900 border border-zinc-800 rounded-xl text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-zinc-600 resize-none" />
       </div>
 
       {/* Actions */}
-      <div className="px-4 py-3 border-t border-zinc-800 space-y-2">
+      <div className="px-4 py-3 border-t border-zinc-800 space-y-2 shrink-0">
         <div className="flex gap-2">
-          <button onClick={() => markStep('fail')}
-            className="flex-1 py-2.5 text-xs font-bold bg-red-900/40 text-red-400 border border-red-800/50 rounded-xl hover:bg-red-900/60">
-            ❌ Bug trouvé
+          <button onClick={() => markStatus('fail')}
+            className="flex-1 py-2.5 text-xs font-bold rounded-xl bg-red-900/30 text-red-400 border border-red-800/40 hover:bg-red-900/50 transition-colors">
+            ❌ Bug
           </button>
-          <button onClick={() => markStep('pass')}
-            className="flex-1 py-2.5 text-xs font-bold bg-green-900/40 text-green-400 border border-green-800/50 rounded-xl hover:bg-green-900/60">
-            ✅ Validé →
+          <button onClick={() => markStatus('pass')}
+            className="flex-1 py-2.5 text-xs font-bold rounded-xl bg-green-900/30 text-green-400 border border-green-800/40 hover:bg-green-900/50 transition-colors">
+            ✅ OK → Suivant
           </button>
         </div>
         <div className="flex gap-2">
-          {currentStepIdx > 0 && (
-            <button onClick={() => { setCurrentStepIdx(i => i-1); setDbStatus(null) }}
-              className="flex-1 py-1.5 text-xs text-zinc-500 hover:text-zinc-300 border border-zinc-800 rounded-xl">
+          {stepIdx > 0 && (
+            <button onClick={() => setStep(stepIdx-1)}
+              className="flex-1 py-1.5 text-[11px] text-zinc-500 hover:text-zinc-300 border border-zinc-800 rounded-xl transition-colors">
               ← Précédent
             </button>
           )}
-          {bugsFound.length > 0 && (
-            <button onClick={() => {
-              const report = `# QA Report — Bali Interns OS\n\n${passed} étapes OK, ${failed} bugs\n\n## Bugs\n${bugsFound.map(b=>`- ${b}`).join('\n')}`
-              navigator.clipboard.writeText(report)
-              alert('Rapport copié !')
-            }} className="flex-1 py-1.5 text-xs text-zinc-500 hover:text-zinc-300 border border-zinc-800 rounded-xl">
-              📋 Copier rapport
-            </button>
-          )}
+          <a href={`/fr/cases?qa=1`}
+            className="flex-1 py-1.5 text-[11px] text-zinc-500 hover:text-zinc-300 border border-zinc-800 rounded-xl transition-colors text-center">
+            → Cas test ↗
+          </a>
         </div>
       </div>
     </div>
