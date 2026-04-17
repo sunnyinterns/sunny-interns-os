@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 
 type ActivityType =
   | 'status_changed'
@@ -46,7 +46,7 @@ interface LogActivityParams {
 
 export async function logActivity(params: LogActivityParams) {
   try {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     await supabase.from('activity_feed').insert({
       case_id: params.caseId,
       type: params.type,
