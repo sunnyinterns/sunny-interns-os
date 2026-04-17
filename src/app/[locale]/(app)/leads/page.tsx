@@ -110,7 +110,6 @@ export default function LeadsPage() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [sourceFilter, setSourceFilter] = useState<string>('all')
   const [lastRefresh, setLastRefresh] = useState(new Date())
-  const [crmCases, setCrmCases] = useState<{id:string;firstName:string;lastName:string;email:string}[]>([])
 
   const fetchLeads = useCallback(async () => {
     const res = await fetch('/api/leads')
@@ -123,10 +122,6 @@ export default function LeadsPage() {
   useEffect(() => {
     setLoading(true)
     void fetchLeads().finally(() => setLoading(false))
-    fetch('/api/cases?status=lead')
-      .then(r => r.ok ? r.json() : [])
-      .then((d: unknown) => Array.isArray(d) ? setCrmCases(d as {id:string;firstName:string;lastName:string;email:string}[]) : null)
-      .catch(() => null)
   }, [fetchLeads])
 
   useEffect(() => {
@@ -180,24 +175,6 @@ export default function LeadsPage() {
 
   return (
     <div className="px-4 sm:px-6 py-6 max-w-6xl mx-auto">
-
-      {/* Cases CRM en statut Lead */}
-      {crmCases.length > 0 && (
-        <div className="mb-5 space-y-2">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">🗂 Dossiers en cours — Lead</p>
-          {crmCases.map(c => (
-            <a key={c.id} href={`/${locale}/cases/${c.id}`}
-              className="flex items-center justify-between px-4 py-3 bg-white border border-[#c8a96e]/40 rounded-xl hover:border-[#c8a96e] transition-colors">
-              <div>
-                <p className="text-sm font-semibold text-[#1a1918]">{c.firstName} {c.lastName}</p>
-                <p className="text-xs text-zinc-400">{c.email}</p>
-              </div>
-              <span className="text-xs text-[#c8a96e] font-medium">Ouvrir →</span>
-            </a>
-          ))}
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
