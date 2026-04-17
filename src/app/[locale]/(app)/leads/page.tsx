@@ -48,7 +48,6 @@ const SOURCE_LABELS: Record<string, { label: string; emoji: string; color: strin
   referral: { label: 'Parrainage', emoji: '🤝', color: 'bg-orange-100 text-orange-700' },
   manual: { label: 'Manuel', emoji: '✏️', color: 'bg-zinc-100 text-zinc-600' },
   newsletter: { label: 'Newsletter', emoji: '📧', color: 'bg-sky-100 text-sky-700' },
-  crm_case: { label: 'Dossier CRM', emoji: '🗂️', color: 'bg-[#c8a96e]/20 text-[#b8945a]' },
 }
 
 
@@ -96,11 +95,9 @@ function daysAgo(d?: string | null) { return d ? Math.floor((Date.now() - new Da
 
 function initials(first: string | null, last: string | null, email: string): string {
   if (first || last) {
-    const a = (first ?? '')[0] ?? ''
-    const b = (last ?? '')[0] ?? ''
-    return (a + b).toUpperCase() || (email?.[0] ?? '?').toUpperCase()
+    return `${(first ?? '')[0] ?? ''}${(last ?? '')[0] ?? ''}`.toUpperCase() || email[0].toUpperCase()
   }
-  return (email?.[0] ?? '?').toUpperCase()
+  return email[0].toUpperCase()
 }
 
 export default function LeadsPage() {
@@ -115,41 +112,10 @@ export default function LeadsPage() {
   const [lastRefresh, setLastRefresh] = useState(new Date())
 
   const fetchLeads = useCallback(async () => {
-    // Fetch leads formulaire + cases en statut lead en parallèle
-    const [leadsRes, casesRes] = await Promise.all([
-      fetch('/api/leads'),
-      fetch('/api/cases?status=lead'),
-    ])
-    const leadsData = leadsRes.ok ? (await leadsRes.json()) as Lead[] : []
-    const casesData = casesRes.ok ? (await casesRes.json()) as {id:string;firstName:string;lastName:string;email:string;created_at:string;status:string}[] : []
-
-    // Convertir les cases lead en format Lead unifié
-    const casesAsLeads: Lead[] = casesData.map(c => ({
-      id: c.id,
-      email: c.email,
-      first_name: c.firstName,
-      last_name: c.lastName,
-      phone: null,
-      whatsapp: null,
-      source: 'crm_case',
-      sub_source: null,
-      status: 'crm_lead',
-      abandon_reason: null,
-      form_step: null,
-      desired_jobs: null,
-      desired_start_date: null,
-      school_country: null,
-      spoken_languages: null,
-      touchpoint: null,
-      notes: null,
-      converted_case_id: null,
-      converted_at: null,
-      last_contacted_at: null,
-      created_at: c.created_at,
-      updated_at: null,
-    }))
-
-    setLeads([...casesAsLeads, ...leadsData])
+    const res = await fetch('/api/leads')
+    if (!res.ok) { setLeads([]); return }
+    const data = (await res.json()) as Lead[]
+    setLeads(Array.isArray(data) ? data : [])
     setLastRefresh(new Date())
   }, [])
 
@@ -169,6 +135,7 @@ export default function LeadsPage() {
   
   // Toujours exclure les convertis — ils sont dans /cases
   const activeLeads = useMemo(() => leads.filter(l => l.status !== 'converted' && !l.converted_case_id), [leads])
+  
   const filtered = useMemo(() => {
     if (sourceFilter === 'all') return activeLeads
     if (sourceFilter === 'in_progress') return activeLeads.filter(l => getFormLeadStatus(l) === 'in_progress')
@@ -208,7 +175,6 @@ export default function LeadsPage() {
 
   return (
     <div className="px-4 sm:px-6 py-6 max-w-6xl mx-auto">
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
@@ -270,36 +236,13 @@ export default function LeadsPage() {
       ) : (
         <div className="space-y-2">
           {filtered.map(lead => {
-            // Render simplifié pour les dossiers CRM en lead
-            if (lead.source === 'crm_case') {
-              const name = [lead.first_name, lead.last_name].filter(Boolean).join(' ') || lead.email
-              return (
-                <div key={lead.id}
-                  className="bg-[#c8a96e]/5 border border-[#c8a96e]/30 rounded-xl p-4 flex items-center gap-4 hover:border-[#c8a96e]/60 hover:shadow-sm transition-all cursor-pointer"
-                  onClick={() => router.push(`/${locale}/cases/${lead.id}`)}>
-                  <div className="w-10 h-10 rounded-full bg-[#c8a96e]/20 flex items-center justify-center text-sm font-semibold text-[#c8a96e] flex-shrink-0">
-                    {initials(lead.first_name, lead.last_name, lead.email)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[#1a1918]">{name}</p>
-                    <p className="text-xs text-zinc-400">{lead.email}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-[#c8a96e]/20 text-[#b8945a]">🗂️ Dossier CRM</span>
-                      <span className="text-xs text-zinc-400">{new Date(lead.created_at).toLocaleDateString('fr-FR')}</span>
-                    </div>
-                  </div>
-                  <span className="text-xs text-[#c8a96e] font-medium shrink-0">Ouvrir →</span>
-                </div>
-              )
-            }
-
             const src = SOURCE_LABELS[lead.source] ?? { label: lead.source, emoji: '•', color: 'bg-zinc-100 text-zinc-600' }
             const name = [lead.first_name, lead.last_name].filter(Boolean).join(' ')
             return (
               <div
                 key={lead.id}
                 className="bg-white border border-zinc-100 rounded-xl p-4 flex items-center gap-4 hover:border-zinc-200 hover:shadow-sm transition-all cursor-pointer"
-                onClick={() => lead.source === 'crm_case' ? router.push(`/${locale}/cases/${lead.id}`) : setSelectedLead(lead)}
+                onClick={() => setSelectedLead(lead)}
               >
                 <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center text-sm font-semibold text-zinc-600 flex-shrink-0">
                   {initials(lead.first_name, lead.last_name, lead.email)}
