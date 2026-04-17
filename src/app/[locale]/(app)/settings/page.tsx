@@ -19,15 +19,15 @@ const SECTIONS: Record<string, { title: string; items: SectionItem[] }> = {
       { href: 'job-departments', icon: '💼', label: 'Job Departments', desc: 'Activity sectors and available roles' },
       { href: 'internship-cities', icon: '📍', label: 'Internship Cities', desc: 'Canggu, Seminyak, Ubud...' },
       { href: 'company-types', icon: '🏛️', label: 'Company Types', desc: 'PT, CV and other legal structures' },
-      { href: 'packages', icon: '📦', label: 'Packages', desc: 'Standard, Express, Visa Only' },
     ],
   },
   visa: {
-    title: 'Visa & Legal',
+    title: 'Fournisseurs Visa',
     items: [
-      { href: 'visa-types', icon: '🛂', label: 'Visa Types', desc: 'VOA, KITAS, tourist visa' },
-      { href: 'visa-agents', icon: '🏢', label: 'Visa Agents', desc: 'Partner agents handling visa applications' },
-      { href: 'sponsors', icon: '🏛️', label: 'Sponsors PT', desc: 'Local PT to sponsor PT PMA entities' },
+      { href: 'packages', icon: '📦', label: 'Packages', desc: 'Standard, Express, Visa Only — tarifs & marges' },
+      { href: 'visa-types', icon: '🛂', label: 'Types de visa', desc: 'VOA, KITAS, Social Budaya...' },
+      { href: 'visa-agents', icon: '🏢', label: 'Agents visa', desc: 'Agents partenaires et leurs tarifs' },
+      { href: 'sponsors', icon: '🏛️', label: 'Sponsors PT', desc: 'PT garantes pour les visas stagiaires' },
     ],
   },
   automations: {
@@ -89,7 +89,6 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold text-[#1a1918]">Settings</h1>
         <p className="text-sm text-zinc-500 mt-1">Bali Interns OS platform configuration</p>
       </div>
-
       {Object.entries(SECTIONS).map(([key, section]) => (
         <SettingsSection key={key} title={section.title} items={section.items} locale={locale} />
       ))}
