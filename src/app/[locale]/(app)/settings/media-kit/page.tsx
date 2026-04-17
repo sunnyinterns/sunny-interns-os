@@ -65,7 +65,25 @@ export default function BrandingKitPage() {
   const [uploading, setUploading] = useState<string | null>(null)
   const [saved, setSaved] = useState<string | null>(null)
   const [tab, setTab] = useState<'logos' | 'typography' | 'colors' | 'guidelines'>('logos')
+  const [syncing, setSyncing] = useState(false)
+  const [syncResult, setSyncResult] = useState<{ synced: number; error?: string } | null>(null)
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
+
+  async function syncFromFigma() {
+    setSyncing(true); setSyncResult(null)
+    try {
+      const r = await fetch('/api/settings/brand-assets/sync-figma', { method: 'POST' })
+      const d = await r.json() as { synced?: number; error?: string; help?: string }
+      if (!r.ok) {
+        setSyncResult({ synced: 0, error: d.error ?? d.help ?? 'Sync failed' })
+      } else {
+        setSyncResult({ synced: d.synced ?? 0 })
+        const a = await fetch('/api/settings/brand-assets').then(res => res.ok ? res.json() : [])
+        setAssets((a as BrandAsset[]).sort((x, y) => (x.sort_order ?? 0) - (y.sort_order ?? 0)))
+      }
+    } catch { setSyncResult({ synced: 0, error: 'Network error' }) }
+    finally { setSyncing(false) }
+  }
 
   useEffect(() => {
     Promise.all([
@@ -130,14 +148,40 @@ export default function BrandingKitPage() {
           <h1 className="text-2xl font-bold text-[#1a1918]">🎨 Branding Kit</h1>
           <p className="text-sm text-zinc-500 mt-1">Source of truth for all brand assets — logos, fonts, colors, guidelines.</p>
         </div>
-        {figmaUrl && (
-          <a href={figmaUrl} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 px-3 py-2 bg-[#1a1918] text-white text-xs font-medium rounded-xl hover:bg-zinc-800 transition-colors shrink-0">
-            <svg width="14" height="14" viewBox="0 0 38 57" fill="none"><path d="M19 28.5A9.5 9.5 0 1 1 28.5 19 9.5 9.5 0 0 1 19 28.5z" fill="white"/><path d="M9.5 57A9.5 9.5 0 0 1 9.5 38h9.5v9.5A9.5 9.5 0 0 1 9.5 57z" fill="white"/><path d="M19 0h-9.5a9.5 9.5 0 0 0 0 19H19V0z" fill="white"/><path d="M28.5 0H19v19h9.5a9.5 9.5 0 1 0 0-19z" fill="white"/><path d="M38 28.5a9.5 9.5 0 1 1-9.5-9.5 9.5 9.5 0 0 1 9.5 9.5z" fill="white"/></svg>
-            Open in Figma
-          </a>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Sync from Figma */}
+          <button
+            onClick={() => void syncFromFigma()}
+            disabled={syncing}
+            className="flex items-center gap-1.5 px-3 py-2 bg-[#c8a96e] hover:bg-[#b8945a] text-white text-xs font-semibold rounded-xl disabled:opacity-50 transition-colors"
+            title="Pull latest logo exports from Figma automatically">
+            {syncing ? (
+              <><span className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"/>Syncing…</>
+            ) : (
+              <><span>⟳</span> Sync Figma</>
+            )}
+          </button>
+          {figmaUrl && (
+            <a href={figmaUrl} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 px-3 py-2 bg-[#1a1918] text-white text-xs font-medium rounded-xl hover:bg-zinc-800 transition-colors">
+              <svg width="12" height="12" viewBox="0 0 38 57" fill="none"><path d="M19 28.5A9.5 9.5 0 1 1 28.5 19 9.5 9.5 0 0 1 19 28.5z" fill="white"/><path d="M9.5 57A9.5 9.5 0 0 1 9.5 38h9.5v9.5A9.5 9.5 0 0 1 9.5 57z" fill="white"/><path d="M19 0h-9.5a9.5 9.5 0 0 0 0 19H19V0z" fill="white"/><path d="M28.5 0H19v19h9.5a9.5 9.5 0 1 0 0-19z" fill="white"/><path d="M38 28.5a9.5 9.5 0 1 1-9.5-9.5 9.5 9.5 0 0 1 9.5 9.5z" fill="white"/></svg>
+              Figma
+            </a>
+          )}
+        </div>
       </div>
+
+      {/* Sync result banner */}
+      {syncResult && (
+        <div className={`mb-4 px-4 py-3 rounded-xl text-sm flex items-center gap-2 ${syncResult.error ? 'bg-red-50 border border-red-100 text-red-700' : 'bg-green-50 border border-green-100 text-green-700'}`}>
+          {syncResult.error ? (
+            <><span>⚠️</span> {syncResult.error}</>
+          ) : (
+            <><span>✅</span> {syncResult.synced} logos synced from Figma — images updated automatically</>
+          )}
+          <button onClick={() => setSyncResult(null)} className="ml-auto text-xs opacity-50 hover:opacity-100">✕</button>
+        </div>
+      )}
 
       {/* Figma source banner */}
       {figmaUrl && (
