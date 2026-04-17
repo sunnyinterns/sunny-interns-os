@@ -48,31 +48,6 @@ export function TabFacturation({ caseId, caseData, referred_by_code }: TabFactur
   return (
     <div className="space-y-4">
 
-      {/* Société facturante */}
-      {caseData?.billing_companies && (
-        <div className="bg-white border border-zinc-100 rounded-xl p-4">
-          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Société facturante</p>
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-[#1a1918]">{caseData.billing_companies.name}</p>
-              <p className="text-xs text-zinc-400">{caseData.billing_companies.legal_form} · {caseData.billing_companies.currency}</p>
-              {caseData.billing_companies.bank_iban && (
-                <p className="text-xs font-mono text-zinc-400 mt-0.5">{caseData.billing_companies.bank_iban}</p>
-              )}
-            </div>
-            <div className="text-right shrink-0">
-              {caseData.billing_companies.stripe_link && (
-                <a href={caseData.billing_companies.stripe_link} target="_blank" rel="noopener noreferrer"
-                  className="text-xs px-3 py-1.5 bg-[#635BFF]/10 text-[#635BFF] rounded-xl font-medium hover:bg-[#635BFF]/20">
-                  ⚡ Stripe
-                </a>
-              )}
-              <a href="/fr/settings/billing-companies" className="text-xs text-zinc-400 hover:text-[#c8a96e] block mt-1">Modifier →</a>
-            </div>
-          </div>
-        </div>
-      )}
-
       {referred_by_code && (
         <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
           <span className="text-base">🎁</span>

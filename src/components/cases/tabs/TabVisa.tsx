@@ -132,12 +132,6 @@ export function TabVisa({ caseData, schoolName, onStatusChange }: TabVisaProps) 
   const intern = caseData.interns
   const internId = intern?.id as string | undefined
 
-  // ─── Packages ───
-  const [packages, setPackages] = useState<Package[]>([])
-  const [selectedPackageId, setSelectedPackageId] = useState(caseData.package_id ?? '')
-  const [loadingPkgs, setLoadingPkgs] = useState(true)
-  const [saving, setSaving] = useState(false)
-
   // ─── Note agent ───
   const [noteForAgent, setNoteForAgent] = useState(caseData.note_for_agent ?? '')
   const [savingNote, setSavingNote] = useState(false)
@@ -200,15 +194,6 @@ export function TabVisa({ caseData, schoolName, onStatusChange }: TabVisaProps) 
     return null
   })()
 
-  useEffect(() => {
-    fetch('/api/packages')
-      .then((r) => r.ok ? r.json() as Promise<Package[]> : Promise.resolve([]))
-      .then((data) => { setPackages(data); setLoadingPkgs(false) })
-      .catch(() => setLoadingPkgs(false))
-  }, [])
-
-  const selectedPkg = packages.find((p) => p.id === selectedPackageId)
-
   async function saveInternField(field: string, value: string) {
     if (!internId) return
     await fetch(`/api/interns/${internId}`, {
@@ -225,23 +210,6 @@ export function TabVisa({ caseData, schoolName, onStatusChange }: TabVisaProps) 
       body: JSON.stringify(patch),
     }).then(() => showToast()).catch(() => null)
   }
-
-  const handlePackageChange = useCallback(async (pkgId: string) => {
-    setSelectedPackageId(pkgId)
-    const pkg = packages.find((p) => p.id === pkgId)
-    setSaving(true)
-    try {
-      await fetch(`/api/cases/${caseData.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ package_id: pkgId || null, payment_amount: pkg?.price_eur ?? null }),
-      })
-      showToast()
-      onStatusChange?.()
-    } finally {
-      setSaving(false)
-    }
-  }, [caseData.id, packages, onStatusChange])
 
   const handleNoteSave = useCallback(async () => {
     setSavingNote(true)
@@ -590,54 +558,25 @@ export function TabVisa({ caseData, schoolName, onStatusChange }: TabVisaProps) 
         </SectionCard>
       )}
 
-      {/* Package visa */}
-      <SectionCard title="Package visa">
-        {loadingPkgs ? (
-          <div className="h-9 bg-zinc-100 rounded-lg animate-pulse" />
-        ) : (
-          <select
-            value={selectedPackageId}
-            onChange={(e) => { void handlePackageChange(e.target.value) }}
-            disabled={saving}
-            className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e] disabled:opacity-60"
-          >
-            <option value="">— Sélectionner un package —</option>
-            {packages.map((pkg) => (
-              <option key={pkg.id} value={pkg.id}>
-                {pkg.name} — {pkg.price_eur}€
-                {pkg.visa_types ? ` · ${pkg.visa_types.code}` : ''}
-                {pkg.max_stay_days ? ` · ${pkg.max_stay_days}j max` : ''}
-              </option>
-            ))}
-          </select>
-        )}
-        {selectedPkg && (
-          <div className="flex flex-wrap gap-3 text-xs text-zinc-500">
-            <span>Prix : <strong className="text-[#1a1918]">{selectedPkg.price_eur}€</strong></span>
-            {selectedPkg.visa_cost_idr && (
-              <span>Coût visa IDR : <strong className="text-[#1a1918]">{selectedPkg.visa_cost_idr.toLocaleString()} IDR</strong></span>
+      {/* Package visa — read only, selection dans Facturation */}
+      {caseData.packages && (
+        <SectionCard title="Package visa" trailing={<a href="#facturation" className="text-[10px] text-[#c8a96e] hover:underline">Modifier dans Facturation →</a>}>
+          <div className="flex flex-wrap gap-4 text-xs">
+            <span className="text-zinc-600 font-medium">{caseData.packages.name}</span>
+            {caseData.packages.visa_cost_idr && (
+              <span className="text-zinc-500">Coût agent : <strong className="text-[#1a1918]">{caseData.packages.visa_cost_idr.toLocaleString()} IDR ≈ {(caseData.packages.visa_cost_idr / 16500).toFixed(0)} €</strong></span>
             )}
-            {selectedPkg.processing_days && (
-              <span>Délai : <strong className="text-[#1a1918]">{selectedPkg.processing_days}j</strong></span>
-            )}
-            {selectedPkg.validity_label && (
-              <span>Validité : <strong className="text-[#1a1918]">{selectedPkg.validity_label}</strong></span>
-            )}
+            {caseData.packages.processing_days && <span className="text-zinc-500">Délai : <strong className="text-[#1a1918]">{caseData.packages.processing_days}j</strong></span>}
+            {caseData.packages.validity_label && <span className="text-zinc-500">Validité : <strong className="text-[#1a1918]">{caseData.packages.validity_label}</strong></span>}
           </div>
-        )}
-        {!selectedPkg && caseData.packages && (
-          <div className="flex flex-wrap gap-3 text-xs text-zinc-500">
-            <span>Package actuel : <strong className="text-[#1a1918]">{caseData.packages.name} — {caseData.packages.price_eur}€</strong></span>
-            {caseData.packages.validity_label && <span>Validité : <strong className="text-[#1a1918]">{caseData.packages.validity_label}</strong></span>}
-          </div>
-        )}
-      </SectionCard>
+        </SectionCard>
+      )}
 
       {/* Virement FAZZA */}
       <SectionCard title="Virement agent visa">
         {/* Montant auto depuis le package */}
         {(() => {
-          const agentCostIdr = selectedPkg?.visa_cost_idr ?? caseData.packages?.visa_cost_idr ?? transferAmount
+          const agentCostIdr = caseData.packages?.visa_cost_idr ?? transferAmount
           const agentCostEur = agentCostIdr ? (agentCostIdr / 16500).toFixed(0) : null
           return (
             <div className="flex items-center justify-between mb-3 p-3 bg-zinc-50 rounded-lg border border-zinc-100">
@@ -659,7 +598,7 @@ export function TabVisa({ caseData, schoolName, onStatusChange }: TabVisaProps) 
             onChange={(e) => {
               const checked = e.target.checked
               setTransferSent(checked)
-              const amountIdr = selectedPkg?.visa_cost_idr ?? caseData.packages?.visa_cost_idr ?? transferAmount
+              const amountIdr = caseData.packages?.visa_cost_idr ?? transferAmount
               void saveCaseField({
                 fazza_transfer_sent: checked,
                 fazza_transfer_amount_idr: checked ? (amountIdr || null) : null,
