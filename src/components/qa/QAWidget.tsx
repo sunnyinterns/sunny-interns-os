@@ -282,27 +282,46 @@ export function QAWidget() {
 
       {/* ── MODE BUG EN COURS ── */}
       {isPaused && (
-        <div className="flex-1 flex flex-col items-center justify-center px-6 space-y-4 text-center">
+        <div className="flex-1 flex flex-col items-center justify-center px-6 space-y-5 text-center">
           <div className="w-12 h-12 rounded-2xl bg-amber-900/40 border border-amber-700/50 flex items-center justify-center text-2xl">
-            {bugStatus === 'fixing' ? '🔧' : '⏳'}
+            {bugStatus === 'fixing' ? '🔧' : '✅'}
           </div>
           <div>
             <p className="text-sm font-bold text-amber-300">
-              {bugStatus === 'fixing' ? 'Fix en cours…' : 'Bug reçu — en attente'}
+              {bugStatus === 'fixing' ? 'Fix en cours…' : 'Bug enregistré !'}
             </p>
-            <p className="text-[11px] text-zinc-500 mt-1">
+            <p className="text-[11px] text-zinc-500 mt-1 leading-relaxed">
               {bugStatus === 'fixing'
-                ? 'Je suis en train de corriger. Le widget se mettra à jour automatiquement.'
-                : 'J\'ai reçu le rapport. Je vais analyser et corriger.'}
+                ? 'Je suis en train de corriger. Le widget se mettra à jour automatiquement dès le déploiement.'
+                : 'Bug sauvegardé en base.'}
             </p>
           </div>
-          <div className="flex gap-1">
-            {[0,1,2].map(i => (
-              <div key={i} className="w-1.5 h-1.5 rounded-full bg-amber-500/60 animate-bounce"
-                style={{ animationDelay: `${i*0.15}s` }} />
-            ))}
-          </div>
-          <p className="text-[10px] text-zinc-600">Polling DB toutes les 4s…</p>
+
+          {/* Call to action clair */}
+          {bugStatus === 'open' && (
+            <div className="w-full bg-[#c8a96e]/10 border border-[#c8a96e]/30 rounded-xl p-4 text-left space-y-2">
+              <p className="text-xs font-bold text-[#c8a96e]">👆 Ce que tu fais maintenant :</p>
+              <p className="text-[11px] text-zinc-300 leading-relaxed">
+                Reviens dans le <strong className="text-white">chat Claude</strong> et écris simplement :
+              </p>
+              <div className="bg-zinc-900 rounded-lg px-3 py-2 font-mono text-xs text-[#c8a96e]">
+                bug
+              </div>
+              <p className="text-[10px] text-zinc-500">
+                Je lirai le contexte complet depuis la DB et je corrigerai en direct.
+                Le widget se mettra à jour automatiquement.
+              </p>
+            </div>
+          )}
+
+          {bugStatus === 'fixing' && (
+            <div className="flex gap-1">
+              {[0,1,2].map(i => (
+                <div key={i} className="w-1.5 h-1.5 rounded-full bg-amber-500/60 animate-bounce"
+                  style={{ animationDelay: `${i*0.15}s` }} />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
