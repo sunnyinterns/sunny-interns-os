@@ -13,6 +13,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
     .select(`
       *,
       interns (*),
+      billing_companies (id, name, legal_form, currency, bank_iban, bank_bic, bank_name, stripe_link),
       job_submissions (
         id,
         status,

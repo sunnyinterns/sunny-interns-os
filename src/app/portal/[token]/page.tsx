@@ -54,6 +54,15 @@ interface PortalData {
   desired_duration_months?: number | null
   visa_submitted_to_agent_at?: string | null
   payment_amount?: number | null
+  billing_companies?: {
+    name: string | null
+    legal_form: string | null
+    currency: string | null
+    bank_iban: string | null
+    bank_bic: string | null
+    bank_name: string | null
+    stripe_link: string | null
+  } | null
   invoice_number?: string | null
   discount_percentage?: number | null
   intern_first_meeting_date?: string | null
@@ -115,8 +124,8 @@ interface PortalJobItem {
 }
 
 const PAYMENT_STATUSES = new Set(['payment_pending', 'convention_signed', 'job_retained'])
-const PAYMENT_INFO = {
-  company: 'C.G Company International',
+const PAYMENT_INFO_FALLBACK = {
+  company: 'SIDLYS INTERNATIONAL LLC',
   iban: 'GB76REVO00996903517949',
   bic: 'REVOGB21',
   bank: 'Revolut Ltd',
@@ -713,19 +722,19 @@ export default function PortalPage() {
           <div style={{ background: 'white', borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
               <span style={{ fontSize: 12, color: '#9ca3af' }}>Société</span>
-              <span style={{ fontSize: 12, color: '#1a1918' }}>{PAYMENT_INFO.company}</span>
+              <span style={{ fontSize: 12, color: '#1a1918' }}>{data.billing_companies?.name ?? 'SIDLYS INTERNATIONAL LLC'}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
               <span style={{ fontSize: 12, color: '#9ca3af' }}>IBAN</span>
-              <span style={{ fontSize: 12, color: '#1a1918', fontFamily: 'monospace' }}>{PAYMENT_INFO.iban}</span>
+              <span style={{ fontSize: 12, color: '#1a1918', fontFamily: 'monospace' }}>{data.billing_companies?.bank_iban ?? 'GB76REVO00996903517949'}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
               <span style={{ fontSize: 12, color: '#9ca3af' }}>BIC</span>
-              <span style={{ fontSize: 12, color: '#1a1918', fontFamily: 'monospace' }}>{PAYMENT_INFO.bic}</span>
+              <span style={{ fontSize: 12, color: '#1a1918', fontFamily: 'monospace' }}>{PAYMENT_INFO_FALLBACK.bic ?? '—'}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
               <span style={{ fontSize: 12, color: '#9ca3af' }}>Banque</span>
-              <span style={{ fontSize: 12, color: '#1a1918' }}>{PAYMENT_INFO.bank}</span>
+              <span style={{ fontSize: 12, color: '#1a1918' }}>{PAYMENT_INFO_FALLBACK.bank ?? '—'}</span>
             </div>
           </div>
           <p style={{ fontSize: 11, color: '#a16207', marginTop: 10, fontStyle: 'italic' }}>Paiement par carte (Stripe) disponible prochainement.</p>
@@ -845,6 +854,29 @@ export default function PortalPage() {
                 FlightAware
               </a>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Logement & Scooters — unlock after payment */}
+      {isPaid && (
+        <div style={{ background: 'white', border: '1.5px solid #c8a96e', borderRadius: 12, padding: 16, marginBottom: 24 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#c8a96e', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>🏠 Avant le décollage</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <a href={`/portal/${token}/logement`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#fafaf7', borderRadius: 10, border: '1px solid #e5e7eb', textDecoration: 'none', color: '#1a1918' }}>
+              <div>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>🏠 Choisir mon logement</p>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6b7280' }}>33 guesthouses partenaires Bali Interns — Canggu, Seminyak, Ubud</p>
+              </div>
+              <span style={{ fontSize: 13, color: '#c8a96e', fontWeight: 700, flexShrink: 0 }}>{data.housing_reserved ? '✅' : '→'}</span>
+            </a>
+            <a href={`/portal/${token}/logement`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#fafaf7', borderRadius: 10, border: '1px solid #e5e7eb', textDecoration: 'none', color: '#1a1918' }}>
+              <div>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>🛵 Louer un scooter</p>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6b7280' }}>7 prestataires partenaires — tarifs négociés stagiaires</p>
+              </div>
+              <span style={{ fontSize: 13, color: '#c8a96e', fontWeight: 700, flexShrink: 0 }}>→</span>
+            </a>
           </div>
         </div>
       )}
