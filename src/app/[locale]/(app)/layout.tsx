@@ -3,6 +3,8 @@ import { CalendarAutoSync } from '@/components/layout/CalendarAutoSync'
 import { createClient } from '@/lib/supabase/server'
 import { AppShell } from '@/components/layout/AppShell'
 import { PushNotifications } from '@/components/layout/PushNotifications'
+import { Suspense } from 'react'
+import { QAWidget } from '@/components/qa/QAWidget'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -19,6 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <PushNotifications />
       <CalendarAutoSync />
       {children}
+      <Suspense><QAWidget /></Suspense>
     </AppShell>
   )
 }
