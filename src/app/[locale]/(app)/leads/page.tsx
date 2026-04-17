@@ -110,6 +110,7 @@ export default function LeadsPage() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [sourceFilter, setSourceFilter] = useState<string>('all')
   const [lastRefresh, setLastRefresh] = useState(new Date())
+  const [crmLeads, setCrmLeads] = useState<{id:string;first_name:string|null;last_name:string|null;email:string;created_at:string}[]>([])
 
   const fetchLeads = useCallback(async () => {
     const res = await fetch('/api/leads')
@@ -122,6 +123,11 @@ export default function LeadsPage() {
   useEffect(() => {
     setLoading(true)
     void fetchLeads().finally(() => setLoading(false))
+    // Fetch cases en statut lead
+    fetch('/api/cases?status=lead')
+      .then(r => r.ok ? r.json() : [])
+      .then((d: {id:string;first_name:string|null;last_name:string|null;email:string;created_at:string}[]) => setCrmLeads(Array.isArray(d) ? d : []))
+      .catch(() => {})
   }, [fetchLeads])
 
   useEffect(() => {
@@ -175,6 +181,30 @@ export default function LeadsPage() {
 
   return (
     <div className="px-4 sm:px-6 py-6 max-w-6xl mx-auto">
+
+      {/* ── Dossiers CRM en statut Lead ── */}
+      {crmLeads.length > 0 && (
+        <div className="mb-6 bg-[#c8a96e]/10 border border-[#c8a96e]/30 rounded-2xl p-4">
+          <p className="text-xs font-bold text-[#c8a96e] uppercase tracking-wider mb-3">
+            🗂️ Dossiers CRM en Lead — {crmLeads.length}
+          </p>
+          <div className="flex flex-col gap-2">
+            {crmLeads.map(c => (
+              <button key={c.id} onClick={() => router.push(`/${locale}/cases/${c.id}`)}
+                className="flex items-center justify-between px-4 py-2.5 bg-white rounded-xl border border-zinc-100 hover:border-[#c8a96e]/50 text-left transition-colors">
+                <div>
+                  <p className="text-sm font-semibold text-[#1a1918]">
+                    {c.first_name ? `${c.first_name} ${c.last_name ?? ''}` : c.email}
+                  </p>
+                  {c.first_name && <p className="text-xs text-zinc-400">{c.email}</p>}
+                </div>
+                <span className="text-xs text-[#c8a96e] font-medium">Ouvrir →</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
