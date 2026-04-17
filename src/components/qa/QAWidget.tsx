@@ -10,20 +10,19 @@ const PORTAL_TOKEN = '9776c61e-152e-48fd-bc8b-f6faa13d8ed7'
 const BASE = typeof window !== 'undefined' ? window.location.origin : 'https://sunny-interns-os.vercel.app'
 
 const STEPS = [
-  { id:'lead', status:'lead', title:'1. Voir le dossier Lead', action:'Va sur /fr/cases → cliquer "Test Stagiaire"', expected:['Dossier visible dans la liste','Statut "Lead" affiché','Boutons : 📅 Booker RDV + ❌ Pas intéressé'] },
-  { id:'rdv_booked', status:'rdv_booked', title:'2. Booker le RDV', action:'Cliquer "📅 Booker RDV"', expected:['Statut → RDV booké','Bouton : ✅ Qualif faite'] },
-  { id:'qualification_done', status:'qualification_done', title:'3. Qualification → Email portail', action:'Cliquer "✅ Qualif faite"', expected:['Statut → Qualification faite','📧 Email reçu : "Entretien validé" sur sidney.ruby@gmail.com','Portail accessible'], email:'Entretien validé', portal:`${BASE}/portal/${PORTAL_TOKEN}` },
-  { id:'job_submitted', status:'job_submitted', title:'4. Proposer un job', action:'Onglet Jobs → choisir une offre → soumettre', expected:['Statut → Jobs proposés','Job submission créée'] },
-  { id:'job_retained', status:'job_retained', title:'5. Job retenu', action:'Cliquer "🎉 Job retenu"', expected:['Statut → Job retenu','📧 Email : "Tu es pris chez..."'], email:'Tu es pris' },
-  { id:'convention_signed', status:'convention_signed', title:'6. Convention signée', action:'Cliquer "📝 Convention signée"', expected:['Statut → Convention signée','📧 Email Partnership Agreement envoyé à l\'employeur','Bouton 📧 Demande paiement dans Facturation'] },
-  { id:'payment_pending', status:'payment_pending', title:'7. Demande paiement', action:'Onglet Facturation → "📧 Envoyer demande paiement"', expected:['Statut → Paiement en attente','📧 Email paiement avec IBAN + 990€'], email:'Paiement de votre stage', portal:`${BASE}/portal/${PORTAL_TOKEN}` },
-  { id:'payment_received', status:'payment_received', title:'8. Confirmer paiement', action:'Onglet Facturation → BillingForm → cocher "✅ Paiement reçu"', expected:['Statut → Payé','Billing entry +990€ créée','Finance → CA +990€','Portail : section Logement débloquée'], portal:`${BASE}/portal/${PORTAL_TOKEN}` },
-  { id:'visa_docs', status:'payment_received', title:'9. Demander docs visa', action:'Cliquer "📋 Demander docs visa"', expected:['📧 Email "Documents visa requis" reçu','Portail /visa accessible'], email:'Documents visa requis', portal:`${BASE}/portal/${PORTAL_TOKEN}/visa` },
-  { id:'visa_in_progress', status:'visa_in_progress', title:'10. Envoyer à l\'agent', action:'Onglet Visa → "Envoyer le dossier à l\'agent visa"', expected:['Statut → Visa en cours','📧 Email envoyé à BIBI CONSULTANT','Boutons : ✅ Visa reçu + ❌ Refusé'] },
-  { id:'visa_received', status:'visa_received', title:'11. Visa reçu', action:'Cliquer "✅ Visa reçu"', expected:['Statut → Visa reçu','Admin notif créée'] },
-  { id:'arrival_prep', status:'arrival_prep', title:'12. Prép. arrivée', action:'Cliquer "🛫 Préparer départ"', expected:['Statut → Prép. arrivée'] },
-  { id:'active', status:'active', title:'13. Stage démarré', action:'Cliquer "🌴 Stage démarré"', expected:['Statut → En stage','📧 Welcome kit envoyé','Portail : carte stagiaire visible'], email:'Welcome Kit', portal:`${BASE}/portal/${PORTAL_TOKEN}/carte` },
-  { id:'alumni', status:'alumni', title:'14. Alumni', action:'Cliquer "🎓 Stage terminé"', expected:['Statut → Alumni','Visible dans /fr/alumni'] },
+  { id:'rdv_booked', status:'rdv_booked', title:'1. Voir le dossier dans Candidats', action:'Va sur /fr/cases → cliquer "Test Stagiaire" → vérifier statut "RDV booké" + boutons dispo', expected:['Dossier visible dans Candidats','Statut "RDV booké" affiché','Boutons : ✅ Qualif faite + ❌ Pas intéressé'] },
+  { id:'qualification_done', status:'qualification_done', title:'2. Qualification → Email portail', action:'Cliquer "✅ Qualif faite"', expected:['Statut → Qualification faite','📧 Email reçu : "Entretien validé" sur sidney.ruby@gmail.com','Portail accessible'], email:'Entretien validé', portal:`${BASE}/portal/${PORTAL_TOKEN}` },
+  { id:'job_submitted', status:'job_submitted', title:'3. Proposer un job', action:'Onglet Jobs → choisir une offre → soumettre', expected:['Statut → Jobs proposés','Job submission créée'] },
+  { id:'job_retained', status:'job_retained', title:'4. Job retenu', action:'Cliquer "🎉 Job retenu"', expected:['Statut → Job retenu','📧 Email : "Tu es pris chez..."'], email:'Tu es pris' },
+  { id:'convention_signed', status:'convention_signed', title:'5. Convention signée', action:'Cliquer "📝 Convention signée"', expected:['Statut → Convention signée','📧 Email Partnership Agreement envoyé à l\'employeur','Bouton 📧 Demande paiement dans Facturation'] },
+  { id:'payment_pending', status:'payment_pending', title:'6. Demande paiement', action:'Onglet Facturation → "📧 Envoyer demande paiement"', expected:['Statut → Paiement en attente','📧 Email paiement avec IBAN + 990€'], email:'Paiement de votre stage', portal:`${BASE}/portal/${PORTAL_TOKEN}` },
+  { id:'payment_received', status:'payment_received', title:'7. Confirmer paiement', action:'Onglet Facturation → BillingForm → cocher "✅ Paiement reçu"', expected:['Statut → Payé','Billing entry +990€ créée','Finance → CA +990€','Portail : section Logement débloquée'], portal:`${BASE}/portal/${PORTAL_TOKEN}` },
+  { id:'visa_docs', status:'payment_received', title:'8. Demander docs visa', action:'Cliquer "📋 Demander docs visa"', expected:['📧 Email "Documents visa requis" reçu','Portail /visa accessible'], email:'Documents visa requis', portal:`${BASE}/portal/${PORTAL_TOKEN}/visa` },
+  { id:'visa_in_progress', status:'visa_in_progress', title:'9. Envoyer à l\'agent', action:'Onglet Visa → "Envoyer le dossier à l\'agent visa"', expected:['Statut → Visa en cours','📧 Email envoyé à BIBI CONSULTANT','Boutons : ✅ Visa reçu + ❌ Refusé'] },
+  { id:'visa_received', status:'visa_received', title:'10. Visa reçu', action:'Cliquer "✅ Visa reçu"', expected:['Statut → Visa reçu','Admin notif créée'] },
+  { id:'arrival_prep', status:'arrival_prep', title:'11. Prép. arrivée', action:'Cliquer "🛫 Préparer départ"', expected:['Statut → Prép. arrivée'] },
+  { id:'active', status:'active', title:'12. Stage démarré', action:'Cliquer "🌴 Stage démarré"', expected:['Statut → En stage','📧 Welcome kit envoyé','Portail : carte stagiaire visible'], email:'Welcome Kit', portal:`${BASE}/portal/${PORTAL_TOKEN}/carte` },
+  { id:'alumni', status:'alumni', title:'13. Alumni', action:'Cliquer "🎓 Stage terminé"', expected:['Statut → Alumni','Visible dans /fr/alumni'] },
 ] as const
 
 const LS_ACTIVE = 'qa_active'
