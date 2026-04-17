@@ -27,6 +27,7 @@ const VALID_CASE_COLUMNS = new Set([
   'fazza_transfer_sent', 'fazza_transfer_amount_idr',
   'cv_feedback', 'cv_status', 'cv_revision_requested', 'cv_revision_notes',
   'welcome_kit_sent_at',
+  'billing_company_id',
 ])
 
 const FIELD_LABELS: Record<string, string> = {
@@ -255,6 +256,8 @@ export async function GET(
         form_language, visa_submitted_to_agent_at, note_for_agent, visa_type_id,
         cv_feedback, cv_status, cv_revision_requested, cv_revision_notes,
         created_at, updated_at,
+        billing_company_id,
+        billing_companies(id, name, legal_form, currency, bank_iban, stripe_link),
         interns(*),
         destinations(name),
         packages(name,price_eur),

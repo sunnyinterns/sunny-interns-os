@@ -11,6 +11,7 @@ interface TabFacturationProps {
     payment_amount?: number | null
     invoice_number?: string | null
     interns?: { first_name: string; last_name: string } | null
+    billing_companies?: { id: string; name: string; legal_form: string | null; currency: string; bank_iban: string | null; stripe_link: string | null } | null
   }
   referred_by_code?: string | null
 }
