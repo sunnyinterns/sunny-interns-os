@@ -29,8 +29,8 @@ export async function POST(
       await supabase.from('activity_feed').insert({
         case_id: id,
         type: 'visa_sent_to_agent',
-        title: 'Visa envoyé à FAZZA',
-        description: "Dossier visa envoyé à l'agent FAZZA",
+        title: 'Visa envoyé à Agent Visa',
+        description: "Dossier visa envoyé à l'agent visa",
       })
     } catch {
       // Non-blocking

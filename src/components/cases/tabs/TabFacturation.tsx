@@ -10,8 +10,10 @@ interface TabFacturationProps {
     status?: string
     payment_amount?: number | null
     invoice_number?: string | null
+    package_id?: string | null
     interns?: { first_name: string; last_name: string } | null
     billing_companies?: { id: string; name: string; legal_form: string | null; currency: string; bank_iban: string | null; stripe_link: string | null } | null
+    billing_company_id?: string | null
   }
   referred_by_code?: string | null
 }
@@ -100,7 +102,12 @@ export function TabFacturation({ caseId, caseData, referred_by_code }: TabFactur
         </div>
       )}
 
-      <BillingForm caseId={caseId} caseData={caseData} />
+      <BillingForm 
+        caseId={caseId} 
+        caseData={caseData} 
+        defaultPackageId={caseData?.package_id}
+        defaultBillingCompanyId={caseData?.billing_company_id ?? caseData?.billing_companies?.id}
+      />
     </div>
   )
 }

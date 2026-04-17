@@ -3,13 +3,17 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-interface BillingEntity {
+interface BillingCompany {
   id: string
   name: string
-  iban?: string | null
+  legal_form?: string | null
+  currency?: string
+  bank_iban?: string | null
   bank_name?: string | null
-  is_active: boolean
+  stripe_link?: string | null
+  is_active?: boolean
   is_default: boolean
+  billing_rule?: string | null
 }
 
 interface Package {
@@ -28,7 +32,7 @@ interface Package {
 interface BillingRecord {
   id?: string
   case_id: string
-  billing_entity_id?: string
+  billing_company_id?: string
   package_id?: string | null
   amount_ht?: number
   discount_percent?: number
@@ -39,7 +43,7 @@ interface BillingRecord {
   payment_type?: string
   paid_at?: string | null
   confirmed_by?: string | null
-  billing_entities?: BillingEntity
+  billing_entities?: BillingCompany
 }
 
 interface CaseData {
@@ -51,6 +55,8 @@ interface CaseData {
 interface BillingFormProps {
   caseId: string
   caseData?: CaseData
+  defaultPackageId?: string | null
+  defaultBillingCompanyId?: string | null
 }
 
 function formatEUR(v: number) {
@@ -72,8 +78,8 @@ function generateInvoiceNumber(caseData?: CaseData): string {
 const UK_IBAN = 'GB76REVO00996903517949'
 const UK_BANK = 'REVOLUT LTD'
 
-export function BillingForm({ caseId, caseData }: BillingFormProps) {
-  const [entities, setEntities] = useState<BillingEntity[]>([])
+export function BillingForm({ caseId, caseData, defaultPackageId, defaultBillingCompanyId }: BillingFormProps) {
+  const [entities, setEntities] = useState<BillingCompany[]>([])
   const [packages, setPackages] = useState<Package[]>([])
   const [billing, setBilling] = useState<BillingRecord | null>(null)
   const [loading, setLoading] = useState(true)
@@ -110,18 +116,18 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
 
   // IBAN effectif: UK entity → hardcodé Revolut, sinon celui de l'entité
   const isUKEntity = selectedEntity?.name?.toLowerCase().includes('uk') || selectedEntity?.name?.toLowerCase().includes('united kingdom')
-  const displayIBAN = isUKEntity ? UK_IBAN : (selectedEntity?.iban ?? null)
+  const displayIBAN = isUKEntity ? UK_IBAN : (selectedEntity?.bank_iban ?? null)
   const displayBank = isUKEntity ? UK_BANK : (selectedEntity?.bank_name ?? null)
 
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
       const [entitiesRes, billingRes, packagesRes] = await Promise.all([
-        fetch('/api/billing-entities'),
+        fetch('/api/billing-companies'),
         fetch(`/api/billing/${caseId}`),
         fetch('/api/packages'),
       ])
-      const entitiesData: BillingEntity[] = entitiesRes.ok ? await entitiesRes.json() as BillingEntity[] : []
+      const entitiesData: BillingCompany[] = entitiesRes.ok ? await entitiesRes.json() as BillingCompany[] : []
       const billingData: BillingRecord | null = billingRes.ok ? await billingRes.json() as BillingRecord | null : null
       const packagesData: Package[] = packagesRes.ok ? await packagesRes.json() as Package[] : []
 
@@ -130,7 +136,7 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
       setBilling(billingData)
 
       if (billingData) {
-        setEntityId(billingData.billing_entity_id ?? '')
+        setEntityId(billingData.billing_company_id ?? '')
         setPackageId(billingData.package_id ?? '')
         setTarifPackage(billingData.amount_ht ?? 0)
         setDiscount(billingData.discount_percent ?? 0)
@@ -140,8 +146,15 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
         setVatRate(billingData.vat_rate ?? 0)
         setIsPaidCheck(!!(billingData.paid_at))
       } else {
-        const defaultEntity = entitiesData.find(e => e.is_default)
-        if (defaultEntity) setEntityId(defaultEntity.id)
+        // Pre-select from case data → then default
+        if (defaultBillingCompanyId) {
+          setEntityId(defaultBillingCompanyId)
+        } else {
+          const defaultEntity = entitiesData.find(e => e.is_default)
+          if (defaultEntity) setEntityId(defaultEntity.id)
+        }
+        // Pre-select package from case
+        if (defaultPackageId) setPackageId(defaultPackageId)
         setInvoiceNumber(generateInvoiceNumber(caseData))
       }
     } catch {
@@ -186,7 +199,7 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
           payment_amount: montantFinal,
           discount_percentage: discount,
           package_id: packageId || null,
-          billing_entity_id: entityId,
+          billing_company_id: entityId,
           payment_type: paymentType,
           invoice_number: invoiceNumber || null,
         }),
@@ -197,7 +210,7 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          billing_entity_id: entityId,
+          billing_company_id: entityId,
           package_id: packageId || null,
           amount_ht: tarifPackage,
           discount_percent: discount,
@@ -246,7 +259,7 @@ export function BillingForm({ caseId, caseData }: BillingFormProps) {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            billing_entity_id: entityId,
+            billing_company_id: entityId,
             package_id: packageId || null,
             amount_ht: tarifPackage,
             discount_percent: discount,

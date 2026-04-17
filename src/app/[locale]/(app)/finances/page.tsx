@@ -13,7 +13,7 @@ type Invoice = {
   invoice_date:string; due_date:string|null; paid_at:string|null
   pdf_url:string|null; notes:string|null; extracted_by_ai:boolean
   extraction_confidence:string|null; deleted_at:string|null
-  visa_agent_invoice_lines?:{id:string;intern_name:string|null;visa_type:string|null;amount_eur:number|null}[]
+  visa_agent_invoice_lines?:{id:string;intern_name:string|null;visa_type:string|null;amount_eur:number|null;case_id?:string|null}[]
 }
 type BillingEntry = {
   id:string; type:string; category:string; label:string; amount_eur:number
@@ -139,6 +139,19 @@ export default function FinancesPage() {
     if(r.ok){const d=await r.json() as {file_path:string;pdf_url:string;extracted:Extraction;category:string;confidence:string};setFilePath(d.file_path);setPdfUrl(d.pdf_url);setExtraction(d.extracted);setExtractConf(d.confidence);setInvForm(f=>({...f,invoice_number:d.extracted.invoice_number??f.invoice_number,supplier_name:d.extracted.supplier_name??f.supplier_name,invoice_date:d.extracted.invoice_date??f.invoice_date,due_date:d.extracted.due_date??f.due_date,amount_eur:d.extracted.amount_eur??f.amount_eur,amount_local:d.extracted.amount_total??f.amount_local,currency:d.extracted.currency??f.currency,notes:d.extracted.description??f.notes,supplier_type:d.category||f.supplier_type}));setUploadDone(true)}
     setUploading(false)
   }
+  async function markCaseTransfer(caseId: string, amountEur: number|null) {
+    await fetch(`/api/cases/${caseId}`, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        fazza_transfer_sent: true,
+        fazza_transfer_amount_idr: amountEur ? Math.round(amountEur * (config.idr_eur_rate)) : null,
+        fazza_transfer_date: new Date().toISOString().split('T')[0],
+      }),
+    })
+    alert('Virement agent visa marqué comme envoyé sur le dossier.')
+  }
+
   async function handleSaveInv(e:React.FormEvent){e.preventDefault();setSavingInv(true);await fetch('/api/finances/invoices',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...invForm,file_path:filePath||null,pdf_url:pdfUrl||null,extracted_by_ai:!!extraction,extraction_confidence:extractConf,amount_eur:invForm.amount_eur?parseFloat(invForm.amount_eur):null,amount_local:invForm.amount_local?parseFloat(invForm.amount_local):null})});setSavingInv(false);setShowInvForm(false);setExtraction(null);setUploadDone(false);setInvForm({invoice_number:'',supplier_name:'',supplier_type:'visa_agent',amount_eur:'',amount_local:'',currency:'IDR',invoice_date:new Date().toISOString().slice(0,10),due_date:'',paid_at:'',notes:''});void load()}
   async function markInvPaid(id:string){await fetch(`/api/finances/invoices/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({paid_at:new Date().toISOString()})});void load()}
   async function handleDeleteInv(){if(!deleteInv)return;await fetch(`/api/finances/invoices/${deleteInv.id}`,{method:'DELETE'});setInvoices(p=>p.filter(i=>i.id!==deleteInv.id));setDeleteInv(null)}
@@ -349,7 +362,10 @@ export default function FinancesPage() {
                           <p className="text-sm font-semibold text-[#1a1918]">{inv.supplier_name}</p>
                           <p className="text-xs text-zinc-400">{inv.invoice_number?`N°${inv.invoice_number} · `:''}{new Date(inv.invoice_date).toLocaleDateString('fr-FR')}</p>
                           {inv.notes&&<p className="text-xs text-zinc-400 truncate">{inv.notes}</p>}
-                          {inv.visa_agent_invoice_lines?.map(l=><div key={l.id} className="text-xs text-zinc-500 mt-0.5">· {l.intern_name} {l.visa_type?`(${l.visa_type})`:''} — {l.amount_eur?FMT(l.amount_eur):'—'}</div>)}
+                          {inv.visa_agent_invoice_lines?.map(l=><div key={l.id} className="text-xs text-zinc-500 mt-0.5 flex items-center gap-2">
+                          <span>· {l.intern_name} {l.visa_type?`(${l.visa_type})`:''} — {l.amount_eur?FMT(l.amount_eur):'—'}</span>
+                          {l.case_id&&<button onClick={()=>markCaseTransfer(l.case_id!,inv.amount_eur)} className="text-[10px] px-2 py-0.5 rounded bg-[#c8a96e]/10 text-[#c8a96e] hover:bg-[#c8a96e]/20">✓ Marquer virement envoyé</button>}
+                        </div>)}
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-lg font-bold text-[#1a1918]">{inv.amount_eur?FMT(inv.amount_eur):'—'}</p>

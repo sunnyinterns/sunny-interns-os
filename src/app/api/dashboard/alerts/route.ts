@@ -86,7 +86,7 @@ export async function GET() {
         alerts.push({
           id: `visa-late-${c.id}`,
           type: 'critical',
-          message: `Dossier visa de ${name} soumis il y a ${daysSince} jours — relancer FAZZA`,
+          message: `Dossier visa de ${name} soumis il y a ${daysSince} jours — relancer Agent Visa`,
           case_id: c.id,
           intern_name: name,
           action_url: `/fr/cases/${c.id}`,

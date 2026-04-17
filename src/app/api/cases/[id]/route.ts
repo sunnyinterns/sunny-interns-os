@@ -24,7 +24,7 @@ const VALID_CASE_COLUMNS = new Set([
   'billet_avion', 'papiers_visas', 'visa_recu', 'chauffeur_reserve',
   'driver_booked', 'housing_reserved',
   'form_language', 'visa_submitted_to_agent_at', 'note_for_agent',
-  'fazza_transfer_sent', 'fazza_transfer_amount_idr',
+  'visa_transfer_sent', 'visa_transfer_amount_idr',
   'cv_feedback', 'cv_status', 'cv_revision_requested', 'cv_revision_notes',
   'welcome_kit_sent_at',
   'billing_company_id',
@@ -48,8 +48,8 @@ const FIELD_LABELS: Record<string, string> = {
   visa_recu: 'Visa reçu',
   convention_signee_check: 'Convention signée',
   chauffeur_reserve: 'Chauffeur réservé',
-  fazza_transfer_sent: 'Virement FAZZA',
-  fazza_transfer_amount_idr: 'Montant FAZZA (IDR)',
+  visa_transfer_sent: 'Virement agent visa',
+  visa_transfer_amount_idr: 'Montant Agent Visa (IDR)',
   welcome_kit_sent_at: 'Welcome kit envoyé',
   driver_booked: 'Chauffeur réservé',
   discount_percentage: 'Remise %',
@@ -157,20 +157,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         metadata: { amount: body.payment_amount, payment_type: body.payment_type, invoice_number: body.invoice_number },
       })
     }
-    if (body.fazza_transfer_sent === true) {
+    if (body.visa_transfer_sent === true) {
       await logActivity({
         caseId: id,
         type: 'fazza_transfer',
-        title: 'Virement FAZZA envoyé',
-        description: `Virement de ${body.fazza_transfer_amount_idr ?? '?'} IDR envoyé à l'agent visa`,
-        metadata: { amount_idr: body.fazza_transfer_amount_idr },
+        title: 'Virement agent visa envoyé',
+        description: `Virement de ${body.visa_transfer_amount_idr ?? '?'} IDR envoyé à l'agent visa`,
+        metadata: { amount_idr: body.visa_transfer_amount_idr },
       })
     }
     if (body.visa_recu === true) {
       await logActivity({
         caseId: id,
         type: 'visa_received',
-        title: "Visa reçu de l'agent FAZZA",
+        title: "Visa reçu de l'agent visa",
         description: 'Le visa a été reçu et est prêt pour le départ',
         priority: 'high',
       })

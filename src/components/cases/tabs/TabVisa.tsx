@@ -143,9 +143,9 @@ export function TabVisa({ caseData, schoolName, onStatusChange }: TabVisaProps) 
   const [savingNote, setSavingNote] = useState(false)
 
   // ─── FAZZA ───
-  const [fazzaSent, setFazzaSent] = useState(!!caseData.fazza_transfer_sent)
-  const [fazzaAmount, setFazzaAmount] = useState(caseData.fazza_transfer_amount_idr ?? 0)
-  const [fazzaDate, setFazzaDate] = useState(caseData.fazza_transfer_date ?? '')
+  const [transferSent, setTransferSent] = useState(!!caseData.fazza_transfer_sent)
+  const [transferAmount, setTransferAmount] = useState(caseData.fazza_transfer_amount_idr ?? 0)
+  const [transferDate, setTransferDate] = useState(caseData.fazza_transfer_date ?? '')
 
   // ─── Send to agent ───
   const [sendingToAgent, setSendingToAgent] = useState(false)
@@ -634,41 +634,43 @@ export function TabVisa({ caseData, schoolName, onStatusChange }: TabVisaProps) 
       </SectionCard>
 
       {/* Virement FAZZA */}
-      <SectionCard title="Virement FAZZA">
+      <SectionCard title="Virement agent visa">
+        {/* Montant auto depuis le package */}
+        {(() => {
+          const agentCostIdr = selectedPkg?.visa_cost_idr ?? caseData.packages?.visa_cost_idr ?? transferAmount
+          const agentCostEur = agentCostIdr ? (agentCostIdr / 16500).toFixed(0) : null
+          return (
+            <div className="flex items-center justify-between mb-3 p-3 bg-zinc-50 rounded-lg border border-zinc-100">
+              <div>
+                <p className="text-xs text-zinc-400 mb-0.5">Montant à virer (depuis le package)</p>
+                <p className="text-sm font-bold text-[#1a1918]">
+                  {agentCostIdr ? `${agentCostIdr.toLocaleString()} IDR` : '—'}
+                  {agentCostEur && <span className="text-zinc-400 font-normal ml-2">≈ {agentCostEur} €</span>}
+                </p>
+              </div>
+              <a href="/fr/settings/packages" className="text-xs text-[#c8a96e] hover:underline">Modifier dans packages →</a>
+            </div>
+          )
+        })()}
         <label className="flex items-center gap-3 cursor-pointer mb-3">
           <input
             type="checkbox"
-            checked={fazzaSent}
+            checked={transferSent}
             onChange={(e) => {
-              setFazzaSent(e.target.checked)
-              void saveCaseField({ fazza_transfer_sent: e.target.checked })
+              const checked = e.target.checked
+              setTransferSent(checked)
+              const amountIdr = selectedPkg?.visa_cost_idr ?? caseData.packages?.visa_cost_idr ?? transferAmount
+              void saveCaseField({
+                fazza_transfer_sent: checked,
+                fazza_transfer_amount_idr: checked ? (amountIdr || null) : null,
+                fazza_transfer_date: checked ? new Date().toISOString().split('T')[0] : null,
+              })
             }}
             className="w-4 h-4 rounded accent-[#c8a96e]"
           />
-          <span className="text-sm text-[#1a1918]">Virement envoyé</span>
+          <span className="text-sm text-[#1a1918]">Virement envoyé à l'agent visa</span>
+          {transferSent && transferDate && <span className="text-xs text-zinc-400">· {new Date(transferDate).toLocaleDateString('fr-FR')}</span>}
         </label>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-[11px] text-zinc-400 mb-1">Montant (IDR)</label>
-            <input
-              type="number"
-              value={fazzaAmount || ''}
-              onChange={(e) => setFazzaAmount(parseFloat(e.target.value) || 0)}
-              onBlur={() => { void saveCaseField({ fazza_transfer_amount_idr: fazzaAmount || null }) }}
-              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-            />
-          </div>
-          <div>
-            <label className="block text-[11px] text-zinc-400 mb-1">Date virement</label>
-            <input
-              type="date"
-              value={fazzaDate}
-              onChange={(e) => setFazzaDate(e.target.value)}
-              onBlur={() => { void saveCaseField({ fazza_transfer_date: fazzaDate || null }) }}
-              className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-            />
-          </div>
-        </div>
       </SectionCard>
 
       {/* Note pour l'agent */}
@@ -677,7 +679,7 @@ export function TabVisa({ caseData, schoolName, onStatusChange }: TabVisaProps) 
           value={noteForAgent}
           onChange={(e) => setNoteForAgent(e.target.value)}
           onBlur={() => { void handleNoteSave() }}
-          placeholder="Instructions spéciales, remarques pour l'agent FAZZA…"
+          placeholder="Instructions spéciales, remarques pour l'agent visa…"
           rows={3}
           className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
         />

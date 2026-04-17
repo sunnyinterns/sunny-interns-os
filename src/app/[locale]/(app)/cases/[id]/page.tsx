@@ -58,7 +58,7 @@ const NEXT_ACTIONS: Record<string, { text: string; cta: string | null; action: s
   convention_signed: { text: 'Ce candidat est maintenant un client', cta: '→ Fiche Client', action: 'client' },
   payment_pending: { text: 'Confirmer la reception du paiement', cta: 'Marquer paye', action: 'mark_paid' },
   payment_received: { text: 'Preparer les documents visa', cta: null, action: null },
-  visa_docs_sent: { text: "Envoyer le dossier a l'agent FAZZA", cta: 'Envoyer FAZZA', action: 'visa' },
+  visa_docs_sent: { text: "Envoyer le dossier a l'agent visa", cta: 'Envoyer Agent Visa', action: 'visa' },
   visa_submitted: { text: 'Attendre la reception du visa', cta: null, action: null },
   visa_in_progress: { text: 'Attendre la reception du visa', cta: null, action: null },
   visa_received: { text: "Preparer l'arrivee", cta: null, action: null },

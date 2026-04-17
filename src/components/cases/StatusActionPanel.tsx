@@ -57,6 +57,8 @@ function getButtons(
   status: string,
   caseData: StatusActionPanelProps['caseData'],
   patchStatus: (s: string, extra?: Record<string, unknown>) => Promise<void>,
+  sendPaymentEmail: () => Promise<void>,
+  sendVisaDocsEmail: () => Promise<void>,
 ): ActionButton[] {
   switch (status) {
     case 'lead': return [
@@ -79,16 +81,15 @@ function getButtons(
       { label: '📝 Convention signée', onClick: () => { void patchStatus('convention_signed') }, variant: 'primary', loadingKey: 'convention_signed' },
     ]
     case 'convention_signed': return [
-      { label: '💳 Attente paiement', onClick: () => { void patchStatus('payment_pending') }, variant: 'primary', loadingKey: 'payment_pending' },
+      { label: '📧 Envoyer demande paiement', onClick: () => { void sendPaymentEmail() }, variant: 'primary', loadingKey: 'send_payment_email' },
+      { label: '💳 Paiement en attente', onClick: () => { void patchStatus('payment_pending') }, variant: 'secondary', loadingKey: 'payment_pending' },
     ]
     case 'payment_pending': return [
       { label: '✅ Paiement reçu', onClick: () => { void patchStatus('payment_received', { payment_date: new Date().toISOString().slice(0, 10) }) }, variant: 'primary', loadingKey: 'payment_received' },
     ]
     case 'payment_received': return [
-      { label: '📁 Docs visa envoyés', onClick: () => { void patchStatus('visa_docs_sent') }, variant: 'primary', loadingKey: 'visa_docs_sent' },
-    ]
-    case 'visa_docs_sent': return [
-      { label: '🚀 Visa soumis FAZZA', onClick: () => { void patchStatus('visa_submitted') }, variant: 'primary', loadingKey: 'visa_submitted' },
+      { label: '📋 Demander docs visa', onClick: () => { void sendVisaDocsEmail() }, variant: 'primary', loadingKey: 'send_visa_docs' },
+      { label: '🚀 Envoyer à l\'agent visa', onClick: () => { void patchStatus('visa_in_progress') }, variant: 'secondary', loadingKey: 'visa_in_progress' },
     ]
     case 'visa_submitted': return [
       { label: '🛂 Visa reçu', onClick: () => { void patchStatus('visa_received') }, variant: 'primary', loadingKey: 'visa_received' },
@@ -128,7 +129,27 @@ export default function StatusActionPanel({ caseData, onRefresh }: StatusActionP
     router.refresh()
   }
 
-  const btns = getButtons(s, caseData, patchStatus)
+  async function sendPaymentEmail() {
+    setLoading('send_payment_email')
+    await fetch(`/api/cases/${caseData.id}/send-payment-email`, { method: 'POST' }).catch(() => null)
+    await fetch(`/api/cases/${caseData.id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'payment_pending' }),
+    }).catch(() => null)
+    setLoading(null)
+    onRefresh?.()
+    router.refresh()
+  }
+
+  async function sendVisaDocsEmail() {
+    setLoading('send_visa_docs')
+    await fetch(`/api/cases/${caseData.id}/send-visa-docs`, { method: 'POST' }).catch(() => null)
+    setLoading(null)
+    onRefresh?.()
+  }
+
+  const btns = getButtons(s, caseData, patchStatus, sendPaymentEmail, sendVisaDocsEmail)
   if (!btns.length) return null
 
   return (

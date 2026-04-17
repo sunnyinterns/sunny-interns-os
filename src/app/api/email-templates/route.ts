@@ -193,7 +193,7 @@ const DEFAULT_TEMPLATES = [
 <h3>What happens next:</h3>
 <ol>
   <li><strong>Visa documents</strong> — you'll receive a checklist to upload on your portal</li>
-  <li><strong>Visa processing</strong> — our agent FAZZA will handle your visa application (3-4 weeks)</li>
+  <li><strong>Visa processing</strong> — our agent Agent Visa will handle your visa application (3-4 weeks)</li>
   <li><strong>Pre-departure</strong> — we'll send you all the info you need before flying to Bali</li>
 </ol>
 <p>Keep an eye on your portal and email — we'll be in touch soon!</p>
