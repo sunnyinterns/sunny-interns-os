@@ -14,6 +14,7 @@ export async function GET() {
   const { data, error } = await svc()
     .from('supplier_invoices')
     .select('*, visa_agent_invoice_lines(*)')
+    .is('deleted_at', null)
     .order('invoice_date', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

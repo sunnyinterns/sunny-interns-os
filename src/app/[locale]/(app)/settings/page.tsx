@@ -51,7 +51,8 @@ const SECTIONS: Record<string, { title: string; items: SectionItem[] }> = {
   finances: {
     title: 'Finances',
     items: [
-      { href: 'finances', icon: '💰', label: 'Finance Settings', desc: 'Payout config, exchange rates, fiscal year' },
+      { href: 'finances', icon: '💰', label: 'Finance Settings', desc: 'Payout config, taux de change, payout fondateurs' },
+      { href: 'billing-companies', icon: '🏢', label: 'Sociétés facturantes', desc: 'SIDLYS LLC, Bali Interns — règles par nationalité, Stripe, IBAN' },
     ],
   },
   team: {
