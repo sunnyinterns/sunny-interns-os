@@ -268,6 +268,29 @@ export default function LeadsPage() {
       ) : (
         <div className="space-y-2">
           {filtered.map(lead => {
+            // Render simplifié pour les dossiers CRM en lead
+            if (lead.source === 'crm_case') {
+              const name = [lead.first_name, lead.last_name].filter(Boolean).join(' ') || lead.email
+              return (
+                <div key={lead.id}
+                  className="bg-[#c8a96e]/5 border border-[#c8a96e]/30 rounded-xl p-4 flex items-center gap-4 hover:border-[#c8a96e]/60 hover:shadow-sm transition-all cursor-pointer"
+                  onClick={() => router.push(`/${locale}/cases/${lead.id}`)}>
+                  <div className="w-10 h-10 rounded-full bg-[#c8a96e]/20 flex items-center justify-center text-sm font-semibold text-[#c8a96e] flex-shrink-0">
+                    {initials(lead.first_name, lead.last_name, lead.email)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-[#1a1918]">{name}</p>
+                    <p className="text-xs text-zinc-400">{lead.email}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-[#c8a96e]/20 text-[#b8945a]">🗂️ Dossier CRM</span>
+                      <span className="text-xs text-zinc-400">{new Date(lead.created_at).toLocaleDateString('fr-FR')}</span>
+                    </div>
+                  </div>
+                  <span className="text-xs text-[#c8a96e] font-medium shrink-0">Ouvrir →</span>
+                </div>
+              )
+            }
+
             const src = SOURCE_LABELS[lead.source] ?? { label: lead.source, emoji: '•', color: 'bg-zinc-100 text-zinc-600' }
             const name = [lead.first_name, lead.last_name].filter(Boolean).join(' ')
             return (
