@@ -217,7 +217,13 @@ export function TabProcess({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       })
-      if (!res.ok) throw new Error()
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({})) as { error?: string; hint?: string; blocked?: boolean }
+        const msg = d.hint ?? d.error ?? 'Changement de statut impossible'
+        showToast(msg, 'error')
+        setStatusChanging(false)
+        return
+      }
       setStatus(newStatus)
       const oldLabel = ALL_STATUSES.find((s) => s.value === oldStatus)?.label ?? oldStatus
       const newLabel = ALL_STATUSES.find((s) => s.value === newStatus)?.label ?? newStatus

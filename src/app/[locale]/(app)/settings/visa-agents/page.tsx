@@ -63,6 +63,9 @@ export default function VisaAgentsPage() {
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState<Form>(EMPTY)
   const [activeTab, setActiveTab] = useState<'general'|'banking'|'portal'>('general')
+  const [confirmDelete, setConfirmDelete] = useState<VisaAgent | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   async function load() {
     setLoading(true)
@@ -105,10 +108,22 @@ export default function VisaAgentsPage() {
     setShowModal(true)
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Supprimer cet agent visa ?')) return
-    await fetch(`/api/settings/visa-agents/${id}`, { method: 'DELETE' })
-    void load()
+  async function handleDelete() {
+    if (!confirmDelete) return
+    setDeleting(true)
+    setDeleteError(null)
+    const res = await fetch(`/api/settings/visa-agents/${confirmDelete.id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({})) as { error?: string }
+      setDeleteError(d.error ?? 'Erreur lors de la suppression')
+      setDeleting(false)
+      return
+    }
+    setDeleting(false)
+    setConfirmDelete(null)
+    // Optimistic remove then reload
+    setAgents(prev => prev.filter(a => a.id !== confirmDelete.id))
+    await load()
   }
 
   function handleAddressSelect(r: AddressResult) {
@@ -201,7 +216,7 @@ export default function VisaAgentsPage() {
                   </div>
                   <div className="flex flex-col gap-1.5 shrink-0">
                     <button onClick={() => openEdit(a)} className="text-xs px-3 py-1.5 border border-zinc-200 rounded-lg text-zinc-600 hover:bg-zinc-50">Modifier</button>
-                    <button onClick={() => handleDelete(a.id)} className="text-xs px-3 py-1.5 border border-red-100 rounded-lg text-red-400 hover:bg-red-50">Supprimer</button>
+                    <button onClick={() => { setConfirmDelete(a); setDeleteError(null) }} className="text-xs px-3 py-1.5 border border-red-100 rounded-lg text-red-400 hover:bg-red-50">Supprimer</button>
                     {a.whatsapp && (
                       <a href={`https://wa.me/${a.whatsapp.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer"
                         className="text-xs px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg text-green-700 text-center">💬 WA</a>
@@ -210,6 +225,31 @@ export default function VisaAgentsPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* CONFIRM DELETE */}
+        {confirmDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full">
+              <p className="text-4xl text-center mb-3">🗑</p>
+              <h3 className="text-base font-bold text-[#1a1918] text-center mb-1">Supprimer cet agent visa ?</h3>
+              <p className="text-sm text-zinc-500 text-center mb-1">{confirmDelete.company_name}</p>
+              <p className="text-xs text-zinc-400 text-center mb-4">Les packages liés seront dissociés. Les factures conserveront leurs données.</p>
+              {deleteError && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4 text-xs text-red-600 text-center">{deleteError}</div>
+              )}
+              <div className="flex gap-3">
+                <button onClick={() => { setConfirmDelete(null); setDeleteError(null) }}
+                  className="flex-1 py-2.5 border border-zinc-200 rounded-xl text-sm text-zinc-600 hover:bg-zinc-50">
+                  Annuler
+                </button>
+                <button onClick={handleDelete} disabled={deleting}
+                  className="flex-1 py-2.5 bg-red-500 text-white text-sm font-bold rounded-xl hover:bg-red-600 disabled:opacity-50">
+                  {deleting ? 'Suppression…' : 'Oui, supprimer'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

@@ -12,7 +12,7 @@ const BOTTOM_NAV = [
   { href: '/fr/calendar', icon: '📅', label: 'Calendrier' },
 ]
 
-const DRAWER_ITEMS: { href?: string; icon?: string; label?: string; separator?: boolean }[] = [
+const DRAWER_ITEMS: { href?: string; icon?: string; label?: string; separator?: boolean; external?: boolean }[] = [
   { href: '/fr/pipeline', icon: '📊', label: 'Pipeline' },
   { href: '/fr/leads', icon: '📋', label: 'Leads' },
   { href: '/fr/cases', icon: '👤', label: 'Candidats' },
@@ -25,6 +25,10 @@ const DRAWER_ITEMS: { href?: string; icon?: string; label?: string; separator?: 
   { href: '/fr/schools', icon: '🎓', label: 'Ecoles' },
   { separator: true },
   { href: '/fr/finances', icon: '💶', label: 'Finances' },
+  { separator: true },
+  { href: '/fr/blog', icon: '📝', label: 'Blog' },
+  { href: 'https://bali-interns-website.vercel.app', icon: '🌐', label: 'Website', external: true },
+  { separator: true },
   { href: '/fr/settings', icon: '⚙️', label: 'Parametres' },
 ]
 
@@ -236,6 +240,20 @@ export function Sidebar() {
 
         <Sep />
 
+        <NavLink href="/fr/blog" label="Blog" icon={<span className="text-base leading-none">📝</span>} />
+        <a
+          href="https://bali-interns-website.vercel.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-zinc-500 hover:text-[#1a1918] hover:bg-zinc-100 transition-all"
+        >
+          <span className="flex-shrink-0 text-base leading-none">🌐</span>
+          <span className="flex-1 truncate">Website</span>
+          <span className="text-zinc-300 text-[10px]">↗</span>
+        </a>
+
+        <Sep />
+
         <NavLink href="/fr/settings" label="Paramètres" icon={icons.settings} />
 
       </nav>
@@ -294,6 +312,17 @@ export function Sidebar() {
           <div className="px-4 pb-6 space-y-1">
             {DRAWER_ITEMS.map((item, i) => {
               if (item.separator) return <div key={`sep-${i}`} className="my-2 border-t border-zinc-100" />
+              if (item.external) {
+                return (
+                  <a key={item.href} href={item.href!} target="_blank" rel="noopener noreferrer"
+                    onClick={() => setDrawerOpen(false)}
+                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors">
+                    <span className="text-lg flex-shrink-0">{item.icon}</span>
+                    <span className="flex-1">{item.label}</span>
+                    <span className="text-zinc-300 text-xs">↗</span>
+                  </a>
+                )
+              }
               return (
                 <Link key={item.href} href={item.href!} onClick={() => setDrawerOpen(false)}
                   className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors ${
