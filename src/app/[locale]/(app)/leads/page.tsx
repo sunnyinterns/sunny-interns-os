@@ -96,9 +96,11 @@ function daysAgo(d?: string | null) { return d ? Math.floor((Date.now() - new Da
 
 function initials(first: string | null, last: string | null, email: string): string {
   if (first || last) {
-    return `${(first ?? '')[0] ?? ''}${(last ?? '')[0] ?? ''}`.toUpperCase() || email[0].toUpperCase()
+    const a = (first ?? '')[0] ?? ''
+    const b = (last ?? '')[0] ?? ''
+    return (a + b).toUpperCase() || (email?.[0] ?? '?').toUpperCase()
   }
-  return email[0].toUpperCase()
+  return (email?.[0] ?? '?').toUpperCase()
 }
 
 export default function LeadsPage() {

@@ -33,6 +33,7 @@ const LS_BUGID = 'qa_bug_id'
 
 export function QAWidget() {
   const searchParams = useSearchParams()
+  const [mounted, setMounted] = useState(false)
   const [active, setActive] = useState(false)
   const [open, setOpen] = useState(true)
   const [stepIdx, setStepIdx] = useState(0)
@@ -46,6 +47,7 @@ export function QAWidget() {
   const pollRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
+    setMounted(true)
     if (searchParams.get('qa') === '1') localStorage.setItem(LS_ACTIVE, '1')
     if (localStorage.getItem(LS_ACTIVE) === '1') setActive(true)
     const s = localStorage.getItem(LS_STEP); if (s) setStepIdx(parseInt(s))
@@ -147,7 +149,7 @@ export function QAWidget() {
     if (pollRef.current) clearInterval(pollRef.current)
   }
 
-  if (!active) return null
+  if (!mounted || !active) return null
 
   const step = STEPS[stepIdx]
   const passed = Object.values(statuses).filter(s => s === 'pass').length
