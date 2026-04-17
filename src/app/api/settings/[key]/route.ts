@@ -15,7 +15,7 @@ const DEFAULTS: Record<string, unknown> = {
     email_payment_received: true,
     web_push_enabled: false,
   },
-  app_name: 'Sunny Interns OS',
+  app_name: 'Bali Interns OS',
   timezone: 'Asia/Makassar',
   default_locale: 'fr',
 }

@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       `${i + 1}. [${j.id}] ${j.title} chez ${(j.companies as Record<string, unknown>)?.name ?? 'N/A'} — ${j.department ?? ''}`
     ).join('\n')
 
-    const prompt = `Tu es un expert en matching stagiaires/entreprises pour Sunny Interns.
+    const prompt = `Tu es un expert en matching stagiaires/entreprises pour Bali Interns.
 
 Profil stagiaire:
 - Nom: ${intern?.first_name ?? ''} ${intern?.last_name ?? ''}

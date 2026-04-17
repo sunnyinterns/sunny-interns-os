@@ -92,7 +92,7 @@ export async function PATCH(
     const resend = new Resend(process.env.RESEND_API_KEY)
     const companyName = ((company as unknown) as {name: string} | null)?.name ?? 'Entreprise'
     await resend.emails.send({
-      from: 'Sunny Interns OS <team@bali-interns.com>',
+      from: 'Bali Interns OS <team@bali-interns.com>',
       to: ['sidney.ruby@gmail.com', 'charly@bali-interns.com'],
       subject: `[Infos validées] ${companyName} a complété son formulaire`,
       html: `<div style="font-family:sans-serif;padding:24px;"><h2>Formulaire complété ✅</h2><p><strong>${companyName}</strong> a validé ses informations administratives. Données appliquées automatiquement.</p></div>`,

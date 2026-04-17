@@ -41,7 +41,7 @@ export function InternCardDigital({ caseData }: InternCardDigitalProps) {
       {/* Header */}
       <div className="px-6 py-4 text-center" style={{ backgroundColor: '#c8a96e' }}>
         <p className="text-xs font-semibold uppercase tracking-widest text-white/80 mb-0.5">
-          Sunny Interns
+          Bali Interns
         </p>
         <p className="text-sm font-medium text-white/90">Carte Stagiaire</p>
       </div>

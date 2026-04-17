@@ -129,10 +129,10 @@ export async function POST(request: Request) {
       <p>Bonjour ${first_name},</p>
       <p>Votre rendez-vous de qualification a bien été enregistré.</p>
       <p><strong>Créneau réservé :</strong> ${slotLabel} (heure de Bali)</p>
-      <p>L'équipe Sunny Interns vous contactera à l'adresse <strong>${email}</strong> pour confirmer et vous envoyer le lien de visioconférence.</p>
+      <p>L'équipe Bali Interns vous contactera à l'adresse <strong>${email}</strong> pour confirmer et vous envoyer le lien de visioconférence.</p>
       <br/>
       <p>À très bientôt,</p>
-      <p>L'équipe Sunny Interns</p>
+      <p>L'équipe Bali Interns</p>
     `
 
     // Send both emails in parallel
@@ -151,7 +151,7 @@ export async function POST(request: Request) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: email,
-          subject: `Confirmation de votre RDV Sunny Interns — ${slotLabel}`,
+          subject: `Confirmation de votre RDV Bali Interns — ${slotLabel}`,
           html: confirmHtml,
         }),
       }),

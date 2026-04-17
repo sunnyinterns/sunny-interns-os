@@ -7,7 +7,6 @@ function fillTemplate(html: string, data: Record<string, string>): string {
   for (const [key, value] of Object.entries(data)) {
     result = result.replaceAll(`{{${key}}}`, value ?? '')
   }
-  // Remove any unfilled {{variables}} so they don't show in final doc
   result = result.replace(/\{\{[^}]+\}\}/g, '')
   return result
 }
@@ -29,19 +28,13 @@ export async function POST(
 ) {
   const { id } = await params
   const body = await request.json() as {
-    caseId?: string; companyId?: string; preview?: boolean
-    portalToken?: string // employer portal context
+    caseId?: string; companyId?: string; preview?: boolean; portalToken?: string
   }
 
-  // Auth: admin route OR portal token (no user session needed from employer portal)
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const svc = serviceClient()
 
-  // If called from employer portal (no admin session), use service client
-  const db = user ? supabase : svc
-
-  // Load template
   const { data: template } = await svc
     .from('contract_templates').select('*').eq('id', id).single()
   if (!template?.html_content) {
@@ -50,54 +43,69 @@ export async function POST(
 
   const vars: Record<string, string> = {}
 
-  // ── 1. SPONSOR (always load active sponsor) ─────────────────────────────
+  // ── 1. SPONSOR ──────────────────────────────────────────────────────────
   const { data: sponsor } = await svc
     .from('sponsors').select('*').eq('is_active', true)
     .order('created_at', { ascending: false }).limit(1).single()
 
   if (sponsor) {
     const legal = sponsor.legal_details as Record<string, unknown> | null
-    vars.sponsor_name         = sponsor.company_name ?? ''
-    vars.sponsor_legal_type   = sponsor.legal_type ?? 'PT'
-    vars.sponsor_registration = sponsor.registration_number ?? ''
-    vars.sponsor_nib          = sponsor.nib ?? ''
-    vars.sponsor_npwp         = sponsor.npwp ?? ''
-    vars.sponsor_city         = sponsor.city ?? 'Denpasar'
-    vars.sponsor_address      = [sponsor.address, sponsor.city, sponsor.country].filter(Boolean).join(', ')
-    vars.sponsor_contact_name = ld(legal, 'director_name') || sponsor.contact_name || ''
-    vars.sponsor_contact_role = sponsor.contact_role ?? 'Direktur Utama / Main Director'
-    vars.sponsor_contact_email= sponsor.contact_email ?? ''
-    vars.sponsor_signature_url= sponsor.signature_url ?? ''
-    // Legal details
-    vars.sponsor_director_name        = ld(legal, 'director_name') || sponsor.contact_name || ''
+    vars.sponsor_name              = sponsor.company_name ?? ''
+    vars.sponsor_legal_type        = sponsor.legal_type ?? 'PT'
+    vars.sponsor_registration      = sponsor.registration_number ?? ''
+    vars.sponsor_nib               = sponsor.nib ?? ''
+    vars.sponsor_npwp              = sponsor.npwp ?? ''
+    vars.sponsor_city              = sponsor.city ?? 'Denpasar'
+    vars.sponsor_address           = [sponsor.address, sponsor.city, sponsor.country].filter(Boolean).join(', ')
+    vars.sponsor_contact_name      = ld(legal, 'director_name') || sponsor.contact_name || ''
+    vars.sponsor_contact_role      = sponsor.contact_role ?? 'Direktur Utama / Main Director'
+    vars.sponsor_signature_url     = sponsor.signature_url ?? ''
+    vars.sponsor_director_name     = ld(legal, 'director_name') || sponsor.contact_name || ''
     vars.sponsor_director_nationality = ld(legal, 'director_nationality') || 'Indonesian'
-    vars.sponsor_director_dob         = ld(legal, 'director_dob')
-    vars.sponsor_director_dob_place   = ld(legal, 'director_dob_place')
-    vars.sponsor_director_id_number   = ld(legal, 'director_id_number')
-    vars.sponsor_notary_name          = ld(legal, 'notary_name')
-    vars.sponsor_deed_number          = ld(legal, 'deed_number')
-    vars.sponsor_deed_date            = ld(legal, 'deed_date')
-    vars.sponsor_ahu_number           = ld(legal, 'ahu_number')
-    vars.sponsor_ahu_date             = ld(legal, 'ahu_date')
+    vars.sponsor_director_dob      = ld(legal, 'director_dob')
+    vars.sponsor_director_dob_place= ld(legal, 'director_dob_place')
+    vars.sponsor_director_id_number= ld(legal, 'director_id_number')
+    vars.sponsor_notary_name       = ld(legal, 'notary_name')
+    vars.sponsor_deed_number       = ld(legal, 'deed_number')
+    vars.sponsor_deed_date         = ld(legal, 'deed_date')
+    vars.sponsor_ahu_number        = ld(legal, 'ahu_number')
+    vars.sponsor_ahu_date          = ld(legal, 'ahu_date')
   }
 
-  // ── 2. EMPLOYER PORTAL CONTEXT (portalToken) ────────────────────────────
+  // ── 2. EMPLOYER PORTAL CONTEXT ──────────────────────────────────────────
   let resolvedCaseId = body.caseId
   let resolvedCompanyId = body.companyId
 
-  if (body.portalToken && !resolvedCaseId) {
-    // Find case via employer access token
+  if (body.portalToken) {
     const { data: access } = await svc
-      .from('employer_access')
-      .select('case_id, company_id')
+      .from('employer_portal_access')
+      .select('case_id, company_id, signing_contact_id')
       .eq('token', body.portalToken).single()
+
     if (access) {
-      resolvedCaseId = access.case_id ?? undefined
-      resolvedCompanyId = access.company_id ?? undefined
+      if (!resolvedCaseId) resolvedCaseId = access.case_id ?? undefined
+      if (!resolvedCompanyId) resolvedCompanyId = access.company_id ?? undefined
+
+      // Pre-fill director from signing contact (overrides company legal_details)
+      if (access.signing_contact_id) {
+        const { data: sc } = await svc.from('contacts')
+          .select('first_name,last_name,nationality,date_of_birth,place_of_birth,id_type,id_number,job_title')
+          .eq('id', access.signing_contact_id).single()
+        if (sc) {
+          const dob = sc.date_of_birth
+            ? new Date(sc.date_of_birth as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+            : ''
+          vars.company_director_name         = `${sc.first_name ?? ''} ${sc.last_name ?? ''}`.trim()
+          vars.company_director_nationality  = (sc.nationality as string) ?? ''
+          vars.company_director_dob          = dob
+          vars.company_director_dob_place    = (sc.place_of_birth as string) ?? ''
+          vars.company_director_id_number    = (sc.id_number as string) ?? ''
+        }
+      }
     }
   }
 
-  // ── 3. CASE DATA (intern + job + company) ───────────────────────────────
+  // ── 3. CASE DATA ────────────────────────────────────────────────────────
   if (resolvedCaseId) {
     const { data: caseData } = await svc
       .from('cases')
@@ -107,133 +115,142 @@ export async function POST(
     if (caseData) {
       const intern = caseData.interns as Record<string, unknown> | null
       const fullName = `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim()
-      vars.intern_name          = fullName
-      vars.intern_full_name     = fullName
-      vars.intern_email         = (intern?.email as string) ?? ''
-      vars.intern_nationality   = (intern?.nationality as string) ?? ''
-      vars.intern_birth_date    = (intern?.birth_date as string) ?? ''
-      vars.intern_address       = (intern?.intern_address as string) ?? ''
-      vars.intern_signing_city  = (intern?.intern_signing_city as string) ?? 'Bali'
-      vars.intern_level         = (intern?.intern_level as string) ?? ''
-      vars.intern_passport      = (intern?.passport_number as string) ?? ''
-      vars.intern_school        = (caseData.schools as { name: string } | null)?.name ?? ''
-      vars.start_date           = caseData.actual_start_date ?? caseData.desired_start_date ?? ''
-      vars.end_date             = caseData.actual_end_date ?? ''
-      vars.duration_months      = String(caseData.desired_duration_months ?? '')
-      vars.amount               = String(caseData.payment_amount ?? (caseData.packages as { price_eur: number } | null)?.price_eur ?? '')
-      vars.amount_ht            = vars.amount
-      vars.tva                  = '0'
-      vars.invoice_number       = (caseData as Record<string, unknown>).invoice_number as string ?? `SI-${new Date().getFullYear()}-${resolvedCaseId.slice(0, 6).toUpperCase()}`
-      vars.invoice_date         = new Date().toLocaleDateString('fr-FR')
-      vars.package_name         = (caseData.packages as { name: string } | null)?.name ?? ''
+      vars.intern_name         = fullName
+      vars.intern_full_name    = fullName
+      vars.intern_email        = (intern?.email as string) ?? ''
+      vars.intern_nationality  = (intern?.nationality as string) ?? ''
+      vars.intern_passport     = (intern?.passport_number as string) ?? ''
+      vars.intern_school       = (caseData.schools as { name: string } | null)?.name ?? ''
+      vars.start_date          = (caseData as Record<string, unknown>).actual_start_date as string ?? (caseData as Record<string, unknown>).desired_start_date as string ?? ''
+      vars.end_date            = (caseData as Record<string, unknown>).actual_end_date as string ?? ''
+      vars.duration_months     = String((caseData as Record<string, unknown>).desired_duration_months ?? '')
+      vars.amount              = String((caseData as Record<string, unknown>).payment_amount ?? (caseData.packages as { price_eur: number } | null)?.price_eur ?? '')
+      vars.amount_ht           = vars.amount
+      vars.tva                 = '0'
+      vars.invoice_number      = (caseData as Record<string, unknown>).invoice_number as string ?? `BI-${new Date().getFullYear()}-${resolvedCaseId.slice(0, 6).toUpperCase()}`
+      vars.package_name        = (caseData.packages as { name: string } | null)?.name ?? ''
 
       // Retained job + host company
       const { data: subs } = await svc
         .from('job_submissions')
-        .select('*, jobs(*, companies(*))')
+        .select('status, jobs(id, title, public_title, description, location, wished_duration_months, companies(*))')
         .eq('case_id', resolvedCaseId)
         .eq('status', 'retained')
         .limit(1)
 
       if (subs?.[0]) {
-        const job = subs[0].jobs as Record<string, unknown> | null
+        const job = (subs[0] as Record<string, unknown>).jobs as Record<string, unknown> | null
         const company = job?.companies as Record<string, unknown> | null
-        vars.job_title       = (job?.public_title as string) ?? (job?.title as string) ?? ''
-        vars.job_description = (job?.description as string) ?? ''
-        vars.job_location    = (job?.location as string) ?? ''
-        // Missions from job description (split by newline or bullet)
+        vars.job_title         = (job?.public_title as string) ?? (job?.title as string) ?? ''
+        vars.job_description   = (job?.description as string) ?? ''
+        vars.job_location      = (job?.location as string) ?? ''
+
         const desc = (job?.description as string) ?? ''
-        const missions = desc.split(/\n|•|-/).map(s => s.trim()).filter(s => s.length > 10).slice(0, 5)
+        const missions = desc.split(/\n|•|-/).map((s: string) => s.trim()).filter((s: string) => s.length > 10).slice(0, 5)
         vars.missions_html = missions.length
-          ? `<ul>${missions.map(m => `<li>${m}</li>`).join('')}</ul>`
+          ? `<ul>${missions.map((m: string) => `<li>${m}</li>`).join('')}</ul>`
           : ''
-        // Host company
-        if (company && !resolvedCompanyId) resolvedCompanyId = company.id as string
+
         if (company) {
+          if (!resolvedCompanyId) resolvedCompanyId = company.id as string
           const compLegal = company.legal_details as Record<string, unknown> | null
-          vars.company_name        = (company.name as string) ?? ''
+          if (!vars.company_name) vars.company_name       = (company.name as string) ?? ''
           vars.company_legal_type  = (company.legal_type as string) ?? ''
           vars.company_nib         = (company.nib as string) ?? ''
           vars.company_npwp        = (company.npwp as string) ?? ''
-          vars.company_city        = (company.city as string) ?? ''
-          vars.company_address     = (company.domiciliation as string) ?? (company.address as string) ?? ''
-          vars.company_director_name        = ld(compLegal, 'director_name') || (company.contact_name as string) || ''
-          vars.company_director_nationality = ld(compLegal, 'director_nationality')
-          vars.company_director_dob         = ld(compLegal, 'director_dob')
-          vars.company_director_dob_place   = ld(compLegal, 'director_dob_place')
-          vars.company_director_id_number   = ld(compLegal, 'director_id_number')
-          vars.company_notary_name          = ld(compLegal, 'notary_name')
-          vars.company_deed_number          = ld(compLegal, 'deed_number')
-          vars.company_deed_date            = ld(compLegal, 'deed_date')
-          vars.company_ahu_number           = ld(compLegal, 'ahu_number')
-          vars.company_ahu_date             = ld(compLegal, 'ahu_date')
+          vars.company_city        = (company.city as string) ?? (company.address_city as string) ?? ''
+          vars.company_address     = (company.address_street as string) ?? (company.address as string) ?? ''
+          // Only set if not already set by signing contact
+          if (!vars.company_director_name) {
+            vars.company_director_name         = ld(compLegal, 'director_name') || (company.contact_name as string) || ''
+            vars.company_director_nationality  = ld(compLegal, 'director_nationality')
+            vars.company_director_dob          = ld(compLegal, 'director_dob')
+            vars.company_director_dob_place    = ld(compLegal, 'director_dob_place')
+            vars.company_director_id_number    = ld(compLegal, 'director_id_number')
+          }
+          vars.company_notary_name   = ld(compLegal, 'notary_name')
+          vars.company_deed_number   = ld(compLegal, 'deed_number')
+          vars.company_deed_date     = ld(compLegal, 'deed_date')
+          vars.company_ahu_number    = ld(compLegal, 'ahu_number')
+          vars.company_ahu_date      = ld(compLegal, 'ahu_date')
         }
       }
     }
   }
 
-  // ── 4. COMPANY (direct lookup if no case) ───────────────────────────────
+  // ── 4. COMPANY direct lookup ─────────────────────────────────────────────
   if (resolvedCompanyId && !vars.company_name) {
-    const { data: company } = await svc
-      .from('companies').select('*').eq('id', resolvedCompanyId).single()
+    const { data: company } = await svc.from('companies').select('*').eq('id', resolvedCompanyId).single()
     if (company) {
       const compLegal = (company as Record<string, unknown>).legal_details as Record<string, unknown> | null
-      vars.company_name       = company.name ?? ''
-      vars.company_legal_type = company.legal_type ?? ''
-      vars.company_nib        = company.nib ?? ''
-      vars.company_npwp       = company.npwp ?? ''
-      vars.company_city       = company.city ?? ''
-      vars.company_address    = company.domiciliation ?? company.address ?? ''
-      vars.company_director_name        = ld(compLegal, 'director_name') || company.contact_name || ''
-      vars.company_director_nationality = ld(compLegal, 'director_nationality')
-      vars.company_director_dob         = ld(compLegal, 'director_dob')
-      vars.company_director_dob_place   = ld(compLegal, 'director_dob_place')
-      vars.company_director_id_number   = ld(compLegal, 'director_id_number')
-      vars.company_notary_name          = ld(compLegal, 'notary_name')
-      vars.company_deed_number          = ld(compLegal, 'deed_number')
-      vars.company_deed_date            = ld(compLegal, 'deed_date')
-      vars.company_ahu_number           = ld(compLegal, 'ahu_number')
-      vars.company_ahu_date             = ld(compLegal, 'ahu_date')
+      vars.company_name       = (company as Record<string, unknown>).name as string ?? ''
+      vars.company_legal_type = (company as Record<string, unknown>).legal_type as string ?? ''
+      vars.company_nib        = (company as Record<string, unknown>).nib as string ?? ''
+      vars.company_npwp       = (company as Record<string, unknown>).npwp as string ?? ''
+      vars.company_city       = (company as Record<string, unknown>).address_city as string ?? (company as Record<string, unknown>).city as string ?? ''
+      vars.company_address    = (company as Record<string, unknown>).address_street as string ?? (company as Record<string, unknown>).address as string ?? ''
+      if (!vars.company_director_name) {
+        vars.company_director_name         = ld(compLegal, 'director_name') || (company as Record<string, unknown>).contact_name as string || ''
+        vars.company_director_nationality  = ld(compLegal, 'director_nationality')
+        vars.company_director_dob          = ld(compLegal, 'director_dob')
+        vars.company_director_dob_place    = ld(compLegal, 'director_dob_place')
+        vars.company_director_id_number    = ld(compLegal, 'director_id_number')
+      }
+      vars.company_notary_name   = ld(compLegal, 'notary_name')
+      vars.company_deed_number   = ld(compLegal, 'deed_number')
+      vars.company_deed_date     = ld(compLegal, 'deed_date')
+      vars.company_ahu_number    = ld(compLegal, 'ahu_number')
+      vars.company_ahu_date      = ld(compLegal, 'ahu_date')
     }
   }
 
-  // ── 5. ENTITY SETTINGS ──────────────────────────────────────────────────
+  // ── 5. SETTINGS ──────────────────────────────────────────────────────────
   const { data: settings } = await svc.from('settings').select('key, value')
-  const sm = Object.fromEntries((settings ?? []).map(s => [s.key, s.value]))
-  vars.entity_name         = sm.entity_name ?? 'Sunny Interns'
+  const sm = Object.fromEntries((settings ?? []).map((s: Record<string, string>) => [s.key, s.value]))
+  vars.entity_name         = sm.entity_name ?? 'Bali Interns'
   vars.entity_address      = sm.entity_address ?? ''
   vars.entity_iban         = sm.entity_iban ?? ''
-  vars.entity_bic          = sm.entity_bic ?? ''
-  vars.entity_registration = sm.entity_registration ?? ''
 
-  // ── 6. DATE & SIGNING FIELDS ────────────────────────────────────────────
+  // ── 6. DATES ─────────────────────────────────────────────────────────────
   const today = new Date()
-  vars.agreement_date  = today.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-  vars.signing_date    = vars.agreement_date
-  vars.signing_city    = vars.intern_signing_city || 'Bali, Indonesia'
-  vars.invoice_date    = vars.invoice_date || today.toLocaleDateString('fr-FR')
+  vars.agreement_date = today.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+  vars.signing_date   = vars.agreement_date
+  vars.signing_city   = 'Bali, Indonesia'
+  vars.invoice_date   = vars.invoice_date || today.toLocaleDateString('fr-FR')
 
-  // Fill & return
   const filledHtml = fillTemplate(template.html_content, vars)
 
   if (body.preview) {
-    return new NextResponse(filledHtml, {
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
-    })
+    return new NextResponse(filledHtml, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
   }
 
-  // Generate PDF
-  const { generatePdfFromHtml } = await import('@/lib/pdf-generator')
-  const pdfBuffer = await generatePdfFromHtml(filledHtml)
-  const filename = `${template.type}-${resolvedCaseId ?? resolvedCompanyId ?? 'doc'}-${Date.now()}.pdf`
-  const bucket = template.type === 'facture' ? 'invoice-pdfs' : 'visa-documents'
-  await svc.storage.from(bucket).upload(filename, pdfBuffer, { contentType: 'application/pdf', upsert: true })
-  const { data: urlData } = svc.storage.from(bucket).getPublicUrl(filename)
-  await svc.from('generated_documents').insert({
-    case_id: resolvedCaseId ?? null,
-    company_id: resolvedCompanyId ?? null,
-    template_id: id, type: template.type,
-    url: urlData.publicUrl, filename,
-  })
-  return NextResponse.json({ pdf_url: urlData.publicUrl, filename })
+  // PDF generation (when not preview)
+  try {
+    const { generatePdfFromHtml } = await import('@/lib/pdf-generator')
+    const pdfBuffer = await generatePdfFromHtml(filledHtml)
+    const filename = `${template.type}-${resolvedCaseId ?? resolvedCompanyId ?? 'doc'}-${Date.now()}.pdf`
+    await svc.storage.from('visa-documents').upload(filename, pdfBuffer, { contentType: 'application/pdf', upsert: true })
+    const { data: urlData } = svc.storage.from('visa-documents').getPublicUrl(filename)
+    return NextResponse.json({ pdf_url: urlData.publicUrl, filename })
+  } catch {
+    // pdf-generator not available — return HTML instead
+    return new NextResponse(filledHtml, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
+  }
+}
+
+// Allow unauthenticated GET for portal preview
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const url = new URL(request.url)
+  const portalToken = url.searchParams.get('portal_token')
+  const caseId = url.searchParams.get('case_id')
+  const preview = url.searchParams.get('preview') === 'true'
+
+  return POST(new Request(request.url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ portalToken, caseId, preview }),
+  }), { params })
 }

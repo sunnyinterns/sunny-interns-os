@@ -33,7 +33,7 @@ export async function GET(req: Request) {
 
   try {
     await resend.emails.send({
-      from: 'Sunny Interns <team@bali-interns.com>',
+      from: 'Bali Interns <team@bali-interns.com>',
       to: 'charly@bali-interns.com',
       subject: `🔄 ${cases!.length} stage(s) se terminent dans ~45 jours — Re-staffer ?`,
       html: `<div style="font-family:sans-serif;max-width:600px;padding:24px">

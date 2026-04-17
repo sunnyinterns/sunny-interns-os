@@ -124,7 +124,7 @@ export async function sendJobSubmittedEmployer(params: {
         <a href="${verifyUrl}" style="display:inline-block;background:#c8a96e;color:white;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin-top:16px">
           Donner ma réponse →
         </a>
-        <p style="color:#999;font-size:12px;margin-top:24px">Sunny Interns — Stages à Bali</p>
+        <p style="color:#999;font-size:12px;margin-top:24px">Bali Interns — Stages à Bali</p>
       </div>
     `,
   })
@@ -143,7 +143,7 @@ export async function sendPaymentRequest(params: {
 
   await send({
     to: internEmail,
-    subject: 'Paiement de votre stage — Sunny Interns',
+    subject: 'Paiement de votre stage — Bali Interns',
     html: `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
         <h2 style="color:#c8a96e">Informations de paiement</h2>
@@ -155,7 +155,7 @@ export async function sendPaymentRequest(params: {
         </div>
         ${invoiceUrl ? `<p><strong>Lien facture :</strong> <a href="${invoiceUrl}" style="color:#c8a96e">${invoiceUrl}</a></p>` : ''}
         <p>N'hésite pas à nous contacter pour toute question.</p>
-        <p style="color:#999;font-size:12px;margin-top:24px">Sunny Interns — charly@bali-interns.com</p>
+        <p style="color:#999;font-size:12px;margin-top:24px">Bali Interns — charly@bali-interns.com</p>
       </div>
     `,
   })
@@ -378,7 +378,7 @@ export async function sendVisaDocsRequest(params: {
         <a href="${portalUrl}" style="display:inline-block;background:#c8a96e;color:white;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin-top:8px">
           Uploader mes documents →
         </a>
-        <p style="color:#999;font-size:12px;margin-top:24px">Sunny Interns — team@bali-interns.com</p>
+        <p style="color:#999;font-size:12px;margin-top:24px">Bali Interns — team@bali-interns.com</p>
       </div>
     `,
   })

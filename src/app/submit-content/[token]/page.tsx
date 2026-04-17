@@ -65,7 +65,7 @@ export default function SubmitContentPage() {
             </div>
             <p className="text-base font-semibold text-[#1a1918]">Merci pour ton témoignage !</p>
             <p className="text-sm text-zinc-500 mt-2">
-              Ton contenu a été envoyé et sera relu par l&apos;équipe Sunny Interns.
+              Ton contenu a été envoyé et sera relu par l&apos;équipe Bali Interns.
             </p>
           </div>
         ) : (

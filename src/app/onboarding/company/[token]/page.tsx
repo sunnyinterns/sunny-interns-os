@@ -77,7 +77,7 @@ export default function CompanyOnboardingPage() {
   return (
     <div style={{ maxWidth: 560, margin: '0 auto', padding: '40px 20px' }}>
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
-        <div style={{ fontSize: 28, fontWeight: 800, color: '#c8a96e', marginBottom: 4 }}>Sunny Interns</div>
+        <div style={{ fontSize: 28, fontWeight: 800, color: '#c8a96e', marginBottom: 4 }}>Bali Interns</div>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1a1918', marginBottom: 4 }}>Onboarding Partenaire</h1>
         <p style={{ color: '#6b7280', fontSize: 14 }}>{company.name}</p>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 16 }}>
@@ -166,7 +166,7 @@ export default function CompanyOnboardingPage() {
           <div><label style={labelStyle}>Titre du poste</label><input style={inputStyle} value={form.hr_contact_title} onChange={e => set('hr_contact_title', e.target.value)} /></div>
           <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer' }}>
             <input type="checkbox" checked={form.terms_accepted} onChange={e => set('terms_accepted', e.target.checked)} style={{ marginTop: 3 }} />
-            <span style={{ fontSize: 13, color: '#6b7280' }}>J&apos;ai pris connaissance des conditions de partenariat avec Sunny Interns.</span>
+            <span style={{ fontSize: 13, color: '#6b7280' }}>J&apos;ai pris connaissance des conditions de partenariat avec Bali Interns.</span>
           </label>
           {error && <p style={{ color: '#dc2626', fontSize: 13 }}>{error}</p>}
           <div style={{ display: 'flex', gap: 12 }}>

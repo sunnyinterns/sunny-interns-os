@@ -28,7 +28,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
   const name = [intern?.first_name, intern?.last_name].filter(Boolean).join(' ')
 
   await resend.emails.send({
-    from: 'Sunny Interns <team@bali-interns.com>',
+    from: 'Bali Interns <team@bali-interns.com>',
     to: 'charly@bali-interns.com',
     subject: `💰 Paiement notifié — ${name}`,
     html: `<p><strong>${name}</strong> indique avoir effectué son paiement.</p>${body.note ? `<p>Note: ${body.note}</p>` : ''}<p>Vérifier et valider dans la fiche candidat.</p>`,

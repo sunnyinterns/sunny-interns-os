@@ -47,10 +47,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const name = [contact.first_name, contact.last_name].filter(Boolean).join(' ')
 
   await resend.emails.send({
-    from: 'Sunny Interns <team@bali-interns.com>',
+    from: 'Bali Interns <team@bali-interns.com>',
     to: contact.email,
-    subject: `Votre espace partenaire Sunny Interns — ${company.name}`,
-    html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px"><div style="background:#c8a96e;width:40px;height:40px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:24px"><span style="color:white;font-weight:bold">SI</span></div><h2>Bonjour ${name},</h2><p>Votre espace partenaire est prêt :<br>• Valider les infos de <strong>${company.name}</strong><br>• Voir les offres actives</p><a href="${url}" style="display:inline-block;background:#c8a96e;color:white;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:600;margin:16px 0">Accéder à mon espace →</a><p style="color:#888;font-size:12px">Sunny Interns · Canggu, Bali</p></div>`,
+    subject: `Votre espace partenaire Bali Interns — ${company.name}`,
+    html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px"><div style="background:#c8a96e;width:40px;height:40px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:24px"><span style="color:white;font-weight:bold">SI</span></div><h2>Bonjour ${name},</h2><p>Votre espace partenaire est prêt :<br>• Valider les infos de <strong>${company.name}</strong><br>• Voir les offres actives</p><a href="${url}" style="display:inline-block;background:#c8a96e;color:white;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:600;margin:16px 0">Accéder à mon espace →</a><p style="color:#888;font-size:12px">Bali Interns · Canggu, Bali</p></div>`,
   })
 
   return NextResponse.json({ success: true, token: tok })

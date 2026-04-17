@@ -158,7 +158,7 @@ export default function VerifyPage() {
               {/* Footer */}
               <div className="pt-3 border-t border-zinc-100 text-center">
                 <p className="text-xs text-zinc-400">
-                  Vérifié par Sunny Interns — {new Date().toLocaleDateString('fr-FR')}
+                  Vérifié par Bali Interns — {new Date().toLocaleDateString('fr-FR')}
                 </p>
               </div>
             </div>

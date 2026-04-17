@@ -127,7 +127,7 @@ async function runMigration(filePath: string): Promise<void> {
 }
 
 async function main() {
-  console.log('🚀  Sunny Interns OS — Migration Runner')
+  console.log('🚀  Bali Interns OS — Migration Runner')
   console.log(`   Supabase: ${SUPABASE_URL}`)
   console.log(`   Migrations dir: ${migrationsDir}`)
 

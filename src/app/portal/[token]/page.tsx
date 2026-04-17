@@ -793,7 +793,7 @@ export default function PortalPage() {
       {/* Carte stagiaire */}
       {data.status === 'active' && (
         <div style={{ background: 'linear-gradient(135deg, #111110, #2a2927)', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <p style={{ color: '#c8a96e', fontWeight: 700, marginBottom: 6, fontSize: 15 }}>Ta carte Sunny Interns</p>
+          <p style={{ color: '#c8a96e', fontWeight: 700, marginBottom: 6, fontSize: 15 }}>Ta carte Bali Interns</p>
           <p style={{ color: '#9ca3af', fontSize: 13, marginBottom: 12 }}>Affiche ta carte digitale pour te présenter en stage.</p>
           <Link href={`/portal/${token}/carte`} style={{ display: 'inline-block', padding: '8px 16px', background: '#c8a96e', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
             Voir ma carte →
@@ -884,7 +884,7 @@ export default function PortalPage() {
         <p style={{ color: 'white', fontWeight: 700, fontSize: 15, marginBottom: 6 }}>Besoin d&apos;aide ?</p>
         <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginBottom: 12 }}>Notre equipe est disponible sur WhatsApp.</p>
         <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', background: 'white', color: '#075e54', borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
-          WhatsApp Sunny Interns
+          WhatsApp Bali Interns
         </a>
       </div>
 

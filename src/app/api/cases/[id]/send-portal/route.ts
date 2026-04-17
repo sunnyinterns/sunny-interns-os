@@ -27,15 +27,15 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const manager = (c as Record<string, unknown>).assigned_manager_name as string ?? 'Charly'
 
   await resend.emails.send({
-    from: 'Sunny Interns <team@bali-interns.com>',
+    from: 'Bali Interns <team@bali-interns.com>',
     to: intern.email,
-    subject: `🌴 Ton espace Sunny Interns est prêt, ${intern.first_name} !`,
+    subject: `🌴 Ton espace Bali Interns est prêt, ${intern.first_name} !`,
     html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px">
       <div style="background:#c8a96e;width:48px;height:48px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:24px">
         <span style="color:white;font-weight:bold;font-size:18px">🌴</span>
       </div>
       <h2 style="color:#1a1918;margin-bottom:8px">Bonjour ${name} !</h2>
-      <p style="color:#444;line-height:1.7">Félicitations pour ton entretien ! Ton espace personnel Sunny Interns est maintenant actif. Tu peux y accéder pour :</p>
+      <p style="color:#444;line-height:1.7">Félicitations pour ton entretien ! Ton espace personnel Bali Interns est maintenant actif. Tu peux y accéder pour :</p>
       <ul style="color:#444;line-height:1.9;padding-left:20px">
         <li>Signer ta lettre d'engagement</li>
         <li>Voir les offres de stage qui te correspondent</li>
@@ -52,7 +52,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
         <strong>Prochaine étape :</strong> connecte-toi et signe ta lettre d'engagement.<br>
         Des questions ? Réponds directement à cet email ou contacte ${manager} sur WhatsApp.
       </p>
-      <p style="color:#888;font-size:12px;margin-top:24px">Sunny Interns · Canggu, Bali, Indonesia</p>
+      <p style="color:#888;font-size:12px;margin-top:24px">Bali Interns · Canggu, Bali, Indonesia</p>
     </div>`,
   })
 

@@ -47,7 +47,7 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#c8a96e] mb-4">
             <span className="text-white font-bold text-xl">S</span>
           </div>
-          <h1 className="text-2xl font-semibold text-[#1a1918]">Sunny Interns OS</h1>
+          <h1 className="text-2xl font-semibold text-[#1a1918]">Bali Interns OS</h1>
           <p className="text-sm text-zinc-500 mt-1">Connexion à l&apos;espace équipe</p>
         </div>
 

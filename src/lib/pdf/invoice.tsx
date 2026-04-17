@@ -70,12 +70,12 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
   const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(n)
 
   return (
-    <Document title={`Facture ${invoiceNumber}`} author="Sunny Interns">
+    <Document title={`Facture ${invoiceNumber}`} author="Bali Interns">
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.logo}>Sunny Interns</Text>
+            <Text style={styles.logo}>Bali Interns</Text>
           </View>
           <View>
             <Text style={styles.entityInfo}>{entity.name}</Text>

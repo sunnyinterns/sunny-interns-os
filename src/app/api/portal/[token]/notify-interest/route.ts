@@ -36,7 +36,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
 
   const resend = new Resend(process.env.RESEND_API_KEY)
   await resend.emails.send({
-    from: 'Sunny Interns <team@bali-interns.com>',
+    from: 'Bali Interns <team@bali-interns.com>',
     to: 'charly@bali-interns.com',
     subject: `⭐ ${name} est intéressé${jobTitle ? ` par "${jobTitle}"` : ' par une offre'}`,
     html: `<p><strong>${name}</strong> vient de marquer son intérêt${jobTitle ? ` pour "${jobTitle}"` : ' pour une offre de stage'}. <a href="https://sunny-interns-os.vercel.app/fr/cases/${c.id}">Voir le dossier →</a></p>`,

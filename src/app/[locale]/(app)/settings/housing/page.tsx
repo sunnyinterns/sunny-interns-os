@@ -75,7 +75,7 @@ export default function HousingPage() {
 <!DOCTYPE html>
 <html>
 <body style="font-family:sans-serif;max-width:600px;margin:0 auto">
-  <h1 style="color:#c8a96e">Logements disponibles — Sunny Interns</h1>
+  <h1 style="color:#c8a96e">Logements disponibles — Bali Interns</h1>
   ${guesthouses.map((g) => `
   <div style="border:1px solid #e4e4e7;border-radius:12px;padding:16px;margin-bottom:16px">
     <h2 style="margin:0 0 4px">${g.name}</h2>
@@ -85,7 +85,7 @@ export default function HousingPage() {
 </body>
 </html>`
     console.log('[EMAIL] Housing listing generated', html)
-    window.location.href = `mailto:?subject=Listing logements Sunny Interns&body=${encodeURIComponent('Voir listing en pièce jointe ou lien')}`
+    window.location.href = `mailto:?subject=Listing logements Bali Interns&body=${encodeURIComponent('Voir listing en pièce jointe ou lien')}`
   }
 
   async function setDefaultTransport(id: string) {

@@ -57,7 +57,7 @@ export async function POST(
     const doc = ce(Document, null,
       ce(Page, { size: 'A4', style: styles.page },
         ce(View, { style: styles.header },
-          ce(Text, { style: styles.title }, 'Sunny Interns'),
+          ce(Text, { style: styles.title }, 'Bali Interns'),
           ce(Text, { style: styles.subtitle }, "Lettre d'engagement de stage"),
         ),
         ce(View, { style: styles.section },
@@ -82,7 +82,7 @@ export async function POST(
         ),
         ce(View, { style: styles.section },
           ce(Text, null,
-            `Par la présente, Sunny Interns confirme l'engagement de stage de ${internName} au sein de ${companyName} pour la période indiquée ci-dessus. Ce stage s'effectue dans le cadre d'une convention de stage validée par les parties.`
+            `Par la présente, Bali Interns confirme l'engagement de stage de ${internName} au sein de ${companyName} pour la période indiquée ci-dessus. Ce stage s'effectue dans le cadre d'une convention de stage validée par les parties.`
           ),
         ),
         ce(View, { style: styles.signature },

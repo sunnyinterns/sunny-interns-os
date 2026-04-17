@@ -45,7 +45,7 @@ export async function POST(
 
   try {
     await resend.emails.send({
-      from: 'Sunny Interns <team@bali-interns.com>',
+      from: 'Bali Interns <team@bali-interns.com>',
       to: contact.email,
       subject: `[Action requise] Informations de ${company.name} a completer`,
       html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;">
@@ -53,7 +53,7 @@ export async function POST(
         <h2 style="color:#1a1918;margin-bottom:8px;">Bonjour ${contactName},</h2>
         <p style="color:#444;line-height:1.6;">Nous preparons le dossier de <strong>${company.name}</strong> pour l'accueil de stagiaires a Bali.<br/>Merci de verifier et completer les informations administratives de votre societe.</p>
         <a href="${formUrl}" style="display:inline-block;background:#c8a96e;color:white;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:600;margin:16px 0;">Completer les informations →</a>
-        <p style="color:#888;font-size:12px;margin-top:24px;">Lien unique valable 30 jours.<br/>Sunny Interns · Canggu, Bali, Indonesia</p>
+        <p style="color:#888;font-size:12px;margin-top:24px;">Lien unique valable 30 jours.<br/>Bali Interns · Canggu, Bali, Indonesia</p>
       </div>`,
     })
   } catch (e) {
