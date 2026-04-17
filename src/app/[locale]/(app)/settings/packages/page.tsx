@@ -65,6 +65,7 @@ export default function PackagesPage() {
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<Package | null>(null)
   const [saving, setSaving] = useState(false)
+  const [deleteId, setDeleteId] = useState<string|null>(null)
   const [form, setForm] = useState<Form>(emptyForm)
 
   async function load() {
@@ -109,6 +110,12 @@ export default function PackagesPage() {
     await fetch(`/api/packages/${p.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_active: !p.is_active }) })
   }
 
+
+  async function deletePackage(id: string) {
+    await fetch(`/api/packages/${id}`, { method: 'DELETE' })
+    setDeleteId(null)
+    void load()
+  }
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
@@ -215,7 +222,10 @@ export default function PackagesPage() {
                     </div>
                   )}
                   <div className="flex items-center justify-between pt-3 border-t border-zinc-50">
-                    <button onClick={() => openEdit(pkg)} className="text-xs px-3 py-1.5 rounded-lg border border-zinc-200 text-zinc-600">Modifier</button>
+                    <div className="flex gap-2">
+                      <button onClick={() => openEdit(pkg)} className="text-xs px-3 py-1.5 rounded-lg border border-zinc-200 text-zinc-600">Modifier</button>
+                      <button onClick={() => setDeleteId(pkg.id)} className="text-xs px-3 py-1.5 rounded-lg border border-red-100 text-red-400 hover:bg-red-50">Supprimer</button>
+                    </div>
                     <button
                       onClick={() => toggleActive(pkg)}
                       className={['w-10 h-6 rounded-full transition-colors relative', pkg.is_active ? 'bg-[#0d9e75]' : 'bg-zinc-200'].join(' ')}
@@ -233,6 +243,20 @@ export default function PackagesPage() {
           </div>
         )}
 
+
+        {/* Delete confirmation */}
+        {deleteId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full">
+              <p className="text-base font-semibold text-[#1a1918] mb-2">Supprimer ce package ?</p>
+              <p className="text-sm text-zinc-500 mb-5">Cette action est irréversible. Les dossiers associés ne seront pas affectés.</p>
+              <div className="flex justify-end gap-2">
+                <button onClick={() => setDeleteId(null)} className="px-4 py-2 text-sm border border-zinc-200 rounded-xl text-zinc-600">Annuler</button>
+                <button onClick={() => deletePackage(deleteId)} className="px-4 py-2 text-sm font-bold bg-red-500 text-white rounded-xl hover:bg-red-600">Supprimer</button>
+              </div>
+            </div>
+          </div>
+        )}
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={e => { if (e.target === e.currentTarget) setShowModal(false) }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg my-8">

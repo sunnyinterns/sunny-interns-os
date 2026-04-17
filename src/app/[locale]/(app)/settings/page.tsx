@@ -48,6 +48,12 @@ const SECTIONS: Record<string, { title: string; items: SectionItem[] }> = {
       { href: 'schools', icon: '🎓', label: 'Schools', desc: 'Partner schools and contacts' },
     ],
   },
+  finances: {
+    title: 'Finances',
+    items: [
+      { href: 'finances', icon: '💰', label: 'Finance Settings', desc: 'Payout config, exchange rates, fiscal year' },
+    ],
+  },
   team: {
     title: 'Team & Access',
     items: [
