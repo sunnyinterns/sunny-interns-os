@@ -110,7 +110,7 @@ export default function LeadsPage() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [sourceFilter, setSourceFilter] = useState<string>('all')
   const [lastRefresh, setLastRefresh] = useState(new Date())
-  const [crmLeads, setCrmLeads] = useState<{id:string;first_name:string|null;last_name:string|null;email:string;created_at:string}[]>([])
+  const [crmLeads, setCrmLeads] = useState<{id:string;firstName:string;lastName:string;email:string;created_at:string}[]>([])
 
   const fetchLeads = useCallback(async () => {
     const res = await fetch('/api/leads')
@@ -126,7 +126,7 @@ export default function LeadsPage() {
     // Fetch cases en statut lead
     fetch('/api/cases?status=lead')
       .then(r => r.ok ? r.json() : [])
-      .then((d: {id:string;first_name:string|null;last_name:string|null;email:string;created_at:string}[]) => setCrmLeads(Array.isArray(d) ? d : []))
+      .then((d: {id:string;firstName:string;lastName:string;email:string;created_at:string}[]) => setCrmLeads(Array.isArray(d) ? d : []))
       .catch(() => {})
   }, [fetchLeads])
 
@@ -194,9 +194,9 @@ export default function LeadsPage() {
                 className="flex items-center justify-between px-4 py-2.5 bg-white rounded-xl border border-zinc-100 hover:border-[#c8a96e]/50 text-left transition-colors">
                 <div>
                   <p className="text-sm font-semibold text-[#1a1918]">
-                    {c.first_name ? `${c.first_name} ${c.last_name ?? ''}` : c.email}
+                    {c.firstName ? `${c.firstName} ${c.lastName}` : c.email}
                   </p>
-                  {c.first_name && <p className="text-xs text-zinc-400">{c.email}</p>}
+                  {c.firstName && <p className="text-xs text-zinc-400">{c.email}</p>}
                 </div>
                 <span className="text-xs text-[#c8a96e] font-medium">Ouvrir →</span>
               </button>
