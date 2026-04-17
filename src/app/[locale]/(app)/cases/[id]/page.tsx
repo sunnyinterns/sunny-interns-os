@@ -10,6 +10,7 @@ import { TabStaffing } from '@/components/cases/tabs/TabStaffing'
 import { TabHistorique } from '@/components/cases/tabs/TabHistorique'
 import { InternCardDigital } from '@/components/cases/InternCardDigital'
 import { ChauffeurCard } from '@/components/cases/ChauffeurCard'
+import { CaseStatusBandeau } from '@/components/cases/CaseStatusBandeau'
 
 const CANDIDATE_STATUSES = ['lead', 'rdv_booked', 'qualification_done', 'job_submitted', 'job_retained', 'convention_signed']
 
@@ -291,6 +292,15 @@ export default function CaseDetailPage() {
   const isVisaOnly = caseData.case_type === 'visa_only'
   const isClient = !CANDIDATE_STATUSES.includes(caseData.status)
 
+  async function patchStatusDirect(newStatus: string) {
+    const r = await fetch(`/api/cases/${id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    })
+    if (r.ok) fetchCase()
+  }
+
   const badge = STATUS_BADGE[caseData.status] ?? { label: caseData.status, bg: '#f4f4f5', text: '#71717a' }
   const baseAction = NEXT_ACTIONS[caseData.status]
   const actionInfo = (() => {
@@ -373,298 +383,166 @@ export default function CaseDetailPage() {
   return (
     <div className="flex flex-col h-full bg-[#fafaf9]">
       {/* ── HEADER STICKY ── */}
-      <div className={`sticky top-0 z-20 bg-white border-b border-zinc-200 transition-all duration-200 ${headerCompact ? 'shadow-md' : ''}`}>
+      <div className="sticky top-0 z-20 bg-white border-b border-zinc-100 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          {/* Ligne nav */}
-          <div className="flex items-center justify-between py-3">
-            <button
-              onClick={() => router.back()}
-              className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 transition-colors"
-            >
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+
+          {/* ── LIGNE 1 : Nav + Boutons contextuels ── */}
+          <div className="flex items-center justify-between py-2.5 gap-2">
+            <button onClick={() => router.back()}
+              className="flex items-center gap-1 text-sm text-zinc-400 hover:text-zinc-700 transition-colors flex-shrink-0">
+              <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
               Retour
             </button>
-            <div className="flex items-center gap-2">
-              <span
-                className="px-3 py-1 rounded-full text-xs font-semibold"
-                style={{ backgroundColor: badge.bg, color: badge.text }}
-              >
-                {badge.label}
-              </span>
-              {isVisaOnly && (
-                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
-                  Visa Only
-                </span>
-              )}
-              {caseData.portal_token && (
-                <a
-                  href={`/portal/${caseData.portal_token}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs px-3 py-1.5 rounded-lg border border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition-colors"
-                >
-                  Portail candidat
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              {/* Modifier — toujours visible */}
+              <button onClick={() => setShowEditModal(true)}
+                className="px-3 py-1.5 text-xs font-medium border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 transition-colors">
+                Modifier
+              </button>
+              {/* Portail candidat — seulement après qualification_done */}
+              {['qualification_done','job_submitted','job_retained','convention_signed'].includes(caseData.status) && caseData.portal_token && (
+                <a href={`/portal/${caseData.portal_token}`} target="_blank" rel="noopener noreferrer"
+                  className="px-3 py-1.5 text-xs border border-zinc-200 rounded-lg text-zinc-600 hover:bg-zinc-50 transition-colors">
+                  Portail candidat ↗
                 </a>
               )}
+              {/* Récap entretien — rdv_booked uniquement */}
               {caseData.status === 'rdv_booked' && (
-                <button
-                  onClick={() => { void sendRecapEmail() }}
-                  disabled={sendingRecap}
-                  className="text-xs px-3 py-1.5 rounded-lg bg-[#0d9e75] text-white font-semibold hover:bg-[#0a8a65] transition-colors disabled:opacity-60"
-                >
+                <button onClick={() => { void sendRecapEmail() }} disabled={sendingRecap}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#0d9e75] text-white hover:bg-[#0a8a65] disabled:opacity-60 transition-colors">
                   {sendingRecap ? 'Envoi…' : recapSent ? '✓ Envoyé' : '📧 Récap entretien'}
                 </button>
               )}
-              {caseData.status === 'qualification_done' && (
-                <button
-                  onClick={() => { void sendQualificationEmail() }}
-                  disabled={sendingQualif}
-                  className="text-xs px-3 py-1.5 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700 transition-colors disabled:opacity-60"
-                >
-                  {sendingQualif ? 'Envoi…' : qualifSent ? '✓ Envoyé' : '📧 Email qualif'}
+              {/* Envoyer portail — qualification_done + CV validé */}
+              {caseData.status === 'qualification_done' && caseData.portal_token && intern.cv_url && (
+                <button onClick={() => { void sendPortal() }} disabled={sendingPortal}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#c8a96e] text-white hover:opacity-90 disabled:opacity-60 transition-opacity">
+                  {sendingPortal ? 'Envoi…' : portalSent ? '✓ Envoyé' : caseData.portal_sent_at ? '🔁 Renvoyer portail' : '🌴 Envoyer portail'}
                 </button>
               )}
-              {caseData.status === 'job_retained' && (
-                <button
-                  onClick={() => { void sendRecapEmail() }}
-                  disabled={sendingRecap}
-                  className="text-xs px-3 py-1.5 rounded-lg bg-[#0d9e75] text-white font-semibold hover:bg-[#0a8a65] transition-colors disabled:opacity-60"
-                >
-                  {sendingRecap ? 'Envoi…' : recapSent ? '✓ Envoyé' : '📋 Récap candidat'}
+              {/* Chauffeur WA — arrival_prep/active avec vol */}
+              {(caseData.interns?.flight_number || caseData.flight_arrival_time_local) && (
+                <button onClick={() => { void openDriverWhatsApp() }} disabled={openingDriverWA}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#25d366] text-white hover:bg-[#1da851] disabled:opacity-60 transition-colors">
+                  🚗 Chauffeur
                 </button>
               )}
-              {(caseData.status === 'qualification_done' || caseData.status === 'rdv_booked') && caseData.portal_token && (
-                <button
-                  onClick={() => { void sendPortal() }}
-                  disabled={sendingPortal}
-                  className="text-xs px-3 py-1.5 rounded-lg bg-[#c8a96e] text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
-                >
-                  {sendingPortal ? 'Envoi…' : portalSent ? '✓ Portail envoyé' : caseData.portal_sent_at ? '🔁 Renvoyer portail' : '🌴 Envoyer portail'}
-                </button>
-              )}
+              {/* Carte stagiaire — active */}
               {caseData.status === 'active' && (
-                <button
-                  onClick={() => setShowInternCard(true)}
-                  className="text-xs px-3 py-1.5 rounded-lg bg-[#c8a96e] text-white hover:opacity-90 transition-opacity"
-                >
+                <button onClick={() => setShowInternCard(true)}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#c8a96e] text-white hover:opacity-90 transition-opacity">
                   Carte stagiaire
                 </button>
               )}
-              {/* WA Chauffeur — visible quand infos vol présentes */}
-              {(caseData.interns?.flight_number || caseData.flight_arrival_time_local) && (
-                <>
-                  <button
-                    onClick={() => { void openDriverWhatsApp() }}
-                    disabled={openingDriverWA}
-                    className="text-xs px-3 py-1.5 rounded-lg bg-[#25d366] text-white font-semibold hover:bg-[#1da851] transition-colors disabled:opacity-60"
-                  >
-                    🚗 Chauffeur WA
-                  </button>
-                  {caseData.flight_number && caseData.flight_arrival_time_local && (
-                    <button
-                      onClick={() => setShowChauffeurCard(true)}
-                      className="text-xs px-3 py-1.5 border border-zinc-200 rounded-lg text-zinc-600 hover:bg-zinc-50 transition-colors"
-                    >
-                      🖼️ Carte
-                    </button>
-                  )}
-                </>
+              {/* Voir fiche client — isClient */}
+              {isClient && (
+                <Link href={`/${locale}/clients/${caseData.id}`}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#1a1918] text-[#c8a96e] hover:bg-zinc-800 transition-colors">
+                  Fiche client →
+                </Link>
               )}
-              <button
-                onClick={() => setShowEditModal(true)}
-                className="px-3 py-1.5 text-xs font-medium bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-colors"
-              >
-                Modifier
-              </button>
             </div>
           </div>
 
-          {/* LIGNE PRINCIPALE: 2 colonnes sur md+, stack sur mobile */}
-          <div className="flex flex-col md:flex-row md:items-center gap-4 pb-3">
-            {/* Colonne gauche: avatar + infos */}
-            <div className="flex items-center gap-3 flex-shrink-0">
-              {/* Avatar */}
-              <div className="relative w-12 h-12 flex-shrink-0">
-                {avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={avatarUrl}
-                    alt={`${firstName} ${lastName}`}
-                    className="w-12 h-12 rounded-full object-cover absolute inset-0 border-2 border-zinc-100"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden') }}
-                  />
-                ) : null}
-                <div className={`w-12 h-12 rounded-full bg-[#c8a96e]/20 flex items-center justify-center text-lg font-bold text-[#c8a96e] ${avatarUrl ? 'hidden' : ''}`}>
-                  {getInitials(firstName, lastName)}
-                </div>
-              </div>
-              {/* Infos candidat */}
-              <div>
-                <h1 className="text-base font-bold text-[#1a1918] leading-tight">
-                  {firstName} {lastName}
-                  {age ? <span className="text-sm font-normal text-zinc-400 ml-1">({age} ans)</span> : null}
-                </h1>
-                <p className="text-xs text-zinc-500">{email}</p>
-                {/* Boutons Gmail + WA + LinkedIn */}
-                <div className="flex items-center gap-2 mt-1">
-                  <a href={`mailto:${email}`}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-lg text-xs font-medium transition-colors">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
-                    Email
-                  </a>
-                  {whatsapp && (
-                    <a href={`https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#25d366] text-white rounded-lg text-xs font-bold hover:bg-[#20bd5a] transition-colors">
-                      WA
-                    </a>
-                  )}
-                  {linkedinUrl && (
-                    <a href={linkedinUrl.startsWith('http') ? linkedinUrl : `https://${linkedinUrl}`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-colors">
-                      LinkedIn
-                    </a>
-                  )}
-                </div>
+          {/* ── LIGNE 2 : Identité + Pipeline ── */}
+          <div className="flex items-center gap-3 pb-2.5">
+            {/* Avatar */}
+            <div className="relative w-10 h-10 flex-shrink-0">
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl} alt={`${firstName} ${lastName}`}
+                  className="w-10 h-10 rounded-full object-cover border border-zinc-100"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display='none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden') }} />
+              ) : null}
+              <div className={`w-10 h-10 rounded-full bg-[#c8a96e]/20 flex items-center justify-center text-sm font-bold text-[#c8a96e] ${avatarUrl ? 'hidden' : ''}`}>
+                {getInitials(firstName, lastName)}
               </div>
             </div>
 
-            {/* Colonne droite: timeline 5 étapes + bouton ✏️ (masquée en mode compact) */}
-            <div className={`flex-1 transition-all duration-200 ${headerCompact ? 'hidden' : 'block'}`}>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 overflow-x-auto">
-                  {STATUTS_TIMELINE.map((s, i) => {
-                    const idx = STATUTS_TIMELINE.findIndex(x => x.key === caseData.status)
-                    const reached = i <= idx
-                    return (
-                      <div key={s.key} className="flex items-center gap-1 flex-shrink-0">
-                        <div className={`flex flex-col items-center gap-0.5 ${reached ? 'opacity-100' : 'opacity-25'}`}>
-                          <span className="text-sm">{s.icon}</span>
-                          <span className="text-[9px] text-zinc-500 text-center max-w-[44px] leading-tight">{s.label}</span>
+            {/* Infos */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <span className="text-sm font-semibold text-[#1a1918]">{firstName} {lastName}</span>
+                {age ? <span className="text-xs text-zinc-400">{age} ans</span> : null}
+                <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: badge.bg, color: badge.text }}>{badge.label}</span>
+                {isVisaOnly && <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold">Visa Only</span>}
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-zinc-400">{email}</span>
+                {mainJob && <span className="text-xs text-zinc-400">· {mainJob}</span>}
+                {dateDepart && <span className="text-xs text-zinc-400">· 📅 {dateDepart}</span>}
+                {durationMonths && <span className="text-xs text-zinc-400">· {durationMonths} mois</span>}
+                {/* Icônes contact rapide */}
+                <a href={`mailto:${email}`}
+                  className="w-6 h-6 rounded-md border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 flex items-center justify-center transition-colors flex-shrink-0" title="Email">
+                  <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                </a>
+                {whatsapp && (
+                  <a href={`https://wa.me/${whatsapp.replace(/[^0-9]/g,'')}`} target="_blank" rel="noopener noreferrer"
+                    className="w-6 h-6 rounded-md border border-[#25d366]/30 bg-[#25d366]/10 hover:bg-[#25d366]/20 flex items-center justify-center transition-colors flex-shrink-0" title="WhatsApp">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="#25d366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.133.558 4.133 1.532 5.866L.058 23.942l6.234-1.637A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.863 0-3.61-.48-5.13-1.32l-.367-.218-3.704.973.99-3.614-.24-.37A9.963 9.963 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+                  </a>
+                )}
+                {linkedinUrl && (
+                  <a href={linkedinUrl.startsWith('http') ? linkedinUrl : `https://${linkedinUrl}`} target="_blank" rel="noopener noreferrer"
+                    className="w-6 h-6 rounded-md border border-blue-200 bg-blue-50 hover:bg-blue-100 flex items-center justify-center transition-colors flex-shrink-0" title="LinkedIn">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="#0077b5"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Pipeline 5 étapes — Candidats seulement */}
+            {!isClient && (
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {[
+                  { key: 'rdv_booked', label: 'RDV' },
+                  { key: 'qualification_done', label: 'Qualif' },
+                  { key: 'job_submitted', label: 'Jobs' },
+                  { key: 'job_retained', label: 'Match' },
+                  { key: 'convention_signed', label: 'Convention' },
+                ].map((step, i, arr) => {
+                  const statusOrder = ['rdv_booked','qualification_done','job_submitted','job_retained','convention_signed']
+                  const currentIdx = statusOrder.indexOf(caseData.status)
+                  const stepIdx = statusOrder.indexOf(step.key)
+                  const isDone = currentIdx > stepIdx
+                  const isCurrent = currentIdx === stepIdx
+                  return (
+                    <div key={step.key} className="flex items-center gap-1">
+                      <div className="flex flex-col items-center gap-0.5">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold transition-colors ${
+                          isDone ? 'bg-[#0d9e75] text-white' :
+                          isCurrent ? 'border-2 border-[#c8a96e] text-[#c8a96e] bg-[#c8a96e]/10' :
+                          'border border-zinc-200 text-zinc-300 bg-zinc-50'
+                        }`}>
+                          {isDone ? '✓' : i + 1}
                         </div>
-                        {i < STATUTS_TIMELINE.length - 1 && (
-                          <div className={`h-0.5 w-4 mt-[-10px] rounded-full flex-shrink-0 ${i < idx ? 'bg-[#c8a96e]' : 'bg-zinc-200'}`} />
-                        )}
+                        <span className={`text-[8px] leading-tight text-center w-12 ${isCurrent ? 'text-[#c8a96e] font-semibold' : isDone ? 'text-[#0d9e75]' : 'text-zinc-300'}`}>
+                          {step.label}
+                        </span>
                       </div>
-                    )
-                  })}
-                </div>
-                <button onClick={() => setShowStatusModal(true)}
-                  className="ml-2 text-xs px-2 py-1 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 rounded-lg flex-shrink-0"
-                  title="Modifier le statut">
-                  ✏️
-                </button>
+                      {i < arr.length - 1 && (
+                        <div className={`w-4 h-px mb-3 ${isDone ? 'bg-[#0d9e75]' : 'bg-zinc-200'}`} />
+                      )}
+                    </div>
+                  )
+                })}
               </div>
-              {/* Badge statut actuel + infos clés */}
-              <div className="mt-1.5 flex items-center gap-2 flex-wrap">
-                <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                  style={{ backgroundColor: badge.bg, color: badge.text }}>
-                  {badge.label}
-                </span>
-                {schoolName && (
-                  <span className="text-xs text-zinc-500">🎓 {schoolName}</span>
-                )}
-                {dateDepart && (
-                  <span className="text-xs text-zinc-400">📅 {dateDepart}</span>
-                )}
-                {durationMonths && (
-                  <span className="text-xs text-zinc-400">⏱ {durationMonths} mois</span>
-                )}
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* ── BANDEAU UNIQUE: RDV + Prochaine étape ── */}
-          {(actionInfo || caseData.intern_first_meeting_date || caseData.google_meet_link) && (
-            <div className={`mb-3 px-4 py-3 border rounded-xl flex flex-wrap items-center justify-between gap-2 transition-all duration-200 ${
-              headerCompact ? 'max-h-0 opacity-0 overflow-hidden py-0 px-0 border-0' : 'max-h-32 opacity-100'
-            } ${caseData.intern_first_meeting_date ? 'bg-blue-50 border-blue-200' : 'bg-[#0d9e75]/10 border-[#0d9e75]/20'}`}>
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5 text-zinc-400">Prochaine étape</p>
-                {caseData.intern_first_meeting_date ? (
-                  <>
-                    <p className="text-sm font-bold text-[#1a1918]">
-                      📅 Entretien : {new Date(caseData.intern_first_meeting_date).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' })} à {new Date(caseData.intern_first_meeting_date).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', timeZone:'Asia/Jakarta' })} WITA
-                      {(() => { const d = Math.ceil((new Date(caseData.intern_first_meeting_date).getTime() - Date.now()) / 86400000); return d >= 0 ? <span className="ml-2 text-xs text-blue-600 font-semibold">{d === 0 ? "aujourd'hui" : d === 1 ? 'demain' : `dans ${d}j`}</span> : null })()}
-                    </p>
-                    <p className="text-xs text-zinc-500 mt-0.5">Mener l&apos;entretien et qualifier le candidat dans l&apos;onglet Staffing</p>
-                  </>
-                ) : actionInfo ? (
-                  <p className="text-sm font-medium text-[#1a1918]">{actionInfo.text}</p>
-                ) : null}
-              </div>
-              <div className="flex gap-2 flex-shrink-0">
-                {caseData.google_meet_link && (
-                  <a href={caseData.google_meet_link} target="_blank" rel="noopener noreferrer"
-                    className="px-3 py-1.5 bg-[#1a73e8] text-white text-xs font-bold rounded-lg hover:bg-[#1557b0]">
-                    Meet →
-                  </a>
-                )}
-                {actionInfo?.cta && !caseData.intern_first_meeting_date && (
-                  <button onClick={handleCtaClick}
-                    className="px-3 py-1.5 bg-[#0d9e75] text-white text-xs font-bold rounded-lg hover:bg-emerald-600">
-                    {actionInfo.cta} →
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Alerte paiement notifié par le candidat */}
-          {caseData.payment_notified_by_intern_at && !headerCompact && (
-            <div className="mb-2 px-4 py-3 bg-yellow-50 border border-yellow-300 rounded-xl flex items-start gap-3">
-              <span className="text-lg flex-shrink-0">💰</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-yellow-800">Le candidat indique avoir payé — à vérifier</p>
-                <p className="text-xs text-yellow-700">
-                  Notifié le {new Date(caseData.payment_notified_by_intern_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  {caseData.payment_notified_by_intern_note ? ` · ${caseData.payment_notified_by_intern_note}` : ''}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Badge engagement letter */}
-          {(caseData.engagement_letter_signed_at || (!caseData.engagement_letter_signed_at && caseData.portal_sent_at)) && !headerCompact && (
-            <div className="mb-2 flex items-center gap-2">
-              {caseData.engagement_letter_signed_at ? (
-                <span className="text-xs px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full font-semibold">
-                  ✅ Lettre d&apos;engagement signée le {new Date(caseData.engagement_letter_signed_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
-                </span>
-              ) : (
-                <span className="text-xs px-2.5 py-1 bg-orange-50 text-orange-600 border border-orange-200 rounded-full">
-                  ⏳ Lettre d&apos;engagement en attente de signature
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Bannière redirection client — avant les onglets */}
-          {isClient && !headerCompact && (
-            <div className="mb-2 px-4 py-3 bg-amber-50 border border-amber-300 rounded-xl flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-amber-600 font-bold text-sm">Ce candidat est maintenant un client</span>
-                <span className="text-amber-500 text-xs">({badge.label})</span>
-              </div>
-              <Link href={`/${locale}/clients/${caseData.id}`}
-                className="px-4 py-1.5 bg-amber-500 text-white text-sm font-bold rounded-xl hover:bg-amber-600 transition-colors">
-                Voir la fiche client →
-              </Link>
-            </div>
-          )}
+          {/* ── BANDEAU CONTEXTUEL PAR STATUT ── */}
+          <CaseStatusBandeau caseData={caseData} intern={intern} onAction={handleCtaClick}
+            onSendPortal={() => { void sendPortal() }} sendingPortal={sendingPortal}
+            onPatchStatus={(s) => { void patchStatusDirect(s) }} locale={locale} />
 
           {/* Onglets */}
           <div className="flex gap-0 -mb-px overflow-x-auto">
             {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                  activeTab === tab.key
-                    ? 'border-[#c8a96e] text-[#c8a96e]'
-                    : 'border-transparent text-zinc-500 hover:text-zinc-800'
-                }`}
-              >
+              <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  activeTab === tab.key ? 'border-[#c8a96e] text-[#c8a96e]' : 'border-transparent text-zinc-500 hover:text-zinc-800'
+                }`}>
                 {tab.label}
               </button>
             ))}

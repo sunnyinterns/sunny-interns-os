@@ -83,7 +83,37 @@ rdv_booked → qualification_done → job_submitted → job_retained
 
 ---
 
-## 🚫 Ce qu'il NE FAUT PAS faire
+## 🎨 Header dossier candidat — RÈGLES
+
+### Structure (3 lignes)
+1. **Nav bar** : ← Retour + boutons contextuels (context-aware par statut)
+2. **Identité** : Avatar + Nom + Badge statut + Email + Icônes Email/WA/LinkedIn + Pipeline 5 étapes
+3. **Bandeau statut** : `CaseStatusBandeau` — composant dédié, un bandeau par statut
+
+### Boutons context-aware (nav bar)
+- `rdv_booked` → Récap entretien
+- `qualification_done` + cv_url présent → Envoyer portail
+- `qualification_done`+ → Portail candidat ↗ (lecture)
+- `arrival_prep`/`active` avec vol → Chauffeur WA
+- `active` → Carte stagiaire
+- `isClient` → Fiche client →
+
+### Pipeline (5 étapes candidat)
+`RDV → Qualif → Jobs → Match → Convention`
+- Étapes passées : fond vert (#0d9e75) + ✓
+- Étape courante : bordure dorée (#c8a96e)
+- Étapes à venir : gris clair
+
+### Bandeaux par statut (CaseStatusBandeau.tsx)
+- `rdv_booked` + `rdv_cancelled_by_intern_at` → Alerte annulation rouge
+- `rdv_booked` + `intern_first_meeting_date` → Date RDV + délai + Reprogrammer/Annuler
+- `qualification_done` + cv manquant → 2A CV manquant
+- `qualification_done` + cv uploadé non validé → 2B Valider CV
+- `qualification_done` + cv validé + pas envoyé → 2C Envoyer aux employeurs
+- `qualification_done` + envoyé → 2D Attente retours (countdown 6j)
+- `job_submitted` → Attente retours employeurs
+- `job_retained` → Uploader convention
+- `convention_signed` → **Bouton "✅ Convention signée" → patch payment_pending** (irréversible)
 
 1. **Ne pas ajouter de statut `lead` aux `CANDIDATE_STATUSES`** dans `/api/cases`
 2. **Ne pas créer de tabs "Leads/Candidats"** dans `/fr/cases` — la séparation est faite par les routes
