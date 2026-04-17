@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: 'Bali Interns',
   description: 'Your internship in Bali',
   icons: {
-    icon: '/favicon.svg',
+    icon: '/favicon.png',
   },
 }
 

@@ -4,7 +4,23 @@ import { withSentryConfig } from '@sentry/nextjs'
 
 const withNextIntl = createNextIntlPlugin()
 
-const nextConfig: NextConfig = {}
+const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'djoqjgiyseobotsjqcgz.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
+  },
+  async redirects() {
+    return [
+      { source: '/en/apply', destination: '/apply', permanent: true },
+      { source: '/en/apply/:path*', destination: '/apply/:path*', permanent: true },
+    ]
+  },
+}
 
 export default withSentryConfig(
   withNextIntl(nextConfig),

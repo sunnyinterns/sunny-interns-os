@@ -2,7 +2,7 @@
 import { DatePickerInput } from '@/components/ui/DatePickerInput'
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { MobileApply } from './mobile/MobileApply'
 
 
@@ -422,6 +422,11 @@ export type FormData = typeof FORM_DEFAULTS
 
 export default function ApplyPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const cvPrefillSource = searchParams?.get('source') ?? ''
+  const cvLeadId = searchParams?.get('lead_id') ?? ''
+  const cvPrefilled = cvPrefillSource === 'cv_dropper'
+  const [leadId, setLeadId] = useState<string | null>(cvLeadId || null)
   const [step, setStep] = useState(() => {
     try {
       const saved = typeof window !== 'undefined' ? localStorage.getItem('apply_desktop_step_v1') : null
@@ -486,6 +491,56 @@ export default function ApplyPage() {
     } catch { /* ignore */ }
     return FORM_DEFAULTS
   })
+
+  // ── CV-dropper prefill from URL (runs once on mount if params present) ──
+  useEffect(() => {
+    if (!searchParams || !cvPrefilled) return
+    const p = {
+      first_name: searchParams.get('first_name') || '',
+      last_name: searchParams.get('last_name') || '',
+      email: searchParams.get('email') || '',
+      phone: searchParams.get('phone') || '',
+      school: searchParams.get('school') || '',
+      field: searchParams.get('field') || '',
+      english: searchParams.get('english') || '',
+    }
+    if (!Object.values(p).some(v => v)) return
+    setForm(f => {
+      const next = { ...f }
+      if (p.first_name && !f.first_name) next.first_name = p.first_name
+      if (p.last_name && !f.last_name) next.last_name = p.last_name
+      if (p.email && !f.email) next.email = p.email
+      if (p.phone && !f.whatsapp_number) {
+        const digits = p.phone.replace(/[^\d+]/g, '')
+        if (digits.startsWith('+')) {
+          const match = digits.match(/^(\+\d{1,3})(\d+)$/)
+          if (match) { next.whatsapp_code = match[1]; next.whatsapp_number = match[2] }
+          else { next.whatsapp_number = digits }
+        } else {
+          next.whatsapp_number = digits
+        }
+      }
+      if (p.school && !f.school_name && !f.school_custom_name) {
+        next.school_custom_name = p.school
+        next.school_not_found = true
+      }
+      if (p.english && !f.spoken_languages.includes('English')) {
+        next.spoken_languages = [...f.spoken_languages, 'English']
+      }
+      if (p.field && !f.desired_jobs.length) {
+        const map: Record<string, string> = {
+          'marketing': 'Marketing',
+          'communication': 'Communication',
+          'business-dev': 'Business Development',
+          'events': 'Events',
+          'design': 'Design',
+        }
+        const mapped = map[p.field.toLowerCase()]
+        if (mapped) next.custom_jobs = [mapped]
+      }
+      return next
+    })
+  }, [searchParams, cvPrefilled])
 
   // ── Fetched data ──
   const [jobTypes, setJobTypes] = useState<JobType[]>([])
