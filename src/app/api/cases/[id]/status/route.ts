@@ -27,9 +27,40 @@ const STATUS_LABELS: Record<string, string> = {
   on_hold: 'En attente', suspended: 'Suspendu', visa_refused: 'Visa refusé', archived: 'Archivé',
 }
 
-const schema = z.object({
-  status: z.string(),
-})
+// ── Transition rules ────────────────────────────────────────────────────────
+// Key = newStatus, Value = allowed previous statuses (null = any)
+// Special: some require DB conditions checked at runtime
+const TRANSITION_GATES: Record<string, {
+  allowedFrom: string[] | null
+  requirePayment?: boolean  // payment_received_at must exist
+  requireAgreement?: boolean // sponsor_contract_signed_at must exist
+  message: string
+}> = {
+  visa_in_progress: {
+    allowedFrom: ['payment_received', 'convention_signed'], // convention_signed is edge case
+    requirePayment: true,
+    message: 'Le dossier visa ne peut être envoyé à l\'agent qu\'après confirmation du paiement.',
+  },
+  visa_received: {
+    allowedFrom: ['visa_in_progress', 'visa_refused'],
+    message: 'Le statut visa reçu ne peut suivre que visa_in_progress ou visa_refused.',
+  },
+  arrival_prep: {
+    allowedFrom: ['visa_received'],
+    message: 'La préparation arrivée ne peut commencer qu\'après réception du visa.',
+  },
+  payment_received: {
+    allowedFrom: ['payment_pending', 'convention_signed'],
+    message: 'Le paiement ne peut être confirmé qu\'après la convention signée.',
+  },
+  convention_signed: {
+    allowedFrom: ['job_retained', 'job_submitted'],
+    requireAgreement: false, // agreement can come later via portal
+    message: 'La convention ne peut être signée qu\'une fois un job retenu.',
+  },
+}
+
+const schema = z.object({ status: z.string() })
 
 export async function PATCH(
   request: Request,
@@ -46,34 +77,59 @@ export async function PATCH(
 
   const newStatus = parsed.data.status
 
-  // Fetch old status before updating
+  // Fetch current case state for gating
   const { data: oldCase } = await supabase
     .from('cases')
-    .select('status')
+    .select('status, sponsor_contract_sent_at, payment_received_at')
     .eq('id', id)
     .single()
   const oldStatus = (oldCase?.status as string) ?? 'unknown'
 
+  // ── Gate check ─────────────────────────────────────────────────────────
+  const gate = TRANSITION_GATES[newStatus]
+  if (gate) {
+    if (gate.allowedFrom && !gate.allowedFrom.includes(oldStatus)) {
+      return NextResponse.json({
+        error: gate.message,
+        blocked: true,
+        current_status: oldStatus,
+        required_statuses: gate.allowedFrom,
+      }, { status: 422 })
+    }
+    if (gate.requirePayment) {
+      const hasPayment = !!(oldCase?.payment_received_at) || oldStatus === 'payment_received'
+      if (!hasPayment) {
+        return NextResponse.json({
+          error: gate.message,
+          blocked: true,
+          hint: 'Confirmez le paiement en passant le dossier en "payment_received" d\'abord.',
+        }, { status: 422 })
+      }
+    }
+  }
+
   const { error } = await supabase
     .from('cases')
-    .update({ status: newStatus, updated_at: new Date().toISOString() })
+    .update({
+      status: newStatus,
+      updated_at: new Date().toISOString(),
+      // Track payment date automatically
+      ...(newStatus === 'payment_received' ? { payment_received_at: new Date().toISOString() } : {}),
+    })
     .eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Get author name
   const authorUser = await supabase.from('app_users').select('full_name').eq('auth_user_id', user.id).maybeSingle()
   const authorName = authorUser?.data?.full_name ?? user.email ?? 'Équipe'
 
-  // Get intern name
   const { data: caseWithIntern } = await supabase
     .from('cases')
     .select('interns(first_name, last_name)')
     .eq('id', id)
     .single()
-  const internName = `${(caseWithIntern as any)?.interns?.first_name ?? ''} ${(caseWithIntern as any)?.interns?.last_name ?? ''}`.trim()
+  const internName = `${(caseWithIntern as Record<string, unknown> & { interns?: { first_name?: string; last_name?: string } })?.interns?.first_name ?? ''} ${(caseWithIntern as Record<string, unknown> & { interns?: { first_name?: string; last_name?: string } })?.interns?.last_name ?? ''}`.trim()
 
-  // Log to case_logs
   await supabase.from('case_logs').insert({
     case_id: id,
     author_name: authorName,
@@ -89,50 +145,32 @@ export async function PATCH(
   await logActivity({
     caseId: id,
     type: 'status_changed',
-    title: `Statut changé → ${STATUS_LABELS[newStatus] ?? newStatus}`,
-    description: `Le dossier est passé de "${STATUS_LABELS[oldStatus] ?? oldStatus}" à "${STATUS_LABELS[newStatus] ?? newStatus}"`,
-    priority: ['payment_pending', 'arrival_prep'].includes(newStatus) ? 'high' : 'normal',
+    title: `Statut → ${STATUS_LABELS[newStatus] ?? newStatus}`,
+    description: `De "${STATUS_LABELS[oldStatus] ?? oldStatus}" à "${STATUS_LABELS[newStatus] ?? newStatus}"`,
+    priority: ['payment_pending', 'arrival_prep', 'visa_in_progress'].includes(newStatus) ? 'high' : 'normal',
     metadata: { old_status: oldStatus, new_status: newStatus },
   })
 
-  // Envoyer email qualification quand statut passe à qualification_done
+  // ── Triggers ────────────────────────────────────────────────────────────
   if (newStatus === 'qualification_done') {
     try {
       const admin = getAdmin()
       const { data: caseRow } = await admin
         .from('cases')
         .select('id, portal_token, qualification_notes_for_intern, qualification_notes, interns(first_name, last_name, email)')
-        .eq('id', id)
-        .single()
-
+        .eq('id', id).single()
       if (caseRow) {
         const intern = (caseRow as Record<string, unknown>).interns as { first_name?: string; last_name?: string; email?: string } | null
         let portalToken = (caseRow as Record<string, unknown>).portal_token as string | null
         const tempPassword = generatePassword()
-
-        // Generate portal_token if missing
-        if (!portalToken) {
-          portalToken = crypto.randomUUID()
-        }
-
-        // Save portal_token + temp password
-        await admin.from('cases').update({
-          portal_token: portalToken,
-          portal_temp_password: tempPassword,
-        }).eq('id', id)
-
+        if (!portalToken) portalToken = crypto.randomUUID()
+        await admin.from('cases').update({ portal_token: portalToken, portal_temp_password: tempPassword }).eq('id', id)
         const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
-        const qualNotes = (caseRow as Record<string, unknown>).qualification_notes_for_intern as string
-          ?? (caseRow as Record<string, unknown>).qualification_notes as string
-          ?? ''
-
+        const qualNotes = (caseRow as Record<string, unknown>).qualification_notes_for_intern as string ?? ''
         if (intern?.email) {
           void sendQualificationEmail({
-            internEmail: intern.email,
-            prenom: intern.first_name ?? 'Stagiaire',
-            nom: intern.last_name ?? '',
-            portalToken,
-            tempPassword,
+            internEmail: intern.email, prenom: intern.first_name ?? 'Stagiaire',
+            nom: intern.last_name ?? '', portalToken, tempPassword,
             qualificationNotes: qualNotes,
             portalUrl: `${appUrl}/portal/${portalToken}/login`,
           })
@@ -141,15 +179,12 @@ export async function PATCH(
     } catch { /* non-blocking */ }
   }
 
-  // Envoyer email paiement quand statut passe à payment_pending
   if (newStatus === 'payment_pending') {
     try {
       const { data: caseRow } = await supabase
         .from('cases')
         .select('payment_amount, fillout_bill_form_url, interns(first_name, email)')
-        .eq('id', id)
-        .single()
-
+        .eq('id', id).single()
       if (caseRow) {
         const intern = (caseRow as Record<string, unknown>).interns as { first_name?: string; email?: string } | null
         if (intern?.email) {
@@ -164,5 +199,12 @@ export async function PATCH(
     } catch { /* non-blocking */ }
   }
 
-  return NextResponse.json({ success: true })
+  // ── Auto-trigger convention letter when convention_signed ────────────────
+  if (newStatus === 'convention_signed') {
+    try {
+      void fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/cases/${id}/send-sponsor-contract`, { method: 'POST' })
+    } catch { /* non-blocking */ }
+  }
+
+  return NextResponse.json({ success: true, new_status: newStatus })
 }

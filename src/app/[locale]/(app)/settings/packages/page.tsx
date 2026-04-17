@@ -168,8 +168,17 @@ export default function PackagesPage() {
             <p>Aucun package configuré.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {packages.map(pkg => {
+          <div className="space-y-8">
+            {['active','inactive'].map(section => {
+              const sectionPkgs = packages.filter(p => section === 'active' ? p.is_active : !p.is_active)
+              if (!sectionPkgs.length) return null
+              return (
+                <div key={section}>
+                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">
+                    {section === 'active' ? `✅ Actifs (${sectionPkgs.length})` : `⏸ Inactifs (${sectionPkgs.length})`}
+                  </p>
+                  <div className={['grid grid-cols-1 md:grid-cols-2 gap-4', section === 'inactive' ? 'opacity-60' : ''].join(' ')}>
+                    {sectionPkgs.map(pkg => {
               const agentName = pkg.visa_agents?.company_name ?? pkg.visa_agents?.name ?? null
               const margin = pkg.gross_margin_eur ?? (pkg.price_eur - (pkg.visa_cost_idr ? pkg.visa_cost_idr / IDR_TO_EUR : 0))
               const directLink = pkg.is_direct_client && pkg.direct_client_form_token
@@ -213,6 +222,10 @@ export default function PackagesPage() {
                     >
                       <div className={['absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform', pkg.is_active ? 'translate-x-5' : 'translate-x-1'].join(' ')} />
                     </button>
+                  </div>
+                </div>
+              )
+            })}
                   </div>
                 </div>
               )
