@@ -85,7 +85,6 @@ export default function CasesPage() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [view, setView] = useState<'leads' | 'candidats'>('leads')
 
   const STATUS_FILTERS: { value: string; label: string }[] = [
     { value: 'all', label: 'Tous' },
@@ -99,7 +98,7 @@ export default function CasesPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(view === 'leads' ? '/api/cases?status=lead' : '/api/cases?type=candidate')
+      const res = await fetch('/api/cases?type=candidate')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json() as CaseRow[]
       setCases(data)
@@ -112,7 +111,7 @@ export default function CasesPage() {
 
   useEffect(() => {
     void fetchCases()
-  }, [fetchCases, view])
+  }, [fetchCases])
 
   const filtered = cases.filter((c) => {
     // Status filter
@@ -130,24 +129,14 @@ export default function CasesPage() {
   return (
     <div className="px-4 sm:px-6 py-6 max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-xl font-semibold text-[#1a1918]">{view === 'leads' ? 'Leads' : 'Candidats'}</h1>
-          <p className="text-sm text-zinc-500 mt-0.5">{filtered.length} dossier{filtered.length > 1 ? 's' : ''}</p>
+          <h1 className="text-xl font-semibold text-[#1a1918]">Candidats</h1>
+          <p className="text-sm text-zinc-500 mt-0.5">{cases.length} candidats en cours</p>
         </div>
         <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
           + Nouveau dossier
         </Button>
-      </div>
-
-      {/* Tabs Leads / Candidats */}
-      <div className="flex gap-1 bg-zinc-100 p-1 rounded-xl w-fit mb-4">
-        {([['leads', '🌱 Leads'], ['candidats', '👤 Candidats']] as const).map(([v, label]) => (
-          <button key={v} onClick={() => { setView(v); setStatusFilter('all') }}
-            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${view === v ? 'bg-white shadow text-[#1a1918]' : 'text-zinc-500 hover:text-zinc-700'}`}>
-            {label}
-          </button>
-        ))}
       </div>
 
       {/* Search + Filters */}
