@@ -109,12 +109,12 @@ export async function POST() {
           continue
         }
 
-        // Get permanent public URL
+        // Get permanent public URL with cache-buster so browser always loads fresh
         const { data: urlData } = sb.storage
           .from('brand-assets')
           .getPublicUrl(storagePath)
 
-        const permanentUrl = urlData.publicUrl
+        const permanentUrl = `${urlData.publicUrl}?v=${Date.now()}`
 
         // Update brand_assets with permanent URL
         await sb.from('brand_assets').update({
