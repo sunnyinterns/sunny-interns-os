@@ -1,7 +1,7 @@
 'use client'
 import { DatePickerInput } from '@/components/ui/DatePickerInput'
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { MobileApply } from './mobile/MobileApply'
 
@@ -421,6 +421,14 @@ const FORM_DEFAULTS = {
 export type FormData = typeof FORM_DEFAULTS
 
 export default function ApplyPage() {
+  return (
+    <Suspense fallback={null}>
+      <ApplyPageInner />
+    </Suspense>
+  )
+}
+
+function ApplyPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const cvPrefillSource = searchParams?.get('source') ?? ''
@@ -886,6 +894,13 @@ export default function ApplyPage() {
       }
 
       localStorage.removeItem('apply_form_v1')
+      if (leadId) {
+        fetch('/api/leads/complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lead_id: leadId }),
+        }).catch(() => {})
+      }
       // candidature soumise — on avance vers step 4 (Fillout RDV)
     } catch (e) {
       setError(e instanceof Error ? e.message : T('Erreur inconnue', 'Unknown error', lang))
@@ -971,6 +986,19 @@ export default function ApplyPage() {
 
 
       <div className="max-w-xl mx-auto px-4 py-8">
+        {cvPrefilled && step !== 5 && (
+          <div className="mb-5 rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-50 to-amber-100 px-4 py-3 flex items-start gap-3">
+            <span className="text-xl leading-none mt-0.5">📄</span>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-amber-900">
+                {T('Nous avons pr\u00e9-rempli ta candidature depuis ton CV.', 'We pre-filled your application from your CV.', lang)}
+              </p>
+              <p className="text-xs text-amber-800/80 mt-0.5">
+                {T('V\u00e9rifie les champs puis valide.', 'Review the fields and submit.', lang)}
+              </p>
+            </div>
+          </div>
+        )}
         {/* Toggle langue — caché à step 5 */}
         {step !== 5 && <div className="flex justify-end mb-4">
           <div className="inline-flex rounded-lg border border-zinc-200 bg-white overflow-hidden text-xs font-medium">

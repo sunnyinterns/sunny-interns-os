@@ -130,6 +130,10 @@ export default function CandidaterPage() {
   const searchParams = useSearchParams()
   const locale = typeof params?.locale === 'string' ? params.locale : 'fr'
   const refCode = searchParams?.get('ref') ?? ''
+  const cvPrefillSource = searchParams?.get('source') ?? ''
+  const cvLeadId = searchParams?.get('lead_id') ?? ''
+  const cvPrefilled = cvPrefillSource === 'cv_dropper'
+  const [leadId] = useState<string | null>(cvLeadId || null)
 
   const [step, setStep] = useState(1)
   const [direction, setDirection] = useState<'forward' | 'back'>('forward')
@@ -222,6 +226,39 @@ export default function CandidaterPage() {
     }, 600)
     return () => clearTimeout(t)
   }, [form.affiliate_code])
+
+  // CV-dropper prefill from URL
+  useEffect(() => {
+    if (!searchParams || !cvPrefilled) return
+    const p = {
+      first_name: searchParams.get('first_name') || '',
+      last_name: searchParams.get('last_name') || '',
+      email: searchParams.get('email') || '',
+      phone: searchParams.get('phone') || '',
+      english: searchParams.get('english') || '',
+    }
+    if (!Object.values(p).some(v => v)) return
+    setForm(f => {
+      const next = { ...f }
+      if (p.first_name && !f.first_name) next.first_name = p.first_name
+      if (p.last_name && !f.last_name) next.last_name = p.last_name
+      if (p.email && !f.email) next.email = p.email
+      if (p.phone && !f.whatsapp_number) {
+        const digits = p.phone.replace(/[^\d+]/g, '')
+        if (digits.startsWith('+')) {
+          const match = digits.match(/^(\+\d{1,3})(\d+)$/)
+          if (match) { next.whatsapp_code = match[1]; next.whatsapp_number = match[2] }
+          else { next.whatsapp_number = digits }
+        } else {
+          next.whatsapp_number = digits
+        }
+      }
+      if (p.english && !f.spoken_languages.includes('Anglais')) {
+        next.spoken_languages = [...f.spoken_languages, 'Anglais']
+      }
+      return next
+    })
+  }, [searchParams, cvPrefilled])
 
   // Abandon tracking (step 3+)
   useEffect(() => {
@@ -394,6 +431,13 @@ export default function CandidaterPage() {
 
       const d = await res.json() as { portal_token?: string }
       abandonSent.current = true
+      if (leadId) {
+        fetch('/api/leads/complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lead_id: leadId }),
+        }).catch(() => {})
+      }
       router.push(`/${locale}/candidature-confirmee${d.portal_token ? `?token=${d.portal_token}` : ''}`)
     } catch {
       setError('Erreur réseau. Réessayez.')
@@ -443,6 +487,15 @@ export default function CandidaterPage() {
             transition: 'opacity 0.2s ease, transform 0.2s ease',
           }}
         >
+          {cvPrefilled && (
+            <div className="mb-5 rounded-2xl border border-[#c8a96e]/40 bg-[#c8a96e]/10 px-4 py-3 flex items-start gap-3">
+              <span className="text-xl leading-none mt-0.5">📄</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-[#c8a96e]">Nous avons pré-rempli ta candidature depuis ton CV.</p>
+                <p className="text-xs text-white/60 mt-0.5">Vérifie les champs puis valide.</p>
+              </div>
+            </div>
+          )}
           <p className="text-white/40 text-sm mb-2">{stepTitles[step - 1]}</p>
 
           {/* ── STEP 1 ── */}
