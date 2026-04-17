@@ -301,6 +301,36 @@ export async function POST(request: Request) {
 
     if (internError) return NextResponse.json({ error: internError.message }, { status: 500 })
 
+    // 3. Determine billing company based on nationality
+    const { data: billingCompanies } = await supabase
+      .from('billing_companies')
+      .select('id, billing_rule, excluded_nationalities, included_nationalities, is_default')
+      .eq('is_active', true)
+    
+    let billingCompanyId: string | null = null
+    if (billingCompanies && nationality) {
+      const nat = nationality.toLowerCase()
+      // Find matching billing company
+      for (const bc of billingCompanies) {
+        if (bc.billing_rule === 'exclude_nationality') {
+          const excluded = (bc.excluded_nationalities ?? []).map((n: string) => n.toLowerCase())
+          if (!excluded.some((e: string) => nat.includes(e) || e.includes(nat))) {
+            billingCompanyId = bc.id; break
+          }
+        } else if (bc.billing_rule === 'nationality_only') {
+          const included = (bc.included_nationalities ?? []).map((n: string) => n.toLowerCase())
+          if (included.some((i: string) => nat.includes(i) || i.includes(nat))) {
+            billingCompanyId = bc.id; break
+          }
+        }
+      }
+      // Fallback: default company
+      if (!billingCompanyId) {
+        const def = billingCompanies.find((bc) => bc.is_default)
+        billingCompanyId = def?.id ?? null
+      }
+    }
+
     // 3. Create case
     const { data: newCase, error: caseError } = await supabase
       .from('cases')
@@ -312,6 +342,7 @@ export async function POST(request: Request) {
         case_type: internship_type ?? null,
         qualification_notes: notes ?? null,
         assigned_manager_name: user.id,
+        billing_company_id: billingCompanyId,
       })
       .select()
       .single()

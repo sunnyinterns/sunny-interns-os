@@ -138,12 +138,15 @@ export default function FinanceSettingsPage() {
         {/* RATES */}
         {tab==='rates' && (
           <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-xs text-blue-700">
+              <p className="font-semibold mb-1">🔄 Intégration Revolut Business à venir</p>
+              <p>Ces taux seront automatiquement synchronisés depuis l'API Revolut Business (taux en temps réel + frais de change associés). En attendant, mettez-les à jour manuellement.</p>
+            </div>
             <div className="bg-white border border-zinc-100 rounded-2xl p-5 space-y-1">
               <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Taux de conversion → EUR</p>
               {([
                 { label:'🇮🇩 IDR → EUR', key:'idr_eur_rate' as const, hint:'1 EUR = X IDR', ph:'16500' },
                 { label:'🇺🇸 USD → EUR', key:'usd_eur_rate' as const, hint:'1 USD = X EUR', ph:'0.92' },
-                { label:'🇸🇬 SGD → EUR', key:'sgd_eur_rate' as const, hint:'1 SGD = X EUR', ph:'0.70' },
               ]).map(({ label, key, hint, ph }) => (
                 <div key={key} className="flex items-center gap-4 py-3 border-b border-zinc-50 last:border-0">
                   <p className="text-sm font-medium text-[#1a1918] w-36 shrink-0">{label}</p>
@@ -153,21 +156,6 @@ export default function FinanceSettingsPage() {
                   <p className="text-xs text-zinc-400">{hint}</p>
                 </div>
               ))}
-              <div className="mt-3 bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
-                Facture BIBI : 45 000 000 IDR ÷ {settings.idr_eur_rate.toLocaleString()} = <strong>{(45000000/settings.idr_eur_rate).toFixed(0)} €</strong>
-              </div>
-            </div>
-
-            <div className="bg-white border border-zinc-100 rounded-2xl p-5 space-y-3">
-              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Coût chauffeur arrivée</p>
-              <div>
-                <label className="block text-xs font-medium text-zinc-600 mb-1">Tarif par réservation (IDR)</label>
-                <input type="number" className={inp} value={settings.driver_cost_idr}
-                  onChange={e => setSettings(s => ({...s, driver_cost_idr: parseFloat(e.target.value)||0}))}/>
-                <p className="text-xs text-zinc-400 mt-1">
-                  ≈ {(settings.driver_cost_idr/settings.idr_eur_rate).toFixed(0)} € · Compté automatiquement dans les charges à venir sur le dashboard finance
-                </p>
-              </div>
             </div>
           </div>
         )}
