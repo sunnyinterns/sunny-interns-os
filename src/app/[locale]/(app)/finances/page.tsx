@@ -21,6 +21,13 @@ type BillingEntry = {
   cases?:{id:string; interns?:{first_name:string;last_name:string}|null}|null
 }
 type Config = { idr_eur_rate:number; usd_eur_rate:number; founders:{name:string;payout_pct:number;wise_email:string}[] }
+
+type DriverInvoice = {
+  id:string; invoice_ref:string|null; invoice_date:string; total_amount_idr:number|null; total_amount_eur:number|null
+  paid_at:string|null; notes:string|null
+  driver_suppliers?:{name:string}|null
+  driver_invoice_lines?:{id:string;intern_name:string|null;transfer_date:string|null;amount_idr:number|null;amount_eur:number|null}[]
+}
 type Extraction = { invoice_number?:string|null; supplier_name?:string|null; invoice_date?:string|null; due_date?:string|null; amount_total?:string|null; currency?:string|null; amount_eur?:string|null; description?:string|null }
 
 const SUPPLIER_TYPES = [
@@ -41,6 +48,7 @@ export default function FinancesPage() {
   const [billing, setBilling] = useState<BillingEntry[]>([])
   const [config, setConfig] = useState<Config>({ idr_eur_rate:16500, usd_eur_rate:0.92, founders:[] })
   const [loading, setLoading] = useState(true)
+  const [driverInvoices, setDriverInvoices] = useState<DriverInvoice[]>([])
 
   const now = new Date()
   const [selYear, setSelYear] = useState(now.getFullYear())
@@ -71,13 +79,15 @@ export default function FinancesPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const [invR, bilR, cfgR] = await Promise.all([
+    const [invR, bilR, cfgR, drvR] = await Promise.all([
       fetch('/api/finances/invoices'),
       fetch('/api/finances/billing-entries'),
       fetch('/api/settings/finance-config'),
+      fetch('/api/driver-invoices'),
     ])
     setInvoices(invR.ok ? await invR.json() as Invoice[] : [])
     setBilling(bilR.ok ? await bilR.json() as BillingEntry[] : [])
+    setDriverInvoices(drvR.ok ? await drvR.json() as DriverInvoice[] : [])
     if (cfgR.ok) {
       const d = await cfgR.json() as { settings:Record<string,number>; founders:Config['founders'] }
       setConfig({ idr_eur_rate:d.settings?.idr_eur_rate??16500, usd_eur_rate:d.settings?.usd_eur_rate??0.92, founders:d.founders??[] })
@@ -97,8 +107,15 @@ export default function FinancesPage() {
   const directCosts   = filtBil.filter(b=>b.type==='cost').reduce((s,b)=>s+b.amount_eur,0)
   const supplierTotal = filtInv.reduce((s,i)=>s+toEur(i.amount_eur,'EUR'),0)
   const supplierUnpaid= filtInv.filter(i=>!i.paid_at).reduce((s,i)=>s+toEur(i.amount_eur,'EUR'),0)
+  // Driver invoices (notas chauffeurs)
+  const filtDriver = driverInvoices.filter(i=>inPeriod(i.invoice_date))
+  const driverTotal = filtDriver.reduce((s,i)=>s+(i.total_amount_eur??0),0)
+  const driverUnpaid= filtDriver.filter(i=>!i.paid_at).reduce((s,i)=>s+(i.total_amount_eur??0),0)
+  // Combined supplier + driver
+  const allCostsTotal = supplierTotal + driverTotal
+  const allCostsUnpaid= supplierUnpaid + driverUnpaid
   const grossMargin   = revenue-directCosts
-  const netMargin     = grossMargin-supplierTotal
+  const netMargin     = grossMargin-allCostsTotal
   const grossPct      = revenue>0?(grossMargin/revenue)*100:0
   const netPct        = revenue>0?(netMargin/revenue)*100:0
   const payouts       = filtBil.filter(b=>b.category==='payout_fondateur')
@@ -184,7 +201,7 @@ export default function FinancesPage() {
             {l:'CA',v:FMT(revenue),c:'text-[#1a1918]',sub:`${filtBil.filter(b=>b.type==='revenue').length} encaissements`},
             {l:'Marge brute',v:FMT(grossMargin),c:grossMargin>=0?'text-[#0d9e75]':'text-red-500',sub:`${grossPct.toFixed(1)}%`},
             {l:'Marge nette',v:FMT(netMargin),c:netMargin>=0?'text-[#0d9e75]':'text-red-500',sub:`${netPct.toFixed(1)}%`},
-            {l:'Fournisseurs impayés',v:FMT(supplierUnpaid),c:supplierUnpaid>0?'text-amber-600':'text-zinc-400',sub:`${filtInv.filter(i=>!i.paid_at).length} facture(s)`},
+            {l:'Fournisseurs impayés',v:FMT(allCostsUnpaid),c:allCostsUnpaid>0?'text-amber-600':'text-zinc-400',sub:`${filtInv.filter(i=>!i.paid_at).length+filtDriver.filter(i=>!i.paid_at).length} facture(s)`},
             {l:'Payouts versés',v:FMT(totalPayouts),c:'text-[#c8a96e]',sub:`${payouts.length} virement(s)`},
           ].map(({l,v,c,sub})=>(
             <div key={l} className="bg-white border border-zinc-100 rounded-2xl p-4">
@@ -213,11 +230,11 @@ export default function FinancesPage() {
         )}
 
         {/* Unpaid warning */}
-        {supplierUnpaid>0 && (
+        {allCostsUnpaid>0 && (
           <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-5 flex items-center justify-between">
             <div>
               <p className="text-xs font-bold text-amber-700 mb-0.5">⚠️ Factures fournisseurs impayées</p>
-              <p className="text-sm text-amber-800 font-semibold">{FMT(supplierUnpaid)} à régler · {filtInv.filter(i=>!i.paid_at).length} facture(s)</p>
+              <p className="text-sm text-amber-800 font-semibold">{FMT(allCostsUnpaid)} à régler · {filtInv.filter(i=>!i.paid_at).length+filtDriver.filter(i=>!i.paid_at).length} facture(s) · dont {FMT(driverUnpaid)} chauffeurs</p>
             </div>
             <button onClick={()=>setTab('invoices')} className="text-xs px-3 py-1.5 bg-amber-500 text-white rounded-xl font-semibold">Voir →</button>
           </div>
@@ -349,7 +366,42 @@ export default function FinancesPage() {
                 </div>
               )
             })}
-            {filtInv.length===0&&<div className="text-center py-16 text-zinc-400"><p className="text-4xl mb-3">🧾</p><p>Aucune facture sur cette période</p></div>}
+
+            {/* 🚗 NOTAS CHAUFFEURS */}
+            {driverInvoices.filter(i=>inPeriod(i.invoice_date)).length>0&&(
+              <div>
+                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">🚗 Notas Chauffeurs</p>
+                {driverInvoices.filter(i=>inPeriod(i.invoice_date)).map(inv=>(
+                  <div key={inv.id} className={`bg-white border rounded-xl p-4 mb-2 ${inv.paid_at?'border-zinc-100':'border-amber-100'}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-700">🚗 Transport</span>
+                          <span className="text-xs text-zinc-400">{inv.driver_suppliers?.name}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${inv.paid_at?'bg-green-50 text-[#0d9e75]':'bg-amber-50 text-amber-700'}`}>{inv.paid_at?'✅ Payée':'⏳ À payer'}</span>
+                        </div>
+                        <p className="text-sm font-semibold text-[#1a1918]">{inv.invoice_ref??`Nota ${new Date(inv.invoice_date).toLocaleDateString('fr-FR',{month:'long',year:'numeric'})}`}</p>
+                        <p className="text-xs text-zinc-400">{new Date(inv.invoice_date).toLocaleDateString('fr-FR')}</p>
+                        {inv.driver_invoice_lines?.map(l=>(
+                          <div key={l.id} className="text-xs text-zinc-500 mt-0.5 flex items-center gap-2">
+                            <span className="text-zinc-300">·</span>
+                            {l.transfer_date&&<span>{new Date(l.transfer_date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})}</span>}
+                            <span className="font-medium">{l.intern_name??'—'}</span>
+                            <span className="ml-auto">{l.amount_idr?new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(l.amount_idr):'—'}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-lg font-bold text-[#1a1918]">{inv.total_amount_idr?new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(inv.total_amount_idr):'—'}</p>
+                        {inv.total_amount_eur&&<p className="text-xs text-zinc-400">≈ {FMT(inv.total_amount_eur)}</p>}
+                        <a href="/fr/settings/drivers" className="text-xs text-[#c8a96e] mt-1 block">Gérer →</a>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {filtInv.length===0&&driverInvoices.filter(i=>inPeriod(i.invoice_date)).length===0&&<div className="text-center py-16 text-zinc-400"><p className="text-4xl mb-3">🧾</p><p>Aucune facture sur cette période</p></div>}
           </div>
         )}
 
