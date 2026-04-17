@@ -206,5 +206,34 @@ export async function PATCH(
     } catch { /* non-blocking */ }
   }
 
+  // ── Auto-create billing_entry (revenue) when payment_received ────────────
+  if (newStatus === 'payment_received' && oldStatus !== 'payment_received') {
+    try {
+      const admin = getAdmin()
+      const { data: caseRow } = await admin
+        .from('cases')
+        .select('payment_amount, billing_company_id, interns(first_name, last_name), packages(name, price_eur)')
+        .eq('id', id).single()
+      if (caseRow) {
+        const intern = (caseRow as Record<string, unknown>).interns as { first_name?: string; last_name?: string } | null
+        const pkg = (caseRow as Record<string, unknown>).packages as { name?: string; price_eur?: number } | null
+        const amount = ((caseRow as Record<string, unknown>).payment_amount as number)
+          ?? pkg?.price_eur ?? 0
+        if (amount > 0) {
+          await admin.from('billing_entries').insert({
+            case_id: id,
+            type: 'revenue',
+            category: 'package',
+            label: `Paiement ${intern?.first_name ?? ''} ${intern?.last_name ?? ''} — ${pkg?.name ?? 'Package'}`,
+            amount_eur: amount,
+            paid_at: new Date().toISOString(),
+            recorded_at: new Date().toISOString(),
+            billing_type: 'payment',
+          })
+        }
+      }
+    } catch { /* non-blocking */ }
+  }
+
   return NextResponse.json({ success: true, new_status: newStatus })
 }
