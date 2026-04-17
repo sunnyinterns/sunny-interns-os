@@ -91,6 +91,10 @@ function getButtons(
       { label: '📋 Demander docs visa', onClick: () => { void sendVisaDocsEmail() }, variant: 'primary', loadingKey: 'send_visa_docs' },
       { label: '🚀 Envoyer à l\'agent visa', onClick: () => { void patchStatus('visa_in_progress') }, variant: 'secondary', loadingKey: 'visa_in_progress' },
     ]
+    case 'visa_in_progress': return [
+      { label: '✅ Visa reçu', onClick: () => { void patchStatus('visa_received') }, variant: 'primary', loadingKey: 'visa_received' },
+      { label: '❌ Visa refusé', onClick: () => { void patchStatus('visa_refused') }, variant: 'danger', loadingKey: 'visa_refused' },
+    ]
     case 'visa_submitted': return [
       { label: '🛂 Visa reçu', onClick: () => { void patchStatus('visa_received') }, variant: 'primary', loadingKey: 'visa_received' },
     ]
