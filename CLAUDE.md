@@ -127,8 +127,8 @@ rdv_booked → qualification_done → job_submitted → job_retained
 ## 🧪 Test E2E — Dossier de référence
 
 - **Intern** : Test Stagiaire — `sidney.ruby@gmail.com`
-- **Case ID** : `8ebc87da-3de7-4f8c-82fe-fdf60995a6d4`
-- **Portal token** : `9776c61e-152e-48fd-bc8b-f6faa13d8ed7`
+- **Case ID** : `cf00ef63-f634-4aad-808e-28cf33ffba3f`
+- **Portal token** : `f90af311-4a0a-40d9-8b6d-5ee9bf7898f8`
 - **Statut de départ test** : `rdv_booked`
 - **QA Widget** : accessible via `?qa=1` dans l'URL (persiste en localStorage)
 

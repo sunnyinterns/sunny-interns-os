@@ -5,8 +5,8 @@ import { useSearchParams } from 'next/navigation'
 type StepStatus = 'pending' | 'pass' | 'fail'
 type BugStatus = 'idle' | 'submitting' | 'open' | 'fixing' | 'fixed'
 
-const CASE_ID = '8ebc87da-3de7-4f8c-82fe-fdf60995a6d4'
-const PORTAL_TOKEN = '9776c61e-152e-48fd-bc8b-f6faa13d8ed7'
+const CASE_ID = 'cf00ef63-f634-4aad-808e-28cf33ffba3f'
+const PORTAL_TOKEN = 'f90af311-4a0a-40d9-8b6d-5ee9bf7898f8'
 const BASE = typeof window !== 'undefined' ? window.location.origin : 'https://sunny-interns-os.vercel.app'
 
 const STEPS = [
