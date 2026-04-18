@@ -449,7 +449,6 @@ function ApplyPageInner() {
   const [cvLocalUploading, setCvLocalUploading] = useState(false)
   const [price, setPrice] = useState(990)
   const [phoneDropOpen, setPhoneDropOpen] = useState(false)
-  const [filloutOverlay, setFilloutOverlay] = useState(true) // masque page Fields Fillout
   const [emailExists, setEmailExists] = useState(false)
   const [emailChecking, setEmailChecking] = useState(false)
   const [phoneError, setPhoneError] = useState('')
@@ -649,93 +648,7 @@ function ApplyPageInner() {
     try { localStorage.setItem('apply_desktop_step_v1', String(step)) } catch {}
   }, [step])
 
-  // Fillout: génère l'URL iframe avec params inclus DANS le src (méthode la plus fiable)
-  // Fillout Scheduling pré-remplit Name et Email depuis les URL params du formulaire embedded
-  const filloutIframeSrc = useMemo(() => {
-    if (step !== 5) return ''
-    const fullName = `${form.first_name} ${form.last_name}`.trim()
-    const params = new URLSearchParams()
-    if (form.email) { params.set('Email', form.email); params.set('email', form.email) }
-    if (fullName) { params.set('Name', fullName); params.set('name', fullName) }
-    if (form.first_name) params.set('firstName', form.first_name)
-    if (form.last_name) params.set('lastName', form.last_name)
-    return `https://form.fillout.com/t/gn4Zg9eydFus?${params.toString()}`
-  }, [step, form.first_name, form.last_name, form.email])
 
-  useEffect(() => {
-    if (step !== 5) { setFilloutOverlay(true); return }
-    setFilloutOverlay(true) // reset à chaque fois qu'on arrive step 5
-
-    // Mettre les params dans l'URL pour compatibilité
-    const params = new URLSearchParams()
-    const fullName = `${form.first_name} ${form.last_name}`.trim()
-    if (form.email) { params.set('Email', form.email); params.set('email', form.email) }
-    if (fullName) { params.set('Name', fullName); params.set('name', fullName) }
-    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`)
-
-    function handleMessage(e: MessageEvent) {
-      // Redirection après soumission Fillout
-      if (
-        e.data?.type === 'fillout:formSubmitted' ||
-        e.data?.type === 'fillout_form_submitted' ||
-        e.data?.name === 'formSubmitted' ||
-        (typeof e.data === 'string' && e.data.includes('submitted'))
-      ) {
-        router.push(`/apply/confirmation?name=${encodeURIComponent(form.first_name)}&email=${encodeURIComponent(form.email)}&lang=${lang}&rdv=1`)
-      }
-
-      // Fillout events — détecter quand on quitte la page Fields (page 0)
-      if (
-        e.data?.type === 'fillout:pageChange' ||
-        e.data?.type === 'fillout:loaded' ||
-        e.data?.type === 'fillout:ready' ||
-        e.data?.event === 'page_change' ||
-        (e.data?.type && typeof e.data.type === 'string' && e.data.type.startsWith('fillout:'))
-      ) {
-        const pageIndex = e.data?.pageIndex ?? e.data?.page ?? e.data?.currentPage
-        if (pageIndex === 0 || pageIndex === undefined) {
-          // Encore sur la page Fields — tenter d'avancer
-          const iframe = document.querySelector('iframe[src*="fillout"]') as HTMLIFrameElement | null
-          if (iframe?.contentWindow) {
-            iframe.contentWindow.postMessage({ type: 'fillout:next' }, '*')
-            iframe.contentWindow.postMessage({ type: 'fillout:navigate', page: 1 }, '*')
-            iframe.contentWindow.postMessage({ action: 'next' }, '*')
-          }
-        } else {
-          // Page > 0 = calendrier visible → cacher l'overlay
-          setFilloutOverlay(false)
-        }
-      }
-    }
-    window.addEventListener('message', handleMessage)
-
-    // Fallback: tenter plusieurs fois d'avancer + fallback final à 5s
-    const autoAdvanceTimer = setTimeout(() => {
-      const iframe = document.querySelector('iframe[src*="fillout"]') as HTMLIFrameElement | null
-      if (iframe?.contentWindow) {
-        iframe.contentWindow.postMessage({ type: 'fillout:next' }, '*')
-        iframe.contentWindow.postMessage({ action: 'next' }, '*')
-        iframe.contentWindow.postMessage({ type: 'fillout:navigate', direction: 'next' }, '*')
-      }
-    }, 1000)
-    const autoAdvanceTimer2 = setTimeout(() => {
-      const iframe = document.querySelector('iframe[src*="fillout"]') as HTMLIFrameElement | null
-      if (iframe?.contentWindow) {
-        iframe.contentWindow.postMessage({ type: 'fillout:next' }, '*')
-        iframe.contentWindow.postMessage({ action: 'next' }, '*')
-      }
-    }, 2000)
-    // Fallback absolu : cacher l'overlay après 5s quoi qu'il arrive
-    const fallbackTimer = setTimeout(() => setFilloutOverlay(false), 5000)
-
-    return () => {
-      clearTimeout(autoAdvanceTimer)
-      clearTimeout(autoAdvanceTimer2)
-      clearTimeout(fallbackTimer)
-      window.removeEventListener('message', handleMessage)
-      window.history.replaceState({}, '', window.location.pathname)
-    }
-  }, [step, form.first_name, form.last_name, form.email, lang, router])
 
   // Scroll to top automatique à chaque changement d'étape
   useEffect(() => {

@@ -124,8 +124,52 @@ export async function POST(request: Request) {
     console.error('[booking] email error:', emailErr)
   }
 
+  // ── Post-booking actions ──────────────────────────────────────────
+  const bookingId = booking.id as string
+  const rdvLabel = new Date(d.start).toLocaleDateString('fr-FR', {
+    weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta'
+  })
+
+  // Case logs + activity + admin notif (non-blocking)
+  if (d.prefill_case_id) {
+    await Promise.allSettled([
+      admin.from('case_logs').insert({
+        case_id: d.prefill_case_id,
+        author_name: `${d.first_name} ${d.last_name}`,
+        action: 'rdv_booked',
+        description: `RDV planifié → ${rdvLabel}`,
+        metadata: { booking_id: bookingId, meet_link: gcalResult.meetLink },
+      }),
+      admin.from('activity_feed').insert({
+        case_id: d.prefill_case_id,
+        type: 'rdv_booked',
+        title: `RDV planifié → ${rdvLabel}`,
+        description: `${d.first_name} ${d.last_name} a planifié son entretien`,
+        priority: 'normal',
+        status: 'done',
+        source: 'scheduling_native',
+        metadata: { booking_id: bookingId, meet_link: gcalResult.meetLink },
+      }),
+      admin.from('admin_notifications').insert({
+        type: 'rdv_booked',
+        title: `RDV planifié — ${d.first_name} ${d.last_name}`,
+        message: `${d.first_name} ${d.last_name} a planifié son RDV → ${rdvLabel}`,
+        link: `/fr/cases/${d.prefill_case_id}`,
+        metadata: { case_id: d.prefill_case_id, booking_id: bookingId },
+      }),
+    ])
+  }
+
+  // Marquer le lead comme converti si un case existe
+  if (d.prefill_case_id) {
+    await admin.from('leads')
+      .update({ status: 'converted', converted_case_id: d.prefill_case_id, converted_at: new Date().toISOString() })
+      .eq('email', d.email.toLowerCase().trim())
+      .neq('status', 'converted')
+  }
+
   return NextResponse.json({
-    booking_id: booking.id as string,
+    booking_id: bookingId,
     meet_link: gcalResult.meetLink,
     start: d.start,
     end: d.end,
