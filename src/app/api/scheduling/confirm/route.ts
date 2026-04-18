@@ -171,16 +171,66 @@ export async function POST(request: Request) {
     ])
   }
 
-  // Marquer le lead comme converti si un case existe
-  if (d.prefill_case_id) {
+  // ── Créer le case automatiquement si pas de case_id (booking direct depuis /book) ──
+  let finalCaseId = d.prefill_case_id ?? null
+  if (!finalCaseId) {
+    try {
+      // Créer l'intern
+      const { data: newIntern } = await admin.from('interns').insert({
+        first_name: d.first_name,
+        last_name: d.last_name,
+        email: d.email,
+        whatsapp: d.phone ?? null,
+      }).select('id').single()
+
+      if (newIntern) {
+        // Fetch default billing company + package
+        const [{ data: bc }, { data: pkg }] = await Promise.all([
+          admin.from('billing_companies').select('id').eq('is_default', true).single(),
+          admin.from('packages').select('id, price_eur').eq('is_active', true).order('created_at').limit(1).single(),
+        ])
+        // Créer le case en rdv_booked
+        const { data: newCase } = await admin.from('cases').insert({
+          intern_id: newIntern.id,
+          status: 'rdv_booked',
+          billing_company_id: bc?.id ?? null,
+          package_id: pkg?.id ?? null,
+          payment_amount: pkg?.price_eur ?? null,
+          portal_token: crypto.randomUUID(),
+          intern_first_meeting_date: d.start,
+          intern_first_meeting_link: gcalResult.meetLink,
+          intern_first_meeting_reschedule_link: rescheduleUrl,
+          google_meet_cancel_link: cancelUrl,
+          form_language: d.lang,
+        }).select('id').single()
+
+        if (newCase) {
+          finalCaseId = newCase.id as string
+          // Update booking with case_id
+          await admin.from('bookings').update({ case_id: finalCaseId }).eq('id', bookingId)
+          // Admin notif
+          await admin.from('admin_notifications').insert({
+            type: 'new_candidate',
+            title: `Nouveau candidat — ${d.first_name} ${d.last_name}`,
+            message: `RDV planifié → ${rdvLabel}`,
+            link: `/fr/cases/${finalCaseId}`,
+          })
+        }
+      }
+    } catch (err) { console.error('[confirm] auto-case error:', err) }
+  }
+
+  // Marquer le lead comme converti
+  if (finalCaseId) {
     await admin.from('leads')
-      .update({ status: 'converted', converted_case_id: d.prefill_case_id, converted_at: new Date().toISOString() })
+      .update({ status: 'converted', converted_case_id: finalCaseId, converted_at: new Date().toISOString() })
       .eq('email', d.email.toLowerCase().trim())
       .neq('status', 'converted')
   }
 
   return NextResponse.json({
     booking_id: bookingId,
+    case_id: finalCaseId,
     meet_link: gcalResult.meetLink,
     start: d.start,
     end: d.end,
