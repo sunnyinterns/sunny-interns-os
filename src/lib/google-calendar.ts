@@ -5,7 +5,7 @@ async function getCalendarClient(refreshToken?: string) {
   const clientId = process.env.GOOGLE_CLIENT_ID
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET
   const token = refreshToken ?? process.env.GOOGLE_REFRESH_TOKEN
-  console.log('[GCal] tok_len=' + (token?.length ?? 0) + ' tok_ok=' + (token && token.length > 50 ? 'YES' : 'NO') + ' id_ok=' + (clientId && clientId !== 'placeholder' ? 'YES' : 'NO'))
+
 
   if (!clientId || !clientSecret || !token ||
       clientId === 'placeholder' || token === 'placeholder') {
@@ -171,7 +171,8 @@ export async function createMeetEvent(p: {
       htmlLink: res.data.htmlLink ?? '',
     }
   } catch (err) {
-    console.error('[GCal] createMeetEvent error:', err)
+    const e = err as { message?: string; code?: number; status?: number }
+    console.error('[GCal] ERR:', JSON.stringify({ msg: e.message?.slice(0,200), code: e.code, status: e.status }))
     return { eventId: '', meetLink: '', cancelLink: '', htmlLink: '' }
   }
 }
