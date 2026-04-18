@@ -8,9 +8,10 @@ async function getCalendarClient(refreshToken?: string) {
 
   if (!clientId || !clientSecret || !token ||
       clientId === 'placeholder' || token === 'placeholder') {
-    console.log('[GCal] missing credentials - clientId:', !!clientId, 'secret:', !!clientSecret, 'token:', !!token)
+    console.log('[GCal] missing credentials')
     return null
   }
+  console.log('[GCal] creds: id_end=' + clientId.slice(-8) + ' sec_end=' + clientSecret.slice(-8) + ' tok_end=' + token.slice(-8))
   try {
     const auth = new googleLib.auth.OAuth2(clientId, clientSecret)
     auth.setCredentials({ refresh_token: token })
