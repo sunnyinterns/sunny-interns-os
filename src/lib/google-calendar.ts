@@ -122,8 +122,7 @@ export async function createMeetEvent(p: {
     console.log('[GCal] event created:', res.data.id, 'meet:', meetLink?.slice(0, 40))
     return { eventId: res.data.id ?? '', meetLink, cancelLink: res.data.htmlLink ?? '', htmlLink: res.data.htmlLink ?? '' }
   } catch (err) {
-    const e = err as { message?: string; code?: number }
-    console.error('[GCal] createMeetEvent ERR:', e.message, '| code:', e.code)
+    try { console.error('[GCal-FULL]' + JSON.stringify(err, Object.getOwnPropertyNames(err as object))) } catch { console.error('[GCal] err unknown') }
     return { eventId: '', meetLink: '', cancelLink: '', htmlLink: '' }
   }
 }
