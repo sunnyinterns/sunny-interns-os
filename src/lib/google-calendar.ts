@@ -5,7 +5,7 @@ async function getCalendarClient(refreshToken?: string) {
   const clientId = process.env.GOOGLE_CLIENT_ID
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET
   const token = refreshToken ?? process.env.GOOGLE_REFRESH_TOKEN
-  console.log('[GCal] clientId:', clientId?.slice(0,20), '| secret:', clientSecret?.slice(0,8), '| tokenLen:', token?.length, '| tokenStart:', token?.slice(0,10))
+  console.log('[GCal] tok_len=' + (token?.length ?? 0) + ' tok_ok=' + (token && token.length > 50 ? 'YES' : 'NO') + ' id_ok=' + (clientId && clientId !== 'placeholder' ? 'YES' : 'NO'))
 
   if (!clientId || !clientSecret || !token ||
       clientId === 'placeholder' || token === 'placeholder') {
