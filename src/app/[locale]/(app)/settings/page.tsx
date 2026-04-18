@@ -36,6 +36,7 @@ const SECTIONS: Record<string, { title: string; items: SectionItem[] }> = {
       { href: 'automations', icon: '⚡', label: 'Automations', desc: 'Enable/disable automatic emails and notifications by stage' },
       { href: 'email-templates', icon: '✉️', label: 'Email Templates', desc: 'Automated emails by stage and recipient' },
       { href: 'templates/contracts', icon: '📄', label: 'Contract Templates', desc: "Liability Agreement, Partnership Agreement (3 variants) + Mission Letter" },
+      { href: 'scheduling', icon: '📅', label: 'Scheduling', desc: 'Prise de RDV native Google Calendar — créneaux, managers, booking page, timezone' },
     ],
   },
   partners: {
@@ -54,7 +55,6 @@ const SECTIONS: Record<string, { title: string; items: SectionItem[] }> = {
       { href: 'finances', icon: '💰', label: 'Finance Settings', desc: 'Payout config, taux de change, payout fondateurs' },
       { href: 'billing-companies', icon: '🧾', label: 'Sociétés facturantes', desc: 'SIDLYS LLC, Bali Interns — règles par nationalité, Stripe, IBAN' },
       { href: 'drivers', icon: '🚗', label: 'Factures Chauffeurs', desc: 'Notas de transfert aéroport · Liées aux dossiers clients' },
-      { href: 'scheduling', icon: '📅', label: 'Scheduling', desc: 'Prise de RDV native Google Calendar — event type, managers, booking page' },
     ],
   },
   team: {
