@@ -54,6 +54,7 @@ const SECTIONS: Record<string, { title: string; items: SectionItem[] }> = {
       { href: 'finances', icon: '💰', label: 'Finance Settings', desc: 'Payout config, taux de change, payout fondateurs' },
       { href: 'billing-companies', icon: '🧾', label: 'Sociétés facturantes', desc: 'SIDLYS LLC, Bali Interns — règles par nationalité, Stripe, IBAN' },
       { href: 'drivers', icon: '🚗', label: 'Factures Chauffeurs', desc: 'Notas de transfert aéroport · Liées aux dossiers clients' },
+      { href: 'scheduling', icon: '📅', label: 'Scheduling', desc: 'Prise de RDV native Google Calendar — event type, managers, booking page' },
     ],
   },
   team: {

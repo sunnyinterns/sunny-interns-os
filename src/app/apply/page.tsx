@@ -1,6 +1,6 @@
 'use client'
 import { DatePickerInput } from '@/components/ui/DatePickerInput'
-
+import { NativeBookingEmbed } from '@/components/booking/NativeBookingEmbed'
 import { useState, useRef, useEffect, useCallback, useMemo, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { MobileApply } from './mobile/MobileApply'
@@ -1864,32 +1864,15 @@ function ApplyPageInner() {
                   : "⚠️ If you can't make it, a reschedule link will be in your confirmation email. Due to high demand, only one reschedule is allowed."}
               </p>
             </div>
-            {/* Fillout iframe — page Fields auto-skippée:
-                1. postMessage fillout:next après 1.5s
-                2. overlay qui masque le bouton Next pendant 2s (UX) */}
-            {filloutIframeSrc && (
-              <div style={{ position: 'relative', width: '100%', minHeight: '600px' }}>
-                {/* Overlay React-controlled — masque page Fields jusqu'à événement Fillout page>0 ou fallback 5s */}
-                {filloutOverlay && (
-                  <div style={{
-                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                    background: '#fafaf9', zIndex: 10, display: 'flex',
-                    alignItems: 'center', justifyContent: 'center',
-                    borderRadius: '12px', flexDirection: 'column', gap: '12px'
-                  }}>
-                    <div style={{ width: 32, height: 32, border: '3px solid #c8a96e', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                    <p style={{ fontSize: 13, color: '#8a7d6d', margin: 0 }}>
-                      {lang === 'fr' ? 'Chargement du calendrier...' : 'Loading calendar...'}
-                    </p>
-                  </div>
-                )}
-                <iframe
-                  src={filloutIframeSrc}
-                  style={{ width: '100%', minHeight: '600px', height: '700px', border: 'none', borderRadius: '12px' }}
-                  title="Prendre un rendez-vous"
-                  allow="camera; microphone; fullscreen"
-                />
-              </div>
+            {/* Booking native — remplace Fillout */}
+            {step === 5 && (
+              <NativeBookingEmbed
+                firstName={form.first_name}
+                lastName={form.last_name}
+                email={form.email}
+                phone={`${form.whatsapp_code}${form.whatsapp_number}`.trim()}
+                lang={lang}
+              />
             )}
             <p className="text-xs text-zinc-400 text-center mt-3">
               {lang === 'fr'

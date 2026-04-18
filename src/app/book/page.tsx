@@ -1,185 +1,270 @@
 'use client'
+import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-
-interface SlotDay {
+interface SlotItem {
+  start: string
+  end: string
+  label_fr: string
+  label_en: string
+  manager_id: string
+}
+interface DayItem {
   date: string
-  dayLabel: string
-  slots: { start: string; end: string; label: string }[]
+  label: string
+  label_en: string
+  slots: SlotItem[]
+}
+interface EventType {
+  title: string
+  title_en: string
+  description: string
+  description_en: string
+  duration_minutes: number
+  booking_button_text: string
+  booking_button_text_en: string
 }
 
-type Step = 1 | 2
+type Step = 'loading' | 'pick' | 'form' | 'confirmed' | 'error'
 
-export default function BookPage() {
-  const router = useRouter()
-  const [step, setStep] = useState<Step>(1)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+function BookingForm() {
+  const searchParams = useSearchParams()
+  const lang = (searchParams.get('lang') ?? 'fr') as 'fr' | 'en'
+  const prefillFirstName = searchParams.get('first_name') ?? ''
+  const prefillLastName = searchParams.get('last_name') ?? ''
+  const prefillEmail = searchParams.get('email') ?? ''
+  const prefillPhone = searchParams.get('phone') ?? ''
+  const caseId = searchParams.get('case_id') ?? ''
 
-  // Step 1 fields
-  const [prenom, setPrenom] = useState('')
-  const [nom, setNom] = useState('')
-  const [email, setEmail] = useState('')
-  const [whatsapp, setWhatsapp] = useState('')
-  const [message, setMessage] = useState('')
-
-  // Step 2
-  const [slotDays, setSlotDays] = useState<SlotDay[]>([])
-  const [selectedStart, setSelectedStart] = useState('')
-  const [selectedEnd, setSelectedEnd] = useState('')
-
-  async function handleStep1(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch('/api/calendar/slots')
-      if (!res.ok) throw new Error('Impossible de charger les créneaux')
-      const data = await res.json() as { slots: SlotDay[] }
-      setSlotDays(data.slots)
-      setStep(2)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur')
-    } finally {
-      setLoading(false)
-    }
+  const t = {
+    title: lang === 'fr' ? 'Réserver un appel' : 'Book a call',
+    subtitle: lang === 'fr' ? 'Choisis un créneau' : 'Choose a time slot',
+    noSlots: lang === 'fr' ? 'Aucun créneau disponible pour le moment. Réessaie dans quelques heures.' : 'No slots available right now. Try again in a few hours.',
+    loading: lang === 'fr' ? 'Chargement des créneaux…' : 'Loading available slots…',
+    back: lang === 'fr' ? '← Retour' : '← Back',
+    firstName: lang === 'fr' ? 'Prénom' : 'First name',
+    lastName: lang === 'fr' ? 'Nom' : 'Last name',
+    email: lang === 'fr' ? 'Email' : 'Email',
+    phone: lang === 'fr' ? 'WhatsApp / Téléphone' : 'WhatsApp / Phone',
+    message: lang === 'fr' ? 'Message (optionnel)' : 'Message (optional)',
+    confirm: lang === 'fr' ? 'Confirmer la réservation' : 'Confirm booking',
+    confirming: lang === 'fr' ? 'Confirmation…' : 'Confirming…',
+    confirmedTitle: lang === 'fr' ? '🎉 Entretien confirmé !' : '🎉 Call confirmed!',
+    meetBtn: lang === 'fr' ? '📹 Rejoindre Google Meet' : '📹 Join Google Meet',
+    addCal: lang === 'fr' ? '📅 Ajouter à Google Calendar' : '📅 Add to Google Calendar',
+    slot: lang === 'fr' ? 'Créneau sélectionné' : 'Selected slot',
+    timezone: lang === 'fr' ? 'Heures affichées en heure de France (Paris) et Bali' : 'Times shown in France (Paris) and Bali time',
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!selectedStart || !selectedEnd) { setError('Sélectionnez un créneau'); return }
-    setLoading(true)
-    setError(null)
+  const [step, setStep] = useState<Step>('loading')
+  const [days, setDays] = useState<DayItem[]>([])
+  const [et, setEt] = useState<EventType | null>(null)
+  const [selectedDay, setSelectedDay] = useState<DayItem | null>(null)
+  const [selectedSlot, setSelectedSlot] = useState<SlotItem | null>(null)
+  const [error, setError] = useState('')
+  const [firstName, setFirstName] = useState(prefillFirstName)
+  const [lastName, setLastName] = useState(prefillLastName)
+  const [email, setEmail] = useState(prefillEmail)
+  const [phone, setPhone] = useState(prefillPhone)
+  const [message, setMessage] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [booking, setBooking] = useState<{ meet_link: string; start: string } | null>(null)
+
+  useEffect(() => {
+    fetch('/api/scheduling/slots')
+      .then(r => r.ok ? r.json() : Promise.reject('fetch failed'))
+      .then((data: { days: DayItem[]; event_type: EventType }) => {
+        setDays(data.days ?? [])
+        setEt(data.event_type)
+        setStep(data.days?.length ? 'pick' : 'error')
+      })
+      .catch(() => setStep('error'))
+  }, [])
+
+  const handleConfirm = useCallback(async () => {
+    if (!selectedSlot || !firstName || !email) return
+    setSubmitting(true)
     try {
-      const res = await fetch('/api/calendar/events', {
+      const r = await fetch('/api/scheduling/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          internEmail: email,
-          internName: prenom + ' ' + nom,
-          startDateTime: selectedStart,
-          endDateTime: selectedEnd,
+          start: selectedSlot.start,
+          end: selectedSlot.end,
+          manager_id: selectedSlot.manager_id,
+          first_name: firstName,
+          last_name: lastName,
+          email,
+          phone: phone || undefined,
+          message: message || undefined,
+          lang,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Paris',
+          prefill_case_id: caseId || undefined,
+          source: caseId ? 'apply_form' : 'direct_link',
         }),
       })
-      if (!res.ok) throw new Error('Erreur lors de la réservation')
-      const result = await res.json() as { meetLink?: string }
-      router.push(`/book/confirme?prenom=${encodeURIComponent(prenom)}&meet=${encodeURIComponent(result.meetLink ?? '')}`)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur')
-      setLoading(false)
+      if (!r.ok) throw new Error('confirm failed')
+      const data = await r.json() as { meet_link: string; start: string }
+      setBooking(data)
+      setStep('confirmed')
+    } catch {
+      setError(lang === 'fr' ? 'Erreur lors de la confirmation. Réessaie.' : 'Confirmation error. Please try again.')
+    } finally {
+      setSubmitting(false)
     }
-  }
+  }, [selectedSlot, firstName, lastName, email, phone, message, lang, caseId])
+
+  // Shared header
+  const Header = () => (
+    <div style={{ textAlign: 'center', marginBottom: 28 }}>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+        <div style={{ background: '#111110', padding: '8px 16px', borderRadius: 8 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="https://djoqjgiyseobotsjqcgz.supabase.co/storage/v1/object/public/brand-assets/logos/logo_landscape_white.png" alt="Bali Interns" style={{ height: 24 }} />
+        </div>
+      </div>
+      <h1 style={{ fontSize: 22, fontWeight: 500, color: '#1a1918', margin: '0 0 6px' }}>
+        {et ? (lang === 'fr' ? et.title : et.title_en) : t.title}
+      </h1>
+      {et && <p style={{ fontSize: 14, color: '#6b7280', margin: 0, lineHeight: 1.5 }}>{lang === 'fr' ? et.description : et.description_en}</p>}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 10, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 12, color: '#9ca3af' }}>⏱ {et?.duration_minutes ?? 45} min</span>
+        <span style={{ fontSize: 12, color: '#9ca3af' }}>📹 Google Meet</span>
+        <span style={{ fontSize: 12, color: '#9ca3af' }}>🆓 Gratuit</span>
+      </div>
+    </div>
+  )
+
+  if (step === 'loading') return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafaf7' }}>
+      <p style={{ color: '#9ca3af', fontSize: 14 }}>{t.loading}</p>
+    </div>
+  )
+
+  if (step === 'error') return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#fafaf7', padding: 24 }}>
+      <Header />
+      <p style={{ color: '#6b7280', fontSize: 14, textAlign: 'center', maxWidth: 360 }}>{t.noSlots}</p>
+      <p style={{ color: '#9ca3af', fontSize: 12, marginTop: 8 }}>team@bali-interns.com</p>
+    </div>
+  )
+
+  if (step === 'confirmed' && booking) return (
+    <div style={{ minHeight: '100vh', background: '#fafaf7', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ maxWidth: 460, width: '100%' }}>
+        <Header />
+        <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 28, textAlign: 'center' }}>
+          <p style={{ fontSize: 32, margin: '0 0 12px' }}>🎉</p>
+          <h2 style={{ fontSize: 20, fontWeight: 500, color: '#1a1918', margin: '0 0 8px' }}>{t.confirmedTitle}</h2>
+          <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 20px' }}>
+            {lang === 'fr' ? `Un email de confirmation a été envoyé à ${email}` : `A confirmation email was sent to ${email}`}
+          </p>
+          <div style={{ background: '#fdf8f0', borderRadius: 10, padding: 16, marginBottom: 20 }}>
+            <p style={{ fontSize: 13, color: '#92400e', margin: '0 0 4px', fontWeight: 500 }}>{t.slot}</p>
+            <p style={{ fontSize: 15, color: '#1a1918', margin: 0, fontWeight: 500 }}>
+              {selectedSlot ? (lang === 'fr' ? selectedSlot.label_fr : selectedSlot.label_en) : ''}
+            </p>
+          </div>
+          {booking.meet_link && (
+            <a href={booking.meet_link} target="_blank" rel="noopener noreferrer"
+              style={{ display: 'block', background: '#1a73e8', color: 'white', padding: '12px 24px', borderRadius: 10, textDecoration: 'none', fontWeight: 500, fontSize: 14, marginBottom: 10 }}>
+              {t.meetBtn}
+            </a>
+          )}
+          <a href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(et?.title ?? 'Bali Interns')}&dates=${booking.start.replace(/[-:]/g, '').split('.')[0]}Z/${booking.start.replace(/[-:]/g, '').split('.')[0]}Z`}
+            target="_blank" rel="noopener noreferrer"
+            style={{ display: 'block', background: '#f3f4f6', color: '#374151', padding: '10px 24px', borderRadius: 10, textDecoration: 'none', fontSize: 13 }}>
+            {t.addCal}
+          </a>
+        </div>
+      </div>
+    </div>
+  )
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fafaf7', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 16px' }}>
-      {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-        <div style={{ width: '48px', height: '48px', background: '#c8a96e', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
-          <span style={{ color: 'white', fontSize: '24px' }}>🌴</span>
-        </div>
-        <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#1a1918', margin: '0 0 4px' }}>Bali Interns</h1>
-        <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>Prendre un RDV de qualification</p>
-      </div>
+    <div style={{ minHeight: '100vh', background: '#fafaf7', padding: '24px 16px' }}>
+      <div style={{ maxWidth: step === 'form' ? 460 : 640, margin: '0 auto' }}>
+        <Header />
 
-      <div style={{ width: '100%', maxWidth: '520px', background: 'white', borderRadius: '16px', padding: '32px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-        {/* Step indicator */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '28px' }}>
-          {[1, 2].map((s) => (
-            <div key={s} style={{ flex: 1, height: '4px', borderRadius: '2px', background: step >= s ? '#c8a96e' : '#e5e7eb', transition: 'background 0.3s' }} />
-          ))}
-        </div>
-
-        {step === 1 && (
-          <form onSubmit={(e) => { void handleStep1(e) }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#1a1918', marginTop: 0, marginBottom: '20px' }}>Tes coordonnées</h2>
-            {([
-              { label: 'Prénom', value: prenom, set: setPrenom, type: 'text', required: true },
-              { label: 'Nom', value: nom, set: setNom, type: 'text', required: true },
-              { label: 'Email', value: email, set: setEmail, type: 'email', required: true },
-              { label: 'WhatsApp (avec indicatif)', value: whatsapp, set: setWhatsapp, type: 'tel', required: false },
-            ] as const).map(({ label, value, set, type, required }) => (
-              <div key={label} style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>{label}</label>
-                <input
-                  type={type}
-                  value={value}
-                  onChange={(e) => set(e.target.value)}
-                  required={required}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }}
-                />
-              </div>
-            ))}
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Message (optionnel)</label>
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                rows={3}
-                placeholder="Secteur souhaité, questions..."
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', resize: 'vertical', boxSizing: 'border-box', outline: 'none' }}
-              />
-            </div>
-            {error && <p style={{ color: '#dc2626', fontSize: '13px', marginBottom: '16px' }}>{error}</p>}
-            <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', background: '#c8a96e', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
-              {loading ? 'Chargement…' : 'Voir les créneaux →'}
-            </button>
-          </form>
-        )}
-
-        {step === 2 && (
-          <form onSubmit={(e) => { void handleSubmit(e) }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#1a1918', marginTop: 0, marginBottom: '4px' }}>Choisis ton créneau</h2>
-            <p style={{ color: '#6b7280', fontSize: '13px', marginBottom: '20px' }}>Horaires Bali (UTC+8) — 45 minutes</p>
-            <div style={{ maxHeight: '380px', overflowY: 'auto', marginBottom: '20px' }}>
-              {slotDays.map((day) => (
-                <div key={day.date} style={{ marginBottom: '20px' }}>
-                  <p style={{ fontSize: '13px', fontWeight: 600, color: '#374151', textTransform: 'capitalize', margin: '0 0 8px' }}>{day.dayLabel}</p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {day.slots.map((slot) => (
-                      <label key={slot.start} style={{ cursor: 'pointer' }}>
-                        <input
-                          type="radio"
-                          name="slot"
-                          value={slot.start}
-                          checked={selectedStart === slot.start}
-                          onChange={() => { setSelectedStart(slot.start); setSelectedEnd(slot.end) }}
-                          style={{ display: 'none' }}
-                        />
-                        <span style={{
-                          display: 'inline-block',
-                          padding: '6px 12px',
-                          borderRadius: '8px',
-                          fontSize: '13px',
-                          fontWeight: 500,
-                          border: '1.5px solid',
-                          borderColor: selectedStart === slot.start ? '#c8a96e' : '#e5e7eb',
-                          background: selectedStart === slot.start ? '#fdf6ec' : 'white',
-                          color: selectedStart === slot.start ? '#c8a96e' : '#374151',
-                          transition: 'all 0.15s',
-                        }}>
-                          {slot.label}
-                        </span>
-                      </label>
+        {/* STEP: pick slot */}
+        {step === 'pick' && (
+          <div>
+            <p style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center', marginBottom: 16 }}>{t.timezone}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {days.map(day => (
+                <div key={day.date}>
+                  <p style={{ fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 8, textTransform: 'capitalize' }}>
+                    {lang === 'fr' ? day.label : day.label_en}
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
+                    {day.slots.map(slot => (
+                      <button key={slot.start}
+                        onClick={() => { setSelectedDay(day); setSelectedSlot(slot); setStep('form') }}
+                        style={{ padding: '10px 14px', background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 10, cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#1a1918', transition: 'border-color 0.15s' }}
+                        onMouseEnter={e => (e.currentTarget.style.borderColor = '#c8a96e')}
+                        onMouseLeave={e => (e.currentTarget.style.borderColor = '#e5e7eb')}>
+                        {lang === 'fr' ? slot.label_fr : slot.label_en}
+                      </button>
                     ))}
                   </div>
                 </div>
               ))}
             </div>
-            {error && <p style={{ color: '#dc2626', fontSize: '13px', marginBottom: '16px' }}>{error}</p>}
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button type="button" onClick={() => setStep(1)} style={{ flex: 1, padding: '12px', background: 'white', color: '#374151', border: '1px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}>
-                ← Retour
-              </button>
-              <button type="submit" disabled={loading || !selectedStart} style={{ flex: 2, padding: '12px', background: '#c8a96e', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: 600, cursor: loading || !selectedStart ? 'not-allowed' : 'pointer', opacity: loading || !selectedStart ? 0.6 : 1 }}>
-                {loading ? 'Réservation…' : 'Confirmer le RDV'}
+          </div>
+        )}
+
+        {/* STEP: form */}
+        {step === 'form' && selectedSlot && (
+          <div style={{ background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 16, padding: 24 }}>
+            <button onClick={() => setStep('pick')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 13, padding: 0, marginBottom: 16 }}>{t.back}</button>
+
+            {/* Selected slot recap */}
+            <div style={{ background: '#fdf8f0', borderRadius: 10, padding: 12, marginBottom: 20 }}>
+              <p style={{ fontSize: 11, color: '#c8a96e', fontWeight: 500, margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.slot}</p>
+              <p style={{ fontSize: 14, color: '#1a1918', margin: 0, fontWeight: 500 }}>{lang === 'fr' ? selectedSlot.label_fr : selectedSlot.label_en}</p>
+            </div>
+
+            {/* Form */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>{t.firstName} *</label>
+                  <input value={firstName} onChange={e => setFirstName(e.target.value)} required style={{ width: '100%', padding: '10px 12px', border: '0.5px solid #e5e7eb', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>{t.lastName} *</label>
+                  <input value={lastName} onChange={e => setLastName(e.target.value)} required style={{ width: '100%', padding: '10px 12px', border: '0.5px solid #e5e7eb', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>{t.email} *</label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} required style={{ width: '100%', padding: '10px 12px', border: '0.5px solid #e5e7eb', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>{t.phone}</label>
+                <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} style={{ width: '100%', padding: '10px 12px', border: '0.5px solid #e5e7eb', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>{t.message}</label>
+                <textarea value={message} onChange={e => setMessage(e.target.value)} rows={3} style={{ width: '100%', padding: '10px 12px', border: '0.5px solid #e5e7eb', borderRadius: 8, fontSize: 14, resize: 'none', boxSizing: 'border-box' }} />
+              </div>
+              {error && <p style={{ color: '#dc2626', fontSize: 13 }}>{error}</p>}
+              <button onClick={() => { void handleConfirm() }} disabled={submitting || !firstName || !email}
+                style={{ width: '100%', padding: '14px', background: !firstName || !email ? '#e5e7eb' : '#c8a96e', color: !firstName || !email ? '#9ca3af' : 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 500, cursor: !firstName || !email ? 'not-allowed' : 'pointer' }}>
+                {submitting ? t.confirming : (et ? (lang === 'fr' ? et.booking_button_text : et.booking_button_text_en) : t.confirm)}
               </button>
             </div>
-          </form>
+          </div>
         )}
       </div>
-
-      <p style={{ marginTop: '24px', fontSize: '13px', color: '#9ca3af' }}>Questions ? <a href="mailto:team@bali-interns.com" style={{ color: '#c8a96e' }}>team@bali-interns.com</a></p>
     </div>
+  )
+}
+
+export default function BookPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafaf7' }}><p style={{ color: '#9ca3af' }}>Chargement…</p></div>}>
+      <BookingForm />
+    </Suspense>
   )
 }
