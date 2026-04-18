@@ -152,3 +152,4 @@ export async function listUpcomingEvents(maxResults = 20) {
 }
 
 export const googleAvailable = true
+// cache bust Sam 18 avr 2026 14:47:28 PST
