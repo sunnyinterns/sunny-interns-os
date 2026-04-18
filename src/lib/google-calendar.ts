@@ -11,7 +11,6 @@ async function getCalendarClient(refreshToken?: string) {
     console.log('[GCal] missing credentials')
     return null
   }
-  console.log('[GCal] creds: id_end=' + clientId.slice(-8) + ' sec_end=' + clientSecret.slice(-8) + ' tok_end=' + token.slice(-8))
   try {
     const auth = new googleLib.auth.OAuth2(clientId, clientSecret)
     auth.setCredentials({ refresh_token: token })
@@ -153,4 +152,4 @@ export async function listUpcomingEvents(maxResults = 20) {
 }
 
 export const googleAvailable = true
-// cache bust Sam 18 avr 2026 14:47:28 PST
+Sam 18 avr 2026 14:47:28 PST
