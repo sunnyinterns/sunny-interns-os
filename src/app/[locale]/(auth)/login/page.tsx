@@ -59,7 +59,7 @@ export default function LoginPage() {
           <p className="text-sm text-zinc-500 mt-1">Connexion à l&apos;espace équipe</p>
         </div>
 
-        {/* Google OAuth — principal */}
+        {/* Google OAuth */}
         <button
           onClick={() => { void handleGoogleLogin() }}
           disabled={googleLoading}
@@ -80,6 +80,8 @@ export default function LoginPage() {
 
         <p className="text-center text-xs text-zinc-400 mt-2">
           Accès agenda Google Calendar inclus
+          {' · '}
+          <span className="text-amber-500">À configurer dans Supabase Dashboard</span>
         </p>
 
         {/* Divider */}
