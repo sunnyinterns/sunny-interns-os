@@ -173,7 +173,6 @@ export function Sidebar() {
         <Sep />
         <Label>Marketing</Label>
         <SoonLink href="/fr/marketing/jobs" label="Offres publiques" d={ICONS.jobs} />
-        <SoonLink href="/fr/marketing/leads" label="Leads gen" d={ICONS.leads} />
         <SoonLink href="/fr/marketing/social" label="Réseaux sociaux" d={ICONS.social} />
         <NavLink href="/fr/blog" label="Blog" d={ICONS.blog} />
 
