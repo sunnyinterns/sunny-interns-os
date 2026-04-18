@@ -122,7 +122,14 @@ export async function createMeetEvent(p: {
     console.log('[GCal] event created:', res.data.id, 'meet:', meetLink?.slice(0, 40))
     return { eventId: res.data.id ?? '', meetLink, cancelLink: res.data.htmlLink ?? '', htmlLink: res.data.htmlLink ?? '' }
   } catch (err) {
-    try { console.error('[GCal-FULL]' + JSON.stringify(err, Object.getOwnPropertyNames(err as object))) } catch { console.error('[GCal] err unknown') }
+    // Write full error to Supabase for debugging
+    try {
+      const errStr = JSON.stringify(err, Object.getOwnPropertyNames(err as object))
+      const { createClient } = await import('@supabase/supabase-js')
+      const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+      await sb.from('settings').upsert({ key: 'gcal_last_error', value: errStr.slice(0, 2000) })
+      console.error('[GCal] ERR written to DB - first50:', errStr.slice(0, 50))
+    } catch (e2) { console.error('[GCal] could not write error to DB', (e2 as Error).message) }
     return { eventId: '', meetLink: '', cancelLink: '', htmlLink: '' }
   }
 }
