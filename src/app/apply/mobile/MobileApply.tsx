@@ -1271,6 +1271,9 @@ export function MobileApply({
               email={form.email}
               phone={`${form.whatsapp_code}${form.whatsapp_number}`.trim()}
               lang={lang}
+              onConfirmed={(meetLink) => {
+                window.location.href = `/apply/confirmation?name=${encodeURIComponent(form.first_name)}&email=${encodeURIComponent(form.email)}&lang=${lang}&rdv=1&meet=${encodeURIComponent(meetLink)}`
+              }}
             />
           </div>
         )

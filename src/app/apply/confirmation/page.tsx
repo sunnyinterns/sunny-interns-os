@@ -8,6 +8,7 @@ function ConfirmationContent() {
   const name = params.get('name') ?? ''
   const email = params.get('email') ?? ''
   const rdv = params.get('rdv')
+  const meetLink = params.get('meet')
   const langParam = params.get('lang')
   const isFr = langParam !== 'en'
 
@@ -76,6 +77,12 @@ function ConfirmationContent() {
             <span>✅</span>
             <span>{isFr ? 'Ton entretien Google Meet est confirmé !' : 'Your Google Meet interview is confirmed!'}</span>
           </div>
+        )}
+        {meetLink && (
+          <a href={meetLink} target="_blank" rel="noopener noreferrer"
+            className="block w-full text-center py-3 mb-4 bg-[#1a73e8] text-white font-semibold rounded-xl text-sm hover:bg-[#1557b0] transition-colors">
+            📹 {isFr ? 'Rejoindre Google Meet' : 'Join Google Meet'}
+          </a>
         )}
 
         {/* Timeline des prochaines étapes */}

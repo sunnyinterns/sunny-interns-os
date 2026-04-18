@@ -1785,6 +1785,9 @@ function ApplyPageInner() {
                 email={form.email}
                 phone={`${form.whatsapp_code}${form.whatsapp_number}`.trim()}
                 lang={lang}
+                onConfirmed={(meetLink, start) => {
+                  router.push(`/apply/confirmation?name=${encodeURIComponent(form.first_name)}&email=${encodeURIComponent(form.email)}&lang=${lang}&rdv=1&meet=${encodeURIComponent(meetLink)}`)
+                }}
               />
             )}
             <p className="text-xs text-zinc-400 text-center mt-3">
