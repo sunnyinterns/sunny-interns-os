@@ -123,9 +123,12 @@ export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPorta
               Reprogrammer
             </a>
           )}
-          <button className="px-3 py-1.5 text-xs font-medium rounded-lg border border-red-200 text-red-600 bg-red-50">
-            Annuler
-          </button>
+          {caseData.google_meet_cancel_link ? (
+            <a href={caseData.google_meet_cancel_link as string} target="_blank" rel="noopener noreferrer"
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-red-200 text-red-600 bg-red-50">
+              Annuler
+            </a>
+          ) : null}
         </div>
       </>,
       <><span>📋</span><span><strong>Todo :</strong> Préparer la fiche entretien · Vérifier le CV · Confirmer le créneau avec le candidat</span></>

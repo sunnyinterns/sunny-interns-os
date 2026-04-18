@@ -80,19 +80,25 @@ export async function POST(request: Request) {
     status: 'confirmed',
     case_id: d.prefill_case_id ?? null,
     source: d.source,
-  }).select().single()
+  }).select('id, cancel_token, reschedule_token').single()
 
-  if (bookingError) {
+  if (bookingError || !booking) {
     console.error('[booking] DB error:', bookingError)
     return NextResponse.json({ error: 'Failed to save booking' }, { status: 500 })
   }
 
-  // Update case with meeting info if case_id provided
+  const bookingId = booking.id as string
+  const origin = new URL(request.url).origin
+  const cancelUrl = `${origin}/api/scheduling/cancel?token=${booking.cancel_token as string}`
+  const rescheduleUrl = `${origin}/api/scheduling/reschedule?token=${booking.reschedule_token as string}`
+
+  // Update case with real native links
   if (d.prefill_case_id) {
     await admin.from('cases').update({
       intern_first_meeting_date: d.start,
       intern_first_meeting_link: gcalResult.meetLink,
-      intern_first_meeting_reschedule_link: gcalResult.htmlLink,
+      intern_first_meeting_reschedule_link: rescheduleUrl,
+      google_meet_cancel_link: cancelUrl,
     }).eq('id', d.prefill_case_id)
   }
 
@@ -117,6 +123,11 @@ export async function POST(request: Request) {
           <p style="margin:0;color:#6b7280;font-size:14px;">${et.duration_minutes as number} min · Google Meet</p>
         </div>
         ${gcalResult.meetLink ? `<a href="${gcalResult.meetLink}" style="display:inline-block;background:#1a73e8;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">📹 ${d.lang === 'fr' ? 'Rejoindre Google Meet' : 'Join Google Meet'}</a>` : ''}
+        <p style="margin-top:20px;font-size:12px;color:#9ca3af;">
+          <a href="${rescheduleUrl}" style="color:#c8a96e;">${d.lang === 'fr' ? 'Reprogrammer' : 'Reschedule'}</a>
+          &nbsp;·&nbsp;
+          <a href="${cancelUrl}" style="color:#9ca3af;">${d.lang === 'fr' ? 'Annuler' : 'Cancel'}</a>
+        </p>
         <p style="color:#9ca3af;font-size:12px;margin-top:24px;">Bali Interns · team@bali-interns.com</p>
       </div>`,
     })
@@ -125,7 +136,7 @@ export async function POST(request: Request) {
   }
 
   // ── Post-booking actions ──────────────────────────────────────────
-  const bookingId = booking.id as string
+  // bookingId already declared above
   const rdvLabel = new Date(d.start).toLocaleDateString('fr-FR', {
     weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta'
   })
