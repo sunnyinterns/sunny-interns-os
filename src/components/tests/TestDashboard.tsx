@@ -181,12 +181,13 @@ function SuiteCard({
 
 function StepRow({ step }: { step: TestStep }) {
   const [expanded, setExpanded] = useState(false)
+  const canExpand = !!(step.error_message || (step as any).screenshot_url)
 
   return (
     <div className={`border-b border-zinc-50 last:border-0 ${step.status === 'running' ? 'bg-amber-50/40' : ''}`}>
       <button
         className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-zinc-50 transition-colors"
-        onClick={() => step.error_message && setExpanded(!expanded)}
+        onClick={() => canExpand && setExpanded(!expanded)}
       >
         {/* Status icon */}
         <span className={`text-sm font-bold w-4 flex-shrink-0 ${STATUS_COLOR[step.status]} ${step.status === 'running' ? 'animate-pulse' : ''}`}>
@@ -208,6 +209,11 @@ function StepRow({ step }: { step: TestStep }) {
           {step.title}
         </span>
 
+        {/* Screenshot indicator */}
+        {(step as any).screenshot_url && (
+          <span className="text-[10px] text-zinc-300 flex-shrink-0">📷</span>
+        )}
+
         {/* Duration */}
         {step.duration_ms && (
           <span className="text-[10px] text-zinc-400 flex-shrink-0 font-mono">
@@ -215,20 +221,54 @@ function StepRow({ step }: { step: TestStep }) {
           </span>
         )}
 
-        {/* Expand indicator si erreur */}
-        {step.error_message && (
-          <span className="text-[10px] text-zinc-400">{expanded ? '▲' : '▼'}</span>
+        {/* Expand indicator */}
+        {canExpand && (
+          <span className="text-[10px] text-zinc-300">{expanded ? '▲' : '▼'}</span>
         )}
       </button>
 
-      {/* Error detail */}
-      {expanded && step.error_message && (
-        <div className="px-4 pb-3 ml-7">
-          <div className="bg-red-50 border border-red-100 rounded-lg p-3">
-            <p className="text-[11px] font-mono text-[#dc2626] break-all leading-relaxed">
-              {step.error_message}
-            </p>
-          </div>
+      {/* Expanded: screenshot + erreur */}
+      {expanded && (
+        <div className="px-4 pb-4 ml-7 space-y-3">
+          {/* Screenshot */}
+          {(step as any).screenshot_url && (
+            <div className="rounded-xl overflow-hidden border border-zinc-200 shadow-sm">
+              <div className="bg-zinc-800 px-3 py-1.5 flex items-center gap-2">
+                <div className="flex gap-1">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
+                </div>
+                <span className="text-[10px] text-zinc-400 flex-1 truncate">
+                  sunny-interns-os.vercel.app — {step.test_id} {step.title}
+                </span>
+                <a
+                  href={(step as any).screenshot_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  className="text-[10px] text-zinc-400 hover:text-zinc-200 underline"
+                >
+                  Ouvrir ↗
+                </a>
+              </div>
+              <img
+                src={(step as any).screenshot_url}
+                alt={`Screenshot ${step.test_id}`}
+                className="w-full object-cover max-h-64 object-top"
+                loading="lazy"
+              />
+            </div>
+          )}
+
+          {/* Erreur */}
+          {step.error_message && (
+            <div className="bg-red-50 border border-red-100 rounded-lg p-3">
+              <p className="text-[11px] font-mono text-[#dc2626] break-all leading-relaxed">
+                {step.error_message}
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

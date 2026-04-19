@@ -1,6 +1,9 @@
 name: E2E Tests — Sunny Interns OS
 
 on:
+  # Déclenchement automatique après chaque push sur main
+  push:
+    branches: [main]
   # Déclenchement depuis le dashboard OS
   repository_dispatch:
     types: [run-e2e-tests]

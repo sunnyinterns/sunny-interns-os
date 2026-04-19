@@ -61,6 +61,7 @@ const SECTIONS: Record<string, { title: string; items: SectionItem[] }> = {
     title: 'Team & Access',
     items: [
       { href: 'users', icon: '👤', label: 'Users', desc: 'Team access and role management' },
+      { href: '/fr/tests', icon: '🧪', label: 'Tests E2E', desc: '47 scénarios · Workflow complet · Screenshots par étape' },
     ],
   },
 }
@@ -71,9 +72,13 @@ function SettingsSection({ title, items, locale }: { title: string; items: Secti
       <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">{title}</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {items.map(item => (
+        {items.map(item => {
+          const isAbsolute = item.href.startsWith('/')
+          const href = isAbsolute ? item.href : `/${locale}/settings/${item.href}`
+          return (
           <Link
             key={item.href}
-            href={`/${locale}/settings/${item.href}`}
+            href={href}
             className="bg-white border border-zinc-100 rounded-2xl p-4 hover:border-[#c8a96e] hover:shadow-sm transition-all group flex items-center gap-3"
           >
             <span className="text-2xl flex-shrink-0">{item.icon}</span>
@@ -82,6 +87,8 @@ function SettingsSection({ title, items, locale }: { title: string; items: Secti
               <p className="text-xs text-zinc-400 mt-0.5">{item.desc}</p>
             </div>
           </Link>
+          )
+        })}
         ))}
       </div>
     </div>
