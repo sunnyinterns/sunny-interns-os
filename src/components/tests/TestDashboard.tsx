@@ -179,19 +179,58 @@ function SuiteCard({
   )
 }
 
+function Lightbox({ url, title, onClose }: { url: string; title: string; onClose: () => void }) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col" onClick={onClose}>
+      <div className="flex items-center justify-between px-6 py-3 flex-shrink-0" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-3">
+          <div className="flex gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-red-400"/>
+            <span className="w-3 h-3 rounded-full bg-yellow-400"/>
+            <span className="w-3 h-3 rounded-full bg-green-400"/>
+          </div>
+          <span className="text-sm text-zinc-300 font-mono">sunny-interns-os.vercel.app — {title}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <a href={url} target="_blank" rel="noopener noreferrer"
+            className="text-xs text-zinc-400 hover:text-white underline">
+            Ouvrir original ↗
+          </a>
+          <button onClick={onClose} className="text-zinc-400 hover:text-white text-xl font-bold px-2">✕</button>
+        </div>
+      </div>
+      <div className="flex-1 overflow-auto flex items-start justify-center p-4" onClick={onClose}>
+        <img src={url} alt={title}
+          className="max-w-full rounded-lg shadow-2xl"
+          onClick={e => e.stopPropagation()}
+          style={{ maxHeight: 'calc(100vh - 80px)' }}
+        />
+      </div>
+    </div>
+  )
+}
+
 function StepRow({ step, runId }: { step: TestStep; runId: string }) {
-  const [expanded, setExpanded] = useState(false)
+  const [lightbox, setLightbox] = useState(false)
+  const [commentsOpen, setCommentsOpen] = useState(false)
   const [comment, setComment] = useState('')
   const [comments, setComments] = useState<Array<{id:string;comment:string;severity:string;created_at:string}>>([])
   const [saving, setSaving] = useState(false)
+  const screenshotUrl = (step as any).screenshot_url as string | null
 
+  // Charger les commentaires dès que la step est visible
   useEffect(() => {
-    if (!expanded || !step.id) return
+    if (!step.id || step.status === 'pending') return
     fetch(`/api/tests/comments?step_id=${step.id}`)
       .then(r => r.ok ? r.json() : { comments: [] })
       .then(d => setComments(d.comments ?? []))
       .catch(() => {})
-  }, [expanded, step.id])
+  }, [step.id, step.status])
 
   const saveComment = async () => {
     if (!comment.trim()) return
@@ -200,79 +239,123 @@ function StepRow({ step, runId }: { step: TestStep; runId: string }) {
       await fetch('/api/tests/comments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ step_id: step.id, run_id: runId, test_id: step.test_id, comment: comment.trim(), severity: step.status === 'failed' ? 'bug' : 'note' }),
+        body: JSON.stringify({
+          step_id: step.id, run_id: runId, test_id: step.test_id,
+          comment: comment.trim(),
+          severity: step.status === 'failed' ? 'bug' : 'note',
+        }),
       })
       setComment('')
       const r = await fetch(`/api/tests/comments?step_id=${step.id}`)
-      const d = await r.json()
-      setComments(d.comments ?? [])
+      setComments((await r.json()).comments ?? [])
     } finally { setSaving(false) }
   }
 
-  return (
-    <div className={`border-b border-zinc-50 last:border-0 ${step.status === 'running' ? 'bg-amber-50/40' : ''}`}>
-      <button
-        className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-zinc-50 transition-colors"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <span className={`text-sm font-bold w-4 flex-shrink-0 ${STATUS_COLOR[step.status]} ${step.status === 'running' ? 'animate-pulse' : ''}`}>
-          {STATUS_ICON[step.status]}
-        </span>
-        <span className="text-[10px] font-mono font-bold text-zinc-400 w-8 flex-shrink-0">{step.test_id}</span>
-        <span className={`text-xs flex-1 ${step.status === 'failed' ? 'text-[#dc2626]' : step.status === 'passed' ? 'text-[#1a1918]' : step.status === 'running' ? 'text-[#c8a96e] font-medium' : 'text-zinc-400'}`}>
-          {step.title}
-        </span>
-        {(step as any).screenshot_url && <span className="text-[10px] text-zinc-300 flex-shrink-0">📷</span>}
-        {comments.length > 0 && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{comments.length}💬</span>}
-        {step.duration_ms && <span className="text-[10px] text-zinc-400 font-mono">{step.duration_ms < 1000 ? step.duration_ms+'ms' : (step.duration_ms/1000).toFixed(1)+'s'}</span>}
-        <span className="text-[10px] text-zinc-300">{expanded ? '▲' : '▼'}</span>
-      </button>
+  const fmtMs = (ms: number) => ms < 1000 ? `${ms}ms` : `${(ms/1000).toFixed(1)}s`
 
-      {expanded && (
-        <div className="px-4 pb-4 ml-7 space-y-3">
-          {(step as any).screenshot_url && (
-            <div className="rounded-xl overflow-hidden border border-zinc-200 shadow-sm">
-              <div className="bg-zinc-800 px-3 py-1.5 flex items-center gap-2">
-                <div className="flex gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-400"/><span className="w-2.5 h-2.5 rounded-full bg-yellow-400"/><span className="w-2.5 h-2.5 rounded-full bg-green-400"/>
-                </div>
-                <span className="text-[10px] text-zinc-400 flex-1 truncate">sunny-interns-os.vercel.app — {step.test_id}</span>
-                <a href={(step as any).screenshot_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-[10px] text-zinc-400 hover:text-zinc-200 underline">Plein écran ↗</a>
-              </div>
-              <img src={(step as any).screenshot_url} alt={`Screenshot ${step.test_id}`} className="w-full object-cover max-h-72 object-top" loading="lazy"/>
-            </div>
-          )}
-          {step.error_message && (
-            <div className="bg-red-50 border border-red-100 rounded-lg p-3">
-              <p className="text-[10px] text-zinc-400 font-semibold mb-1">Erreur Playwright</p>
-              <p className="text-[11px] font-mono text-[#dc2626] break-all leading-relaxed">{step.error_message}</p>
-            </div>
-          )}
-          {comments.map(c => (
-            <div key={c.id} className={`rounded-lg p-2.5 text-xs border ${c.severity === 'bug' ? 'bg-red-50 border-red-100 text-[#dc2626]' : c.severity === 'warning' ? 'bg-amber-50 border-amber-100 text-amber-700' : 'bg-zinc-50 border-zinc-100 text-zinc-600'}`}>
-              <div className="flex gap-2 mb-1">
-                <span className="font-bold text-[10px] uppercase">{c.severity}</span>
-                <span className="text-[10px] opacity-50">{new Date(c.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>
-              </div>
-              {c.comment}
-            </div>
-          ))}
-          <div className="flex gap-2 items-start">
-            <textarea value={comment} onChange={e => setComment(e.target.value)}
-              placeholder={step.status === 'failed' ? '🐛 Décrire le bug observé...' : '📝 Note sur cette étape...'}
-              className="flex-1 text-xs border border-zinc-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-              rows={2}
-              onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveComment() }}
-            />
-            <button onClick={saveComment} disabled={saving || !comment.trim()}
-              className="px-3 py-2 text-xs font-semibold rounded-lg bg-[#1a1918] text-white disabled:opacity-40 hover:bg-zinc-700 transition-colors">
-              {saving ? '...' : '💾 Sauver'}
+  return (
+    <>
+      {lightbox && screenshotUrl && (
+        <Lightbox url={screenshotUrl} title={`${step.test_id} — ${step.title}`} onClose={() => setLightbox(false)} />
+      )}
+      <div className={`border-b border-zinc-50 last:border-0 ${step.status === 'failed' ? 'bg-red-50/30' : step.status === 'running' ? 'bg-amber-50/40' : ''}`}>
+        {/* Header de la step */}
+        <div className="flex items-center gap-3 px-4 py-2.5">
+          <span className={`text-sm font-bold w-4 flex-shrink-0 ${STATUS_COLOR[step.status]} ${step.status === 'running' ? 'animate-pulse' : ''}`}>
+            {STATUS_ICON[step.status]}
+          </span>
+          <span className="text-[10px] font-mono font-bold text-zinc-400 w-8 flex-shrink-0">{step.test_id}</span>
+          <span className={`text-xs flex-1 font-medium ${
+            step.status === 'failed' ? 'text-[#dc2626]' :
+            step.status === 'passed' ? 'text-[#1a1918]' :
+            step.status === 'running' ? 'text-[#c8a96e]' : 'text-zinc-400'
+          }`}>{step.title}</span>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {step.duration_ms && <span className="text-[10px] text-zinc-400 font-mono">{fmtMs(step.duration_ms)}</span>}
+            {comments.length > 0 && (
+              <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">{comments.length}💬</span>
+            )}
+            <button onClick={() => setCommentsOpen(v => !v)}
+              className="text-[10px] text-zinc-400 hover:text-[#c8a96e] px-2 py-1 rounded border border-zinc-200 hover:border-[#c8a96e] transition-colors">
+              {commentsOpen ? 'Fermer' : '+ Note'}
             </button>
           </div>
-          <p className="text-[10px] text-zinc-300">⌘+Entrée pour sauvegarder · bug / warning / note</p>
         </div>
-      )}
-    </div>
+
+        {/* Screenshot — toujours visible si disponible */}
+        {screenshotUrl && (
+          <div className="mx-4 mb-3 rounded-xl overflow-hidden border border-zinc-200 shadow-sm">
+            <div className="bg-zinc-800 px-3 py-1.5 flex items-center gap-2">
+              <div className="flex gap-1">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-400"/>
+                <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"/>
+                <span className="w-2.5 h-2.5 rounded-full bg-green-400"/>
+              </div>
+              <span className="text-[10px] text-zinc-400 flex-1 truncate font-mono">
+                sunny-interns-os.vercel.app
+              </span>
+              <button onClick={() => setLightbox(true)}
+                className="text-[10px] text-[#c8a96e] hover:text-white font-semibold transition-colors">
+                ⛶ Plein écran
+              </button>
+            </div>
+            <img
+              src={screenshotUrl}
+              alt={`Screenshot ${step.test_id}`}
+              className="w-full object-cover object-top cursor-zoom-in"
+              style={{ maxHeight: '320px' }}
+              loading="lazy"
+              onClick={() => setLightbox(true)}
+            />
+          </div>
+        )}
+
+        {/* Erreur Playwright */}
+        {step.error_message && (
+          <div className="mx-4 mb-3 bg-red-50 border border-red-100 rounded-lg p-3">
+            <p className="text-[10px] text-zinc-500 font-semibold mb-1 uppercase tracking-wide">Erreur Playwright</p>
+            <p className="text-[11px] font-mono text-[#dc2626] break-all leading-relaxed">{step.error_message}</p>
+          </div>
+        )}
+
+        {/* Zone commentaires (toggle) */}
+        {commentsOpen && (
+          <div className="mx-4 mb-3 space-y-2">
+            {comments.map(c => (
+              <div key={c.id} className={`rounded-lg p-2.5 text-xs border ${
+                c.severity === 'bug' ? 'bg-red-50 border-red-200 text-[#dc2626]' :
+                c.severity === 'warning' ? 'bg-amber-50 border-amber-200 text-amber-700' :
+                'bg-zinc-50 border-zinc-200 text-zinc-600'
+              }`}>
+                <div className="flex gap-2 mb-1">
+                  <span className="font-bold text-[10px] uppercase tracking-wide">{c.severity}</span>
+                  <span className="text-[10px] opacity-50">
+                    {new Date(c.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
+                  </span>
+                </div>
+                {c.comment}
+              </div>
+            ))}
+            <div className="flex gap-2 items-start">
+              <textarea
+                value={comment}
+                onChange={e => setComment(e.target.value)}
+                placeholder={step.status === 'failed' ? '🐛 Bug observé sur ce screenshot...' : '📝 Note sur cette étape...'}
+                className="flex-1 text-xs border border-zinc-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-[#c8a96e] bg-white"
+                rows={2}
+                onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveComment() }}
+                autoFocus
+              />
+              <button onClick={saveComment} disabled={saving || !comment.trim()}
+                className="px-3 py-2 text-xs font-semibold rounded-lg bg-[#1a1918] text-white disabled:opacity-40 hover:bg-zinc-700 transition-colors flex-shrink-0">
+                {saving ? '…' : '💾'}
+              </button>
+            </div>
+            <p className="text-[10px] text-zinc-300">⌘+Entrée · bug / warning / note</p>
+          </div>
+        )}
+      </div>
+    </>
   )
 }
 
