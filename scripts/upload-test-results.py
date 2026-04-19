@@ -1,3 +1,4 @@
+from datetime import datetime
 #!/usr/bin/env python3
 """
 Upload Playwright JSON results → Supabase
@@ -112,9 +113,8 @@ overall_status = "passed" if failed == 0 else "failed"
 
 print(f"📊 Total={total} ✓={passed} ✗={failed} skip={skipped} ({duration_ms}ms) → {overall_status}")
 
-# Récupérer les steps existants en Supabase
-existing = sb("GET", "test_steps", params=f"?run_id=eq.{RUN_ID}&select=id,test_id")
-step_map = {s["test_id"]: s["id"] for s in (existing or [])}
+# Upsert les steps directement dans Supabase
+step_map = {}  # sera rempli au fur et a mesure
 
 # Parser chaque test dans le JSON Playwright
 def parse_suite(suite, results):
@@ -160,17 +160,27 @@ updated = 0
 for r in all_results:
     tid = r["test_id"]
     step_id = step_map.get(tid)
-    if not step_id:
-        print(f"  ⚠️  Step {tid} pas trouvé en DB, skip")
-        continue
+    # Upsert : patch si existe, sinon insert
     payload = {
+        "run_id": RUN_ID,
+        "test_id": tid,
+        "title": r["title"],
+        "suite": tid[0] if tid else "A",
         "status": r["status"],
         "duration_ms": r["duration_ms"],
-        "finished_at": "now()",
+        "finished_at": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
     if r["error_message"]:
         payload["error_message"] = r["error_message"]
-    patch_step(step_id, payload)
+    if step_id:
+        patch_step(step_id, payload)
+    else:
+        # Chercher par test_id + run_id
+        res = sb("GET", "test_steps", params=f"?run_id=eq.{RUN_ID}&test_id=eq.{tid}&select=id")
+        if res and len(res) > 0:
+            patch_step(res[0]["id"], payload)
+        else:
+            sb("POST", "test_steps", payload)
     icon = "✓" if r["status"] == "passed" else "✗" if r["status"] == "failed" else "—"
     print(f"  {icon} {tid}: {r['title'][:50]} ({r['duration_ms']}ms)")
     updated += 1
