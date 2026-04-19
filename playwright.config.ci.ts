@@ -16,16 +16,14 @@ export default defineConfig({
   use: {
     baseURL: process.env.TEST_BASE_URL ?? 'https://sunny-interns-os.vercel.app',
     headless: true,
-    // Screenshot après chaque test (pas seulement en cas d'échec)
     screenshot: 'on',
     video: 'retain-on-failure',
-    // Viewport standard
     viewport: { width: 1280, height: 800 },
   },
+  // JSON reporter écrit dans test-results.json via la config (pas via CLI)
   reporter: [
     ['list'],
     ['json', { outputFile: 'test-results.json' }],
-    ['./src/lib/supabase-reporter.ts'],
   ],
   projects: [
     { name: 'setup', testMatch: /.*\.setup\.ts/, use: { headless: true } },
