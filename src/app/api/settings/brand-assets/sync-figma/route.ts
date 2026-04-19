@@ -4,8 +4,8 @@ import { NextResponse } from 'next/server'
 
 const FIGMA_FILE_KEY = 'nuNpKunExoHegVl6P5XvfL'
 const FIGMA_API = 'https://api.figma.com/v1'
+const CACHE_HOURS = 4 // ne pas appeler Figma plus d'1x toutes les 4h
 
-// Figma frame name → brand_asset key
 const FRAME_MAP: Record<string, string> = {
   logo_landscape_white: 'logo_landscape_white',
   logo_landscape_black: 'logo_landscape_black',
@@ -33,6 +33,7 @@ export async function GET() {
     file_key: FIGMA_FILE_KEY,
     figma_url: `https://www.figma.com/design/${FIGMA_FILE_KEY}/bali_interns`,
     frames_mapped: Object.keys(FRAME_MAP).length,
+    cache_hours: CACHE_HOURS,
   })
 }
 
@@ -46,23 +47,79 @@ export async function POST() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+  // ── Vérifier le cache : pas de sync si < CACHE_HOURS ──────────────────────
+  const { data: lastSync } = await sb
+    .from('settings')
+    .select('value, updated_at')
+    .eq('key', 'figma_last_sync')
+    .single()
+
+  if (lastSync?.updated_at) {
+    const hoursSince = (Date.now() - new Date(lastSync.updated_at).getTime()) / 3600000
+    if (hoursSince < CACHE_HOURS) {
+      return NextResponse.json({
+        cached: true,
+        message: `Dernière sync il y a ${Math.round(hoursSince * 10) / 10}h. Prochaine sync possible dans ${Math.round((CACHE_HOURS - hoursSince) * 10) / 10}h.`,
+        last_sync: lastSync.updated_at,
+      })
+    }
+  }
+
   try {
     const headers = figmaHeaders()
 
-    // 1. Get file structure to find node IDs by frame name
-    const fileRes = await fetch(`${FIGMA_API}/files/${FIGMA_FILE_KEY}?depth=3`, { headers })
-    if (!fileRes.ok) throw new Error(`Figma file API ${fileRes.status}: ${await fileRes.text()}`)
-    const fileData = await fileRes.json() as {
-      document: { children: Array<{ children: Array<{ id: string; name: string; type: string }> }> }
+    // ── Utiliser /v1/files/:key/nodes plutôt que le fichier entier ──────────
+    // On passe directement par la liste des composants (beaucoup plus légère)
+    // On utilise depth=1 sur la page principale seulement
+    const fileRes = await fetch(`${FIGMA_API}/files/${FIGMA_FILE_KEY}?depth=1`, { headers })
+
+    if (fileRes.status === 429) {
+      const retryAfter = fileRes.headers.get('Retry-After') ?? '60'
+      return NextResponse.json({
+        error: 'rate_limited',
+        message: `Figma API rate limit atteint. Réessaie dans ${retryAfter}s.`,
+        retry_after_seconds: parseInt(retryAfter),
+      }, { status: 429 })
     }
+
+    if (!fileRes.ok) throw new Error(`Figma file API ${fileRes.status}: ${await fileRes.text()}`)
+
+    const fileData = await fileRes.json() as {
+      document: { children: Array<{ id: string; name: string }> }
+    }
+
+    // Trouver la page principale (première page)
+    const mainPage = fileData.document.children[0]
+    if (!mainPage) throw new Error('No pages found in Figma file')
+
+    // ── Récupérer les nodes de cette page seulement ────────────────────────
+    const pageRes = await fetch(
+      `${FIGMA_API}/files/${FIGMA_FILE_KEY}/nodes?ids=${mainPage.id}&depth=2`,
+      { headers }
+    )
+
+    if (pageRes.status === 429) {
+      return NextResponse.json({
+        error: 'rate_limited',
+        message: 'Figma API rate limit atteint. Réessaie dans 60s.',
+        retry_after_seconds: 60,
+      }, { status: 429 })
+    }
+
+    if (!pageRes.ok) throw new Error(`Figma nodes API ${pageRes.status}`)
+
+    const pageData = await pageRes.json() as {
+      nodes: Record<string, { document: { children: Array<{ id: string; name: string; type: string }> } }>
+    }
+
+    const pageDoc = pageData.nodes[mainPage.id]?.document
+    if (!pageDoc) throw new Error('Could not fetch page nodes')
 
     // Map frame name → node id
     const nodeMap: Record<string, string> = {}
-    for (const page of fileData.document.children) {
-      for (const node of (page.children ?? [])) {
-        if (node.type === 'FRAME' && FRAME_MAP[node.name]) {
-          nodeMap[node.name] = node.id
-        }
+    for (const node of (pageDoc.children ?? [])) {
+      if (FRAME_MAP[node.name]) {
+        nodeMap[node.name] = node.id
       }
     }
 
@@ -70,53 +127,48 @@ export async function POST() {
       return NextResponse.json({ error: 'No matching frames found in Figma file' }, { status: 404 })
     }
 
-    // 2. Get export URLs @2x PNG from Figma (temporary URLs)
+    // ── Export URLs ────────────────────────────────────────────────────────
     const ids = Object.values(nodeMap).join(',')
     const imgRes = await fetch(
       `${FIGMA_API}/images/${FIGMA_FILE_KEY}?ids=${encodeURIComponent(ids)}&format=png&scale=2`,
       { headers }
     )
+
+    if (imgRes.status === 429) {
+      return NextResponse.json({
+        error: 'rate_limited',
+        message: 'Figma API rate limit atteint sur export images. Réessaie dans 60s.',
+        retry_after_seconds: 60,
+      }, { status: 429 })
+    }
+
     if (!imgRes.ok) throw new Error(`Figma images API ${imgRes.status}`)
     const imgData = await imgRes.json() as { images: Record<string, string> }
 
-    // 3. Download each image + upload to Supabase Storage (permanent)
+    // ── Download + upload Supabase ─────────────────────────────────────────
     const updates: { key: string; url: string }[] = []
 
     for (const [frameName, nodeId] of Object.entries(nodeMap)) {
       const tempUrl = imgData.images[nodeId]
       if (!tempUrl) continue
-
       const assetKey = FRAME_MAP[frameName]
       if (!assetKey) continue
 
       try {
-        // Download from Figma temp URL
         const imgBuffer = await fetch(tempUrl)
         if (!imgBuffer.ok) continue
         const blob = await imgBuffer.arrayBuffer()
 
-        // Upload to Supabase Storage (brand-assets bucket)
         const storagePath = `logos/${assetKey}.png`
         const { error: uploadErr } = await sb.storage
           .from('brand-assets')
-          .upload(storagePath, blob, {
-            contentType: 'image/png',
-            upsert: true,
-          })
+          .upload(storagePath, blob, { contentType: 'image/png', upsert: true })
 
-        if (uploadErr) {
-          console.error(`Upload error for ${assetKey}:`, uploadErr.message)
-          continue
-        }
+        if (uploadErr) { console.error(`Upload error for ${assetKey}:`, uploadErr.message); continue }
 
-        // Get permanent public URL with cache-buster so browser always loads fresh
-        const { data: urlData } = sb.storage
-          .from('brand-assets')
-          .getPublicUrl(storagePath)
-
+        const { data: urlData } = sb.storage.from('brand-assets').getPublicUrl(storagePath)
         const permanentUrl = `${urlData.publicUrl}?v=${Date.now()}`
 
-        // Update brand_assets with permanent URL
         await sb.from('brand_assets').update({
           url: permanentUrl,
           figma_frame_id: nodeId,
@@ -129,11 +181,13 @@ export async function POST() {
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      synced: updates.length,
-      details: updates,
+    // ── Mettre à jour le cache ─────────────────────────────────────────────
+    await sb.from('settings').upsert({
+      key: 'figma_last_sync',
+      value: JSON.stringify({ synced: updates.length, frames: updates.map(u => u.key) }),
     })
+
+    return NextResponse.json({ success: true, synced: updates.length, details: updates })
 
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
