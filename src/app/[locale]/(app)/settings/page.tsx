@@ -88,7 +88,6 @@ function SettingsSection({ title, items, locale }: { title: string; items: Secti
           </Link>
           )
         })}
-        ))}
       </div>
     </div>
   )
