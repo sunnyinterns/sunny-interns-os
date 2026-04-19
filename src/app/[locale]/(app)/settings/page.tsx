@@ -71,7 +71,6 @@ function SettingsSection({ title, items, locale }: { title: string; items: Secti
     <div>
       <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">{title}</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {items.map(item => (
         {items.map(item => {
           const isAbsolute = item.href.startsWith('/')
           const href = isAbsolute ? item.href : `/${locale}/settings/${item.href}`
