@@ -1,43 +1,38 @@
 name: E2E Tests — Sunny Interns OS
 
 on:
-  # Déclenchement automatique après chaque push sur main
   push:
     branches: [main]
-  # Déclenchement depuis le dashboard OS
   repository_dispatch:
     types: [run-e2e-tests]
-  # Déclenchement manuel depuis GitHub
   workflow_dispatch:
     inputs:
       suite:
-        description: 'Suite à tester (A, B, C, E, all)'
+        description: 'Suite (A, B, C, E, all)'
         required: false
         default: 'all'
       run_id:
-        description: 'ID du test_run Supabase (optionnel)'
+        description: 'Supabase test_run ID'
         required: false
+
+env:
+  TEST_SUITE:  ${{ github.event.client_payload.suite  || github.event.inputs.suite  || 'all' }}
+  TEST_RUN_ID: ${{ github.event.client_payload.run_id || github.event.inputs.run_id || '' }}
+  TEST_BASE_URL: https://sunny-interns-os.vercel.app
+  SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
 jobs:
   e2e:
-    name: 'Tests E2E — Suite ${{ github.event.client_payload.suite || github.event.inputs.suite || ''all'' }}'
+    name: "E2E · Suite ${{ github.event.client_payload.suite || github.event.inputs.suite || 'all' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
-    env:
-      TEST_SUITE: ${{ github.event.client_payload.suite || github.event.inputs.suite || 'all' }}
-      TEST_RUN_ID: ${{ github.event.client_payload.run_id || github.event.inputs.run_id || '' }}
-      TEST_BASE_URL: https://sunny-interns-os.vercel.app
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
@@ -51,35 +46,64 @@ jobs:
       - name: Create auth directory
         run: mkdir -p playwright/.auth
 
-      - name: Run E2E tests
-        run: npx playwright test --config=playwright.config.ci.ts
+      - name: Mark run as started
+        if: env.TEST_RUN_ID != ''
+        run: |
+          curl -sf -X PATCH \
+            "$SUPABASE_URL/rest/v1/test_runs?id=eq.$TEST_RUN_ID" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"status":"running","started_at":"now()"}' && echo "✅ Run marqué running" || echo "⚠️ Patch failed"
+
+      - name: Run E2E tests (JSON output)
+        run: |
+          npx playwright test \
+            --config=playwright.config.ci.ts \
+            --reporter=json \
+            2>&1 | tee /tmp/playwright-stdout.txt
+          echo "$?" > /tmp/exit-code.txt
         env:
           PLAYWRIGHT_TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
           PLAYWRIGHT_TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
         continue-on-error: true
 
-      - name: Upload test results
+      - name: Show test output
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report-${{ github.run_id }}
-          path: |
-            test-results.json
-            playwright-report/
-          retention-days: 7
+        run: cat /tmp/playwright-stdout.txt | tail -30 || true
 
-      - name: Update run status via API
-        if: always()
+      - name: Upload results to Supabase
+        if: always() && env.TEST_RUN_ID != ''
         run: |
-          GITHUB_RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          echo "GitHub Run URL: $GITHUB_RUN_URL"
-          # Le reporter Supabase a déjà mis à jour le statut
-          # On met juste à jour l'URL du run GitHub
-          if [ -n "$TEST_RUN_ID" ]; then
-            curl -s -X PATCH \
+          if [ -f test-results.json ]; then
+            python3 scripts/upload-test-results.py test-results.json "$TEST_RUN_ID"
+          else
+            echo "❌ test-results.json absent"
+            curl -sf -X PATCH \
               "$SUPABASE_URL/rest/v1/test_runs?id=eq.$TEST_RUN_ID" \
               -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
               -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
               -H "Content-Type: application/json" \
-              -d "{\"github_run_id\": \"${{ github.run_id }}\", \"github_run_url\": \"$GITHUB_RUN_URL\"}"
+              -d '{"status":"failed","finished_at":"now()"}' || true
           fi
+
+      - name: Set GitHub run URL
+        if: always() && env.TEST_RUN_ID != ''
+        run: |
+          GH_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          curl -sf -X PATCH \
+            "$SUPABASE_URL/rest/v1/test_runs?id=eq.$TEST_RUN_ID" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"github_run_id\":\"${{ github.run_id }}\",\"github_run_url\":\"$GH_URL\"}" || true
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results-${{ github.run_id }}
+          path: |
+            test-results.json
+            playwright-report/
+          retention-days: 7

@@ -179,101 +179,103 @@ function SuiteCard({
   )
 }
 
-function StepRow({ step }: { step: TestStep }) {
+function StepRow({ step, runId }: { step: TestStep; runId: string }) {
   const [expanded, setExpanded] = useState(false)
-  const canExpand = !!(step.error_message || (step as any).screenshot_url)
+  const [comment, setComment] = useState('')
+  const [comments, setComments] = useState<Array<{id:string;comment:string;severity:string;created_at:string}>>([])
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (!expanded || !step.id) return
+    fetch(`/api/tests/comments?step_id=${step.id}`)
+      .then(r => r.ok ? r.json() : { comments: [] })
+      .then(d => setComments(d.comments ?? []))
+      .catch(() => {})
+  }, [expanded, step.id])
+
+  const saveComment = async () => {
+    if (!comment.trim()) return
+    setSaving(true)
+    try {
+      await fetch('/api/tests/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ step_id: step.id, run_id: runId, test_id: step.test_id, comment: comment.trim(), severity: step.status === 'failed' ? 'bug' : 'note' }),
+      })
+      setComment('')
+      const r = await fetch(`/api/tests/comments?step_id=${step.id}`)
+      const d = await r.json()
+      setComments(d.comments ?? [])
+    } finally { setSaving(false) }
+  }
 
   return (
     <div className={`border-b border-zinc-50 last:border-0 ${step.status === 'running' ? 'bg-amber-50/40' : ''}`}>
       <button
         className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-zinc-50 transition-colors"
-        onClick={() => canExpand && setExpanded(!expanded)}
+        onClick={() => setExpanded(!expanded)}
       >
-        {/* Status icon */}
         <span className={`text-sm font-bold w-4 flex-shrink-0 ${STATUS_COLOR[step.status]} ${step.status === 'running' ? 'animate-pulse' : ''}`}>
           {STATUS_ICON[step.status]}
         </span>
-
-        {/* ID badge */}
-        <span className="text-[10px] font-mono font-bold text-zinc-400 w-8 flex-shrink-0">
-          {step.test_id}
-        </span>
-
-        {/* Title */}
-        <span className={`text-xs flex-1 ${
-          step.status === 'failed' ? 'text-[#dc2626]' :
-          step.status === 'passed' ? 'text-[#1a1918]' :
-          step.status === 'running' ? 'text-[#c8a96e] font-medium' :
-          'text-zinc-400'
-        }`}>
+        <span className="text-[10px] font-mono font-bold text-zinc-400 w-8 flex-shrink-0">{step.test_id}</span>
+        <span className={`text-xs flex-1 ${step.status === 'failed' ? 'text-[#dc2626]' : step.status === 'passed' ? 'text-[#1a1918]' : step.status === 'running' ? 'text-[#c8a96e] font-medium' : 'text-zinc-400'}`}>
           {step.title}
         </span>
-
-        {/* Screenshot indicator */}
-        {(step as any).screenshot_url && (
-          <span className="text-[10px] text-zinc-300 flex-shrink-0">📷</span>
-        )}
-
-        {/* Duration */}
-        {step.duration_ms && (
-          <span className="text-[10px] text-zinc-400 flex-shrink-0 font-mono">
-            {fmtDuration(step.duration_ms)}
-          </span>
-        )}
-
-        {/* Expand indicator */}
-        {canExpand && (
-          <span className="text-[10px] text-zinc-300">{expanded ? '▲' : '▼'}</span>
-        )}
+        {(step as any).screenshot_url && <span className="text-[10px] text-zinc-300 flex-shrink-0">📷</span>}
+        {comments.length > 0 && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{comments.length}💬</span>}
+        {step.duration_ms && <span className="text-[10px] text-zinc-400 font-mono">{step.duration_ms < 1000 ? step.duration_ms+'ms' : (step.duration_ms/1000).toFixed(1)+'s'}</span>}
+        <span className="text-[10px] text-zinc-300">{expanded ? '▲' : '▼'}</span>
       </button>
 
-      {/* Expanded: screenshot + erreur */}
       {expanded && (
         <div className="px-4 pb-4 ml-7 space-y-3">
-          {/* Screenshot */}
           {(step as any).screenshot_url && (
             <div className="rounded-xl overflow-hidden border border-zinc-200 shadow-sm">
               <div className="bg-zinc-800 px-3 py-1.5 flex items-center gap-2">
                 <div className="flex gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-400"/><span className="w-2.5 h-2.5 rounded-full bg-yellow-400"/><span className="w-2.5 h-2.5 rounded-full bg-green-400"/>
                 </div>
-                <span className="text-[10px] text-zinc-400 flex-1 truncate">
-                  sunny-interns-os.vercel.app — {step.test_id} {step.title}
-                </span>
-                <a
-                  href={(step as any).screenshot_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={e => e.stopPropagation()}
-                  className="text-[10px] text-zinc-400 hover:text-zinc-200 underline"
-                >
-                  Ouvrir ↗
-                </a>
+                <span className="text-[10px] text-zinc-400 flex-1 truncate">sunny-interns-os.vercel.app — {step.test_id}</span>
+                <a href={(step as any).screenshot_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-[10px] text-zinc-400 hover:text-zinc-200 underline">Plein écran ↗</a>
               </div>
-              <img
-                src={(step as any).screenshot_url}
-                alt={`Screenshot ${step.test_id}`}
-                className="w-full object-cover max-h-64 object-top"
-                loading="lazy"
-              />
+              <img src={(step as any).screenshot_url} alt={`Screenshot ${step.test_id}`} className="w-full object-cover max-h-72 object-top" loading="lazy"/>
             </div>
           )}
-
-          {/* Erreur */}
           {step.error_message && (
             <div className="bg-red-50 border border-red-100 rounded-lg p-3">
-              <p className="text-[11px] font-mono text-[#dc2626] break-all leading-relaxed">
-                {step.error_message}
-              </p>
+              <p className="text-[10px] text-zinc-400 font-semibold mb-1">Erreur Playwright</p>
+              <p className="text-[11px] font-mono text-[#dc2626] break-all leading-relaxed">{step.error_message}</p>
             </div>
           )}
+          {comments.map(c => (
+            <div key={c.id} className={`rounded-lg p-2.5 text-xs border ${c.severity === 'bug' ? 'bg-red-50 border-red-100 text-[#dc2626]' : c.severity === 'warning' ? 'bg-amber-50 border-amber-100 text-amber-700' : 'bg-zinc-50 border-zinc-100 text-zinc-600'}`}>
+              <div className="flex gap-2 mb-1">
+                <span className="font-bold text-[10px] uppercase">{c.severity}</span>
+                <span className="text-[10px] opacity-50">{new Date(c.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>
+              </div>
+              {c.comment}
+            </div>
+          ))}
+          <div className="flex gap-2 items-start">
+            <textarea value={comment} onChange={e => setComment(e.target.value)}
+              placeholder={step.status === 'failed' ? '🐛 Décrire le bug observé...' : '📝 Note sur cette étape...'}
+              className="flex-1 text-xs border border-zinc-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
+              rows={2}
+              onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveComment() }}
+            />
+            <button onClick={saveComment} disabled={saving || !comment.trim()}
+              className="px-3 py-2 text-xs font-semibold rounded-lg bg-[#1a1918] text-white disabled:opacity-40 hover:bg-zinc-700 transition-colors">
+              {saving ? '...' : '💾 Sauver'}
+            </button>
+          </div>
+          <p className="text-[10px] text-zinc-300">⌘+Entrée pour sauvegarder · bug / warning / note</p>
         </div>
       )}
     </div>
   )
 }
+
 
 function RunPanel({
   run,
@@ -382,7 +384,7 @@ function RunPanel({
               </span>
             </div>
             {suiteSteps.map(step => (
-              <StepRow key={step.id} step={step} />
+              <StepRow key={step.id} step={step} runId={run.id} />
             ))}
           </div>
         ))}
