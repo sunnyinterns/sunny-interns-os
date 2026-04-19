@@ -533,6 +533,18 @@ export function TestDashboard({ suites }: Props) {
     }
   }, [loadHistory])
 
+  const handleQuickRun = useCallback(async () => {
+    setError(null)
+    setLaunching('Q')
+    try {
+      const res = await fetch('/api/tests/run-quick', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error ?? 'Erreur quick run'); setLaunching(null); return }
+      setActiveRunId(data.run_id)
+      await loadHistory()
+    } catch { setError('Erreur réseau'); setLaunching(null) }
+  }, [loadHistory])
+
   // ── Résumé global ──────────────────────────────────────────────────────────
   const lastRuns = suites.reduce<Record<string, TestRun | null>>((acc, s) => {
     acc[s.suite] = runs.find(r => r.suite === s.suite || r.suite === 'all') ?? null
@@ -574,6 +586,14 @@ export function TestDashboard({ suites }: Props) {
           {launching === 'all' || activeRun?.status === 'running'
             ? '⏳ En cours…'
             : '▶ Tout lancer'}
+        </button>
+        <button
+          onClick={handleQuickRun}
+          disabled={!!launching}
+          className={`flex-shrink-0 px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${launching ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed' : 'bg-zinc-700 text-white hover:bg-zinc-600 active:scale-[0.98] shadow-sm'}`}
+          title="Vérifie les 17 pages clés en ~15s sans GitHub CI"
+        >
+          {launching === 'Q' ? '⏳ Quick...' : '⚡ Quick Check'}
         </button>
       </div>
 
