@@ -103,8 +103,8 @@ except FileNotFoundError:
     sys.exit(1)
 
 stats = data.get("stats", {})
-total   = stats.get("expected", 0)
-passed  = stats.get("expected", 0) - stats.get("unexpected", 0) - stats.get("skipped", 0)
+total   = stats.get('expected', 0) + stats.get('unexpected', 0) + stats.get('skipped', 0)
+passed  = stats.get("expected", 0)
 failed  = stats.get("unexpected", 0)
 skipped = stats.get("skipped", 0)
 duration_ms = int(stats.get("duration", 0))
