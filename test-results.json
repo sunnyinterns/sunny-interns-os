@@ -1,0 +1,774 @@
+{
+  "config": {
+    "configFile": "/Users/sidneyrubinsztejn/sunny-interns-os/playwright.config.ci.ts",
+    "rootDir": "/Users/sidneyrubinsztejn/sunny-interns-os",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {},
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/sidneyrubinsztejn/sunny-interns-os/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {},
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/Users/sidneyrubinsztejn/sunny-interns-os",
+        "testIgnore": [],
+        "testMatch": [
+          "/.*\\.setup\\.ts/"
+        ],
+        "timeout": 45000
+      },
+      {
+        "outputDir": "/Users/sidneyrubinsztejn/sunny-interns-os/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {},
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/sidneyrubinsztejn/sunny-interns-os",
+        "testIgnore": [],
+        "testMatch": [
+          "tests/workflow/**/*.{spec,setup}.ts"
+        ],
+        "timeout": 45000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "tests/workflow/00-auth.setup.ts",
+      "file": "tests/workflow/00-auth.setup.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "authenticate",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "setup",
+              "projectName": "setup",
+              "results": [],
+              "status": "skipped"
+            },
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "0d534364d5e650d3bd2b-998a87054a779cad3abc",
+          "file": "tests/workflow/00-auth.setup.ts",
+          "line": 9,
+          "column": 6
+        }
+      ]
+    },
+    {
+      "title": "tests/workflow/01-lead.spec.ts",
+      "file": "tests/workflow/01-lead.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "A1: cases page shows candidates",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "4b006dbffae8382afbce-d79cfae7c5a230cc7431",
+          "file": "tests/workflow/01-lead.spec.ts",
+          "line": 5,
+          "column": 5
+        },
+        {
+          "title": "A2: clicking a candidate loads without 500",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "4b006dbffae8382afbce-0d556112d0edbda75607",
+          "file": "tests/workflow/01-lead.spec.ts",
+          "line": 11,
+          "column": 5
+        },
+        {
+          "title": "A3: notifications page loads",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "4b006dbffae8382afbce-001cf283da5ba78201ca",
+          "file": "tests/workflow/01-lead.spec.ts",
+          "line": 25,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "tests/workflow/02-rdv.spec.ts",
+      "file": "tests/workflow/02-rdv.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "A4: rdv_booked case loads and shows profile",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "bcdf717270169bf97e55-25eab128deea4824345f",
+          "file": "tests/workflow/02-rdv.spec.ts",
+          "line": 5,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "tests/workflow/03-qualification.spec.ts",
+      "file": "tests/workflow/03-qualification.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "A5: en-attente page loads with pending items",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "991cfe880a364e1df71c-0c0a858d66a5a698c7ed",
+          "file": "tests/workflow/03-qualification.spec.ts",
+          "line": 5,
+          "column": 5
+        },
+        {
+          "title": "A6: qualification_done case portal loads via portal_token",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "991cfe880a364e1df71c-80f913d96ddf0e033bcc",
+          "file": "tests/workflow/03-qualification.spec.ts",
+          "line": 12,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "tests/workflow/04-job-submitted.spec.ts",
+      "file": "tests/workflow/04-job-submitted.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "A7: job_submitted case staffing tab shows job info",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "ffcfdd08913fbc425686-21ce1fdc8e2e16f1cfee",
+          "file": "tests/workflow/04-job-submitted.spec.ts",
+          "line": 5,
+          "column": 5
+        },
+        {
+          "title": "A8: en-attente page loads without error",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "ffcfdd08913fbc425686-4ec054d26e12a9851399",
+          "file": "tests/workflow/04-job-submitted.spec.ts",
+          "line": 26,
+          "column": 5
+        },
+        {
+          "title": "A9: job_submitted portal loads",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "ffcfdd08913fbc425686-90defe2987b22dc68d5e",
+          "file": "tests/workflow/04-job-submitted.spec.ts",
+          "line": 37,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "tests/workflow/05-job-retained.spec.ts",
+      "file": "tests/workflow/05-job-retained.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "A10: en-attente page loads without error",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "1f3d5fcb07441542edf9-ba830b3faf586e5f47ee",
+          "file": "tests/workflow/05-job-retained.spec.ts",
+          "line": 5,
+          "column": 5
+        },
+        {
+          "title": "A11: job_retained portal shows upload or convention",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "1f3d5fcb07441542edf9-d843d7120e8d4b5fc293",
+          "file": "tests/workflow/05-job-retained.spec.ts",
+          "line": 21,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "tests/workflow/06-convention.spec.ts",
+      "file": "tests/workflow/06-convention.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "A12: notifications page has content",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "567eca3de5aa28a84caf-b8a661a621a0cff8e71a",
+          "file": "tests/workflow/06-convention.spec.ts",
+          "line": 5,
+          "column": 5
+        },
+        {
+          "title": "A13: convention_signed case billing tab loads without 500",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "567eca3de5aa28a84caf-26d03a39cbc4ab4e04b8",
+          "file": "tests/workflow/06-convention.spec.ts",
+          "line": 12,
+          "column": 5
+        },
+        {
+          "title": "A14: convention_signed portal loads",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "567eca3de5aa28a84caf-6866a34b533fa7c76e6a",
+          "file": "tests/workflow/06-convention.spec.ts",
+          "line": 31,
+          "column": 5
+        },
+        {
+          "title": "A15: payment_pending portal loads",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "567eca3de5aa28a84caf-25b600fac8270f445e6e",
+          "file": "tests/workflow/06-convention.spec.ts",
+          "line": 44,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "tests/workflow/07-payment.spec.ts",
+      "file": "tests/workflow/07-payment.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "A16: clients page loads",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "d8332f7346b1d2e2c52d-49c1a4a01b89e31ae992",
+          "file": "tests/workflow/07-payment.spec.ts",
+          "line": 5,
+          "column": 5
+        },
+        {
+          "title": "A17: en-attente shows waiting items",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "d8332f7346b1d2e2c52d-acaee6bb90fb94645c27",
+          "file": "tests/workflow/07-payment.spec.ts",
+          "line": 11,
+          "column": 5
+        },
+        {
+          "title": "A18: payment_received portal loads",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "d8332f7346b1d2e2c52d-7ca3dc1795aca7163ffd",
+          "file": "tests/workflow/07-payment.spec.ts",
+          "line": 18,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "tests/workflow/08-visa.spec.ts",
+      "file": "tests/workflow/08-visa.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "A19: en-attente page loads",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "c42759a959aaa46ae4e0-429145d62ef8c2981743",
+          "file": "tests/workflow/08-visa.spec.ts",
+          "line": 5,
+          "column": 5
+        },
+        {
+          "title": "A20: visa_submitted portal loads",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "c42759a959aaa46ae4e0-eb9f2192037e975b7de5",
+          "file": "tests/workflow/08-visa.spec.ts",
+          "line": 12,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "tests/workflow/09-visa-received.spec.ts",
+      "file": "tests/workflow/09-visa-received.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "A21: notifications page loads",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "c53986581535a72cc083-262cde1f3841769121ef",
+          "file": "tests/workflow/09-visa-received.spec.ts",
+          "line": 5,
+          "column": 5
+        },
+        {
+          "title": "A22: en-attente shows waiting items",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "c53986581535a72cc083-a2af6951249ab4979ac3",
+          "file": "tests/workflow/09-visa-received.spec.ts",
+          "line": 12,
+          "column": 5
+        },
+        {
+          "title": "A23: visa_received portal loads",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "c53986581535a72cc083-8bca7f9a39d02aad2371",
+          "file": "tests/workflow/09-visa-received.spec.ts",
+          "line": 19,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "tests/workflow/10-arrival.spec.ts",
+      "file": "tests/workflow/10-arrival.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "A24: arrival_prep case shows flight or arrival info",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "6c642b33316bd24ad7f0-bd00ec01df5d5a195f55",
+          "file": "tests/workflow/10-arrival.spec.ts",
+          "line": 5,
+          "column": 5
+        },
+        {
+          "title": "A25: arrival_prep portal loads",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "6c642b33316bd24ad7f0-a47c3833423866113d48",
+          "file": "tests/workflow/10-arrival.spec.ts",
+          "line": 21,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "tests/workflow/11-active.spec.ts",
+      "file": "tests/workflow/11-active.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "A26: clients page shows active clients",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "4821a84155a510f6ffd9-0be4d793c706b8ede4a6",
+          "file": "tests/workflow/11-active.spec.ts",
+          "line": 5,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "tests/workflow/12-alumni.spec.ts",
+      "file": "tests/workflow/12-alumni.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "A27: alumni page loads",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "9beb46b7a627279b9510-685ad9c960679f90bcd7",
+          "file": "tests/workflow/12-alumni.spec.ts",
+          "line": 5,
+          "column": 5
+        },
+        {
+          "title": "A28: alumni portal loads",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "9beb46b7a627279b9510-cdef57dd825cb7587641",
+          "file": "tests/workflow/12-alumni.spec.ts",
+          "line": 11,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-04-19T15:59:01.825Z",
+    "duration": 196.59000000000003,
+    "expected": 0,
+    "skipped": 30,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

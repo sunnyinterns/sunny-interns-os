@@ -2,9 +2,9 @@ import { defineConfig } from '@playwright/test'
 
 const SUITE = process.env.TEST_SUITE ?? 'all'
 const suiteToGlob: Record<string, string> = {
-  A: 'tests/workflow/**/*.ts', B: 'tests/branches/**/*.ts',
-  C: 'tests/admin/**/*.ts',   E: 'tests/settings/**/*.ts',
-  all: 'tests/**/*.ts',
+  A: 'tests/workflow/**/*.{spec,setup}.ts', B: 'tests/branches/**/*.ts',
+  C: 'tests/admin/**/*.{spec,setup}.ts',   E: 'tests/settings/**/*.{spec,setup}.ts',
+  all: 'tests/**/*.{spec,setup}.ts',
 }
 
 export default defineConfig({
