@@ -184,12 +184,7 @@ for r in all_results:
     if r["error"]: payload["error_message"] = r["error"]
     if screenshot_url: payload["screenshot_url"] = screenshot_url
     
-    # Chercher le step existant
-    existing = sb_req("GET", f"test_steps?run_id=eq.{RUN_ID}&test_id=eq.{tid}&select=id")
-    if existing and len(existing) > 0:
-        sb_req("PATCH", f"test_steps?id=eq.{existing[0]['id']}", payload)
-    else:
-        sb_req("POST", "test_steps", payload)
+    sb_req("PATCH", f"test_steps?run_id=eq.{RUN_ID}&test_id=eq.{tid}", payload)
     
     icon = "✓" if r["status"] == "passed" else "✗" if r["status"] == "failed" else "-"
     print(f"  {icon} {tid}: {r['title'][:40]} ({r['duration']}ms)")

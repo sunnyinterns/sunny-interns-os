@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useState, useCallback } from 'react'
+import { DebriefModal } from '@/components/cases/DebriefModal'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CaseData = Record<string, any>
@@ -39,6 +40,7 @@ interface BandeauProps {
 export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPortal, onPatchStatus, locale }: BandeauProps) {
   const status = caseData.status as string
   const [patchingConvention, setPatchingConvention] = useState(false)
+  const [debriefOpen, setDebriefOpen] = useState(false)
 
   const handleConventionSigned = useCallback(async () => {
     if (patchingConvention) return
@@ -286,6 +288,57 @@ export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPorta
     )
   }
 
+  // ── TO RECONTACT ──
+  if (status === 'to_recontact') {
+    const recontactMonth = (caseData as any).recontact_month as string | null
+    const monthLabel = recontactMonth
+      ? new Date(recontactMonth + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+      : '—'
+    const isPast = recontactMonth ? new Date(recontactMonth + '-01') <= new Date() : false
+    return bandeau(
+      isPast ? '#fffbeb' : '#fdf8f0',
+      isPast ? '#fcd34d' : '#c8a96e60',
+      <>
+        <div className="flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: isPast ? '#d97706' : '#c8a96e' }}>
+            {isPast ? '⚠️ À relancer maintenant' : '📅 À recontacter'}
+          </p>
+          <p className="text-sm font-medium text-[#1a1918]">
+            {intern?.first_name ?? 'Ce candidat'} sera à relancer en <strong>{monthLabel}</strong>
+          </p>
+          {(caseData as any).recontact_reason && (
+            <p className="text-xs text-zinc-400 mt-0.5 truncate max-w-xs">{(caseData as any).recontact_reason}</p>
+          )}
+        </div>
+        <div className="flex gap-2 flex-shrink-0">
+          <button onClick={() => setDebriefOpen(true)}
+            className="px-3 py-1.5 text-xs rounded-lg border border-zinc-200 text-zinc-600 bg-white whitespace-nowrap">
+            Modifier →
+          </button>
+          {isPast && (
+            <button className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#c8a96e] text-white whitespace-nowrap">
+              📧 Envoyer relance
+            </button>
+          )}
+        </div>
+      </>,
+      isPast
+        ? <><span>🔔</span><span><strong>Alerte :</strong> Le mois de relance est arrivé — contacter {intern?.first_name ?? 'le candidat'} maintenant</span></>
+        : <><span>📅</span><span>Alerte To-Do créée · Relance prévue en {monthLabel}</span></>
+    )
+  }
+
   // Aucun bandeau pour les autres statuts (client — géré dans /fr/clients)
-  return null
+  return (
+    <>
+      {debriefOpen && (
+        <DebriefModal
+          caseId={caseData.id as string}
+          internName={intern ? `${intern.first_name ?? ''} ${intern.last_name ?? ''}`.trim() : undefined}
+          onClose={() => setDebriefOpen(false)}
+          onSaved={() => { setDebriefOpen(false); window.location.reload() }}
+        />
+      )}
+    </>
+  )
 }

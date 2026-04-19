@@ -59,6 +59,7 @@ export function Sidebar() {
   const [newLeadsCount, setNewLeadsCount] = useState<number | null>(null)
   const [activeClientsCount, setActiveClientsCount] = useState<number | null>(null)
   const [candidatsCount, setCandidatsCount] = useState<number | null>(null)
+  const [recontactCount, setRecontactCount] = useState<number | null>(null)
   const [todoCount, setTodoCount] = useState<number>(0)
   const [notifCount, setNotifCount] = useState<number>(0)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -76,6 +77,7 @@ export function Sidebar() {
     fetch('/api/cases?status=lead').then(r => r.ok ? r.json() : []).then((d: unknown[]) => setNewLeadsCount(Array.isArray(d) ? d.length : 0)).catch(() => {})
     fetch('/api/cases?type=client').then(r => r.ok ? r.json() : []).then((d: unknown[]) => setActiveClientsCount(Array.isArray(d) ? d.length : 0)).catch(() => {})
     fetch('/api/cases?type=candidate').then(r => r.ok ? r.json() : []).then((d: unknown[]) => setCandidatsCount(Array.isArray(d) ? d.length : 0)).catch(() => {})
+    fetch('/api/cases?status=to_recontact').then(r => r.ok ? r.json() : []).then((d: unknown[]) => setRecontactCount(Array.isArray(d) ? d.length : 0)).catch(() => {})
     fetch('/api/notifications/unread-count').then(r => r.ok ? r.json() : { count: 0 }).then((d: { count?: number }) => setNotifCount(d.count ?? 0)).catch(() => {})
   }, [])
 
@@ -161,6 +163,7 @@ export function Sidebar() {
         <Label>Candidats</Label>
         <NavLink href="/fr/leads" label="Leads" d={ICONS.leads} badge={newLeadsCount} />
         <NavLink href="/fr/cases" label="Candidats" d={ICONS.candidats} badge={candidatsCount} />
+        <NavLink href="/fr/recontact" label="À recontacter" d={ICONS.clock} badge={recontactCount} urgent={!!(recontactCount && recontactCount > 0)} />
         <NavLink href="/fr/clients" label="Clients" d={ICONS.clients} badge={activeClientsCount} />
         <NavLink href="/fr/alumni" label="Alumni" d={ICONS.alumni} />
 
