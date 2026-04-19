@@ -1,11 +1,6 @@
-from datetime import datetime
-#!/usr/bin/env python3
-"""
-Upload Playwright JSON results → Supabase
-Appelé après `npx playwright test --reporter=json`
-Usage: python3 scripts/upload-test-results.py test-results.json <RUN_ID>
-"""
-import json, sys, os, re, urllib.request, urllib.error
+from datetime import datetime, timezone
+import json, sys, os, re, glob
+import urllib.request, urllib.error
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUPABASE_URL", "")
 SERVICE_KEY  = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
@@ -13,44 +8,61 @@ RUN_ID       = sys.argv[2] if len(sys.argv) > 2 else os.environ.get("TEST_RUN_ID
 RESULTS_FILE = sys.argv[1] if len(sys.argv) > 1 else "test-results.json"
 
 if not all([SUPABASE_URL, SERVICE_KEY, RUN_ID]):
-    print(f"❌ Missing env: SUPABASE_URL={bool(SUPABASE_URL)}, SERVICE_KEY={bool(SERVICE_KEY)}, RUN_ID={bool(RUN_ID)}")
+    print(f"Missing: SUPABASE_URL={bool(SUPABASE_URL)} SERVICE_KEY={bool(SERVICE_KEY)} RUN_ID={bool(RUN_ID)}")
     sys.exit(1)
 
-def sb(method, table, data=None, params=""):
-    url = f"{SUPABASE_URL}/rest/v1/{table}{params}"
-    body = json.dumps(data).encode() if data else b""
+def now():
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+def sb_req(method, path, data=None, content_type="application/json"):
+    url = f"{SUPABASE_URL}/rest/v1/{path}"
+    body = json.dumps(data).encode() if data and content_type == "application/json" else data
     req = urllib.request.Request(url, data=body, method=method)
     req.add_header("apikey", SERVICE_KEY)
     req.add_header("Authorization", f"Bearer {SERVICE_KEY}")
-    req.add_header("Content-Type", "application/json")
+    req.add_header("Content-Type", content_type)
     req.add_header("Prefer", "return=representation")
     try:
         with urllib.request.urlopen(req) as r:
-            return json.loads(r.read()) if r.read else []
+            raw = r.read()
+            return json.loads(raw) if raw else []
     except urllib.error.HTTPError as e:
-        print(f"  ⚠️  {method} {table}: {e.code} {e.read().decode()[:100]}")
+        print(f"  HTTP {e.code}: {e.read().decode()[:200]}")
         return None
 
-def patch_run(data):
-    sb("PATCH", "test_runs", data, f"?id=eq.{RUN_ID}")
+def upload_screenshot(png_path, step_id):
+    if not os.path.exists(png_path): return None
+    try:
+        with open(png_path, "rb") as f:
+            data = f.read()
+        key = f"{RUN_ID}/{step_id}.png"
+        req = urllib.request.Request(
+            f"{SUPABASE_URL}/storage/v1/object/test-screenshots/{key}",
+            data=data, method="POST"
+        )
+        req.add_header("apikey", SERVICE_KEY)
+        req.add_header("Authorization", f"Bearer {SERVICE_KEY}")
+        req.add_header("Content-Type", "image/png")
+        req.add_header("x-upsert", "true")
+        with urllib.request.urlopen(req) as r:
+            return f"{SUPABASE_URL}/storage/v1/object/public/test-screenshots/{key}"
+    except Exception as e:
+        print(f"  Screenshot upload failed: {e}")
+        return None
 
-def patch_step(step_id, data):
-    sb("PATCH", "test_steps", data, f"?id=eq.{step_id}")
-
-# ID mapping — titre exact → test_id
 TITLE_TO_ID = {
-    "authenticate": "A0",
+    "authenticate": "A0", "A0: authenticate": "A0",
     "A1: cases page shows candidates": "A1",
     "A2: clicking a candidate loads without 500": "A2",
     "A3: notifications page loads": "A3",
-    "A4: rdv booked case has google meet link": "A4",
-    "A5: en-attente shows qualification items": "A5",
-    "A6: portal for qualification_done loads": "A6",
-    "A7: job_submitted case is staffed": "A7",
-    "A8: en-attente shows employer or candidate": "A8",
-    "A9: portal shows accept/reject": "A9",
-    "A10: en-attente shows convention or candidate": "A10",
-    "A11: portal for job_retained has upload": "A11",
+    "A4: rdv_booked case loads and shows profile": "A4",
+    "A5: en-attente page loads with pending items": "A5",
+    "A6: qualification_done case portal loads via portal_token": "A6",
+    "A7: job_submitted case staffing tab shows job info": "A7",
+    "A8: en-attente page loads without error": "A8",
+    "A9: job_submitted portal loads": "A9",
+    "A10: en-attente page loads without error": "A10",
+    "A11: job_retained portal shows upload or convention": "A11",
     "A12: notifications page has content": "A12",
     "A13: convention_signed case billing tab loads without 500": "A13",
     "A14: convention_signed portal loads": "A14",
@@ -89,111 +101,104 @@ TITLE_TO_ID = {
 }
 
 def get_test_id(title):
-    if title in TITLE_TO_ID:
-        return TITLE_TO_ID[title]
-    m = re.match(r'^([ABCE]\d+):', title)
-    return m.group(1) if m else title[:10]
+    if title in TITLE_TO_ID: return TITLE_TO_ID[title]
+    m = re.match(r"^([ABCE]\d+):", title)
+    return m.group(1) if m else title[:12]
 
-# Charger les résultats
-try:
-    with open(RESULTS_FILE) as f:
-        data = json.load(f)
-except FileNotFoundError:
-    print(f"❌ {RESULTS_FILE} not found")
-    patch_run({"status": "failed"})
-    sys.exit(1)
+def find_screenshot(title, project):
+    # Playwright saves screenshots in test-results/<file>-<title>-<project>/
+    safe = re.sub(r"[^a-zA-Z0-9-]", "-", title)[:50]
+    patterns = [
+        f"test-results/**/*{safe}*/*.png",
+        f"test-results/**/*.png",
+    ]
+    for p in patterns:
+        files = glob.glob(p, recursive=True)
+        if files:
+            # Prendre le dernier screenshot (fin du test)
+            return sorted(files)[-1]
+    return None
 
-stats = data.get("stats", {})
-total   = stats.get('expected', 0) + stats.get('unexpected', 0) + stats.get('skipped', 0)
-passed  = stats.get("expected", 0)
-failed  = stats.get("unexpected", 0)
-skipped = stats.get("skipped", 0)
-duration_ms = int(stats.get("duration", 0))
-overall_status = "passed" if failed == 0 else "failed"
-
-print(f"📊 Total={total} ✓={passed} ✗={failed} skip={skipped} ({duration_ms}ms) → {overall_status}")
-
-# Upsert les steps directement dans Supabase
-step_map = {}  # sera rempli au fur et a mesure
-
-# Parser chaque test dans le JSON Playwright
-def parse_suite(suite, results):
+def parse_tests(suite, results):
     for spec in suite.get("specs", []):
         for test in spec.get("tests", []):
             title = test.get("title", "")
-            test_id = get_test_id(title)
             status_raw = test.get("status", "")
-            status = "passed" if status_raw == "expected" else \
-                     "failed" if status_raw == "unexpected" else \
-                     "skipped"
+            status = "passed" if status_raw == "expected" else "skipped" if status_raw == "skipped" else "failed"
             duration = sum(r.get("duration", 0) for r in test.get("results", []))
             error_msg = None
-            screenshot_url = None
-
+            screenshot_path = None
             for r in test.get("results", []):
                 if r.get("error"):
                     error_msg = (r["error"].get("message") or "")[:500]
                 for att in r.get("attachments", []):
                     if att.get("name") == "screenshot" and att.get("path"):
-                        # Pas d'upload depuis ici (pas de fichier local), on note juste le path
-                        pass
-
-            results.append({
-                "test_id": test_id,
-                "title": title,
-                "status": status,
-                "duration_ms": duration,
-                "error_message": error_msg,
-            })
-
+                        screenshot_path = att["path"]
+            results.append({"title": title, "status": status, "duration": duration,
+                            "error": error_msg, "screenshot": screenshot_path})
     for child in suite.get("suites", []):
-        parse_suite(child, results)
+        parse_tests(child, results)
 
+# Charger le JSON
+try:
+    data = json.load(open(RESULTS_FILE))
+except Exception as e:
+    print(f"Cannot read {RESULTS_FILE}: {e}")
+    sb_req("PATCH", f"test_runs?id=eq.{RUN_ID}", {"status": "failed", "finished_at": now()})
+    sys.exit(1)
+
+stats = data.get("stats", {})
+total    = stats.get("expected", 0) + stats.get("unexpected", 0) + stats.get("skipped", 0)
+passed   = stats.get("expected", 0)
+failed   = stats.get("unexpected", 0)
+skipped  = stats.get("skipped", 0)
+duration = int(stats.get("duration", 0))
+status   = "passed" if failed == 0 else "failed"
+print(f"Results: {total} total, {passed} passed, {failed} failed, {skipped} skipped ({duration}ms) → {status}")
+
+# Parser chaque test
 all_results = []
 for suite in data.get("suites", []):
-    parse_suite(suite, all_results)
+    parse_tests(suite, all_results)
+print(f"Parsed {len(all_results)} tests")
 
-print(f"🔍 {len(all_results)} tests parsés")
-
-# Mettre à jour chaque step dans Supabase
-updated = 0
+# Upsert chaque step
+sort = 0
 for r in all_results:
-    tid = r["test_id"]
-    step_id = step_map.get(tid)
-    # Upsert : patch si existe, sinon insert
+    tid = get_test_id(r["title"])
+    suite_letter = tid[0] if tid and tid[0] in "ABCE" else "A"
+    
+    # Uploader le screenshot
+    screenshot_url = None
+    if r["screenshot"]:
+        screenshot_url = upload_screenshot(r["screenshot"], f"{tid}-{sort}")
+        if screenshot_url:
+            print(f"  📷 {tid}: screenshot uploadé")
+    
     payload = {
-        "run_id": RUN_ID,
-        "test_id": tid,
-        "title": r["title"],
-        "suite": tid[0] if tid else "A",
-        "status": r["status"],
-        "duration_ms": r["duration_ms"],
-        "finished_at": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "run_id": RUN_ID, "test_id": tid, "title": r["title"],
+        "suite": suite_letter, "status": r["status"],
+        "duration_ms": r["duration"],
+        "finished_at": now(), "sort_order": sort,
     }
-    if r["error_message"]:
-        payload["error_message"] = r["error_message"]
-    if step_id:
-        patch_step(step_id, payload)
+    if r["error"]: payload["error_message"] = r["error"]
+    if screenshot_url: payload["screenshot_url"] = screenshot_url
+    
+    # Chercher le step existant
+    existing = sb_req("GET", f"test_steps?run_id=eq.{RUN_ID}&test_id=eq.{tid}&select=id")
+    if existing and len(existing) > 0:
+        sb_req("PATCH", f"test_steps?id=eq.{existing[0]['id']}", payload)
     else:
-        # Chercher par test_id + run_id
-        res = sb("GET", "test_steps", params=f"?run_id=eq.{RUN_ID}&test_id=eq.{tid}&select=id")
-        if res and len(res) > 0:
-            patch_step(res[0]["id"], payload)
-        else:
-            sb("POST", "test_steps", payload)
-    icon = "✓" if r["status"] == "passed" else "✗" if r["status"] == "failed" else "—"
-    print(f"  {icon} {tid}: {r['title'][:50]} ({r['duration_ms']}ms)")
-    updated += 1
+        sb_req("POST", "test_steps", payload)
+    
+    icon = "✓" if r["status"] == "passed" else "✗" if r["status"] == "failed" else "-"
+    print(f"  {icon} {tid}: {r['title'][:40]} ({r['duration']}ms)")
+    sort += 1
 
-# Màj run final
-patch_run({
-    "status": overall_status,
-    "finished_at": "now()",
-    "duration_ms": duration_ms,
-    "total": total,
-    "passed": passed,
-    "failed": failed,
-    "skipped": skipped,
+# Finaliser le run
+sb_req("PATCH", f"test_runs?id=eq.{RUN_ID}", {
+    "status": status, "finished_at": now(),
+    "total": total, "passed": passed, "failed": failed, "skipped": skipped,
+    "duration_ms": duration,
 })
-
-print(f"\n✅ {updated}/{len(all_results)} steps mis à jour → run {overall_status}")
+print(f"Run {status}: {passed}/{total}")
