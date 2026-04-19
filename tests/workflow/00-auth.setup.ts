@@ -1,21 +1,30 @@
-import { test as setup, expect } from '@playwright/test'
+import { test as setup } from '@playwright/test'
+import * as fs from 'fs'
+import * as path from 'path'
 
-const SECRET = 'e2e-sunny-interns-2026'
+const AUTH_PATH = 'playwright/.auth/user.json'
+const SECRET    = 'e2e-sunny-interns-2026'
+const BASE      = process.env.TEST_BASE_URL ?? 'https://sunny-interns-os.vercel.app'
 
 setup('authenticate', async ({ page, context }) => {
-  await page.goto(`/api/tests/auth-setup?secret=${SECRET}`)
-  await page.waitForLoadState('networkidle')
-  await page.waitForTimeout(2000)
+  // Garantir que le dossier existe
+  fs.mkdirSync(path.dirname(AUTH_PATH), { recursive: true })
+
+  // Naviguer vers l'endpoint auth (signe via API Supabase + set cookies SSR)
+  const authUrl = `${BASE}/api/tests/auth-setup?secret=${SECRET}`
+  console.log('Auth URL:', authUrl)
+
+  const response = await page.goto(authUrl, { waitUntil: 'networkidle' })
+  console.log('Auth response status:', response?.status())
+  console.log('Final URL:', page.url())
+
+  // Sauvegarder même si pas parfait (évite crash chromium)
+  await context.storageState({ path: AUTH_PATH })
+  console.log('Auth state saved to', AUTH_PATH)
 
   const url = page.url()
-  console.log('Post-auth URL:', url)
-
   if (url.includes('/login')) {
-    await page.screenshot({ path: 'auth-failure.png' })
-    throw new Error(`Auth failed — still on login: ${url}`)
+    throw new Error(`Auth échouée — redirigé vers login: ${url}`)
   }
-
-  await expect(page).not.toHaveURL(/login/)
-  await context.storageState({ path: 'playwright/.auth/user.json' })
-  console.log('Auth saved OK')
+  console.log('Auth OK')
 })
