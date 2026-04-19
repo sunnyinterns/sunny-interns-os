@@ -13,6 +13,13 @@ const SECTIONS: Record<string, { title: string; items: SectionItem[] }> = {
       { href: 'general', icon: '🔧', label: 'General Settings', desc: 'WhatsApp, email, Fillout ID' },
     ],
   },
+  website: {
+    title: 'Website',
+    items: [
+      { href: 'website', icon: '🌐', label: 'Website CMS', desc: 'Hero video, images, titles — manage bali-interns.com content' },
+      { href: 'website/blog', icon: '📝', label: 'Blog Manager', desc: 'Create, edit and publish blog articles' },
+    ],
+  },
   staffing: {
     title: 'Staffing Database',
     items: [
