@@ -93,6 +93,9 @@ interface JobDetail {
     whatsapp_number?: string | null
     industry?: string | null
     location?: string | null
+    description?: string | null
+    website?: string | null
+    logo_url?: string | null
   } | null
   contacts?: Contact | null
   job_departments?: JobDepartment | null
@@ -321,11 +324,19 @@ export default function JobDetailPage() {
           {job.companies?.name && (
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-xl bg-[#c8a96e]/15 flex items-center justify-center text-sm font-bold text-[#c8a96e] flex-shrink-0">
-                {job.companies.name.charAt(0).toUpperCase()}
+                {job.companies.logo_url
+                  ? <img src={job.companies.logo_url} alt="" className="w-10 h-10 rounded-xl object-cover" />
+                  : job.companies.name.charAt(0).toUpperCase()}
               </div>
               <div>
-                <p className="text-sm font-medium text-[#1a1918]">{job.companies.name}</p>
+                <button
+                  onClick={() => router.push(`/${locale}/companies/${job.companies!.id}`)}
+                  className="text-sm font-medium text-[#1a1918] hover:text-[#c8a96e] transition-colors text-left"
+                >
+                  {job.companies.name}
+                </button>
                 {job.companies.location && <p className="text-xs text-zinc-400">{job.companies.location}</p>}
+                {job.companies.description && <p className="text-[11px] text-zinc-400 italic mt-0.5 max-w-[180px] truncate" title={job.companies.description}>{job.companies.description}</p>}
               </div>
             </div>
           )}

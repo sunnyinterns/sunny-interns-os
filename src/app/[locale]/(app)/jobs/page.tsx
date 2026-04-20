@@ -469,6 +469,17 @@ export default function JobsPage() {
                   >
                     🗑 Supprimer
                   </button>
+                  {j.is_public && j.seo_slug && (
+                    <a
+                      href={`/jobs/${j.seo_slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={e => e.stopPropagation()}
+                      className="text-[10px] text-green-600 hover:text-green-700 font-medium"
+                    >
+                      🌐 Voir ↗
+                    </a>
+                  )}
                 </div>
               </div>
             )

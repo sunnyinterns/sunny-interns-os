@@ -153,6 +153,8 @@ export default function CompanyDetailPage() {
   const [editNotes, setEditNotes] = useState('')
   // États manquants
   const [editDescription, setEditDescription] = useState('')
+  const [inlineEditingDesc, setInlineEditingDesc] = useState(false)
+  const [savingDesc, setSavingDesc] = useState(false)
   const [editSize, setEditSize] = useState('')
   const [editIsEmployer, setEditIsEmployer] = useState(false)
   const [editIsPartner, setEditIsPartner] = useState(false)
@@ -412,6 +414,18 @@ export default function CompanyDetailPage() {
     } catch {
       // ignore
     }
+  }
+
+  async function patchDescription(value: string) {
+    setSavingDesc(true)
+    await fetch(`/api/companies/${companyId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description: value || null }),
+    })
+    setCompany(prev => prev ? { ...prev, description: value || null } : prev)
+    setInlineEditingDesc(false)
+    setSavingDesc(false)
   }
 
   async function handleDeactivate() {
@@ -1115,7 +1129,45 @@ export default function CompanyDetailPage() {
               <div className="flex justify-between gap-3"><dt className="text-zinc-500">Taille</dt><dd className="text-[#1a1918]">{company.company_size ?? '—'}</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-zinc-500">Site web</dt><dd>{company.website ? (<a href={company.website} target="_blank" rel="noopener noreferrer" className="text-[#c8a96e] hover:underline text-xs">{company.website}</a>) : <span className="text-zinc-300">—</span>}</dd></div>
             </dl>
-            <p className="text-xs text-zinc-500 mt-2 pt-2 border-t border-zinc-50">{company.description ?? <span className="text-zinc-300 italic">Aucune description</span>}</p>
+            {/* Description — éditable inline */}
+            <div className="mt-3 pt-3 border-t border-zinc-50">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Description</p>
+                {!inlineEditingDesc && (
+                  <button onClick={() => { setEditDescription(company.description ?? ''); setInlineEditingDesc(true) }}
+                    className="text-[10px] text-zinc-300 hover:text-[#c8a96e] transition-colors">
+                    ✏️ Modifier
+                  </button>
+                )}
+              </div>
+              {inlineEditingDesc ? (
+                <div className="space-y-2">
+                  <textarea
+                    className="w-full px-3 py-2 text-sm border border-[#c8a96e] rounded-xl focus:outline-none resize-none"
+                    rows={3}
+                    value={editDescription}
+                    autoFocus
+                    onChange={e => setEditDescription(e.target.value)}
+                    placeholder="Décrivez l'activité principale de l'entreprise..."
+                    onKeyDown={e => { if (e.key === 'Escape') setInlineEditingDesc(false) }}
+                  />
+                  <div className="flex gap-2">
+                    <button onClick={() => void patchDescription(editDescription)} disabled={savingDesc}
+                      className="text-xs px-3 py-1.5 bg-[#c8a96e] text-white rounded-lg hover:bg-[#b8945a] disabled:opacity-50 font-medium">
+                      {savingDesc ? 'Sauvegarde...' : '✓ Sauvegarder'}
+                    </button>
+                    <button onClick={() => setInlineEditingDesc(false)}
+                      className="text-xs px-3 py-1.5 border border-zinc-200 text-zinc-500 rounded-lg hover:border-zinc-400">
+                      Annuler
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-zinc-600 leading-relaxed">
+                  {company.description ?? <span className="text-zinc-300 italic text-xs">Aucune description — cliquez sur Modifier</span>}
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="bg-white border border-zinc-100 rounded-xl p-4">

@@ -37,7 +37,7 @@ export async function GET(
           public_hook, public_vibe, public_perks, public_hashtags,
           seo_slug, cv_drop_enabled, cover_image_url, is_public,
           created_at, updated_at,
-          companies(id, name, contact_name, contact_email, contact_whatsapp, whatsapp_number, industry, location),
+          companies(id, name, contact_name, contact_email, contact_whatsapp, whatsapp_number, industry, location, description, website, logo_url),
           contacts!jobs_contact_id_fkey(id, first_name, last_name, job_title, email, whatsapp),
           job_departments(id, name, slug, categories)
         `)
