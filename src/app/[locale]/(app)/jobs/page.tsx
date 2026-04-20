@@ -86,6 +86,15 @@ const EMPTY_FORM = {
   company_type: '',
   background_image_url: '',
   parent_job_id: null as string | null,
+  // Champs Publication & Contenu
+  public_hook: '',
+  public_vibe: '',
+  public_perks: [] as string[],
+  public_hashtags: [] as string[],
+  seo_slug: '',
+  cv_drop_enabled: false,
+  cover_image_url: '',
+  is_public: false,
 }
 
 export default function JobsPage() {
@@ -209,6 +218,14 @@ export default function JobsPage() {
       is_recurring: form.is_recurring,
       company_type: form.company_type || null,
       background_image_url: form.background_image_url || null,
+      public_hook: form.public_hook || null,
+      public_vibe: form.public_vibe || null,
+      public_perks: form.public_perks.filter(Boolean),
+      public_hashtags: form.public_hashtags.filter(Boolean),
+      seo_slug: form.seo_slug || null,
+      cv_drop_enabled: form.cv_drop_enabled ?? false,
+      cover_image_url: form.cover_image_url || null,
+      is_public: form.is_public ?? false,
       parent_job_id: form.parent_job_id,
       destination_id: 'fc9ece85-e5d5-41d2-9142-79054244bbce',
     }
@@ -714,18 +731,107 @@ export default function JobsPage() {
                 </div>
               </div>
 
-              {/* ÉTAPE 6 — Social (collapsible) */}
-              <details className="pt-2 border-t border-zinc-100">
-                <summary className="text-xs font-bold text-zinc-400 uppercase tracking-wider cursor-pointer py-2">⑦ Social (avancé, optionnel)</summary>
-                <div className="space-y-2 mt-2">
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1">Type d&apos;entreprise</label>
-                    <input className={inputCls} value={form.company_type} onChange={e => setForm(p => ({ ...p, company_type: e.target.value }))} />
+              {/* ÉTAPE 6 — Publication & Contenu */}
+              <details className="pt-2 border-t border-zinc-100" open>
+                <summary className="text-xs font-bold uppercase tracking-wider cursor-pointer py-2 flex items-center gap-2" style={{color:'#c8a96e'}}>
+                  📢 Publication & Génération de contenu
+                </summary>
+                <div className="space-y-4 mt-3 bg-amber-50/40 rounded-xl p-4 border border-amber-100">
+
+                  {/* Activer la publication */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-[#1a1918]">Publier cette offre</p>
+                      <p className="text-xs text-zinc-400">Active la page publique + génération de contenu</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" checked={form.is_public} onChange={e => setForm(p => ({ ...p, is_public: e.target.checked }))} className="sr-only peer" />
+                      <div className="w-10 h-5 bg-zinc-200 peer-checked:bg-[#c8a96e] rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5" />
+                    </label>
                   </div>
+
+                  {/* Accroche */}
                   <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1">Image de fond (URL)</label>
-                    <input className={inputCls} value={form.background_image_url} onChange={e => setForm(p => ({ ...p, background_image_url: e.target.value }))} />
+                    <label className="block text-xs font-semibold text-zinc-600 mb-1">
+                      🎣 Accroche du post <span className="text-zinc-400 font-normal">(hook — max 100 car.)</span>
+                    </label>
+                    <input className={inputCls} maxLength={100}
+                      placeholder='Ex: "Tu veux bosser dans un resort 5⭐ à Bali ?"'
+                      value={form.public_hook}
+                      onChange={e => setForm(p => ({ ...p, public_hook: e.target.value }))} />
+                    <p className="text-[10px] text-zinc-400 mt-1">{form.public_hook.length}/100 — utilisé comme première ligne des posts social media</p>
                   </div>
+
+                  {/* Vibe */}
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-600 mb-1">
+                      🌴 Ambiance / Culture
+                    </label>
+                    <input className={inputCls}
+                      placeholder='Ex: "Startup surf, équipe internationale, bureau face mer"'
+                      value={form.public_vibe}
+                      onChange={e => setForm(p => ({ ...p, public_vibe: e.target.value }))} />
+                  </div>
+
+                  {/* Avantages */}
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-600 mb-2">✨ Avantages mis en avant</label>
+                    <div className="space-y-1.5">
+                      {(form.public_perks.length === 0 ? [''] : [...form.public_perks, '']).map((perk, i) => (
+                        <div key={i} className="flex gap-2">
+                          <input className={inputCls + ' flex-1'} placeholder={`Avantage ${i+1} (ex: Logement géré, Vue sur mer…)`}
+                            value={perk}
+                            onChange={e => {
+                              const next = [...form.public_perks]
+                              if (i < form.public_perks.length) next[i] = e.target.value
+                              else next.push(e.target.value)
+                              setForm(p => ({ ...p, public_perks: next.filter((x,j) => x || j < next.length-1) }))
+                            }} />
+                          {i < form.public_perks.length && (
+                            <button type="button" onClick={() => setForm(p => ({ ...p, public_perks: p.public_perks.filter((_,j) => j !== i) }))}
+                              className="text-zinc-300 hover:text-red-400 px-1 text-sm">✕</button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Hashtags custom */}
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-600 mb-1">
+                      # Hashtags custom <span className="text-zinc-400 font-normal">(séparés par virgule)</span>
+                    </label>
+                    <input className={inputCls}
+                      placeholder='Ex: BaliInterns, StageMarketing, InternshipBali'
+                      value={form.public_hashtags.join(', ')}
+                      onChange={e => setForm(p => ({ ...p, public_hashtags: e.target.value.split(',').map(h => h.trim()).filter(Boolean) }))} />
+                  </div>
+
+                  {/* Slug SEO */}
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-600 mb-1">
+                      🔗 Slug URL <span className="text-zinc-400 font-normal">(auto-généré si vide)</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-zinc-400 flex-shrink-0">bali-interns.com/jobs/</span>
+                      <input className={inputCls + ' flex-1'} placeholder="marketing-digital-resort-bali-4mois"
+                        value={form.seo_slug}
+                        onChange={e => setForm(p => ({ ...p, seo_slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') }))} />
+                    </div>
+                  </div>
+
+                  {/* CV Drop */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-[#1a1918]">📄 CV Drop</p>
+                      <p className="text-xs text-zinc-400">Permettre à un candidat de déposer son CV sur la page publique</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" checked={form.cv_drop_enabled} onChange={e => setForm(p => ({ ...p, cv_drop_enabled: e.target.checked }))} className="sr-only peer" />
+                      <div className="w-10 h-5 bg-zinc-200 peer-checked:bg-[#c8a96e] rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5" />
+                    </label>
+                  </div>
+
                 </div>
               </details>
 
