@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { SearchableSelect, type SearchableSelectItem } from '@/components/ui/SearchableSelect'
@@ -142,6 +142,7 @@ export default function JobDetailPage() {
   const [allDepartments, setAllDepartments] = useState<JobDepartment[]>([])
   const [relatedJobs, setRelatedJobs] = useState<RelatedJob[]>([])
   const { assist, isLoading } = useAIAssist()
+  const generatingAllRef = useRef(false) // debounce "Générer tout"
 
   function showToast(msg: string) {
     setToastMsg(msg)
@@ -765,6 +766,8 @@ export default function JobDetailPage() {
               type="button"
               disabled={!job.title || isLoading('generate_public_description') || isLoading('generate_hook') || isLoading('generate_vibe') || isLoading('generate_perks') || isLoading('generate_slug')}
               onClick={async () => {
+                if (generatingAllRef.current) return
+                generatingAllRef.current = true
                 const ctx = {
                   title: job.title ?? '', public_title: job.public_title ?? '',
                   company_name: job.companies?.name ?? '', company_type: job.company_type ?? '',
@@ -791,6 +794,7 @@ export default function JobDetailPage() {
                   const r = await assist('generate_slug', ctx)
                   if (r) void patchJob({ seo_slug: r.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') })
                 }
+                generatingAllRef.current = false
               }}
               className="text-xs px-3 py-1.5 bg-purple-50 text-purple-600 rounded-xl font-semibold hover:bg-purple-100 disabled:opacity-40 transition-all"
             >

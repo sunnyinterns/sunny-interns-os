@@ -145,3 +145,33 @@ rdv_booked → qualification_done → job_submitted → job_retained
 **Avant chaque commit :**
 1. `npx tsc --noEmit` → 0 erreur obligatoire
 2. Décrire précisément ce qui change dans le message de commit
+
+---
+
+## 🤖 IA — Patterns et routes
+
+### Hook `useAIAssist` (`src/hooks/useAIAssist.ts`)
+- **Retourne** : `{ assist, isLoading, loadingAction, loading }`
+- **Usage** : `isLoading('action_name')` → true uniquement pour CE bouton (pas global)
+- **NE PAS** utiliser `loading` (global) pour désactiver des boutons individuels
+- **Toujours** : `disabled={isLoading('action_name') || !job.title}`
+
+### Route `/api/ai-assist`
+- Tente Anthropic (`ANTHROPIC_API_KEY`) en premier, fallback Gemini (`GOOGLE_AI_STUDIO_KEY`)
+- Action `raw_prompt` : accepte `{ action: 'raw_prompt', prompt: 'mon prompt complet' }` → 800 tokens
+- Autres actions : 400 tokens max
+- **Ne pas** appeler `/api/anthropic/v1/messages` — cette route a été supprimée
+
+### Hub Marketing Jobs & Contenu (`/fr/marketing/jobs`)
+- Page principale : 5 onglets (Infos / Image / Vidéo / Posts / Publication)
+- Génération posts : `fetch('/api/ai-assist', { action: 'raw_prompt', prompt: textPrompt(...) })`
+- Génération images : `fetch('/api/content/generate-image', ...)`
+- `/fr/marketing/social` → redirige vers `/fr/marketing/jobs` (doublon supprimé)
+
+---
+
+## 🔒 Sécurité API — Règles
+- Toute route dans `src/app/api/(app)/` DOIT vérifier `await supabase.auth.getUser()`
+- Routes légitimement publiques (sans auth) : `/api/public/*`, `/api/scheduling/*`, `/api/book`, `/api/leads/complete`, `/api/apply/*`, `/api/portal/*`
+- Routes admin nécessitent auth même si elles utilisent `service_role_key`
+- **Jamais** de `createClient()` Supabase sans vérifier l'utilisateur dans les routes admin

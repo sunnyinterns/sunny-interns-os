@@ -1,14 +1,23 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
+async function requireAuth() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
+}
+
 function getServiceClient() {
-  return createClient(
+  return createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 }
 
 export async function GET() {
+  const user = await requireAuth()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const supabase = getServiceClient()
     const { data, error } = await supabase
@@ -24,6 +33,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const user = await requireAuth()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const body = await request.json() as {
       name: string
