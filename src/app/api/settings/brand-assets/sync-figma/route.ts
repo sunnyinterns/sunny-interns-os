@@ -19,6 +19,7 @@ const FRAME_MAP: Record<string, string> = {
   favicon:              'favicon',
   email_logo:           'email_logo',
   og_image:             'og_image',
+  logo_profile:         'logo_profile',
 }
 
 function figmaHeaders() {
