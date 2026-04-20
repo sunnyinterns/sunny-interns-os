@@ -87,6 +87,9 @@ Durée: ${ctx.duration ?? ''}. Département: ${ctx.department ?? ''}.
 Format: [metier]-[entreprise-optionnel]-bali-[duree-optionnel]. Max 60 caractères.
 Exemples: "social-media-manager-bali-4mois", "marketing-digital-resort-bali", "ux-designer-startup-bali".
 Réponds UNIQUEMENT avec le slug (lettres minuscules, chiffres, tirets uniquement).`,
+
+  // Action générique — accepte un prompt pré-construit, max_tokens plus élevé pour les posts
+  raw_prompt: (ctx) => ctx.prompt ?? '',
 }
 
 export async function POST(request: Request) {
@@ -105,6 +108,7 @@ export async function POST(request: Request) {
   if (!anthropicKey && !geminiKey) return NextResponse.json({ error: 'Clé API manquante' }, { status: 500 })
 
   const prompt = promptFn(ctx)
+  const maxTokens = action === 'raw_prompt' ? 800 : 400
 
   // Tenter Anthropic d'abord, fallback Gemini
   if (anthropicKey) {
@@ -117,7 +121,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 400,
+        max_tokens: maxTokens,
         messages: [{ role: 'user', content: prompt }],
       }),
     })
@@ -134,7 +138,7 @@ export async function POST(request: Request) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { maxOutputTokens: 400, temperature: 0.8 },
+      generationConfig: { maxOutputTokens: maxTokens, temperature: 0.8 },
     }),
   })
 

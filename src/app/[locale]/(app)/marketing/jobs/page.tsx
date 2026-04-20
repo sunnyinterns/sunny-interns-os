@@ -174,10 +174,11 @@ export default function JobsContentHub() {
     if (!selected) return
     setGeneratingPost(platform)
     try {
-      const res = await fetch('/api/anthropic/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: textPrompt(selected, platform, tone, lang) }] }) })
-      const data = await res.json() as { content: { type: string; text: string }[] }
-      const raw = data.content?.find(c => c.type === 'text')?.text ?? ''
+      const res = await fetch('/api/ai-assist', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'raw_prompt', prompt: textPrompt(selected, platform, tone, lang) }) })
+      if (!res.ok) throw new Error('API error')
+      const data = await res.json() as { result: string }
+      const raw = data.result ?? ''
       const hashtags = raw.match(/#[\w\u00C0-\u017F]+/g) ?? []
       const content = raw.replace(/#[\w\u00C0-\u017F]+/g, '').trim()
       const post: SocialPost = { id: `${Date.now()}-${platform}`, platform, lang, tone, content, hashtags, image_url: platformImages[platform] ?? null, status: 'draft', created_at: new Date().toISOString() }
