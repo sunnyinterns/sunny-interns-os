@@ -879,9 +879,6 @@ export default function JobDetailPage() {
             </button>
           )}
         </div>
-            </div>
-          )}
-        </div>
 
         {/* CV Drop */}
         <div className="flex items-center justify-between">
