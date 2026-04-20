@@ -176,8 +176,7 @@ export function Sidebar() {
 
         <Sep />
         <p className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest" style={{color: '#c8a96e'}}>Marketing</p>
-        <NavLink href="/fr/marketing/jobs" label="Offres publiques" d={ICONS.jobs} />
-        <NavLink href="/fr/marketing/social" label="⚡ Content Machine" d={ICONS.social} />
+        <NavLink href="/fr/marketing/jobs" label="Jobs & Contenu" d={ICONS.marketing} />
         <NavLink href="/fr/blog" label="Blog" d={ICONS.blog} />
 
         <Sep />
