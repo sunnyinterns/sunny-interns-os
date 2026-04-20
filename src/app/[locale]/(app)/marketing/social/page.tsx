@@ -1,12 +1,12 @@
 'use client'
-import { useEffect, useState, useCallback, lazy, Suspense } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
 
-// Remotion Player — chargé côté client uniquement
-const RemotionPlayer = dynamic(
-  () => import('@remotion/player').then(m => ({ default: m.Player })),
-  { ssr: false }
+// JobVideoPlayer — chargé côté client uniquement (Remotion)
+const JobVideoPlayerDynamic = dynamic(
+  () => import('@/components/content/JobVideoPlayer'),
+  { ssr: false, loading: () => <div className="h-32 bg-zinc-50 rounded-xl animate-pulse" /> }
 )
 
 type Platform = 'instagram' | 'linkedin' | 'tiktok' | 'facebook'
@@ -533,6 +533,38 @@ export default function ContentMachinePage() {
                 )
               })}
             </div>
+          )}
+        </div>
+      )}
+
+      {/* ── VIDEO SECTION — visible si un job est sélectionné ── */}
+      {tab === 'generate' && selectedJob && (
+        <div className="mt-6 bg-white border border-zinc-100 rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-bold text-[#1a1918]">🎬 Vidéo du post</h2>
+              <p className="text-xs text-zinc-400 mt-0.5">Rendu dans ton navigateur · 0€ · Export .webm</p>
+            </div>
+            {!showPreview && (
+              <button onClick={() => setShowPreview(true)}
+                className="px-4 py-2 text-xs font-bold bg-[#1a1918] text-[#c8a96e] rounded-xl hover:bg-zinc-800">
+                ▶ Ouvrir le Player
+              </button>
+            )}
+          </div>
+          {showPreview && (
+            <JobVideoPlayerDynamic
+              props={{
+                title: selectedJob.public_title ?? selectedJob.title,
+                company: selectedJob.companies?.name ?? '',
+                location: selectedJob.location ?? 'Bali, Indonésie',
+                duration: selectedJob.wished_duration_months ? `${selectedJob.wished_duration_months} mois` : '',
+                hook: selectedJob.public_hook ?? '',
+                perks: selectedJob.public_perks?.filter(Boolean) ?? [],
+                coverImageUrl: selectedJob.cover_image_url ?? undefined,
+                brandColor: '#F5A623',
+              }}
+            />
           )}
         </div>
       )}
