@@ -175,3 +175,101 @@ rdv_booked → qualification_done → job_submitted → job_retained
 - Routes légitimement publiques (sans auth) : `/api/public/*`, `/api/scheduling/*`, `/api/book`, `/api/leads/complete`, `/api/apply/*`, `/api/portal/*`
 - Routes admin nécessitent auth même si elles utilisent `service_role_key`
 - **Jamais** de `createClient()` Supabase sans vérifier l'utilisateur dans les routes admin
+
+---
+
+## 🤖 IA — PATTERNS ET CONVENTIONS
+
+### Hook `useAIAssist` (`src/hooks/useAIAssist.ts`)
+- Expose `assist(action, ctx)` → `Promise<string | null>`
+- Expose `isLoading(action)` → `boolean` (par action, pas global !)
+- Expose `loading` → `boolean` global
+- **Pattern obligatoire** : `disabled={isLoading('mon_action')}` — jamais `disabled={loading}`
+- Si la clé API manque en prod, `assist()` retourne `null` silencieusement → toujours vérifier `if (r)` avant `patchJob`
+
+### Route `/api/ai-assist`
+- Actions disponibles : `generate_public_title`, `generate_description`, `generate_public_description`, `generate_profile`, `prefill_company`, `improve_text`, `improve_description`, `improve_profile`, `generate_hook`, `generate_vibe`, `generate_perks`, `generate_slug`, `raw_prompt`
+- Clés API : tente `ANTHROPIC_API_KEY` en premier, fallback sur `GOOGLE_AI_STUDIO_KEY` (Gemini Flash)
+- `raw_prompt` : accepte `{action: 'raw_prompt', prompt: '...'}` → max 800 tokens (pour les posts sociaux)
+- Toutes les autres actions : max 400 tokens
+
+### Gemini Image
+- Route : `/api/content/generate-image`
+- Modèle : `gemini-2.0-flash-preview-image-generation`
+- Retourne `{ image_url: string }` (uploadé dans Supabase Storage)
+
+---
+
+## 📱 HUB MARKETING — Jobs & Contenu (`/fr/marketing/jobs`)
+
+### Architecture 5 onglets
+| Onglet | Contenu | API |
+|--------|---------|-----|
+| 📋 Infos | hook/vibe/perks/slug/desc publiques | lecture `job` |
+| 🖼 Image | Cover + 4 formats réseau (IA) | `/api/content/generate-image` |
+| 🎬 Vidéo | Placeholder (à implémenter) | — |
+| ✍️ Posts | Texte par réseau via IA | `/api/ai-assist` (raw_prompt) |
+| 📅 Publication | Scheduling DB | `/api/content/publications` |
+
+### Règles
+- `/fr/marketing/social` redirige vers `/fr/marketing/jobs` (doublon supprimé)
+- La génération de posts utilise **`/api/ai-assist` avec `action: 'raw_prompt'`** — JAMAIS `/api/anthropic/v1/messages`
+- La route `/api/anthropic/v1/messages` a été supprimée
+
+---
+
+## 🔄 STATUTS CRM — StatusActionPanel
+
+Statuts complets avec transitions :
+```
+lead → rdv_booked | to_recontact | not_interested
+rdv_booked → qualification_done | to_recontact | not_interested
+qualification_done → job_submitted | to_recontact | no_job_found
+job_submitted → job_retained | to_recontact
+job_retained → convention_signed
+convention_signed → payment_pending (avec email)
+payment_pending → payment_received
+payment_received → visa_docs_sent | visa_in_progress
+visa_in_progress → visa_received | visa_refused
+visa_received → arrival_prep
+arrival_prep → active
+active → alumni
+to_recontact → rdv_booked | not_interested
+```
+
+### Règle `to_recontact`
+- **Toujours demander une date** avant de basculer via modale
+- Colonne DB : `cases.recontact_at` (date)
+- La modale est dans `StatusActionPanel` — `openRecontactModal()` 
+
+---
+
+## 🔒 SÉCURITÉ — Routes API
+
+### Routes intentionnellement publiques (sans auth)
+`/api/public/*`, `/api/scheduling/*`, `/api/calendar/slots`, `/api/book`, `/api/form-abandonments`
+
+### Routes avec auth obligatoire
+Toutes les autres routes admin. Pattern :
+```ts
+const supabase = await createClient()
+const { data: { user } } = await supabase.auth.getUser()
+if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+```
+
+---
+
+## 📋 PATTERNS DE CODE IMPORTANTS
+
+### patchJob (jobs/[id]/page.tsx)
+Mise à jour **optimiste** : `setJob` est appelé AVANT le fetch réseau. Si erreur → rollback via `load()`.
+
+### patchDescription (companies/[id]/page.tsx)
+Édition inline de la description entreprise sans ouvrir la modale complète.
+
+### Débrief entretien
+- **Un seul endroit** : section `🎤 Débrief Entretien` dans `TabStaffing`
+- Le bouton "📧 Récap entretien" du header cases a été **supprimé** (doublon)
+
+### CLAUDE.md à mettre à jour
+Faire une mise à jour de ce fichier en fin de session si des changements architecturaux ont été faits.

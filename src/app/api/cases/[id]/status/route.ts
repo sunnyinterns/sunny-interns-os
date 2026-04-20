@@ -28,6 +28,7 @@ const STATUS_LABELS: Record<string, string> = {
   visa_in_progress: 'Visa en cours', visa_received: 'Visa reçu',
   arrival_prep: 'Prép. arrivée', active: 'En stage', alumni: 'Alumni',
   not_interested: 'Pas intéressé', not_qualified: 'Non qualifié',
+  to_recontact: 'À recontacter',
   on_hold: 'En attente', suspended: 'Suspendu', visa_refused: 'Visa refusé', archived: 'Archivé',
 }
 
@@ -64,7 +65,12 @@ const TRANSITION_GATES: Record<string, {
   },
 }
 
-const schema = z.object({ status: z.string() })
+const schema = z.object({
+  status: z.string(),
+  recontact_at: z.string().optional(),
+  recontact_note: z.string().optional().nullable(),
+  payment_date: z.string().optional(),
+})
 
 export async function PATCH(
   request: Request,
@@ -117,8 +123,11 @@ export async function PATCH(
     .update({
       status: newStatus,
       updated_at: new Date().toISOString(),
-      // Track payment date automatically
       ...(newStatus === 'payment_received' ? { payment_received_at: new Date().toISOString() } : {}),
+      ...(newStatus === 'to_recontact' && parsed.data.recontact_at ? {
+        recontact_at: parsed.data.recontact_at,
+        recontact_note: parsed.data.recontact_note ?? null,
+      } : {}),
     })
     .eq('id', id)
 

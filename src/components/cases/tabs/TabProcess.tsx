@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { ProcessTimeline } from '@/components/cases/ProcessTimeline'
-import StatusActionPanel from '@/components/cases/StatusActionPanel'
+import { StatusActionPanel } from '@/components/cases/StatusActionPanel'
 import type { CaseStatus } from '@/lib/types'
 
 interface ActivityEntry {

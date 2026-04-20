@@ -81,7 +81,7 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url)
   const typeFilter = searchParams.get('type')
-  const CANDIDATE_STATUSES = ['rdv_booked', 'qualification_done', 'job_submitted', 'job_retained', 'convention_signed']
+  const CANDIDATE_STATUSES = ['rdv_booked', 'qualification_done', 'job_submitted', 'job_retained', 'convention_signed', 'to_recontact']
   const CLIENT_STATUSES_LIST = ['convention_signed', 'payment_pending', 'payment_received', 'visa_docs_sent', 'visa_submitted', 'visa_in_progress', 'visa_received', 'arrival_prep', 'active', 'alumni', 'completed']
   const view = searchParams.get('view')
   const assignedTo = searchParams.get('assigned_to')

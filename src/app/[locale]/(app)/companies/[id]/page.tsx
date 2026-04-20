@@ -265,7 +265,6 @@ export default function CompanyDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: editName,
-          destination: editDest,
           sector: editSector || null,
           industry: editSector || null,
           website: editWebsite || null,

@@ -142,7 +142,8 @@ export default function JobDetailPage() {
   const [allDepartments, setAllDepartments] = useState<JobDepartment[]>([])
   const [relatedJobs, setRelatedJobs] = useState<RelatedJob[]>([])
   const { assist, isLoading } = useAIAssist()
-  const generatingAllRef = useRef(false) // debounce "Générer tout"
+  const generatingAllRef = useRef(false)
+  const [aiError, setAiError] = useState<string | null>(null)
 
   function showToast(msg: string) {
     setToastMsg(msg)
@@ -768,6 +769,8 @@ export default function JobDetailPage() {
               onClick={async () => {
                 if (generatingAllRef.current) return
                 generatingAllRef.current = true
+                setAiError(null)
+                let generated = 0
                 const ctx = {
                   title: job.title ?? '', public_title: job.public_title ?? '',
                   company_name: job.companies?.name ?? '', company_type: job.company_type ?? '',
@@ -776,24 +779,25 @@ export default function JobDetailPage() {
                 }
                 if (!job.public_description) {
                   const r = await assist('generate_public_description', ctx)
-                  if (r) void patchJob({ public_description: r })
+                  if (r) { void patchJob({ public_description: r }); generated++ }
                 }
                 if (!job.public_hook) {
                   const r = await assist('generate_hook', ctx)
-                  if (r) void patchJob({ public_hook: r.slice(0, 100) })
+                  if (r) { void patchJob({ public_hook: r.slice(0, 100) }); generated++ }
                 }
                 if (!job.public_vibe) {
                   const r = await assist('generate_vibe', ctx)
-                  if (r) void patchJob({ public_vibe: r })
+                  if (r) { void patchJob({ public_vibe: r }); generated++ }
                 }
                 if (!(job.public_perks?.filter(Boolean).length)) {
                   const r = await assist('generate_perks', ctx)
-                  if (r) void patchJob({ public_perks: r.split('\n').map((s: string) => s.trim()).filter(Boolean) })
+                  if (r) { void patchJob({ public_perks: r.split('\n').map((s: string) => s.trim()).filter(Boolean) }); generated++ }
                 }
                 if (!job.seo_slug) {
                   const r = await assist('generate_slug', ctx)
-                  if (r) void patchJob({ seo_slug: r.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') })
+                  if (r) { void patchJob({ seo_slug: r.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') }); generated++ }
                 }
+                if (generated === 0) setAiError('⚠️ IA indisponible — vérifier la clé API dans Vercel')
                 generatingAllRef.current = false
               }}
               className="text-xs px-3 py-1.5 bg-purple-50 text-purple-600 rounded-xl font-semibold hover:bg-purple-100 disabled:opacity-40 transition-all"
@@ -807,6 +811,14 @@ export default function JobDetailPage() {
             </label>
           </div>
         </div>
+
+        {/* Erreur IA */}
+        {aiError && (
+          <div className="px-3 py-2 bg-red-50 border border-red-100 rounded-xl text-xs text-red-600 flex items-center justify-between">
+            <span>{aiError}</span>
+            <button onClick={() => setAiError(null)} className="ml-2 text-red-400 hover:text-red-600">×</button>
+          </div>
+        )}
 
         {/* Description publique */}
         <div>

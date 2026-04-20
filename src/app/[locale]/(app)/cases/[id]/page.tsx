@@ -12,7 +12,7 @@ import { InternCardDigital } from '@/components/cases/InternCardDigital'
 import { ChauffeurCard } from '@/components/cases/ChauffeurCard'
 import { CaseStatusBandeau } from '@/components/cases/CaseStatusBandeau'
 
-const CANDIDATE_STATUSES = ['lead', 'rdv_booked', 'qualification_done', 'job_submitted', 'job_retained', 'convention_signed']
+const CANDIDATE_STATUSES = ['lead', 'rdv_booked', 'qualification_done', 'job_submitted', 'job_retained', 'convention_signed', 'to_recontact']
 
 const STATUTS_TIMELINE = [
   { key: 'lead', icon: '🌱', label: 'Lead' },
@@ -43,6 +43,8 @@ const STATUS_BADGE: Record<string, { label: string; bg: string; text: string }> 
   alumni: { label: 'Alumni', bg: '#fef3c7', text: '#92400e' },
   not_interested: { label: 'Pas interesse', bg: '#f4f4f5', text: '#71717a' },
   not_qualified: { label: 'Non qualifie', bg: '#fee2e2', text: '#dc2626' },
+  to_recontact: { label: 'À recontacter', bg: '#fef3c7', text: '#b45309' },
+  no_job_found: { label: 'No job found', bg: '#fee2e2', text: '#dc2626' },
   on_hold: { label: 'En attente', bg: '#fef3c7', text: '#d97706' },
   suspended: { label: 'Suspendu', bg: '#fee2e2', text: '#dc2626' },
   visa_refused: { label: 'Visa refuse', bg: '#fee2e2', text: '#dc2626' },
@@ -405,13 +407,6 @@ export default function CaseDetailPage() {
                   className="px-3 py-1.5 text-xs border border-zinc-200 rounded-lg text-zinc-600 hover:bg-zinc-50 transition-colors">
                   Portail candidat ↗
                 </a>
-              )}
-              {/* Récap entretien — rdv_booked uniquement */}
-              {caseData.status === 'rdv_booked' && (
-                <button onClick={() => { void sendRecapEmail() }} disabled={sendingRecap}
-                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#0d9e75] text-white hover:bg-[#0a8a65] disabled:opacity-60 transition-colors">
-                  {sendingRecap ? 'Envoi…' : recapSent ? '✓ Envoyé' : '📧 Récap entretien'}
-                </button>
               )}
               {/* Envoyer portail — qualification_done + CV validé */}
               {caseData.status === 'qualification_done' && caseData.portal_token && intern.cv_url && (
