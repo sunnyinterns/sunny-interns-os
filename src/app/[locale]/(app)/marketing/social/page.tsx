@@ -103,6 +103,7 @@ export default function ContentMachinePage() {
   const [generatingVideo, setGeneratingVideo] = useState<'square' | 'story' | null>(null)
   const [videoUrls, setVideoUrls] = useState<Record<string, string>>({})
   const [showPreview, setShowPreview] = useState(false)
+  const [generateError, setGenerateError] = useState<string | null>(null)
 
   useEffect(() => {
     // Charger les jobs ouverts
@@ -143,12 +144,13 @@ export default function ContentMachinePage() {
     setGenerating(true)
     setPosts([])
     setSaved(false)
+    setGenerateError(null)
 
+    // Générer les textes plateforme par plateforme (séquentiel pour éviter rate limits)
     const results: SocialPost[] = []
 
-    await Promise.all(platforms.map(async (platform) => {
+    for (const platform of platforms) {
       try {
-        // 1. Générer le texte via Claude
         const textRes = await fetch('/api/anthropic/v1/messages', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -158,12 +160,31 @@ export default function ContentMachinePage() {
             messages: [{ role: 'user', content: textPrompt(selectedJob, platform, tone, lang) }],
           }),
         })
-        const textData = await textRes.json() as { content: { type: string; text: string }[] }
+
+        if (!textRes.ok) {
+          const err = await textRes.text()
+          console.error(`[ContentMachine] Claude error for ${platform}:`, err)
+          setGenerateError(`Erreur Claude pour ${platform}: ${textRes.status}`)
+          continue
+        }
+
+        const textData = await textRes.json() as { content?: { type: string; text: string }[]; error?: { message: string } }
+
+        if (textData.error) {
+          setGenerateError(textData.error.message)
+          continue
+        }
+
         const raw = textData.content?.find(c => c.type === 'text')?.text ?? ''
+        if (!raw) {
+          setGenerateError(`Réponse vide de Claude pour ${platform}`)
+          continue
+        }
+
         const hashtags = raw.match(/#[\w\u00C0-\u017F]+/g) ?? []
         const content = raw.replace(/#[\w\u00C0-\u017F]+/g, '').trim()
 
-        results.push({
+        const post: SocialPost = {
           id: `${Date.now()}-${platform}`,
           job_id: selectedJob.id,
           platform,
@@ -175,17 +196,25 @@ export default function ContentMachinePage() {
           image_prompt: withImage ? imagePromptForJob(selectedJob, platform) : null,
           status: 'draft',
           created_at: new Date().toISOString(),
-        })
-      } catch { /* ignore */ }
-    }))
+        }
+        results.push(post)
 
-    setPosts(results)
+        // Mettre à jour l'UI au fur et à mesure (pas attendre la fin)
+        setPosts(prev => [...prev, post])
+      } catch (e) {
+        console.error(`[ContentMachine] Error for ${platform}:`, e)
+        setGenerateError(`Erreur réseau pour ${platform}`)
+      }
+    }
+
     setGenerating(false)
 
-    // 2. Générer les images en parallèle si demandé
+    if (results.length === 0) return
+
+    // Générer les images EN SÉQUENCE après les textes (Gemini rate limits)
     if (withImage && hasGemini) {
-      await Promise.all(results.map(async (post) => {
-        if (!post.image_prompt) return
+      for (const post of results) {
+        if (!post.image_prompt) continue
         setGeneratingImage(post.platform)
         try {
           const imgRes = await fetch('/api/content/generate-image', {
@@ -197,13 +226,17 @@ export default function ContentMachinePage() {
               platform: post.platform,
             }),
           })
-          const imgData = await imgRes.json() as { image_url?: string }
+          const imgData = await imgRes.json() as { image_url?: string; error?: string }
           if (imgData.image_url) {
             setPosts(prev => prev.map(p => p.id === post.id ? { ...p, image_url: imgData.image_url! } : p))
+          } else if (imgData.error) {
+            console.warn(`[ContentMachine] Image error for ${post.platform}:`, imgData.error)
           }
-        } catch { /* ignore */ }
+        } catch (e) {
+          console.warn(`[ContentMachine] Image fetch error for ${post.platform}:`, e)
+        }
         setGeneratingImage(null)
-      }))
+      }
     }
   }, [selectedJob, platforms, tone, lang, withImage, hasGemini])
 
@@ -385,55 +418,28 @@ export default function ContentMachinePage() {
               </div>
             </div>
 
-            {/* CTA */}
+            {/* Bouton générer */}
             <button
               onClick={() => void generate()}
               disabled={!selectedJob || platforms.length === 0 || generating}
               className="w-full py-3 text-sm font-bold bg-[#1a1918] text-[#c8a96e] rounded-xl hover:bg-zinc-800 disabled:opacity-40 transition-colors flex items-center justify-center gap-2">
               {generating ? (
-                <><span className="w-4 h-4 border-2 border-[#c8a96e] border-t-transparent rounded-full animate-spin"/>{withImage && hasGemini ? 'Génération texte + image…' : 'Génération en cours…'}</>
+                <><span className="w-4 h-4 border-2 border-[#c8a96e] border-t-transparent rounded-full animate-spin"/>
+                {withImage && hasGemini ? 'Génération texte + image en cours…' : 'Génération du texte en cours…'}</>
               ) : (
-                `⚡ Générer ${platforms.length} post${platforms.length > 1 ? 's' : ''}${withImage && hasGemini ? ' + images' : ''}`
+                `⚡ Générer ${platforms.length} post${platforms.length > 1 ? 's' : ''}${withImage && hasGemini ? ' + image' : ''}`
               )}
             </button>
 
-            {/* Vidéo — section séparée */}
-            {selectedJob && (
-              <div className="border-t border-zinc-100 pt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <p className="text-sm font-bold text-[#1a1918]">🎬 Générer une vidéo</p>
-                    <p className="text-xs text-zinc-400">Remotion · MP4 animé depuis les infos du job</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => void generateVideo('square')} disabled={!!generatingVideo}
-                      className="px-3 py-1.5 text-xs font-semibold border-2 border-zinc-100 rounded-lg hover:border-[#c8a96e] disabled:opacity-40 transition-all">
-                      {generatingVideo === 'square' ? (
-                        <span className="flex items-center gap-1"><span className="w-3 h-3 border border-[#c8a96e] border-t-transparent rounded-full animate-spin"/>Square 1:1</span>
-                      ) : videoUrls['square'] ? '✅ Square 1:1' : '⬜ Square 1:1'}
-                    </button>
-                    <button onClick={() => void generateVideo('story')} disabled={!!generatingVideo}
-                      className="px-3 py-1.5 text-xs font-semibold border-2 border-zinc-100 rounded-lg hover:border-[#c8a96e] disabled:opacity-40 transition-all">
-                      {generatingVideo === 'story' ? (
-                        <span className="flex items-center gap-1"><span className="w-3 h-3 border border-[#c8a96e] border-t-transparent rounded-full animate-spin"/>Story 9:16</span>
-                      ) : videoUrls['story'] ? '✅ Story 9:16' : '📱 Story 9:16'}
-                    </button>
-                  </div>
+            {/* Erreur de génération */}
+            {generateError && (
+              <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                <span className="text-red-500 text-sm">⚠️</span>
+                <div>
+                  <p className="text-xs font-semibold text-red-700">Erreur de génération</p>
+                  <p className="text-xs text-red-600 mt-0.5">{generateError}</p>
                 </div>
-                {/* Vidéos générées */}
-                {(videoUrls['square'] || videoUrls['story']) && (
-                  <div className="flex gap-3 mt-2">
-                    {(['square', 'story'] as const).filter(f => videoUrls[f]).map(format => (
-                      <div key={format} className="flex-1 bg-zinc-50 rounded-xl overflow-hidden">
-                        <video src={videoUrls[format]} controls muted loop className="w-full" style={{ maxHeight: format === 'story' ? 300 : 200 }} />
-                        <div className="p-2 flex justify-between items-center">
-                          <span className="text-[10px] text-zinc-400">{format === 'square' ? '1080×1080' : '1080×1920'}</span>
-                          <a href={videoUrls[format]} download className="text-[10px] font-semibold text-[#c8a96e] hover:underline">↓ Télécharger</a>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <button onClick={() => setGenerateError(null)} className="ml-auto text-red-400 hover:text-red-600 text-sm">✕</button>
               </div>
             )}
           </div>
@@ -468,7 +474,7 @@ export default function ContentMachinePage() {
                     </div>
 
                     <div className={`${post.image_url ? 'grid grid-cols-1 sm:grid-cols-2' : ''}`}>
-                      {/* Image */}
+                      {/* Image slot */}
                       {post.image_url ? (
                         <div className="relative">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -478,20 +484,11 @@ export default function ContentMachinePage() {
                           </div>
                         </div>
                       ) : withImage && hasGemini && generatingImage === post.platform ? (
-                        <div className="h-64 bg-zinc-50 flex items-center justify-center">
-                          <div className="text-center text-zinc-400">
-                            <div className="w-6 h-6 border-2 border-[#c8a96e] border-t-transparent rounded-full animate-spin mx-auto mb-2"/>
-                            <p className="text-xs">Nano Banana génère…</p>
-                          </div>
+                        <div className="h-48 bg-zinc-50 flex flex-col items-center justify-center gap-2 border-r border-zinc-100">
+                          <div className="w-6 h-6 border-2 border-[#c8a96e] border-t-transparent rounded-full animate-spin"/>
+                          <p className="text-xs text-zinc-400">Image en cours…</p>
                         </div>
-                      ) : withImage && hasGemini ? (
-                        <div className="h-64 bg-zinc-50 flex items-center justify-center">
-                          <button onClick={() => void generateImageForPost(post)}
-                            className="px-4 py-2 text-xs font-semibold bg-[#c8a96e] text-white rounded-xl hover:bg-[#b8945a]">
-                            🎨 Générer image
-                          </button>
-                        </div>
-                      ) : null}
+                      ) : null /* Pas de bouton isolé — l'image arrive automatiquement */}
 
                       {/* Text */}
                       <div className="p-5 flex flex-col gap-3">
