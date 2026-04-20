@@ -1,5 +1,12 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, lazy, Suspense } from 'react'
+import dynamic from 'next/dynamic'
+
+// Remotion Player — chargé côté client uniquement
+const RemotionPlayer = dynamic(
+  () => import('@remotion/player').then(m => ({ default: m.Player })),
+  { ssr: false }
+)
 
 type Platform = 'instagram' | 'linkedin' | 'tiktok' | 'facebook'
 type Lang = 'fr' | 'en'
@@ -90,6 +97,9 @@ export default function ContentMachinePage() {
   const [hasGemini, setHasGemini] = useState<boolean | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
+  const [generatingVideo, setGeneratingVideo] = useState<'square' | 'story' | null>(null)
+  const [videoUrls, setVideoUrls] = useState<Record<string, string>>({})
+  const [showPreview, setShowPreview] = useState(false)
 
   useEffect(() => {
     // Charger les jobs ouverts
@@ -235,6 +245,23 @@ export default function ContentMachinePage() {
     setGeneratingImage(null)
   }, [hasGemini])
 
+  const generateVideo = useCallback(async (format: 'square' | 'story') => {
+    if (!selectedJob) return
+    setGeneratingVideo(format)
+    try {
+      const res = await fetch('/api/content/generate-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job_id: selectedJob.id, format }),
+      })
+      const d = await res.json() as { video_url?: string; error?: string }
+      if (d.video_url) {
+        setVideoUrls(prev => ({ ...prev, [format]: d.video_url! }))
+      }
+    } catch { /* ignore */ }
+    setGeneratingVideo(null)
+  }, [selectedJob])
+
   function copy(text: string, id: string) {
     void navigator.clipboard.writeText(text)
     setCopied(id); setTimeout(() => setCopied(null), 2000)
@@ -359,6 +386,46 @@ export default function ContentMachinePage() {
                 `⚡ Générer ${platforms.length} post${platforms.length > 1 ? 's' : ''}${withImage && hasGemini ? ' + images' : ''}`
               )}
             </button>
+
+            {/* Vidéo — section séparée */}
+            {selectedJob && (
+              <div className="border-t border-zinc-100 pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-sm font-bold text-[#1a1918]">🎬 Générer une vidéo</p>
+                    <p className="text-xs text-zinc-400">Remotion · MP4 animé depuis les infos du job</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => void generateVideo('square')} disabled={!!generatingVideo}
+                      className="px-3 py-1.5 text-xs font-semibold border-2 border-zinc-100 rounded-lg hover:border-[#c8a96e] disabled:opacity-40 transition-all">
+                      {generatingVideo === 'square' ? (
+                        <span className="flex items-center gap-1"><span className="w-3 h-3 border border-[#c8a96e] border-t-transparent rounded-full animate-spin"/>Square 1:1</span>
+                      ) : videoUrls['square'] ? '✅ Square 1:1' : '⬜ Square 1:1'}
+                    </button>
+                    <button onClick={() => void generateVideo('story')} disabled={!!generatingVideo}
+                      className="px-3 py-1.5 text-xs font-semibold border-2 border-zinc-100 rounded-lg hover:border-[#c8a96e] disabled:opacity-40 transition-all">
+                      {generatingVideo === 'story' ? (
+                        <span className="flex items-center gap-1"><span className="w-3 h-3 border border-[#c8a96e] border-t-transparent rounded-full animate-spin"/>Story 9:16</span>
+                      ) : videoUrls['story'] ? '✅ Story 9:16' : '📱 Story 9:16'}
+                    </button>
+                  </div>
+                </div>
+                {/* Vidéos générées */}
+                {(videoUrls['square'] || videoUrls['story']) && (
+                  <div className="flex gap-3 mt-2">
+                    {(['square', 'story'] as const).filter(f => videoUrls[f]).map(format => (
+                      <div key={format} className="flex-1 bg-zinc-50 rounded-xl overflow-hidden">
+                        <video src={videoUrls[format]} controls muted loop className="w-full" style={{ maxHeight: format === 'story' ? 300 : 200 }} />
+                        <div className="p-2 flex justify-between items-center">
+                          <span className="text-[10px] text-zinc-400">{format === 'square' ? '1080×1080' : '1080×1920'}</span>
+                          <a href={videoUrls[format]} download className="text-[10px] font-semibold text-[#c8a96e] hover:underline">↓ Télécharger</a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Results */}

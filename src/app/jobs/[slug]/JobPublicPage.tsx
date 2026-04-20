@@ -1,349 +1,267 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
 
 interface Job {
-  id: string
-  public_title: string | null
-  title: string
-  status: string
-  location: string | null
-  wished_duration_months: number | null
-  wished_start_date: string | null
-  public_description: string | null
-  description: string | null
-  public_hook: string | null
-  public_vibe: string | null
-  public_perks: string[] | null
-  public_hashtags: string[] | null
-  seo_slug: string | null
-  cv_drop_enabled: boolean
-  cover_image_url: string | null
-  is_public: boolean
-  missions: string[] | null
-  required_languages: string[] | null
-  required_level: string | null
-  profile_sought: string | null
-  remote_ok: boolean
-  companies: { id: string; name: string; logo_url: string | null; company_type: string | null } | null
-}
-
-const LANG_LABELS: Record<string, string> = {
-  french: 'Français', english: 'Anglais', spanish: 'Espagnol',
-  german: 'Allemand', italian: 'Italien', dutch: 'Néerlandais',
-}
-
-const LEVEL_LABELS: Record<string, string> = {
-  bac: 'Bac', bac2: 'Bac+2', bac3: 'Bac+3', bac4: 'Bac+4', bac5: 'Bac+5',
+  id: string; title: string; public_title: string | null
+  description: string | null; public_description: string | null
+  public_hook: string | null; public_vibe: string | null
+  public_perks: string[] | null; public_hashtags: string[] | null
+  seo_slug: string | null; cover_image_url: string | null
+  cv_drop_enabled: boolean | null; is_public: boolean | null
+  status: string; location: string | null; wished_duration_months: number | null
+  wished_start_date: string | null; department: string | null
+  missions: string[] | null; skills_required: string[] | null
+  required_level: string | null; required_languages: string[] | null
+  companies?: { id: string; name: string; logo_url: string | null } | null
 }
 
 export default function JobPublicPage({ job }: { job: Job }) {
-  const [cvForm, setCvForm] = useState({ first_name: '', last_name: '', email: '', phone: '', school: '', message: '' })
-  const [cvSubmitting, setCvSubmitting] = useState(false)
-  const [cvDone, setCvDone] = useState(false)
-  const [cvError, setCvError] = useState('')
+  const [cvFile, setCvFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploaded, setUploaded] = useState(false)
+  const [dragOver, setDragOver] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
 
-  const isStaffed = job.status === 'staffed'
   const title = job.public_title ?? job.title
   const company = job.companies?.name ?? ''
+  const isStaffed = job.status === 'staffed'
+  const duration = job.wished_duration_months ? `${job.wished_duration_months} mois` : null
+  const perks = job.public_perks?.filter(Boolean) ?? []
+  const missions = job.missions?.filter(Boolean) ?? []
+  const skills = job.skills_required?.filter(Boolean) ?? []
 
-  async function submitCV(e: React.FormEvent) {
-    e.preventDefault()
-    if (!cvForm.email) return
-    setCvSubmitting(true); setCvError('')
-    try {
-      const res = await fetch('/api/cv-drops', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ job_id: job.id, ...cvForm }),
-      })
-      const d = await res.json() as { success?: boolean; redirect?: string; error?: string }
-      if (d.success) {
-        setCvDone(true)
-        setTimeout(() => { if (d.redirect) window.location.href = d.redirect }, 1500)
-      } else {
-        setCvError(d.error ?? 'Erreur')
-      }
-    } catch { setCvError('Erreur réseau') }
-    setCvSubmitting(false)
+  async function handleCvUpload(file: File) {
+    setUploading(true)
+    const fd = new FormData()
+    fd.append('cv', file)
+    fd.append('job_id', job.id)
+    await fetch('/api/public/cv-drop', { method: 'POST', body: fd })
+    setUploaded(true)
+    setUploading(false)
+    setTimeout(() => {
+      window.location.href = `/apply?prefill_job=${job.id}&source=cv_drop`
+    }, 1500)
+  }
+
+  function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]
+    if (f) { setCvFile(f); void handleCvUpload(f) }
+  }
+
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault(); setDragOver(false)
+    const f = e.dataTransfer.files?.[0]
+    if (f) { setCvFile(f); void handleCvUpload(f) }
   }
 
   return (
-    <div className="min-h-screen bg-[#faf9f7]" style={{ fontFamily: "'Sora', 'DM Sans', sans-serif" }}>
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-zinc-100">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href="https://bali-interns.com" className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-[#F5A623] flex items-center justify-center text-white text-xs font-black">B</div>
-            <span className="text-sm font-bold text-[#1a1918]">Bali Interns</span>
-          </Link>
-          <Link href="/apply" className="px-4 py-1.5 text-sm font-bold bg-[#1a1918] text-[#F5A623] rounded-xl hover:bg-zinc-800 transition-colors">
-            Postuler →
-          </Link>
-        </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto px-4 py-10">
-        {/* Hero */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          <div className="flex flex-col justify-center">
-            {/* Breadcrumb */}
-            <div className="flex items-center gap-1 text-xs text-zinc-400 mb-4">
-              <Link href="https://bali-interns.com" className="hover:text-zinc-600">Bali Interns</Link>
-              <span>›</span>
-              <Link href="/jobs" className="hover:text-zinc-600">Stages à Bali</Link>
-              <span>›</span>
-              <span className="text-zinc-600 truncate max-w-32">{title}</span>
-            </div>
-
-            {/* Status badge */}
-            {isStaffed ? (
-              <div className="inline-flex w-fit items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 mb-4">
-                ✅ Poste pourvu
-              </div>
-            ) : (
-              <div className="inline-flex w-fit items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 mb-4">
-                🟢 Offre ouverte
-              </div>
-            )}
-
-            {/* Title */}
-            <h1 className="text-3xl sm:text-4xl font-black text-[#1a1918] leading-tight mb-2">
-              {title}
-            </h1>
-            {company && (
-              <p className="text-lg text-zinc-500 font-medium mb-4">@ {company}</p>
-            )}
-
-            {/* Hook */}
-            {job.public_hook && (
-              <p className="text-base font-semibold text-[#F5A623] mb-5 italic">
-                &ldquo;{job.public_hook}&rdquo;
-              </p>
-            )}
-
-            {/* Meta chips */}
-            <div className="flex flex-wrap gap-2 mb-6">
-              {job.location && (
-                <span className="px-3 py-1 bg-zinc-100 text-zinc-600 rounded-full text-sm">📍 {job.location}</span>
-              )}
-              {job.wished_duration_months && (
-                <span className="px-3 py-1 bg-zinc-100 text-zinc-600 rounded-full text-sm">⏱ {job.wished_duration_months} mois</span>
-              )}
-              {job.wished_start_date && (
-                <span className="px-3 py-1 bg-zinc-100 text-zinc-600 rounded-full text-sm">
-                  📅 Début {new Date(job.wished_start_date).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
-                </span>
-              )}
-              {job.remote_ok && (
-                <span className="px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-sm">💻 Remote possible</span>
-              )}
-              {job.required_level && (
-                <span className="px-3 py-1 bg-zinc-100 text-zinc-600 rounded-full text-sm">🎓 {LEVEL_LABELS[job.required_level] ?? job.required_level}</span>
-              )}
-            </div>
-
-            {!isStaffed && (
-              <a href="#postuler" className="inline-flex w-fit items-center gap-2 px-6 py-3 bg-[#F5A623] text-[#1a1918] font-bold rounded-2xl hover:bg-[#e8930a] transition-colors text-sm shadow-lg shadow-amber-200">
-                Postuler maintenant →
-              </a>
-            )}
+    <div className="min-h-screen bg-[#f9f7f4]">
+      {/* Hero */}
+      <div className="relative overflow-hidden bg-[#1a1918]" style={{ minHeight: 420 }}>
+        {job.cover_image_url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={job.cover_image_url} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#1a1918]" />
+        <div className="relative max-w-3xl mx-auto px-6 pt-12 pb-16">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 text-xs text-white/40 mb-8">
+            <a href="https://bali-interns.com" className="hover:text-white/70">Bali Interns</a>
+            <span>/</span>
+            <a href="https://bali-interns.com/stages" className="hover:text-white/70">Stages à Bali</a>
+            <span>/</span>
+            <span className="text-white/60">{title}</span>
           </div>
 
-          {/* Cover image */}
-          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-amber-100 to-orange-200 aspect-[4/3]">
-            {job.cover_image_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={job.cover_image_url} alt={title} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="text-center text-amber-600">
-                  <div className="text-6xl mb-3">🌴</div>
-                  <p className="font-bold text-lg">{company || 'Bali'}</p>
-                  <p className="text-sm opacity-70">Bali, Indonésie</p>
-                </div>
-              </div>
-            )}
-            {/* Overlay badge */}
-            <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur rounded-xl px-3 py-2">
-              <p className="text-xs text-zinc-500">Stage proposé par</p>
-              <p className="text-sm font-bold text-[#1a1918]">{company || 'Bali Interns'}</p>
+          {/* Status badge */}
+          {isStaffed && (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-600/60 text-zinc-300 text-xs font-semibold mb-4">
+              <div className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
+              Poste pourvu
             </div>
-          </div>
-        </div>
+          )}
+          {!isStaffed && (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mb-4" style={{ background: '#F5A62330' }}>
+              <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#F5A623' }} />
+              <span className="text-xs font-semibold" style={{ color: '#F5A623' }}>Offre ouverte</span>
+            </div>
+          )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Description */}
-            {(job.public_description ?? job.description) && (
-              <section>
-                <h2 className="text-lg font-black text-[#1a1918] mb-3">🎯 Le poste</h2>
-                <div className="text-zinc-600 leading-relaxed whitespace-pre-wrap text-sm">
-                  {job.public_description ?? job.description}
-                </div>
-              </section>
+          {/* Title */}
+          <h1 className="text-4xl font-black text-white leading-tight mb-3">{title}</h1>
+          {company && <p className="text-lg text-white/60 font-medium mb-6">@ {company}</p>}
+
+          {/* Hook */}
+          {job.public_hook && (
+            <p className="text-xl font-semibold italic mb-8" style={{ color: '#F5A623' }}>
+              &ldquo;{job.public_hook}&rdquo;
+            </p>
+          )}
+
+          {/* Meta chips */}
+          <div className="flex flex-wrap gap-3">
+            {job.location && (
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-white/80 text-sm">
+                📍 {job.location}
+              </span>
             )}
-
-            {/* Missions */}
-            {job.missions && job.missions.filter(Boolean).length > 0 && (
-              <section>
-                <h2 className="text-lg font-black text-[#1a1918] mb-3">📋 Tes missions</h2>
-                <ul className="space-y-2">
-                  {job.missions.filter(Boolean).map((m, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm text-zinc-600">
-                      <span className="w-5 h-5 rounded-full bg-[#F5A623]/20 text-[#F5A623] flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">{i+1}</span>
-                      {m}
-                    </li>
-                  ))}
-                </ul>
-              </section>
+            {duration && (
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-white/80 text-sm">
+                ⏱ {duration}
+              </span>
             )}
-
-            {/* Profil */}
-            {job.profile_sought && (
-              <section>
-                <h2 className="text-lg font-black text-[#1a1918] mb-3">👤 Profil recherché</h2>
-                <p className="text-sm text-zinc-600 leading-relaxed">{job.profile_sought}</p>
-              </section>
+            {job.department && (
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-white/80 text-sm">
+                💼 {job.department}
+              </span>
             )}
-
-            {/* Vibe */}
-            {job.public_vibe && (
-              <section className="bg-amber-50 rounded-2xl p-5 border border-amber-100">
-                <h2 className="text-sm font-black text-[#F5A623] uppercase tracking-wider mb-2">🌴 L&apos;ambiance</h2>
-                <p className="text-sm text-zinc-700 italic">&ldquo;{job.public_vibe}&rdquo;</p>
-              </section>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Perks */}
-            {job.public_perks && job.public_perks.filter(Boolean).length > 0 && (
-              <div className="bg-white rounded-2xl p-5 border border-zinc-100 shadow-sm">
-                <h3 className="text-sm font-black text-[#1a1918] mb-3">✨ Avantages</h3>
-                <ul className="space-y-2">
-                  {job.public_perks.filter(Boolean).map((p, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-zinc-600">
-                      <span className="text-[#F5A623]">→</span> {p}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Langues */}
-            {job.required_languages && job.required_languages.length > 0 && (
-              <div className="bg-white rounded-2xl p-5 border border-zinc-100 shadow-sm">
-                <h3 className="text-sm font-black text-[#1a1918] mb-3">🗣 Langues requises</h3>
-                <div className="flex flex-wrap gap-2">
-                  {job.required_languages.map((l, i) => (
-                    <span key={i} className="px-2 py-1 bg-zinc-100 text-zinc-600 rounded-lg text-xs">
-                      {LANG_LABELS[l] ?? l}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Hashtags */}
-            {job.public_hashtags && job.public_hashtags.filter(Boolean).length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {job.public_hashtags.filter(Boolean).map((h, i) => (
-                  <span key={i} className="text-xs text-[#F5A623] font-medium">
-                    {h.startsWith('#') ? h : `#${h}`}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* CTA sidebar */}
-            {!isStaffed && (
-              <div className="bg-[#1a1918] rounded-2xl p-5 text-center">
-                <p className="text-white font-bold mb-1 text-sm">Intéressé(e) ?</p>
-                <p className="text-zinc-400 text-xs mb-4">Postulez via Bali Interns — on s&apos;occupe de tout</p>
-                <a href="#postuler" className="block w-full py-2.5 bg-[#F5A623] text-[#1a1918] font-bold rounded-xl text-sm hover:bg-[#e8930a] transition-colors">
-                  Postuler →
-                </a>
-              </div>
+            {job.required_level && (
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-white/80 text-sm">
+                🎓 {job.required_level}
+              </span>
             )}
           </div>
         </div>
+      </div>
 
-        {/* CV Drop section */}
-        {job.cv_drop_enabled && !isStaffed && (
-          <section id="postuler" className="mt-16 bg-white rounded-3xl p-8 border border-zinc-100 shadow-sm">
-            <h2 className="text-2xl font-black text-[#1a1918] mb-1">📄 Dépose ton CV</h2>
-            <p className="text-sm text-zinc-400 mb-6">On te recontacte sous 24h. Ensuite on t&apos;oriente vers le formulaire complet.</p>
-
-            {cvDone ? (
-              <div className="text-center py-8">
-                <div className="text-5xl mb-3">🎉</div>
-                <p className="text-lg font-bold text-[#1a1918]">CV reçu !</p>
-                <p className="text-sm text-zinc-400 mt-1">Redirection vers le formulaire complet…</p>
-              </div>
-            ) : (
-              <form onSubmit={e => void submitCV(e)} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-500 mb-1">Prénom</label>
-                    <input className="w-full px-3 py-2.5 text-sm border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F5A623]"
-                      value={cvForm.first_name} onChange={e => setCvForm(p => ({ ...p, first_name: e.target.value }))} placeholder="Marie" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-500 mb-1">Nom</label>
-                    <input className="w-full px-3 py-2.5 text-sm border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F5A623]"
-                      value={cvForm.last_name} onChange={e => setCvForm(p => ({ ...p, last_name: e.target.value }))} placeholder="Dupont" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-500 mb-1">Email *</label>
-                    <input required type="email" className="w-full px-3 py-2.5 text-sm border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F5A623]"
-                      value={cvForm.email} onChange={e => setCvForm(p => ({ ...p, email: e.target.value }))} placeholder="marie@gmail.com" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-500 mb-1">Téléphone / WhatsApp</label>
-                    <input className="w-full px-3 py-2.5 text-sm border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F5A623]"
-                      value={cvForm.phone} onChange={e => setCvForm(p => ({ ...p, phone: e.target.value }))} placeholder="+33 6 …" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-500 mb-1">Ton école / université</label>
-                  <input className="w-full px-3 py-2.5 text-sm border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F5A623]"
-                    value={cvForm.school} onChange={e => setCvForm(p => ({ ...p, school: e.target.value }))} placeholder="KEDGE Business School, Paris…" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-500 mb-1">Message (optionnel)</label>
-                  <textarea className="w-full px-3 py-2.5 text-sm border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F5A623] resize-none"
-                    rows={3} value={cvForm.message} onChange={e => setCvForm(p => ({ ...p, message: e.target.value }))}
-                    placeholder="Pourquoi ce stage t'intéresse ?" />
-                </div>
-                {cvError && <p className="text-sm text-red-500">{cvError}</p>}
-                <button type="submit" disabled={cvSubmitting || !cvForm.email}
-                  className="w-full py-3 bg-[#F5A623] text-[#1a1918] font-bold rounded-2xl hover:bg-[#e8930a] disabled:opacity-50 transition-colors text-sm">
-                  {cvSubmitting ? 'Envoi…' : '📄 Envoyer et continuer →'}
-                </button>
-                <p className="text-xs text-zinc-400 text-center">
-                  En continuant, vous serez redirigé vers le formulaire complet de candidature Bali Interns.
-                </p>
-              </form>
-            )}
-          </section>
+      {/* Body */}
+      <div className="max-w-3xl mx-auto px-6 py-10 space-y-10">
+        {/* Vibe */}
+        {job.public_vibe && (
+          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6">
+            <p className="text-sm font-bold text-amber-700 uppercase tracking-wider mb-2">🌴 L&apos;ambiance</p>
+            <p className="text-zinc-700 leading-relaxed">{job.public_vibe}</p>
+          </div>
         )}
 
-        {/* Footer minimal */}
-        <footer className="mt-16 pt-8 border-t border-zinc-100 text-center">
-          <p className="text-sm text-zinc-400">
-            Stage géré par{' '}
-            <Link href="https://bali-interns.com" className="text-[#F5A623] font-semibold hover:underline">
-              Bali Interns
-            </Link>
-            {' '}— Agence de stages à Bali, Indonésie
-          </p>
-        </footer>
-      </main>
+        {/* Perks */}
+        {perks.length > 0 && (
+          <div>
+            <h2 className="text-lg font-black text-[#1a1918] mb-4">✨ Ce qu&apos;on t&apos;offre</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {perks.map((perk, i) => (
+                <div key={i} className="flex items-center gap-3 bg-white border border-zinc-100 rounded-xl p-4">
+                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#F5A623' }} />
+                  <span className="text-sm text-zinc-700 font-medium">{perk}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Description */}
+        {(job.public_description ?? job.description) && (
+          <div>
+            <h2 className="text-lg font-black text-[#1a1918] mb-4">📋 Le poste</h2>
+            <p className="text-zinc-600 leading-relaxed whitespace-pre-wrap">
+              {job.public_description ?? job.description}
+            </p>
+          </div>
+        )}
+
+        {/* Missions */}
+        {missions.length > 0 && (
+          <div>
+            <h2 className="text-lg font-black text-[#1a1918] mb-4">🎯 Tes missions</h2>
+            <ul className="space-y-2">
+              {missions.map((m, i) => (
+                <li key={i} className="flex items-start gap-3 text-zinc-600">
+                  <span className="mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#F5A623' }} />
+                  {m}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Skills */}
+        {skills.length > 0 && (
+          <div>
+            <h2 className="text-lg font-black text-[#1a1918] mb-4">🛠 Compétences recherchées</h2>
+            <div className="flex flex-wrap gap-2">
+              {skills.map((s, i) => (
+                <span key={i} className="px-3 py-1 bg-zinc-100 text-zinc-700 rounded-full text-sm font-medium">{s}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* CTA / CV Drop */}
+        <div className="bg-white border border-zinc-100 rounded-2xl p-8 text-center">
+          {isStaffed ? (
+            <div>
+              <p className="text-4xl mb-3">🤙</p>
+              <h3 className="text-xl font-black text-[#1a1918] mb-2">Ce poste est pourvu</h3>
+              <p className="text-zinc-500 text-sm mb-6">Mais d&apos;autres offres t&apos;attendent !</p>
+              <a href="https://bali-interns.com/candidater"
+                className="inline-block px-6 py-3 rounded-xl font-bold text-sm text-white"
+                style={{ background: '#F5A623' }}>
+                Voir toutes les offres →
+              </a>
+            </div>
+          ) : job.cv_drop_enabled ? (
+            <div>
+              <h3 className="text-xl font-black text-[#1a1918] mb-2">
+                {uploaded ? '✅ CV reçu !' : 'Postule maintenant'}
+              </h3>
+              <p className="text-zinc-500 text-sm mb-6">
+                {uploaded
+                  ? 'Redirection vers le formulaire complet…'
+                  : 'Dépose ton CV pour commencer — tu complèteras ton dossier ensuite.'}
+              </p>
+              {!uploaded && (
+                <div
+                  onDrop={onDrop}
+                  onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+                  onDragLeave={() => setDragOver(false)}
+                  onClick={() => fileRef.current?.click()}
+                  className={`border-2 border-dashed rounded-xl p-8 cursor-pointer transition-all mb-6 ${
+                    dragOver ? 'border-[#F5A623] bg-amber-50' : 'border-zinc-200 hover:border-[#F5A623] hover:bg-amber-50/30'
+                  }`}>
+                  <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={onFileChange} />
+                  <div className="text-3xl mb-2">📄</div>
+                  <p className="text-sm font-semibold text-zinc-600">
+                    {uploading ? 'Upload en cours…' : cvFile ? cvFile.name : 'Glisse ton CV ici ou clique pour sélectionner'}
+                  </p>
+                  <p className="text-xs text-zinc-400 mt-1">PDF, DOC, DOCX · max 10MB</p>
+                </div>
+              )}
+              <a href={`/apply?prefill_job=${job.id}`}
+                className="inline-block px-6 py-3 rounded-xl font-bold text-sm text-[#1a1918] border-2 border-zinc-200 hover:border-[#F5A623] transition-colors">
+                Postuler sans CV →
+              </a>
+            </div>
+          ) : (
+            <div>
+              <h3 className="text-xl font-black text-[#1a1918] mb-2">Intéressé(e) ?</h3>
+              <p className="text-zinc-500 text-sm mb-6">Postule en 3 minutes sur Bali Interns.</p>
+              <a href={`/apply?prefill_job=${job.id}`}
+                className="inline-block px-8 py-4 rounded-xl font-black text-sm text-[#1a1918] transition-all hover:scale-105"
+                style={{ background: '#F5A623' }}>
+                Je postule →
+              </a>
+            </div>
+          )}
+        </div>
+
+        {/* Hashtags */}
+        {job.public_hashtags && job.public_hashtags.filter(Boolean).length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {job.public_hashtags.filter(Boolean).map((h, i) => (
+              <span key={i} className="text-sm text-[#F5A623] font-medium">
+                {h.startsWith('#') ? h : `#${h}`}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="border-t border-zinc-100 pt-8 flex items-center justify-between text-xs text-zinc-400">
+          <span>© Bali Interns — Stage à Bali</span>
+          <a href="https://bali-interns.com" className="hover:text-zinc-600">bali-interns.com</a>
+        </div>
+      </div>
     </div>
   )
 }
