@@ -141,7 +141,7 @@ export default function JobDetailPage() {
   const [toastMsg, setToastMsg] = useState<string | null>(null)
   const [allDepartments, setAllDepartments] = useState<JobDepartment[]>([])
   const [relatedJobs, setRelatedJobs] = useState<RelatedJob[]>([])
-  const { assist, loading: aiLoading } = useAIAssist()
+  const { assist, isLoading } = useAIAssist()
 
   function showToast(msg: string) {
     setToastMsg(msg)
@@ -657,12 +657,12 @@ export default function JobDetailPage() {
         <div>
           <div className="flex items-center justify-between mb-1">
             <p className="text-xs text-zinc-400">Description interne</p>
-            <button type="button" disabled={aiLoading || !job.title} onClick={async () => {
+            <button type="button" disabled={isLoading('generate_description') || isLoading('improve_description') || !job.title} onClick={async () => {
               const r = job.description
-                ? await assist('improve_text', { text: job.description, context: `Offre ${job.title} à Bali` })
+                ? await assist('improve_description', { text: job.description })
                 : await assist('generate_description', { title: job.title ?? '', company_name: job.companies?.name ?? '', missions: (job.missions ?? []).join(', '), profile_sought: job.profile_sought ?? '', tools: (job.tools_required ?? []).join(', ') })
               if (r) void patchJob({ description: r })
-            }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
+            }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{isLoading('generate_description') || isLoading('improve_description') ? '...' : '✨ IA'}</button>
           </div>
           {editing.description ? (
             <textarea
@@ -699,12 +699,12 @@ export default function JobDetailPage() {
         <div>
           <div className="flex items-center justify-between mb-1">
             <p className="text-xs text-zinc-400">Profil recherché</p>
-            <button type="button" disabled={aiLoading || !job.title} onClick={async () => {
+            <button type="button" disabled={isLoading('generate_profile') || isLoading('improve_profile') || !job.title} onClick={async () => {
               const r = job.profile_sought
-                ? await assist('improve_text', { text: job.profile_sought, context: `Profil pour ${job.title}` })
+                ? await assist('improve_profile', { text: job.profile_sought })
                 : await assist('generate_profile', { title: job.title ?? '', department: departmentName ?? '', required_level: job.required_level ?? '', tools: (job.tools_required ?? []).join(', '), languages: (job.required_languages ?? []).join(', ') })
               if (r) void patchJob({ profile_sought: r })
-            }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
+            }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{isLoading('generate_profile') || isLoading('improve_profile') ? '...' : '✨ IA'}</button>
           </div>
           {editing.profile_sought ? (
             <textarea
@@ -760,24 +760,53 @@ export default function JobDetailPage() {
       <section className="bg-white border border-zinc-100 rounded-2xl p-5 mb-4 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">📢 Publication & Contenu</h2>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" checked={!!job.is_public} onChange={e => void patchJob({ is_public: e.target.checked })} className="sr-only peer" />
-            <div className="w-9 h-5 bg-zinc-200 peer-checked:bg-[#c8a96e] rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
-            <span className="ml-2 text-xs text-zinc-500">{job.is_public ? '🟢 Publiée' : '⚪ Brouillon'}</span>
-          </label>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              disabled={!job.title || isLoading('generate_public_description') || isLoading('generate_hook') || isLoading('generate_vibe') || isLoading('generate_perks') || isLoading('generate_slug')}
+              onClick={async () => {
+                const ctx = {
+                  title: job.title ?? '', public_title: job.public_title ?? '',
+                  company_name: job.companies?.name ?? '', company_type: job.company_type ?? '',
+                  missions: (job.missions ?? []).join(','), tools: (job.tools_required ?? []).join(', '),
+                  department: departmentName ?? '', duration: job.wished_duration_months ? `${job.wished_duration_months}mois` : ''
+                }
+                if (!job.public_description) {
+                  const r = await assist('generate_public_description', ctx)
+                  if (r) void patchJob({ public_description: r })
+                }
+                if (!job.public_hook) {
+                  const r = await assist('generate_hook', ctx)
+                  if (r) void patchJob({ public_hook: r.slice(0, 100) })
+                }
+                if (!job.public_vibe) {
+                  const r = await assist('generate_vibe', ctx)
+                  if (r) void patchJob({ public_vibe: r })
+                }
+                if (!(job.public_perks?.filter(Boolean).length)) {
+                  const r = await assist('generate_perks', ctx)
+                  if (r) void patchJob({ public_perks: r.split('\n').map((s: string) => s.trim()).filter(Boolean) })
+                }
+                if (!job.seo_slug) {
+                  const r = await assist('generate_slug', ctx)
+                  if (r) void patchJob({ seo_slug: r.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') })
+                }
+              }}
+              className="text-xs px-3 py-1.5 bg-purple-50 text-purple-600 rounded-xl font-semibold hover:bg-purple-100 disabled:opacity-40 transition-all"
+            >
+              {isLoading('generate_public_description') || isLoading('generate_hook') || isLoading('generate_vibe') || isLoading('generate_perks') || isLoading('generate_slug') ? '⏳ Génération…' : '✨ Générer tout'}
+            </button>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" checked={!!job.is_public} onChange={e => void patchJob({ is_public: e.target.checked })} className="sr-only peer" />
+              <div className="w-9 h-5 bg-zinc-200 peer-checked:bg-[#c8a96e] rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
+              <span className="ml-2 text-xs text-zinc-500">{job.is_public ? '🟢 Publiée' : '⚪ Brouillon'}</span>
+            </label>
+          </div>
         </div>
 
         {/* Description publique */}
         <div>
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-xs text-zinc-400">Description publique <span className="text-amber-600 text-[10px]">🇬🇧 visible candidats</span></p>
-            <button type="button" disabled={aiLoading || !job.title} onClick={async () => {
-              const r = job.public_description
-                ? await assist('improve_text', { text: job.public_description, context: `Offre publique ${job.title}` })
-                : await assist('generate_public_description', { title: job.title ?? '', public_title: job.public_title ?? '', company_type: job.company_type ?? '', missions: (job.missions ?? []).join(','), tools: (job.tools_required ?? []).join(', ') })
-              if (r) void patchJob({ public_description: r })
-            }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
-          </div>
+          <p className="text-xs text-zinc-400 mb-1">Description publique <span className="text-amber-600 text-[10px]">🇬🇧 visible candidats</span></p>
           {editing.public_description ? (
             <textarea className="w-full px-3 py-2 text-sm border border-[#c8a96e] rounded-xl focus:outline-none resize-none" autoFocus rows={3}
               defaultValue={job.public_description ?? ''}
@@ -785,107 +814,71 @@ export default function JobDetailPage() {
               onKeyDown={e => { if (e.key === 'Escape') setEditing({}) }} />
           ) : (
             <button onClick={() => setEditing(p => ({ ...p, public_description: true }))} className="text-left w-full text-sm text-zinc-600 hover:text-[#c8a96e] transition-colors">
-              {job.public_description || <span className="text-zinc-300 italic">Cliquer pour ajouter une description publique...</span>}
+              {job.public_description || <span className="text-zinc-300 italic">{isLoading('generate_public_description') ? '⏳ Génération...' : 'Cliquer pour ajouter une description publique...'}</span>}
             </button>
           )}
         </div>
 
         {/* Accroche */}
         <div>
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-xs text-zinc-400">Accroche publique <span className="text-zinc-300">(100 car. max)</span></p>
-            <button type="button" disabled={aiLoading || !job.title} onClick={async () => {
-              const r = job.public_hook
-                ? await assist('improve_text', { text: job.public_hook, context: `Accroche pour ${job.title}` })
-                : await assist('generate_hook', { title: job.title ?? '', company_name: job.companies?.name ?? '', department: departmentName ?? '' })
-              if (r) void patchJob({ public_hook: r.slice(0, 100) })
-            }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
-          </div>
+          <p className="text-xs text-zinc-400 mb-1">Accroche publique <span className="text-zinc-300">(100 car. max)</span></p>
           {editing.public_hook ? (
             <input className="w-full px-3 py-2 text-sm border border-[#c8a96e] rounded-xl focus:outline-none" autoFocus
-              defaultValue={job.public_hook ?? ''}
-              maxLength={100}
+              defaultValue={job.public_hook ?? ''} maxLength={100}
               onBlur={e => void patchJob({ public_hook: e.target.value || null })}
-              onKeyDown={e => { if (e.key === 'Enter') void patchJob({ public_hook: (e.target as HTMLInputElement).value || null }); if (e.key === 'Escape') setEditing({}) }}
-            />
+              onKeyDown={e => { if (e.key === 'Enter') void patchJob({ public_hook: (e.target as HTMLInputElement).value || null }); if (e.key === 'Escape') setEditing({}) }} />
           ) : (
             <button onClick={() => setEditing(p => ({ ...p, public_hook: true }))} className="text-left w-full text-sm text-zinc-600 hover:text-[#c8a96e] transition-colors italic">
-              {job.public_hook || <span className="text-zinc-300 not-italic">Cliquer pour ajouter une accroche...</span>}
+              {job.public_hook || <span className="text-zinc-300 not-italic">{isLoading('generate_hook') ? '⏳ Génération...' : 'Cliquer pour ajouter une accroche...'}</span>}
             </button>
           )}
         </div>
 
         {/* Ambiance */}
         <div>
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-xs text-zinc-400">Ambiance / vibe</p>
-            <button type="button" disabled={aiLoading || !job.title} onClick={async () => {
-              const r = job.public_vibe
-                ? await assist('improve_text', { text: job.public_vibe, context: `Ambiance pour ${job.title}` })
-                : await assist('generate_vibe', { title: job.title ?? '', company_name: job.companies?.name ?? '', company_type: job.company_type ?? '' })
-              if (r) void patchJob({ public_vibe: r })
-            }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
-          </div>
+          <p className="text-xs text-zinc-400 mb-1">Ambiance / vibe</p>
           {editing.public_vibe ? (
             <input className="w-full px-3 py-2 text-sm border border-[#c8a96e] rounded-xl focus:outline-none" autoFocus
               defaultValue={job.public_vibe ?? ''}
               onBlur={e => void patchJob({ public_vibe: e.target.value || null })}
-              onKeyDown={e => { if (e.key === 'Enter') void patchJob({ public_vibe: (e.target as HTMLInputElement).value || null }); if (e.key === 'Escape') setEditing({}) }}
-            />
+              onKeyDown={e => { if (e.key === 'Enter') void patchJob({ public_vibe: (e.target as HTMLInputElement).value || null }); if (e.key === 'Escape') setEditing({}) }} />
           ) : (
             <button onClick={() => setEditing(p => ({ ...p, public_vibe: true }))} className="text-left w-full text-sm text-zinc-600 hover:text-[#c8a96e] transition-colors italic">
-              {job.public_vibe || <span className="text-zinc-300 not-italic">Cliquer pour décrire l&apos;ambiance...</span>}
+              {job.public_vibe || <span className="text-zinc-300 not-italic">{isLoading('generate_vibe') ? '⏳ Génération...' : 'Cliquer pour décrire l\'ambiance...'}</span>}
             </button>
           )}
         </div>
 
         {/* Avantages */}
         <div>
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-xs text-zinc-400">Avantages <span className="text-zinc-300">(un par ligne)</span></p>
-            <button type="button" disabled={aiLoading || !job.title} onClick={async () => {
-              const r = await assist('generate_perks', { title: job.title ?? '', company_name: job.companies?.name ?? '', department: departmentName ?? '' })
-              if (r) void patchJob({ public_perks: r.split('\n').map(s => s.trim()).filter(Boolean) })
-            }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
-          </div>
+          <p className="text-xs text-zinc-400 mb-1">Avantages <span className="text-zinc-300">(un par ligne)</span></p>
           {editing.public_perks ? (
             <textarea className="w-full px-3 py-2 text-sm border border-[#c8a96e] rounded-xl focus:outline-none resize-none" autoFocus rows={3}
               defaultValue={(job.public_perks ?? []).join('\n')}
-              onBlur={e => void patchJob({ public_perks: e.target.value.split('\n').map(s => s.trim()).filter(Boolean) })}
-            />
+              onBlur={e => void patchJob({ public_perks: e.target.value.split('\n').map(s => s.trim()).filter(Boolean) })} />
           ) : (
             <button onClick={() => setEditing(p => ({ ...p, public_perks: true }))} className="text-left w-full text-sm text-zinc-600 hover:text-[#c8a96e] transition-colors">
               {job.public_perks?.filter(Boolean).length ? (
                 <div className="flex flex-wrap gap-1">{job.public_perks.filter(Boolean).map((p, i) => <span key={i} className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">✨ {p}</span>)}</div>
-              ) : <span className="text-zinc-300 italic not-italic text-sm">Cliquer pour ajouter des avantages...</span>}
+              ) : <span className="text-zinc-300 italic not-italic text-sm">{isLoading('generate_perks') ? '⏳ Génération...' : 'Cliquer pour ajouter des avantages...'}</span>}
             </button>
           )}
         </div>
 
         {/* Slug SEO */}
         <div>
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-xs text-zinc-400">Slug SEO <span className="text-zinc-300">(ex: social-media-manager-bali)</span></p>
-            <button type="button" disabled={aiLoading || !job.title} onClick={async () => {
-              const r = await assist('generate_slug', {
-                title: job.public_title ?? job.title ?? '',
-                duration: job.wished_duration_months ? `${job.wished_duration_months}mois` : '',
-                department: departmentName ?? job.department ?? ''
-              })
-              if (r) void patchJob({ seo_slug: r.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') })
-            }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
-          </div>
+          <p className="text-xs text-zinc-400 mb-1">Slug SEO <span className="text-zinc-300">(ex: social-media-manager-bali)</span></p>
           {editing.seo_slug ? (
             <input className="w-full px-3 py-2 text-sm border border-[#c8a96e] rounded-xl focus:outline-none font-mono" autoFocus
               defaultValue={job.seo_slug ?? ''}
               onBlur={e => void patchJob({ seo_slug: e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || null })}
-              onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditing({}) }}
-            />
+              onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditing({}) }} />
           ) : (
-            <div className="flex items-center gap-2">
-              <button onClick={() => setEditing(p => ({ ...p, seo_slug: true }))} className="text-left text-sm font-mono text-zinc-600 hover:text-[#c8a96e] transition-colors">
-                {job.seo_slug || <span className="text-zinc-300 not-italic font-sans">Cliquer pour définir le slug...</span>}
-              </button>
+            <button onClick={() => setEditing(p => ({ ...p, seo_slug: true }))} className="text-left text-sm font-mono text-zinc-600 hover:text-[#c8a96e] transition-colors">
+              {job.seo_slug || <span className="text-zinc-300 not-italic font-sans">{isLoading('generate_slug') ? '⏳ Génération...' : 'Cliquer pour définir le slug...'}</span>}
+            </button>
+          )}
+        </div>
             </div>
           )}
         </div>

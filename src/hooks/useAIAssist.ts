@@ -1,12 +1,10 @@
-'use client'
-
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 
 export function useAIAssist() {
-  const [loading, setLoading] = useState(false)
+  const [loadingAction, setLoadingAction] = useState<string | null>(null)
 
-  async function assist(action: string, ctx: Record<string, string>): Promise<string | null> {
-    setLoading(true)
+  const assist = useCallback(async (action: string, ctx: Record<string, string>): Promise<string | null> => {
+    setLoadingAction(action)
     try {
       const res = await fetch('/api/ai-assist', {
         method: 'POST',
@@ -15,11 +13,19 @@ export function useAIAssist() {
       })
       if (!res.ok) return null
       const data = await res.json() as { result: string }
-      return data.result
+      return data.result ?? null
+    } catch {
+      return null
     } finally {
-      setLoading(false)
+      setLoadingAction(null)
     }
-  }
+  }, [])
 
-  return { assist, loading }
+  // isLoading(action) → true uniquement pour CE bouton précis
+  const isLoading = useCallback((action: string) => loadingAction === action, [loadingAction])
+
+  // loading global = un quelconque bouton tourne
+  const loading = loadingAction !== null
+
+  return { assist, loading, isLoading, loadingAction }
 }

@@ -50,6 +50,15 @@ Si tu ne trouves pas l'info, mets null. Pas d'explication, JSON uniquement.`,
 Texte original: "${ctx.text ?? ''}". Contexte: ${ctx.context ?? ''}.
 Réponds uniquement avec le texte amélioré, même longueur approximative.`,
 
+  // Aliases dédiés pour tracking individuel par bouton
+  improve_description: (ctx) =>
+    `Améliore cette description interne pour une offre de stage à Bali. Ton professionnel et direct.
+Texte: "${ctx.text ?? ''}". Réponds uniquement avec le texte amélioré.`,
+
+  improve_profile: (ctx) =>
+    `Améliore ce profil recherché pour une offre de stage à Bali. Précis et attractif.
+Texte: "${ctx.text ?? ''}". Réponds uniquement avec le texte amélioré.`,
+
   generate_hook: (ctx) =>
     `Tu travailles pour Bali Interns à Bali, Indonésie.
 Génère UNE accroche courte et percutante (max 80 caractères) pour cette offre de stage: "${ctx.title ?? ''}".
