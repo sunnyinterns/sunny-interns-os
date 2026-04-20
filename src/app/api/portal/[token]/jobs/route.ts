@@ -37,6 +37,10 @@ export async function GET(
         title,
         public_title,
         public_description,
+        public_hook,
+        public_vibe,
+        public_perks,
+        seo_slug,
         department,
         job_departments (name),
         companies (name)

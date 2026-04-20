@@ -119,6 +119,10 @@ interface PortalJobItem {
   title: string
   sector: string | null
   public_description: string | null
+  public_hook: string | null
+  public_vibe: string | null
+  public_perks: string[] | null
+  seo_slug: string | null
   intern_interested: boolean | null
   status: string
 }
@@ -248,6 +252,33 @@ function JobCommentCard({ sub, token }: { sub: PortalJobItem; token: string }) {
 
       {sub.public_description && (
         <p style={{ fontSize: 13, color: '#374151', margin: '8px 0', lineHeight: 1.5 }}>{sub.public_description}</p>
+      )}
+
+      {/* Hook accroche */}
+      {sub.public_hook && !sub.public_description && (
+        <p style={{ fontSize: 13, color: '#c8a96e', fontStyle: 'italic', margin: '8px 0' }}>&ldquo;{sub.public_hook}&rdquo;</p>
+      )}
+
+      {/* Ambiance */}
+      {sub.public_vibe && (
+        <p style={{ fontSize: 12, color: '#6b7280', margin: '4px 0', lineHeight: 1.4 }}>🌴 {sub.public_vibe}</p>
+      )}
+
+      {/* Avantages */}
+      {sub.public_perks && sub.public_perks.filter(Boolean).length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, margin: '8px 0' }}>
+          {sub.public_perks.filter(Boolean).map((p: string, i: number) => (
+            <span key={i} style={{ fontSize: 11, padding: '2px 8px', background: '#fef3c7', color: '#92400e', borderRadius: 20 }}>✨ {p}</span>
+          ))}
+        </div>
+      )}
+
+      {/* Lien page publique */}
+      {sub.seo_slug && (
+        <a href={`/jobs/${sub.seo_slug}`} target="_blank" rel="noopener noreferrer"
+          style={{ display: 'inline-block', fontSize: 11, color: '#c8a96e', textDecoration: 'none', margin: '4px 0 8px' }}>
+          🔗 Voir la fiche complète ↗
+        </a>
       )}
 
       {/* Interest buttons */}
