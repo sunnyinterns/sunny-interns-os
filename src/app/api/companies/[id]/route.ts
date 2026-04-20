@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 
 // Colonnes autorisées dans le PATCH (évite d'envoyer des champs inconnus à Supabase)
 const ALLOWED_COLUMNS = new Set([
-  'name','destination','sector','industry','website','logo_url','company_type','type',
+  'name','sector','industry','website','logo_url','company_type','type',
   'internship_city','city','google_maps_url','registration_country','legal_type',
   'nib','npwp','vat_number','registration_number','siret','tax_id','state_of_incorporation',
   'instagram_url','tiktok_url','linkedin_url','facebook_url','notes_internal','description',
