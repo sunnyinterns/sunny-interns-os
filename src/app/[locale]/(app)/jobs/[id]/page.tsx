@@ -135,6 +135,7 @@ export default function JobDetailPage() {
   const [error, setError] = useState(false)
   const [editing, setEditing] = useState<Record<string, boolean>>({})
   const [saving, setSaving] = useState(false)
+  const [activeTab, setActiveTab] = useState<'infos' | 'publication' | 'media' | 'candidatures'>('infos')
   const [qualifiedCases, setQualifiedCases] = useState<QualifiedCase[]>([])
   const [selectedCaseId, setSelectedCaseId] = useState('')
   const [addingCandidate, setAddingCandidate] = useState(false)
@@ -498,6 +499,29 @@ export default function JobDetailPage() {
         </div>
       </div>
 
+      {/* ═══ TABS ═══ */}
+      <div className="flex gap-0 border-b border-zinc-100 bg-white rounded-t-xl overflow-hidden -mb-4">
+        {([
+          { key: 'infos', label: '📋 Infos' },
+          { key: 'publication', label: '📢 Publication' },
+          { key: 'media', label: '🖼 Médias' },
+          { key: 'candidatures', label: `👥 Candidatures${(job.job_submissions?.length ?? 0) > 0 ? ` (${job.job_submissions!.length})` : ''}` },
+        ] as const).map(t => (
+          <button key={t.key} onClick={() => setActiveTab(t.key)}
+            className={['px-4 py-2.5 text-xs font-semibold transition-all border-b-2',
+              activeTab === t.key ? 'border-[#c8a96e] text-[#c8a96e] bg-amber-50/50' : 'border-transparent text-zinc-400 hover:text-zinc-600'
+            ].join(' ')}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ═══ CONTENU PAR ONGLET ═══ */}
+      <div className="mt-4">
+
+      {/* ─── ONGLET INFOS ─── */}
+      {activeTab === 'infos' && <>
+
       {/* ═══ MISSIONS & OUTILS ═══ */}
       {((job.missions && job.missions.length > 0) || (job.tools_required && job.tools_required.length > 0)) && (
         <div className="bg-white border border-zinc-100 rounded-xl p-5 space-y-4">
@@ -543,6 +567,9 @@ export default function JobDetailPage() {
       )}
 
       {/* ═══ CANDIDATURES EN COURS ═══ */}
+      </> /* fin onglet INFOS */}
+
+      {activeTab === 'candidatures' && <>
       <div className="bg-white border border-zinc-100 rounded-xl p-5">
         <h2 className="text-sm font-semibold text-[#1a1918] mb-3">
           Candidatures en cours <span className="text-zinc-400 font-normal">({(job.job_submissions ?? []).length})</span>
@@ -652,6 +679,10 @@ export default function JobDetailPage() {
           </div>
         </div>
       </div>
+      </> /* fin onglet CANDIDATURES */}
+
+      {/* ─── ONGLET INFOS (suite) : Descriptions + Contact ─── */}
+      {activeTab === 'infos' && <>
       {/* ═══ DESCRIPTIONS ═══ */}
       <div className="bg-white border border-zinc-100 rounded-xl p-5 space-y-4">
         <h2 className="text-sm font-semibold text-[#1a1918]">Description</h2>
@@ -757,7 +788,10 @@ export default function JobDetailPage() {
           <p className="text-sm text-zinc-300 italic">Cliquez sur les champs ci-dessus pour ajouter du contenu.</p>
         )}
       </div>
+      </> /* fin onglet INFOS 2 */}
 
+      {/* ─── ONGLET PUBLICATION ─── */}
+      {activeTab === 'publication' && <>
       {/* ═══ PUBLICATION & CONTENU ═══ */}
       <section className="bg-white border border-zinc-100 rounded-2xl p-5 mb-4 space-y-4">
         <div className="flex items-center justify-between">
@@ -910,6 +944,40 @@ export default function JobDetailPage() {
       </section>
 
       {/* ═══ CONTACT EMPLOYEUR ═══ */}
+      </> /* fin onglet PUBLICATION */}
+
+      {/* ─── ONGLET MÉDIAS ─── */}
+      {activeTab === 'media' && (
+        <div className="bg-white border border-zinc-100 rounded-xl p-5 space-y-5">
+          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">🖼 Image de couverture</h2>
+          {job.cover_image_url ? (
+            <div className="relative rounded-xl overflow-hidden" style={{ height: 200 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={job.cover_image_url} alt="Cover" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+              <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end">
+                <span className="text-white text-xs font-medium">Cover image actuelle</span>
+                <a href={job.cover_image_url} target="_blank" rel="noopener noreferrer" className="text-white/80 text-xs hover:text-white">Voir ↗</a>
+              </div>
+            </div>
+          ) : (
+            <div className="h-32 bg-zinc-50 border border-dashed border-zinc-200 rounded-xl flex items-center justify-center text-zinc-400 text-sm">
+              Aucune image de couverture — Générer depuis <button className="ml-1 text-[#c8a96e] hover:underline font-medium" onClick={() => window.open(`/${locale}/marketing/jobs?job_id=${id}`, '_blank')}>Jobs & Contenu ↗</button>
+            </div>
+          )}
+          <div className="pt-2 border-t border-zinc-100">
+            <p className="text-xs text-zinc-400 mb-3">Générer et gérer tous les assets marketing depuis le hub :</p>
+            <button onClick={() => window.open(`/${locale}/marketing/jobs?job_id=${id}`, '_blank')}
+              className="w-full py-3 px-4 bg-purple-50 text-purple-600 rounded-xl text-sm font-semibold hover:bg-purple-100 transition-colors">
+              🎨 Ouvrir Jobs &amp; Contenu → posts, stories, carousels, images formats réseaux
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Contact visible dans onglet INFOS seulement ─── */}
+      {activeTab === 'infos' && <>
+      {/* ═══ CONTACT EMPLOYEUR ═══ */}
       {(job.contacts || job.companies?.contact_email) && (
         <section className="bg-white border border-zinc-100 rounded-2xl p-5 mb-4">
           <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Contact employeur</h2>
@@ -938,6 +1006,9 @@ export default function JobDetailPage() {
           )}
         </section>
       )}
+      </> /* fin onglet INFOS 3 : contact */}
+
+      </div> {/* fin wrapper onglets */}
     </div>
   )
 }
