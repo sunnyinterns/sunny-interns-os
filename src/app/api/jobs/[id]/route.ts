@@ -9,6 +9,8 @@ const ALLOWED = [
   'wished_end_date', 'notes_internal', 'is_active', 'job_department_id', 'max_candidates',
   'compensation_type', 'compensation_amount', 'skills_required', 'actual_end_date',
   'company_type', 'background_image_url', 'parent_job_id',
+  'public_hook', 'public_vibe', 'public_perks', 'public_hashtags',
+  'seo_slug', 'cv_drop_enabled', 'cover_image_url', 'is_public',
 ]
 
 export async function GET(
@@ -32,6 +34,8 @@ export async function GET(
           job_department_id, max_candidates, compensation_type, compensation_amount,
           skills_required, profile_sought, actual_end_date, company_type,
           tools_required, background_image_url,
+          public_hook, public_vibe, public_perks, public_hashtags,
+          seo_slug, cv_drop_enabled, cover_image_url, is_public,
           created_at, updated_at,
           companies(id, name, contact_name, contact_email, contact_whatsapp, whatsapp_number, industry, location),
           contacts(id, first_name, last_name, job_title, email, whatsapp),
@@ -41,7 +45,7 @@ export async function GET(
         .single(),
       supabase
         .from('job_submissions')
-        .select('id, status, cv_sent, intern_interested, sort_order, cases!inner(id, interns!inner(first_name, last_name))')
+        .select('id, status, cv_sent, intern_interested, sort_order, cases(id, interns(first_name, last_name))')
         .eq('job_id', id)
         .order('created_at', { ascending: false }),
     ])
