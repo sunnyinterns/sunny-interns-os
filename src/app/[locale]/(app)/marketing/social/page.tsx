@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback, lazy, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
 
 // Remotion Player — chargé côté client uniquement
@@ -79,6 +80,8 @@ Termine par les hashtags. Retourne UNIQUEMENT le post, rien d'autre.`
 }
 
 export default function ContentMachinePage() {
+  const searchParams = useSearchParams()
+  const prefilledJobId = searchParams.get('job_id')
   const [jobs, setJobs] = useState<Job[]>([])
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [platforms, setPlatforms] = useState<Platform[]>(['instagram'])
@@ -105,7 +108,14 @@ export default function ContentMachinePage() {
     // Charger les jobs ouverts
     fetch('/api/jobs?status=open')
       .then(r => r.ok ? r.json() : [])
-      .then((d: Job[]) => setJobs(d))
+      .then((d: Job[]) => {
+        setJobs(d)
+        // Pré-sélectionner le job si ?job_id= dans l'URL
+        if (prefilledJobId) {
+          const match = (d as Job[]).find(j => j.id === prefilledJobId)
+          if (match) setSelectedJob(match)
+        }
+      })
       .catch(() => {})
 
     // Vérifier si Gemini est configuré
