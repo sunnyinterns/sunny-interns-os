@@ -38,14 +38,14 @@ export async function GET(
           seo_slug, cv_drop_enabled, cover_image_url, is_public,
           created_at, updated_at,
           companies(id, name, contact_name, contact_email, contact_whatsapp, whatsapp_number, industry, location),
-          contacts(id, first_name, last_name, job_title, email, whatsapp),
+          contacts!jobs_contact_id_fkey(id, first_name, last_name, job_title, email, whatsapp),
           job_departments(id, name, slug, categories)
         `)
         .eq('id', id)
         .single(),
       supabase
         .from('job_submissions')
-        .select('id, status, cv_sent, intern_interested, sort_order, cases(id, interns(first_name, last_name))')
+        .select('id, status, intern_interested, sort_order, cases(id, interns(first_name, last_name))')
         .eq('job_id', id)
         .order('created_at', { ascending: false }),
     ])
