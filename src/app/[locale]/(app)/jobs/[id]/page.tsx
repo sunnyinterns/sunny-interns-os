@@ -75,6 +75,15 @@ interface JobDetail {
   parent_job_id?: string | null
   created_at?: string | null
   updated_at?: string | null
+  // Champs publics
+  public_hook?: string | null
+  public_vibe?: string | null
+  public_perks?: string[] | null
+  public_hashtags?: string[] | null
+  seo_slug?: string | null
+  cv_drop_enabled?: boolean | null
+  cover_image_url?: string | null
+  is_public?: boolean | null
   companies?: {
     id: string
     name: string
@@ -704,6 +713,99 @@ export default function JobDetailPage() {
           <p className="text-sm text-zinc-300 italic">Cliquez sur les champs ci-dessus pour ajouter du contenu.</p>
         )}
       </div>
+
+      {/* ═══ PUBLICATION & CONTENU ═══ */}
+      <section className="bg-white border border-zinc-100 rounded-2xl p-5 mb-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">📢 Publication & Contenu</h2>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" checked={!!job.is_public} onChange={e => void patchJob({ is_public: e.target.checked })} className="sr-only peer" />
+            <div className="w-9 h-5 bg-zinc-200 peer-checked:bg-[#c8a96e] rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
+            <span className="ml-2 text-xs text-zinc-500">{job.is_public ? '🟢 Publiée' : '⚪ Brouillon'}</span>
+          </label>
+        </div>
+
+        {/* Accroche */}
+        <div>
+          <p className="text-xs text-zinc-400 mb-1">Accroche publique <span className="text-zinc-300">(100 car. max)</span></p>
+          {editing.public_hook ? (
+            <input className="w-full px-3 py-2 text-sm border border-[#c8a96e] rounded-xl focus:outline-none" autoFocus
+              defaultValue={job.public_hook ?? ''}
+              maxLength={100}
+              onBlur={e => void patchJob({ public_hook: e.target.value || null })}
+              onKeyDown={e => { if (e.key === 'Enter') void patchJob({ public_hook: (e.target as HTMLInputElement).value || null }); if (e.key === 'Escape') setEditing({}) }}
+            />
+          ) : (
+            <button onClick={() => setEditing(p => ({ ...p, public_hook: true }))} className="text-left w-full text-sm text-zinc-600 hover:text-[#c8a96e] transition-colors italic">
+              {job.public_hook || <span className="text-zinc-300 not-italic">Cliquer pour ajouter une accroche...</span>}
+            </button>
+          )}
+        </div>
+
+        {/* Ambiance */}
+        <div>
+          <p className="text-xs text-zinc-400 mb-1">Ambiance / vibe</p>
+          {editing.public_vibe ? (
+            <input className="w-full px-3 py-2 text-sm border border-[#c8a96e] rounded-xl focus:outline-none" autoFocus
+              defaultValue={job.public_vibe ?? ''}
+              onBlur={e => void patchJob({ public_vibe: e.target.value || null })}
+              onKeyDown={e => { if (e.key === 'Enter') void patchJob({ public_vibe: (e.target as HTMLInputElement).value || null }); if (e.key === 'Escape') setEditing({}) }}
+            />
+          ) : (
+            <button onClick={() => setEditing(p => ({ ...p, public_vibe: true }))} className="text-left w-full text-sm text-zinc-600 hover:text-[#c8a96e] transition-colors italic">
+              {job.public_vibe || <span className="text-zinc-300 not-italic">Cliquer pour décrire l&apos;ambiance...</span>}
+            </button>
+          )}
+        </div>
+
+        {/* Avantages */}
+        <div>
+          <p className="text-xs text-zinc-400 mb-1">Avantages <span className="text-zinc-300">(un par ligne)</span></p>
+          {editing.public_perks ? (
+            <textarea className="w-full px-3 py-2 text-sm border border-[#c8a96e] rounded-xl focus:outline-none resize-none" autoFocus rows={3}
+              defaultValue={(job.public_perks ?? []).join('\n')}
+              onBlur={e => void patchJob({ public_perks: e.target.value.split('\n').map(s => s.trim()).filter(Boolean) })}
+            />
+          ) : (
+            <button onClick={() => setEditing(p => ({ ...p, public_perks: true }))} className="text-left w-full text-sm text-zinc-600 hover:text-[#c8a96e] transition-colors">
+              {job.public_perks?.filter(Boolean).length ? (
+                <div className="flex flex-wrap gap-1">{job.public_perks.filter(Boolean).map((p, i) => <span key={i} className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">✨ {p}</span>)}</div>
+              ) : <span className="text-zinc-300 italic not-italic text-sm">Cliquer pour ajouter des avantages...</span>}
+            </button>
+          )}
+        </div>
+
+        {/* Slug SEO */}
+        <div>
+          <p className="text-xs text-zinc-400 mb-1">Slug SEO <span className="text-zinc-300">(ex: social-media-manager-bali)</span></p>
+          {editing.seo_slug ? (
+            <input className="w-full px-3 py-2 text-sm border border-[#c8a96e] rounded-xl focus:outline-none font-mono" autoFocus
+              defaultValue={job.seo_slug ?? ''}
+              onBlur={e => void patchJob({ seo_slug: e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || null })}
+              onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditing({}) }}
+            />
+          ) : (
+            <div className="flex items-center gap-2">
+              <button onClick={() => setEditing(p => ({ ...p, seo_slug: true }))} className="text-left text-sm font-mono text-zinc-600 hover:text-[#c8a96e] transition-colors">
+                {job.seo_slug || <span className="text-zinc-300 not-italic font-sans">Cliquer pour définir le slug...</span>}
+              </button>
+              {job.seo_slug && <a href={`/jobs/${job.seo_slug}`} target="_blank" rel="noopener noreferrer" className="text-xs text-[#c8a96e] hover:underline">↗ voir</a>}
+            </div>
+          )}
+        </div>
+
+        {/* CV Drop */}
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-[#1a1918]">CV Drop activé</p>
+            <p className="text-xs text-zinc-400">Les candidats peuvent déposer leur CV directement</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" checked={!!job.cv_drop_enabled} onChange={e => void patchJob({ cv_drop_enabled: e.target.checked })} className="sr-only peer" />
+            <div className="w-9 h-5 bg-zinc-200 peer-checked:bg-[#c8a96e] rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
+          </label>
+        </div>
+      </section>
 
       {/* ═══ CONTACT EMPLOYEUR ═══ */}
       {(job.contacts || job.companies?.contact_email) && (
