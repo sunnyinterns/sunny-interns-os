@@ -5,12 +5,6 @@ import { withSentryConfig } from '@sentry/nextjs'
 const withNextIntl = createNextIntlPlugin()
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: [
-    '@remotion/bundler',
-    '@remotion/renderer',
-    'remotion',
-    '@remotion/core',
-  ],
   images: {
     remotePatterns: [
       {
