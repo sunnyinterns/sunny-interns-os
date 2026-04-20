@@ -401,16 +401,30 @@ export async function PATCH(
   }
 
   // ── admin notification for key transitions ────────────────────────────────
-  const notifStatuses = ['payment_received', 'visa_received', 'convention_signed', 'alumni']
-  if (notifStatuses.includes(newStatus)) {
+  const notifConfig: Record<string, { title: string; type: string; priority: string }> = {
+    rdv_booked:         { title: `📅 RDV booké — ${internName}`, type: 'rdv', priority: 'normal' },
+    qualification_done: { title: `✅ Qualif OK — ${internName}`, type: 'qualif', priority: 'normal' },
+    job_submitted:      { title: `💼 Jobs proposés — ${internName}`, type: 'job', priority: 'normal' },
+    job_retained:       { title: `🎉 Job retenu — ${internName}`, type: 'job', priority: 'high' },
+    convention_signed:  { title: `📝 Convention signée — ${internName}`, type: 'contract', priority: 'high' },
+    payment_received:   { title: `💰 Paiement reçu — ${internName}`, type: 'payment', priority: 'critical' },
+    visa_received:      { title: `🛂 Visa reçu — ${internName}`, type: 'visa', priority: 'high' },
+    visa_refused:       { title: `❌ Visa refusé — ${internName}`, type: 'visa', priority: 'critical' },
+    active:             { title: `🌴 Stage démarré — ${internName}`, type: 'stage', priority: 'normal' },
+    alumni:             { title: `🎓 Stage terminé — ${internName}`, type: 'alumni', priority: 'normal' },
+    to_recontact:       { title: `🔄 À recontacter — ${internName}`, type: 'recontact', priority: 'normal' },
+  }
+  const notifEntry = notifConfig[newStatus]
+  if (notifEntry) {
     try {
       const admin = getAdmin()
       await admin.from('admin_notifications').insert({
-        title: `${internName} — ${STATUS_LABELS[newStatus] ?? newStatus}`,
-        message: `Le dossier de ${internName} est passé à l'étape "${STATUS_LABELS[newStatus]}"`,
-        type: newStatus === 'payment_received' ? 'payment' : newStatus === 'visa_received' ? 'visa' : 'info',
+        title: notifEntry.title,
+        message: `Statut : ${STATUS_LABELS[oldStatus] ?? oldStatus} → ${STATUS_LABELS[newStatus] ?? newStatus}`,
+        type: notifEntry.type,
         case_id: id,
         is_read: false,
+        action_url: `/fr/cases/${id}`,
       })
     } catch { /* non-blocking */ }
   }

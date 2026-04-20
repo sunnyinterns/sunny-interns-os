@@ -57,6 +57,7 @@ interface Job {
   public_hook?: string | null
   is_public?: boolean | null
   seo_slug?: string | null
+  cover_image_url?: string | null
   compensation_type?: string | null
   compensation_amount?: number | null
 }
@@ -409,7 +410,13 @@ export default function JobsPage() {
               <div
                 key={j.id}
                 onClick={() => router.push(`/${locale}/jobs/${j.id}`)}
-                className="bg-white border border-zinc-100 rounded-xl p-4 hover:border-[#c8a96e] transition-all cursor-pointer"
+                className="relative overflow-hidden border border-zinc-100 rounded-xl p-4 hover:border-[#c8a96e] transition-all cursor-pointer min-h-[120px]"
+                style={j.cover_image_url ? {
+                  backgroundImage: `linear-gradient(to bottom, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.96) 100%), url(${j.cover_image_url})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundColor: 'white',
+                } : { backgroundColor: 'white' }}
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="min-w-0">

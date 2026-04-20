@@ -22,7 +22,8 @@ export async function GET(request: Request) {
     if (companyId) query = query.eq('company_id', companyId)
     const unlinked = searchParams.get('unlinked')
     const excludeLeft = searchParams.get('exclude_left')
-    if (excludeLeft === 'true') query = query.or('left_company.is.null,left_company.eq.false')
+    // left_company column does not exist — filter removed to avoid query crash
+    void excludeLeft
     if (unlinked === 'true') query = query.is('company_id', null)
 
     const { data, error } = await query
