@@ -460,6 +460,10 @@ export default function CaseDetailPage() {
                 <span className="text-sm font-semibold text-[#1a1918]">{firstName} {lastName}</span>
                 {age ? <span className="text-xs text-zinc-400">{age} ans</span> : null}
                 <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: badge.bg, color: badge.text }}>{badge.label}</span>
+                {caseData.status === 'to_recontact' && (() => {
+                  const ra = (caseData as Record<string, string | null>).recontact_at
+                  return ra ? <span className="text-xs text-amber-600">📅 {new Date(ra).toLocaleDateString('fr-FR')}</span> : null
+                })()}
                 {isVisaOnly && <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold">Visa Only</span>}
               </div>
               <div className="flex items-center gap-2 flex-wrap">

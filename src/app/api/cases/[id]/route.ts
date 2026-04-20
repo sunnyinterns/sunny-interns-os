@@ -256,6 +256,7 @@ export async function GET(
         form_language, visa_submitted_to_agent_at, note_for_agent, visa_type_id,
         cv_feedback, cv_status, cv_revision_requested, cv_revision_notes,
         created_at, updated_at,
+        recontact_at, recontact_note,
         billing_company_id,
         billing_companies(id, name, legal_form, currency, bank_iban, stripe_link),
         interns(*),
