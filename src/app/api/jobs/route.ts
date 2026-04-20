@@ -19,6 +19,8 @@ export async function GET(request: Request) {
       .select(`
         id, title, public_title, status, location, wished_duration_months,
         description, created_at, updated_at, company_id,
+        public_hook, public_vibe, public_perks, public_hashtags,
+        seo_slug, is_public, cv_drop_enabled, cover_image_url,
         companies(id, name, logo_url, website),
         contacts!jobs_contact_id_fkey(id, first_name, last_name, email, whatsapp, job_title)
       `)
