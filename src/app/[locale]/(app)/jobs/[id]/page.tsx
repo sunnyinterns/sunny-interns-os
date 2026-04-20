@@ -415,9 +415,38 @@ export default function JobDetailPage() {
             {job.compensation_type && (
               <div>
                 <p className="text-xs text-zinc-400 mb-1">Compensation</p>
-                <p className="text-sm text-[#1a1918]">
-                  {job.compensation_type}{job.compensation_amount ? ` — ${job.compensation_amount}` : ''}
-                </p>
+                {editing.compensation_type ? (
+                  <div className="flex gap-2">
+                    <select className="text-sm border border-[#c8a96e] rounded-lg px-2 py-1 focus:outline-none"
+                      defaultValue={job.compensation_type ?? ''}
+                      onBlur={e => void patchJob({ compensation_type: e.target.value || null })}
+                      onKeyDown={e => { if (e.key === 'Escape') setEditing({}) }}>
+                      <option value="">—</option>
+                      <option value="gratification">Gratification</option>
+                      <option value="salaire">Salaire</option>
+                      <option value="indemnite">Indemnité</option>
+                    </select>
+                    <input type="number" min={0} step={50} className="text-sm border border-[#c8a96e] rounded-lg px-2 py-1 w-24 focus:outline-none"
+                      defaultValue={job.compensation_amount ?? ''}
+                      placeholder="€/mois"
+                      onBlur={e => void patchJob({ compensation_amount: e.target.value ? Number(e.target.value) : null })}
+                      onKeyDown={e => { if (e.key === 'Escape') setEditing({}) }} />
+                  </div>
+                ) : (
+                  <button onClick={() => setEditing(p => ({ ...p, compensation_type: true }))}
+                    className="text-sm text-[#1a1918] hover:text-[#c8a96e] transition-colors text-left">
+                    {job.compensation_type}{job.compensation_amount ? ` — ${job.compensation_amount}€/mois` : ''}
+                  </button>
+                )}
+              </div>
+            )}
+            {!job.compensation_type && (
+              <div>
+                <p className="text-xs text-zinc-400 mb-1">Compensation</p>
+                <button onClick={() => setEditing(p => ({ ...p, compensation_type: true }))}
+                  className="text-sm text-zinc-300 italic hover:text-[#c8a96e] transition-colors">
+                  Non rémunéré — modifier
+                </button>
               </div>
             )}
           </div>
