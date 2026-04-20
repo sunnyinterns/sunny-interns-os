@@ -54,6 +54,11 @@ interface Job {
   company_type?: string | null
   background_image_url?: string | null
   job_department_id?: string | null
+  public_hook?: string | null
+  is_public?: boolean | null
+  seo_slug?: string | null
+  compensation_type?: string | null
+  compensation_amount?: number | null
 }
 
 type JobView = 'open' | 'soon' | 'recurring' | 'archived'
@@ -414,9 +419,11 @@ export default function JobsPage() {
                       {j.company_name ?? j.companies?.name ?? '—'}{(j.department_name ?? j.department) ? ` • ${j.department_name ?? j.department}` : ''}
                     </p>
                     {j.contacts && <p className="text-[10px] text-zinc-400 truncate">👤 {j.contacts.first_name} {j.contacts.last_name ?? ''}</p>}
+                    {j.public_hook && <p className="text-[10px] text-[#c8a96e] italic truncate mt-0.5">&ldquo;{j.public_hook}&rdquo;</p>}
                   </div>
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
                     <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap" style={{ background: badge.bg, color: badge.color }}>{badge.label}</span>
+                    {j.is_public && <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-green-50 text-green-600 whitespace-nowrap">🌐 Publié</span>}
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${(j.submissions_count ?? 0) > 0 ? 'bg-blue-50 text-blue-600' : 'text-zinc-300'}`}>
                       👤 {j.submissions_count ?? 0}
                     </span>
