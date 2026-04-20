@@ -363,7 +363,12 @@ export default function JobsContentMachine() {
                       <div className="flex flex-wrap gap-1">{selected.public_perks.filter(Boolean).map((p, i) => <span key={i} className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">✨ {p}</span>)}</div>
                     </div>
                   )}
-                  {!selected.public_hook && !selected.public_vibe && (
+                  {(selected as Job & { public_description?: string | null }).public_description && (
+                    <div><p className="text-[10px] text-zinc-400 uppercase tracking-wider mb-1">Description publique</p>
+                      <p className="text-sm text-zinc-600 whitespace-pre-wrap">{(selected as Job & { public_description?: string | null }).public_description}</p>
+                    </div>
+                  )}
+                  {!selected.public_hook && !selected.public_vibe && !(selected as Job & { public_description?: string | null }).public_description && (
                     <div className="text-center py-4 text-zinc-400">
                       <p className="text-sm">Aucune info publique</p>
                       <p className="text-xs mt-1">Remplis la section "Publication & Contenu" dans <a href="/fr/jobs" className="text-[#c8a96e] hover:underline">Offres de stage</a></p>
@@ -371,16 +376,31 @@ export default function JobsContentMachine() {
                   )}
                 </div>
 
+                {/* Lien page publique */}
+                {selected.is_public && selected.seo_slug && (
+                  <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-100 rounded-xl">
+                    <span className="text-green-600">🌐</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-green-700">Page publique active</p>
+                      <p className="text-[10px] text-green-500 truncate">bali-interns.com/jobs/{selected.seo_slug}</p>
+                    </div>
+                    <a href={`/jobs/${selected.seo_slug}`} target="_blank" rel="noopener noreferrer"
+                      className="text-xs px-2.5 py-1.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 flex-shrink-0">
+                      ↗ Voir
+                    </a>
+                  </div>
+                )}
+
                 {/* Actions rapides */}
                 <div className="grid grid-cols-2 gap-3">
-                  <a href={`/fr/jobs/${selected.id}`} target="_blank"
+                  <a href={`/fr/jobs/${selected.id}`}
                     className="flex items-center justify-center gap-2 py-3 bg-white border border-zinc-200 rounded-2xl text-xs font-semibold text-zinc-600 hover:bg-zinc-50 transition-colors">
                     ✏️ Éditer le job
                   </a>
-                  <button onClick={() => setTab('posts')}
+                  <a href={`/fr/marketing/social?job_id=${selected.id}`}
                     className="flex items-center justify-center gap-2 py-3 bg-[#1a1918] text-[#c8a96e] rounded-2xl text-xs font-bold hover:bg-zinc-800 transition-colors">
-                    ⚡ Générer contenu
-                  </button>
+                    ⚡ Content Machine
+                  </a>
                 </div>
               </div>
             )}

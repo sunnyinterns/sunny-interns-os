@@ -86,6 +86,8 @@ const EMPTY_FORM = {
   company_type: '',
   background_image_url: '',
   parent_job_id: null as string | null,
+  compensation_type: null as string | null,
+  compensation_amount: null as number | null,
   // Champs Publication & Contenu
   public_hook: '',
   public_vibe: '',
@@ -227,6 +229,8 @@ export default function JobsPage() {
       cover_image_url: form.cover_image_url || null,
       is_public: form.is_public ?? false,
       parent_job_id: form.parent_job_id,
+      compensation_type: form.compensation_type || null,
+      compensation_amount: form.compensation_amount ?? null,
       destination_id: 'fc9ece85-e5d5-41d2-9142-79054244bbce',
     }
     const res = await fetch('/api/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -721,6 +725,27 @@ export default function JobsPage() {
                     <span className="text-xs">Récurrent</span>
                   </label>
                 </div>
+
+                {/* Rémunération */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1">💰 Type de rémunération</label>
+                    <select className={inputCls} value={form.compensation_type ?? ''} onChange={e => setForm(p => ({ ...p, compensation_type: e.target.value || null }))}>
+                      <option value="">— Non rémunéré —</option>
+                      <option value="gratification">Gratification obligatoire</option>
+                      <option value="salaire">Salaire</option>
+                      <option value="indemnite">Indemnité</option>
+                    </select>
+                  </div>
+                  {form.compensation_type && (
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-600 mb-1">Montant (€/mois)</label>
+                      <input type="number" min={0} step={50} className={inputCls} placeholder="Ex: 650"
+                        value={form.compensation_amount ?? ''} onChange={e => setForm(p => ({ ...p, compensation_amount: e.target.value ? Number(e.target.value) : null }))} />
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <label className="block text-xs font-medium text-zinc-600 mb-1">Statut</label>
                   <select className={inputCls} value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))}>

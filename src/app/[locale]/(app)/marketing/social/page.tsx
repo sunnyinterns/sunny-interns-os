@@ -169,8 +169,6 @@ export default function ContentMachinePage() {
   const [generatingImage, setGeneratingImage] = useState(false)
   const [posts, setPosts] = useState<GeneratedPost[]>([])
   const [generating, setGenerating] = useState(false)
-  const [generatingVideo, setGeneratingVideo] = useState(false)
-  const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
@@ -239,16 +237,6 @@ export default function ContentMachinePage() {
     setPosts(newPosts); setGenerating(false)
   }, [selectedJob, enabledPlatforms, configs, images])
 
-  const generateVideo = useCallback(async () => {
-    if (!selectedJob) return
-    setGeneratingVideo(true)
-    try {
-      const res = await fetch('/api/content/generate-video', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ job_id: selectedJob.id, format: 'square' }) })
-      const d = await res.json() as { video_url?: string }
-      if (d.video_url) setVideoUrl(d.video_url)
-    } catch { /* ignore */ }
-    setGeneratingVideo(false)
-  }, [selectedJob])
 
   const saveAll = useCallback(async () => {
     setSaving(true)
@@ -511,8 +499,25 @@ export default function ContentMachinePage() {
                           {img ? (
                             <div className="flex items-center gap-2">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={img.url} alt="" className="w-10 h-10 rounded-lg object-cover" />
-                              <span className="text-[10px] text-green-600 font-semibold">✅ Prête</span>
+                              <img src={img.url} alt="" className="w-12 h-12 rounded-lg object-cover cursor-pointer border-2 border-transparent hover:border-[#c8a96e] transition-all"
+                                onClick={() => window.open(img.url, '_blank')} title="Voir en grand" />
+                              <div>
+                                <span className="text-[10px] text-green-600 font-semibold block">✅ Prête</span>
+                                <button onClick={async () => {
+                                  setGeneratingImage(true)
+                                  const prompt = imagePrompt(selectedJob, platform)
+                                  try {
+                                    const res = await fetch('/api/content/generate-image', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ prompt, job_id: selectedJob.id, platform }) })
+                                    const d = await res.json() as { url?: string; error?: string }
+                                    if (d.url) setImages(prev => {
+                                      const updated = prev.filter(i => i.platform !== platform)
+                                      const prompt = imagePrompt(selectedJob, platform)
+                                      return [...updated, { platform, format: 'square', url: d.url!, prompt } as GeneratedImage]
+                                    })
+                                  } catch { /* ignore */ }
+                                  setGeneratingImage(false)
+                                }} className="text-[10px] text-zinc-400 hover:text-[#c8a96e]">🔄 Régén.</button>
+                              </div>
                             </div>
                           ) : generatingImage ? (
                             <div className="w-10 h-10 rounded-lg bg-zinc-100 animate-pulse" />
@@ -540,7 +545,7 @@ export default function ContentMachinePage() {
                       </button>
                       <button onClick={() => setStep(4)}
                         className="flex-1 py-2.5 font-bold text-sm rounded-2xl" style={{ background: '#1a1918', color: '#c8a96e' }}>
-                        Continuer → Textes & Vidéo
+                        Continuer → Textes
                       </button>
                     </div>
                   )}
@@ -564,22 +569,7 @@ export default function ContentMachinePage() {
                       <p className="text-xs text-zinc-400">{enabledPlatforms.length} post{enabledPlatforms.length > 1 ? 's' : ''} · ton et langue configurés par plateforme</p>
                     </div>
                     {/* Vidéo */}
-                    <button onClick={() => void generateVideo()} disabled={generatingVideo}
-                      className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-zinc-200 rounded-xl text-zinc-600 hover:bg-zinc-50 disabled:opacity-40">
-                      {generatingVideo ? <><span className="w-3 h-3 border border-zinc-400 border-t-transparent rounded-full animate-spin" />Vidéo…</> : '🎬 Générer vidéo'}
-                    </button>
                   </div>
-
-                  {videoUrl && (
-                    <div className="mb-4 p-3 bg-zinc-50 rounded-xl flex items-center gap-3">
-                      <span className="text-2xl">🎬</span>
-                      <div className="flex-1">
-                        <p className="text-xs font-semibold text-[#1a1918]">Vidéo générée ✅</p>
-                        <p className="text-[10px] text-zinc-400">Format carré 1080×1080 · Remotion</p>
-                      </div>
-                      <a href={videoUrl} download className="text-xs px-3 py-1.5 bg-[#c8a96e] text-white rounded-lg font-semibold">↓ DL</a>
-                    </div>
-                  )}
 
                   {posts.length === 0 ? (
                     <button onClick={() => void generateTexts()} disabled={generating}
