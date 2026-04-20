@@ -237,6 +237,7 @@ export function Sidebar() {
               { href: '/fr/pipeline', label: 'Pipeline', d: ICONS.kanban },
               { href: '/fr/leads', label: 'Leads', d: ICONS.leads },
               { href: '/fr/cases', label: 'Candidats', d: ICONS.candidats },
+              { href: '/fr/recontact', label: 'À recontacter', d: ICONS.clock },
               { href: '/fr/clients', label: 'Clients', d: ICONS.clients },
               { href: '/fr/alumni', label: 'Alumni', d: ICONS.alumni },
               { href: '/fr/jobs', label: 'Offres', d: ICONS.jobs },

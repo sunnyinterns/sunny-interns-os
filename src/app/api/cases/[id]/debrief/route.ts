@@ -34,10 +34,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       type: 'todo',
       title: `📅 Relancer ${internName}`,
       message: `${internName} était à recontacter en ${new Date(year, month - 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}. Envoyer un message de relance.`,
+      link: `/fr/cases/${caseId}`,
       case_id: caseId,
       action_url: `/fr/cases/${caseId}`,
       scheduled_for: alertDate,
       is_read: false,
+      metadata: { case_id: caseId, recontact_month: recontact_month },
     })
   }
 

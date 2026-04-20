@@ -61,17 +61,29 @@ export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPorta
     <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: bg, color }}>{label}</span>
   )
 
+  const modal = debriefOpen ? (
+    <DebriefModal
+      caseId={caseData.id as string}
+      internName={intern ? `${intern.first_name ?? ''} ${intern.last_name ?? ''}`.trim() : undefined}
+      onClose={() => setDebriefOpen(false)}
+      onSaved={() => { setDebriefOpen(false); window.location.reload() }}
+    />
+  ) : null
+
   const bandeau = (bg: string, border: string, content: React.ReactNode, notif?: React.ReactNode) => (
-    <div className="mb-2 rounded-xl overflow-hidden" style={{ border: `0.5px solid ${border}` }}>
-      <div className="flex items-center justify-between gap-3 px-4 py-2.5" style={{ background: bg }}>
-        {content}
-      </div>
-      {notif && (
-        <div className="flex items-start gap-2 px-4 py-2 bg-white border-t text-xs text-zinc-500" style={{ borderColor: border }}>
-          {notif}
+    <>
+      {modal}
+      <div className="mb-2 rounded-xl overflow-hidden" style={{ border: `0.5px solid ${border}` }}>
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5" style={{ background: bg }}>
+          {content}
         </div>
-      )}
-    </div>
+        {notif && (
+          <div className="flex items-start gap-2 px-4 py-2 bg-white border-t text-xs text-zinc-500" style={{ borderColor: border }}>
+            {notif}
+          </div>
+        )}
+      </div>
+    </>
   )
 
   // ── RDV ANNULÉ PAR LE CANDIDAT ──
@@ -131,6 +143,10 @@ export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPorta
               Annuler
             </a>
           ) : null}
+          <button onClick={() => setDebriefOpen(true)}
+            className="px-3 py-1.5 text-xs font-bold rounded-lg bg-[#1a1918] text-[#c8a96e] whitespace-nowrap">
+            ✏️ Débrief
+          </button>
         </div>
       </>,
       <><span>📋</span><span><strong>Todo :</strong> Préparer la fiche entretien · Vérifier le CV · Confirmer le créneau avec le candidat</span></>
@@ -329,16 +345,5 @@ export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPorta
   }
 
   // Aucun bandeau pour les autres statuts (client — géré dans /fr/clients)
-  return (
-    <>
-      {debriefOpen && (
-        <DebriefModal
-          caseId={caseData.id as string}
-          internName={intern ? `${intern.first_name ?? ''} ${intern.last_name ?? ''}`.trim() : undefined}
-          onClose={() => setDebriefOpen(false)}
-          onSaved={() => { setDebriefOpen(false); window.location.reload() }}
-        />
-      )}
-    </>
-  )
+  return null
 }
