@@ -49,6 +49,35 @@ Si tu ne trouves pas l'info, mets null. Pas d'explication, JSON uniquement.`,
     `Améliore ce texte pour une offre de stage à Bali. Rends-le plus attractif et professionnel.
 Texte original: "${ctx.text ?? ''}". Contexte: ${ctx.context ?? ''}.
 Réponds uniquement avec le texte amélioré, même longueur approximative.`,
+
+  generate_hook: (ctx) =>
+    `Tu travailles pour Bali Interns à Bali, Indonésie.
+Génère UNE accroche courte et percutante (max 80 caractères) pour cette offre de stage: "${ctx.title ?? ''}".
+Entreprise: ${ctx.company_name ?? ''}. Département: ${ctx.department ?? ''}.
+Style: direct, émotionnel, donne envie. Peut commencer par "Tu veux...", "Envie de...", etc.
+EXEMPLES: "Tu veux bosser dans un resort 5⭐ à Bali ?", "Marketing dans un café face mer — ça te parle ?".
+Réponds UNIQUEMENT avec l'accroche, sans guillemets.`,
+
+  generate_vibe: (ctx) =>
+    `Tu travailles pour Bali Interns à Bali, Indonésie.
+Génère une description courte de l'ambiance / culture d'entreprise (1-2 phrases max) pour: "${ctx.title ?? ''}".
+Entreprise: ${ctx.company_name ?? ''}. Type: ${ctx.company_type ?? ''}.
+Style: décontracté, authentique, concret. Ex: "Startup surf, équipe internationale, bureau face mer".
+Réponds UNIQUEMENT avec l'ambiance, pas de ponctuation finale.`,
+
+  generate_perks: (ctx) =>
+    `Tu travailles pour Bali Interns à Bali, Indonésie.
+Génère 3 avantages concrets et attractifs pour cette offre de stage: "${ctx.title ?? ''}".
+Entreprise: ${ctx.company_name ?? ''}. Département: ${ctx.department ?? ''}.
+Exemples d'avantages: "Logement géré par l'agence", "Vue sur mer depuis le bureau", "Équipe internationale", "Surf sessions".
+Réponds avec EXACTEMENT 3 avantages, un par ligne, sans puces ni numéros.`,
+
+  generate_slug: (ctx) =>
+    `Génère un slug SEO en minuscules avec tirets pour cette offre de stage à Bali: "${ctx.title ?? ''}".
+Durée: ${ctx.duration ?? ''}. Département: ${ctx.department ?? ''}.
+Format: [metier]-[entreprise-optionnel]-bali-[duree-optionnel]. Max 60 caractères.
+Exemples: "social-media-manager-bali-4mois", "marketing-digital-resort-bali", "ux-designer-startup-bali".
+Réponds UNIQUEMENT avec le slug (lettres minuscules, chiffres, tirets uniquement).`,
 }
 
 export async function POST(request: Request) {

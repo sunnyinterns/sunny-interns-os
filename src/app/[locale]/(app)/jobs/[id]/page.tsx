@@ -769,7 +769,15 @@ export default function JobDetailPage() {
 
         {/* Description publique */}
         <div>
-          <p className="text-xs text-zinc-400 mb-1">Description publique <span className="text-amber-600 text-[10px]">🇬🇧 visible candidats</span></p>
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs text-zinc-400">Description publique <span className="text-amber-600 text-[10px]">🇬🇧 visible candidats</span></p>
+            <button type="button" disabled={aiLoading || !job.title} onClick={async () => {
+              const r = job.public_description
+                ? await assist('improve_text', { text: job.public_description, context: `Offre publique ${job.title}` })
+                : await assist('generate_public_description', { title: job.title ?? '', public_title: job.public_title ?? '', company_type: job.company_type ?? '', missions: (job.missions ?? []).join(','), tools: (job.tools_required ?? []).join(', ') })
+              if (r) void patchJob({ public_description: r })
+            }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
+          </div>
           {editing.public_description ? (
             <textarea className="w-full px-3 py-2 text-sm border border-[#c8a96e] rounded-xl focus:outline-none resize-none" autoFocus rows={3}
               defaultValue={job.public_description ?? ''}
@@ -784,7 +792,15 @@ export default function JobDetailPage() {
 
         {/* Accroche */}
         <div>
-          <p className="text-xs text-zinc-400 mb-1">Accroche publique <span className="text-zinc-300">(100 car. max)</span></p>
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs text-zinc-400">Accroche publique <span className="text-zinc-300">(100 car. max)</span></p>
+            <button type="button" disabled={aiLoading || !job.title} onClick={async () => {
+              const r = job.public_hook
+                ? await assist('improve_text', { text: job.public_hook, context: `Accroche pour ${job.title}` })
+                : await assist('generate_hook', { title: job.title ?? '', company_name: job.companies?.name ?? '', department: departmentName ?? '' })
+              if (r) void patchJob({ public_hook: r.slice(0, 100) })
+            }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
+          </div>
           {editing.public_hook ? (
             <input className="w-full px-3 py-2 text-sm border border-[#c8a96e] rounded-xl focus:outline-none" autoFocus
               defaultValue={job.public_hook ?? ''}
@@ -801,7 +817,15 @@ export default function JobDetailPage() {
 
         {/* Ambiance */}
         <div>
-          <p className="text-xs text-zinc-400 mb-1">Ambiance / vibe</p>
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs text-zinc-400">Ambiance / vibe</p>
+            <button type="button" disabled={aiLoading || !job.title} onClick={async () => {
+              const r = job.public_vibe
+                ? await assist('improve_text', { text: job.public_vibe, context: `Ambiance pour ${job.title}` })
+                : await assist('generate_vibe', { title: job.title ?? '', company_name: job.companies?.name ?? '', company_type: job.company_type ?? '' })
+              if (r) void patchJob({ public_vibe: r })
+            }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
+          </div>
           {editing.public_vibe ? (
             <input className="w-full px-3 py-2 text-sm border border-[#c8a96e] rounded-xl focus:outline-none" autoFocus
               defaultValue={job.public_vibe ?? ''}
@@ -817,7 +841,13 @@ export default function JobDetailPage() {
 
         {/* Avantages */}
         <div>
-          <p className="text-xs text-zinc-400 mb-1">Avantages <span className="text-zinc-300">(un par ligne)</span></p>
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs text-zinc-400">Avantages <span className="text-zinc-300">(un par ligne)</span></p>
+            <button type="button" disabled={aiLoading || !job.title} onClick={async () => {
+              const r = await assist('generate_perks', { title: job.title ?? '', company_name: job.companies?.name ?? '', department: departmentName ?? '' })
+              if (r) void patchJob({ public_perks: r.split('\n').map(s => s.trim()).filter(Boolean) })
+            }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
+          </div>
           {editing.public_perks ? (
             <textarea className="w-full px-3 py-2 text-sm border border-[#c8a96e] rounded-xl focus:outline-none resize-none" autoFocus rows={3}
               defaultValue={(job.public_perks ?? []).join('\n')}
@@ -834,7 +864,17 @@ export default function JobDetailPage() {
 
         {/* Slug SEO */}
         <div>
-          <p className="text-xs text-zinc-400 mb-1">Slug SEO <span className="text-zinc-300">(ex: social-media-manager-bali)</span></p>
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs text-zinc-400">Slug SEO <span className="text-zinc-300">(ex: social-media-manager-bali)</span></p>
+            <button type="button" disabled={aiLoading || !job.title} onClick={async () => {
+              const r = await assist('generate_slug', {
+                title: job.public_title ?? job.title ?? '',
+                duration: job.wished_duration_months ? `${job.wished_duration_months}mois` : '',
+                department: departmentName ?? job.department ?? ''
+              })
+              if (r) void patchJob({ seo_slug: r.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') })
+            }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
+          </div>
           {editing.seo_slug ? (
             <input className="w-full px-3 py-2 text-sm border border-[#c8a96e] rounded-xl focus:outline-none font-mono" autoFocus
               defaultValue={job.seo_slug ?? ''}
