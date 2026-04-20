@@ -767,9 +767,6 @@ export default function JobDetailPage() {
           </label>
         </div>
 
-
-        )}
-
         {/* Description publique */}
         <div>
           <div className="flex items-center justify-between mb-1">
