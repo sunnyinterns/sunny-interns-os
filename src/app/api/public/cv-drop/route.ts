@@ -24,13 +24,15 @@ export async function POST(req: NextRequest) {
   const { data: url } = sb.storage.from('brand-assets').getPublicUrl(path)
 
   // Log dans en_attente pour que Sidney voie le CV drop
-  await sb.from('en_attente').insert({
-    type: 'cv_drop',
-    job_id,
-    data: { cv_url: url.publicUrl, filename: cv.name, job_id },
-    status: 'pending',
-    created_at: new Date().toISOString(),
-  }).then(() => {}).catch(() => {})
+  try {
+    await sb.from('en_attente').insert({
+      type: 'cv_drop',
+      job_id,
+      data: { cv_url: url.publicUrl, filename: cv.name, job_id },
+      status: 'pending',
+      created_at: new Date().toISOString(),
+    })
+  } catch { /* ignore */ }
 
   return NextResponse.json({ success: true, cv_url: url.publicUrl })
 }
