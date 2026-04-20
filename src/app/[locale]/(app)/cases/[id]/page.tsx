@@ -617,7 +617,8 @@ export default function CaseDetailPage() {
             referred_by_code={(intern as any)?.referred_by_code ?? null}
           />
         )}
-        {activeTab === 'staffing' && (
+        {/* TabStaffing gardé monté via display:none pour préserver le state submissions */}
+        <div style={{ display: activeTab === 'staffing' ? 'block' : 'none' }}>
           <TabStaffing
             caseId={caseData.id}
             firstName={firstName}
@@ -637,7 +638,7 @@ export default function CaseDetailPage() {
             spokenLanguages={intern.spoken_languages ?? null}
             onRefresh={fetchCase}
           />
-        )}
+        </div>
         {activeTab === 'historique' && (
           <TabHistorique caseId={caseData.id} />
         )}
