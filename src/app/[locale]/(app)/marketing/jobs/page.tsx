@@ -332,6 +332,59 @@ export default function JobsContentMachine() {
 
           {/* Tab content */}
           <div className="flex-1 overflow-y-auto p-4">
+
+            {/* ── Tabs nav ── */}
+            <div className="flex gap-1 mb-4 bg-zinc-100 p-1 rounded-xl w-fit">
+              {(['infos', 'posts', 'publication'] as JobTab[]).map(t => (
+                <button key={t} onClick={() => setTab(t)}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${tab === t ? 'bg-white text-[#1a1918] shadow-sm' : 'text-zinc-500 hover:text-zinc-700'}`}>
+                  {t === 'infos' ? '📋 Infos' : t === 'posts' ? '✍️ Posts' : '📅 Publication'}
+                </button>
+              ))}
+            </div>
+
+            {/* ── TAB: INFOS ── */}
+            {tab === 'infos' && (
+              <div className="space-y-4">
+                {/* Infos publiques du job */}
+                <div className="bg-white rounded-2xl border border-zinc-100 p-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-[#1a1918]">📢 Informations publiques</h3>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" checked={!!selected.is_public} onChange={() => void togglePublic(selected)} className="sr-only peer" />
+                      <div className="w-9 h-5 bg-zinc-200 peer-checked:bg-[#c8a96e] rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
+                      <span className="ml-2 text-xs text-zinc-500">{selected.is_public ? 'Publiée' : 'Brouillon'}</span>
+                    </label>
+                  </div>
+                  {selected.public_hook && <div><p className="text-[10px] text-zinc-400 uppercase tracking-wider mb-1">Accroche</p><p className="text-sm text-[#c8a96e] italic">&ldquo;{selected.public_hook}&rdquo;</p></div>}
+                  {selected.public_vibe && <div><p className="text-[10px] text-zinc-400 uppercase tracking-wider mb-1">Ambiance</p><p className="text-sm text-zinc-600">{selected.public_vibe}</p></div>}
+                  {selected.public_perks && selected.public_perks.filter(Boolean).length > 0 && (
+                    <div><p className="text-[10px] text-zinc-400 uppercase tracking-wider mb-1">Avantages</p>
+                      <div className="flex flex-wrap gap-1">{selected.public_perks.filter(Boolean).map((p, i) => <span key={i} className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">✨ {p}</span>)}</div>
+                    </div>
+                  )}
+                  {!selected.public_hook && !selected.public_vibe && (
+                    <div className="text-center py-4 text-zinc-400">
+                      <p className="text-sm">Aucune info publique</p>
+                      <p className="text-xs mt-1">Remplis la section "Publication & Contenu" dans <a href="/fr/jobs" className="text-[#c8a96e] hover:underline">Offres de stage</a></p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions rapides */}
+                <div className="grid grid-cols-2 gap-3">
+                  <a href={`/fr/jobs/${selected.id}`} target="_blank"
+                    className="flex items-center justify-center gap-2 py-3 bg-white border border-zinc-200 rounded-2xl text-xs font-semibold text-zinc-600 hover:bg-zinc-50 transition-colors">
+                    ✏️ Éditer le job
+                  </a>
+                  <button onClick={() => setTab('posts')}
+                    className="flex items-center justify-center gap-2 py-3 bg-[#1a1918] text-[#c8a96e] rounded-2xl text-xs font-bold hover:bg-zinc-800 transition-colors">
+                    ⚡ Générer contenu
+                  </button>
+                </div>
+              </div>
+            )}
+
             {tab === 'posts' && (
               <div className="space-y-3">
                 {posts.length === 0 ? (
