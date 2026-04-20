@@ -725,6 +725,34 @@ export default function JobDetailPage() {
           </label>
         </div>
 
+        {/* Lien page publique */}
+        {job.is_public && job.seo_slug && (
+          <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-100 rounded-xl">
+            <span className="text-lg">🌐</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-green-700">Page publique active</p>
+              <p className="text-[10px] text-green-500 font-mono truncate">/jobs/{job.seo_slug}</p>
+            </div>
+            <a href={`/jobs/${job.seo_slug}`} target="_blank" rel="noopener noreferrer"
+              className="text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 flex-shrink-0">↗ Voir</a>
+          </div>
+        )}
+
+        {/* Description publique */}
+        <div>
+          <p className="text-xs text-zinc-400 mb-1">Description publique <span className="text-amber-600 text-[10px]">🇬🇧 visible candidats</span></p>
+          {editing.public_description ? (
+            <textarea className="w-full px-3 py-2 text-sm border border-[#c8a96e] rounded-xl focus:outline-none resize-none" autoFocus rows={3}
+              defaultValue={job.public_description ?? ''}
+              onBlur={e => void patchJob({ public_description: e.target.value || null })}
+              onKeyDown={e => { if (e.key === 'Escape') setEditing({}) }} />
+          ) : (
+            <button onClick={() => setEditing(p => ({ ...p, public_description: true }))} className="text-left w-full text-sm text-zinc-600 hover:text-[#c8a96e] transition-colors">
+              {job.public_description || <span className="text-zinc-300 italic">Cliquer pour ajouter une description publique...</span>}
+            </button>
+          )}
+        </div>
+
         {/* Accroche */}
         <div>
           <p className="text-xs text-zinc-400 mb-1">Accroche publique <span className="text-zinc-300">(100 car. max)</span></p>
