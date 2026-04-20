@@ -190,13 +190,15 @@ export default function JobDetailPage() {
   async function patchJob(patch: Record<string, unknown>) {
     if (!job) return
     setSaving(true)
+    // Mise à jour optimiste immédiate — l'UI reflète le changement sans attendre le réseau
+    setJob(prev => prev ? { ...prev, ...patch } as typeof prev : prev)
     const res = await fetch(`/api/jobs/${job.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(patch),
     })
-    if (res.ok) { void load(); setEditing({}); showToast('Sauvegardé ✓') }
-    else showToast('Erreur lors de la sauvegarde')
+    if (res.ok) { setEditing({}); showToast('Sauvegardé ✓') }
+    else { void load(); showToast('Erreur lors de la sauvegarde') } // rollback en cas d'erreur
     setSaving(false)
   }
 
@@ -765,17 +767,7 @@ export default function JobDetailPage() {
           </label>
         </div>
 
-        {/* Lien page publique */}
-        {job.is_public && job.seo_slug && (
-          <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-100 rounded-xl">
-            <span className="text-lg">🌐</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-green-700">Page publique active</p>
-              <p className="text-[10px] text-green-500 font-mono truncate">/jobs/{job.seo_slug}</p>
-            </div>
-            <a href={`/jobs/${job.seo_slug}`} target="_blank" rel="noopener noreferrer"
-              className="text-xs px-3 py-1.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 flex-shrink-0">↗ Voir</a>
-          </div>
+
         )}
 
         {/* Description publique */}
@@ -897,7 +889,6 @@ export default function JobDetailPage() {
               <button onClick={() => setEditing(p => ({ ...p, seo_slug: true }))} className="text-left text-sm font-mono text-zinc-600 hover:text-[#c8a96e] transition-colors">
                 {job.seo_slug || <span className="text-zinc-300 not-italic font-sans">Cliquer pour définir le slug...</span>}
               </button>
-              {job.seo_slug && <a href={`/jobs/${job.seo_slug}`} target="_blank" rel="noopener noreferrer" className="text-xs text-[#c8a96e] hover:underline">↗ voir</a>}
             </div>
           )}
         </div>

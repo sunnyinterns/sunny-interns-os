@@ -90,32 +90,51 @@ export async function POST(request: Request) {
   const promptFn = PROMPTS[action]
   if (!promptFn) return NextResponse.json({ error: 'Action inconnue' }, { status: 400 })
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) return NextResponse.json({ error: 'ANTHROPIC_API_KEY manquante' }, { status: 500 })
+  const anthropicKey = process.env.ANTHROPIC_API_KEY
+  const geminiKey = process.env.GOOGLE_AI_STUDIO_KEY
+
+  if (!anthropicKey && !geminiKey) return NextResponse.json({ error: 'Clé API manquante' }, { status: 500 })
 
   const prompt = promptFn(ctx)
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  // Tenter Anthropic d'abord, fallback Gemini
+  if (anthropicKey) {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': anthropicKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 400,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    })
+    if (res.ok) {
+      const data = await res.json() as { content: Array<{ type: string; text: string }> }
+      const text = data.content.find(c => c.type === 'text')?.text?.trim() ?? ''
+      return NextResponse.json({ result: text })
+    }
+  }
+
+  // Fallback Gemini Flash
+  const gemRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 400,
-      messages: [{ role: 'user', content: prompt }],
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { maxOutputTokens: 400, temperature: 0.8 },
     }),
   })
 
-  if (!res.ok) {
-    const err = await res.text()
-    return NextResponse.json({ error: 'Erreur API Claude', details: err }, { status: 500 })
+  if (!gemRes.ok) {
+    const err = await gemRes.text()
+    return NextResponse.json({ error: 'Erreur API IA', details: err }, { status: 500 })
   }
 
-  const data = await res.json() as { content: Array<{ type: string; text: string }> }
-  const text = data.content.find(c => c.type === 'text')?.text?.trim() ?? ''
-
+  const gemData = await gemRes.json() as { candidates: Array<{ content: { parts: Array<{ text: string }> } }> }
+  const text = gemData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? ''
   return NextResponse.json({ result: text })
 }
