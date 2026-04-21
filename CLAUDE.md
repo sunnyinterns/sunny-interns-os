@@ -273,3 +273,51 @@ Mise à jour **optimiste** : `setJob` est appelé AVANT le fetch réseau. Si err
 
 ### CLAUDE.md à mettre à jour
 Faire une mise à jour de ce fichier en fin de session si des changements architecturaux ont été faits.
+
+---
+
+## 🗂️ ARCHITECTURE JOBS (mise à jour post-chantier)
+
+### Liste `/fr/jobs`
+Vue liste dense (comme `/fr/cases`) — colonnes: titre · entreprise · département · statut · candidats · publié · date.
+**Plus de grid cards.**
+
+### Fiche `/fr/jobs/[id]` — 6 onglets
+```
+📋 Infos       | missions, outils, profil, desc interne, contact employeur
+🌐 Publication | hook, vibe, perks, slug, is_public, desc EN, IA Générer tout
+🖼 Image&Vidéo | cover image Gemini, 4 formats réseaux (carré/story/LinkedIn/TikTok)
+✍️ Posts       | génération texte par réseau via /api/ai-assist raw_prompt
+👥 Candidatures| submissions + proposer candidat
+📊 Activité    | logs chronologiques du job
+```
+- Barre publication (toggle + lien slug) dans le **header**, pas dans un onglet
+- Type: `'infos' | 'publication' | 'media' | 'posts' | 'candidatures' | 'activite'`
+
+### Marketing `/fr/marketing/jobs`
+→ **Posting Calendar uniquement** — liste des posts schedulés (job/réseau/statut/date/actions).
+Plus aucune logique de génération ici (déplacée dans la fiche job).
+
+### Settings `/fr/settings/marketing`
+Page connexions réseaux sociaux (Instagram, LinkedIn, TikTok, Facebook) + webhook n8n/Buffer + branding.
+Lien dans sidebar sous section Marketing.
+
+### Sidebar structure
+```
+Marketing
+├── Posting Calendar  → /fr/marketing/jobs
+├── Blog              → /fr/blog
+└── ⚙️ Réseaux       → /fr/settings/marketing
+```
+
+---
+
+## 🔧 API IMAGES
+
+### `/api/content/generate-image`
+- Modèle: `gemini-2.0-flash-preview-image-generation`
+- Clé: `GOOGLE_AI_STUDIO_KEY`
+- Stockage: bucket Supabase `brand-assets` (public)
+- Path: `content/[job_id]/[platform]_[timestamp].png`
+- Retourne: `{ success: true, image_url: string }`
+- Try/catch global + logs détaillés (voir chantier 5)
