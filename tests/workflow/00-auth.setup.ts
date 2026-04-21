@@ -1,28 +1,31 @@
 import { test as setup } from '@playwright/test'
+import * as fs from 'fs'
+import * as path from 'path'
 
+const AUTH_PATH = 'playwright/.auth/user.json'
+const SECRET    = 'e2e-sunny-interns-2026'
+const BASE      = process.env.TEST_BASE_URL ?? 'https://sunny-interns-os.vercel.app'
 const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? ''
 const SERVICE_KEY   = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
 const TEST_CASE_ID  = 'ffffffff-0001-0001-0001-000000000002'
 
-setup('A0: authentification + reset candidat test', async ({ page }) => {
-  await page.goto('/fr/feed')
-  await page.waitForLoadState('networkidle')
-  await page.waitForTimeout(2000)
+setup('A0: auth via endpoint + reset candidat test', async ({ page, context }) => {
+  fs.mkdirSync(path.dirname(AUTH_PATH), { recursive: true })
+
+  // Auth via endpoint dédié (pas le formulaire de login)
+  const authUrl = `${BASE}/api/tests/auth-setup?secret=${SECRET}`
+  const response = await page.goto(authUrl, { waitUntil: 'networkidle' })
+  console.log('Auth status:', response?.status(), '— URL:', page.url())
+
+  await context.storageState({ path: AUTH_PATH })
 
   if (page.url().includes('/login')) {
-    const email = process.env.PLAYWRIGHT_TEST_EMAIL ?? process.env.TEST_EMAIL ?? ''
-    const password = process.env.PLAYWRIGHT_TEST_PASSWORD ?? process.env.TEST_PASSWORD ?? ''
-    await page.fill('input[type="email"]', email)
-    await page.fill('input[type="password"]', password)
-    await page.click('button[type="submit"]')
-    await page.waitForURL('**/fr/**', { timeout: 20000 })
+    throw new Error(`Auth échouée — redirigé vers login: ${page.url()}`)
   }
 
-  await page.context().storageState({ path: 'playwright/.auth/user.json' })
-
-  // Reset le candidat test à rdv_booked pour un run propre
+  // Reset le candidat test à rdv_booked
   if (SUPABASE_URL && SERVICE_KEY) {
-    await fetch(`${SUPABASE_URL}/rest/v1/cases?id=eq.${TEST_CASE_ID}`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/cases?id=eq.${TEST_CASE_ID}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -41,5 +44,8 @@ setup('A0: authentification + reset candidat test', async ({ page }) => {
         actual_end_date: null,
       }),
     })
+    console.log('Reset candidat test:', res.status)
   }
+
+  console.log('A0 OK — auth + reset done')
 })
