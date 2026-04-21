@@ -15,19 +15,26 @@ export async function GET(
   const { token } = await params
   const supabase = getAdmin()
 
-  // Try dossier-specific access first
+  // Try dossier-specific access first — query séquentielle pour éviter les FK manquantes
   const { data: access } = await supabase
     .from('visa_agent_portal_access')
-    .select('*, cases(*, interns(*), companies(*), visa_types(code, name), packages(name, description)), visa_agents(*)')
+    .select('*, visa_agents(*)')
     .eq('token', token)
     .maybeSingle()
 
   if (access) {
+    // Fetch case + intern séparément
+    const { data: caseData } = access.case_id ? await supabase
+      .from('cases')
+      .select('*, interns(*), visa_types(code, name), packages(name, description)')
+      .eq('id', access.case_id)
+      .single() : { data: null }
+
     await supabase
       .from('visa_agent_portal_access')
       .update({ viewed_at: new Date().toISOString() })
       .eq('token', token)
-    return NextResponse.json({ type: 'dossier', access })
+    return NextResponse.json({ type: 'dossier', access: { ...access, case: caseData } })
   }
 
   // Fallback: agent-level portal (token = visa_agents.portal_token)

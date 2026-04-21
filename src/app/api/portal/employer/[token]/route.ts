@@ -23,7 +23,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
     .from('employer_portal_access')
     .select('*, companies(*), contacts(id,first_name,last_name,email,whatsapp,job_title,nationality,date_of_birth,place_of_birth,id_type,id_number)')
     .eq('token', token)
-    .single()
+    .limit(1)
+    .maybeSingle()
 
   if (error || !access) return NextResponse.json({ error: 'Invalid link' }, { status: 404 })
 
