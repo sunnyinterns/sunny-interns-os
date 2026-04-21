@@ -26,6 +26,7 @@ type AccessData = {
 }
 type PortalData = {
   access: AccessData; case: CaseInfo | null; manager: Manager | null
+  company: Company | null
   company_contacts: Contact[]; variant: 'A' | 'B' | 'C'
   template_id: string; agreement_unlocked: boolean; contract_signed: boolean
 }

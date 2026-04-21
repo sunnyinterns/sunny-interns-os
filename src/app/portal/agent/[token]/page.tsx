@@ -38,7 +38,8 @@ interface Access {
   agent_status?: string | null
   comments?: string | null
   received_at?: string | null
-  cases: Case | null
+  cases?: Case | null
+  case?: Case | null
   visa_agents: { company_name: string | null; name: string | null } | null
 }
 
