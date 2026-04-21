@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { NewCaseModal } from '@/components/cases/NewCaseModal'
 import { Toast } from '@/components/ui/Toast'
+import { KPIsSection } from './kpis'
 
 /* ── Types ── */
 interface ActionItem {
@@ -144,6 +145,9 @@ export default function FeedPage() {
       </div>
 
       <div className="w-full px-4 sm:px-6 py-6 space-y-8">
+
+        {/* ── SECTION 1b: KPIs ── */}
+        <KPIsSection />
 
         {/* ── SECTION 2: Grille 2 colonnes ── */}
         <div style={{ display: 'grid', gridTemplateColumns: '42% 1fr', gap: '16px', alignItems: 'start' }} className="max-lg:grid max-lg:!grid-cols-1">
