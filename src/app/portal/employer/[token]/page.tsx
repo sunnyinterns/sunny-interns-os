@@ -102,7 +102,7 @@ export default function EmployerPortal() {
     const d = await r.json() as PortalData & { error?: string }
     if (d.error) { setError(d.error); setLoading(false); return }
     setData(d)
-    setCompany({ ...d.access.companies })
+    setCompany({ ...(d.company ?? d.access.companies ?? {}) })
     setSigningContactId(d.access.signing_contact_id ?? d.access.contacts?.id ?? '')
     setLoading(false)
   }, [token])
@@ -143,7 +143,7 @@ export default function EmployerPortal() {
     e.preventDefault(); setSavingContact(true)
     const r = await fetch(`/api/portal/employer/${token}/contacts`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...newContact, company_id: data?.access.companies.id }),
+      body: JSON.stringify({ ...newContact, company_id: (data?.company ?? data?.access.companies)?.id }),
     })
     if (r.ok) {
       const d = await r.json() as { id: string }
@@ -205,7 +205,7 @@ export default function EmployerPortal() {
     </div>
   )
 
-  const co = data.access.companies
+  const co = (data.company ?? data.access.companies) as Company
   const intern = data.case?.interns
   const internName = intern ? `${intern.first_name} ${intern.last_name}` : null
   const contacts = data.company_contacts ?? []

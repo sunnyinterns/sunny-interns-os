@@ -147,7 +147,7 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
   }
 
   const a = data.access
-  const c = a.cases
+  const c = (a.case ?? a.cases) as Case | null
   const intern = c?.interns
   const agentName = a.visa_agents?.company_name ?? a.visa_agents?.name ?? '—'
   const fullName = `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim() || '—'
