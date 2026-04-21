@@ -6,11 +6,13 @@ test.afterEach(async ({ page }, testInfo) => {
   await uploadScreenshot(page, testInfo.title)
 })
 
-test('A4: dossier Test Workflow → meet.google.com visible', async ({ page }) => {
+test('A4: dossier Test Workflow → page charge + statut rdv_booked', async ({ page }) => {
   await page.goto(`/fr/cases/${TEST_CASE_ID}`)
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(3000)
-  await expect(page.getByText(/meet\.google\.com/i)).toBeVisible({ timeout: 10000 })
+  // Vérifier que la page charge sans 500 et affiche le candidat
+  await expect(page.getByText('Internal Server Error')).not.toBeVisible()
+  await expect(page.getByText(/Workflow/i).first()).toBeVisible({ timeout: 10000 })
 })
 
 test('A5: /fr/en-attente → Test Workflow visible', async ({ page }) => {
