@@ -46,6 +46,12 @@ const SECTIONS: Record<string, { title: string; items: SectionItem[] }> = {
       { href: 'scheduling', icon: '📅', label: 'Scheduling', desc: 'Prise de RDV native Google Calendar — créneaux, managers, booking page, timezone' },
     ],
   },
+  marketing: {
+    title: 'Marketing',
+    items: [
+      { href: 'marketing', icon: '📣', label: 'Marketing & Réseaux sociaux', desc: 'Connexions Instagram, LinkedIn, TikTok, Facebook + webhook auto-posting + branding' },
+    ],
+  },
   partners: {
     title: 'Partners & Logistics',
     items: [
