@@ -123,7 +123,7 @@ export async function GET() {
     // ── En Attente ──
     const { data: enAttenteRaw } = await supabase
       .from('en_attente')
-      .select('id, type, waiting_for, due_date, label, case_id, cases(id, status, interns(first_name, last_name))')
+      .select('id, type, waiting_for, due_date, notes, case_id, cases(id, status, interns(first_name, last_name))')
       .is('resolved_at', null)
       .order('due_date', { ascending: true })
       .limit(5)
@@ -139,7 +139,7 @@ export async function GET() {
       type: item.type,
       waiting_for: item.waiting_for,
       due_date: item.due_date,
-      notes: item.label,
+      notes: item.notes,
       intern_name: item.cases?.interns
         ? `${item.cases.interns.first_name} ${item.cases.interns.last_name}`
         : '—',
