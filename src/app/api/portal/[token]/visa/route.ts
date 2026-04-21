@@ -82,3 +82,53 @@ export async function POST(
 
   return NextResponse.json({ success: true, url: publicUrl, all_complete: allComplete })
 }
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ token: string }> }
+) {
+  const { token } = await params
+  const supabase = supabaseAdmin()
+
+  const { data: caseRow } = await supabase
+    .from('cases')
+    .select('id, intern_id')
+    .eq('portal_token', token)
+    .single()
+
+  if (!caseRow) return NextResponse.json({ error: 'Token invalide' }, { status: 404 })
+
+  const body = await request.json() as {
+    flight_number?: string
+    flight_departure_city?: string
+    flight_arrival_time?: string
+    mother_first_name?: string
+    mother_last_name?: string
+    emergency_name?: string
+    emergency_email?: string
+    emergency_phone?: string
+  }
+
+  const caseUpdate: Record<string, string | null> = {}
+  if (body.flight_number !== undefined) caseUpdate.flight_number = body.flight_number || null
+  if (body.flight_departure_city !== undefined) caseUpdate.flight_departure_city = body.flight_departure_city || null
+  if (body.flight_arrival_time !== undefined) caseUpdate.flight_arrival_time_local = body.flight_arrival_time || null
+
+  if (Object.keys(caseUpdate).length) {
+    await supabase.from('cases').update(caseUpdate).eq('id', caseRow.id)
+  }
+
+  if (caseRow.intern_id) {
+    const internUpdate: Record<string, string | null> = {}
+    if (body.mother_first_name !== undefined) internUpdate.mother_first_name = body.mother_first_name || null
+    if (body.mother_last_name !== undefined) internUpdate.mother_last_name = body.mother_last_name || null
+    if (body.emergency_name !== undefined) internUpdate.emergency_contact_name = body.emergency_name || null
+    if (body.emergency_email !== undefined) internUpdate.emergency_contact_email = body.emergency_email || null
+    if (body.emergency_phone !== undefined) internUpdate.emergency_contact_phone = body.emergency_phone || null
+    if (Object.keys(internUpdate).length) {
+      await supabase.from('interns').update(internUpdate).eq('id', caseRow.intern_id)
+    }
+  }
+
+  return NextResponse.json({ success: true })
+}
