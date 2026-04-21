@@ -1,3 +1,28 @@
+
+// ─── Candidat test fixe — workflow end-to-end ────────────────────────────────
+export const TEST_CASE_ID   = 'ffffffff-0001-0001-0001-000000000002'
+export const TEST_INTERN_ID = 'ffffffff-0001-0001-0001-000000000001'
+export const TEST_PORTAL_TOKEN = 'ffffffff-0001-0001-0001-000000000099'
+export const TEST_MEET_LINK = 'https://meet.google.com/test-workflow-001'
+
+/** Remet le case test à rdv_booked avant chaque run complet */
+export async function resetTestCase(request: APIRequestContext): Promise<void> {
+  await request.patch(`/api/cases/${TEST_CASE_ID}/status`, {
+    data: { status: 'rdv_booked' },
+  })
+}
+
+/** Avance le case test à un statut donné */
+export async function advanceTestCase(
+  request: APIRequestContext,
+  status: string,
+  extra?: Record<string, unknown>
+): Promise<void> {
+  await request.patch(`/api/cases/${TEST_CASE_ID}/status`, {
+    data: { status, ...extra },
+  })
+}
+
 import type { APIRequestContext, Page } from '@playwright/test'
 
 export async function fetchCases(request: APIRequestContext): Promise<any[]> {
