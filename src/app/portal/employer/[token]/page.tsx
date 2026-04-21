@@ -206,7 +206,7 @@ export default function EmployerPortal() {
     </div>
   )
 
-  const co = (data.company ?? data.access.companies) as Company
+  const co = ((data.company ?? data.access.companies) ?? {}) as Company
   const intern = data.case?.interns
   const internName = intern ? `${intern.first_name} ${intern.last_name}` : null
   const contacts = data.company_contacts ?? []
