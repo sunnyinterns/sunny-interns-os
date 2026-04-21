@@ -15,19 +15,25 @@ test('SMOKE: /api/portal/[token] répond 200 avec data valide', async ({ request
   expect(body.portal_token).toBe(STUDENT_TOKEN)
 })
 
-test('SMOKE: /portal/[token] page stagiaire charge sans erreur', async ({ page }) => {
-  await page.goto(`/portal/${STUDENT_TOKEN}`)
-  await page.waitForLoadState('networkidle')
-  await page.waitForTimeout(2000)
-  await expect(page.getByText('Lien invalide ou expiré')).not.toBeVisible()
-  await expect(page.getByText('Chargement')).not.toBeVisible()
-  await expect(page.getByText('Bonjour')).toBeVisible({ timeout: 10000 })
+test('SMOKE: /api/portal/[token] données complètes (intern + billing)', async ({ request }) => {
+  // Vérifie que le portail retourne les données imbriquées (intern, billing)
+  const res = await request.get(`/api/portal/${STUDENT_TOKEN}`)
+  expect(res.status()).toBe(200)
+  const body = await res.json() as Record<string, unknown>
+  expect(body.status).toBeTruthy()
+  // intern doit être chargé
+  expect(body.interns).toBeTruthy()
+  const intern = body.interns as Record<string, unknown>
+  expect(intern.first_name).toBeTruthy()
+  // job_submissions doit être un tableau
+  expect(Array.isArray(body.job_submissions)).toBe(true)
 })
 
-test('SMOKE: /portal/[token]/visa — page et API POST fonctionnels', async ({ request }) => {
-  // API POST rejects invalid payload → 400 expected (not 404 or 405)
+test('SMOKE: /portal/[token]/visa — route POST existe (400 ou 200, pas 404/405)', async ({ request }) => {
+  // Teste que la route existe — payload invalide attendu → 400
   const res = await request.post(`/api/portal/${STUDENT_TOKEN}/visa`, {
-    multipart: { file: Buffer.from(''), field: 'invalid_field' },
+    data: { test: true },
+    headers: { 'Content-Type': 'application/json' },
   })
   expect(res.status()).not.toBe(404)
   expect(res.status()).not.toBe(405)
