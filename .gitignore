@@ -44,4 +44,5 @@ next-env.d.ts
 playwright/.auth/user.json
 playwright-report/
 test-results/
+test-results.json
 .env*.local
