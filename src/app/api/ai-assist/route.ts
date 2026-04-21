@@ -102,7 +102,7 @@ export async function POST(request: Request) {
             'anthropic-version': '2023-06-01',
           },
           body: JSON.stringify({
-            model: 'claude-sonnet-4-5',
+            model: 'claude-haiku-4-5-20251001',
             max_tokens: maxTokens,
             messages: [{ role: 'user', content: prompt }],
           }),
@@ -110,7 +110,9 @@ export async function POST(request: Request) {
         if (res.ok) {
           const data = await res.json() as { content: Array<{ type: string; text: string }> }
           const text = data.content?.find(c => c.type === 'text')?.text?.trim() ?? ''
+          console.log('[ai-assist] Anthropic OK, text length:', text.length, '| model: claude-haiku-4-5-20251001')
           if (text) return NextResponse.json({ result: text })
+          console.warn('[ai-assist] Anthropic OK but empty text, raw:', JSON.stringify(data).slice(0, 200))
         } else {
           const err = await res.text()
           console.warn('[ai-assist] Anthropic failed:', res.status, err.slice(0, 200))

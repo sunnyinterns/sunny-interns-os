@@ -95,7 +95,7 @@ export async function POST(request: Request) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 1024,
         system: `You extract structured data from invoices/receipts. Return ONLY a JSON object, no markdown, no explanation. Extract these fields if present:
 - invoice_number: string or null
