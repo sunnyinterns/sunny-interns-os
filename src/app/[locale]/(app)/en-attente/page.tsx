@@ -39,6 +39,10 @@ const WAITING_TYPE_LABELS: Record<string, string> = {
   flight_info:        'Infos vol pour le chauffeur',
   payment:            'Confirmation paiement',
   sponsor_contract:   'Signature contrat sponsor',
+  job_match:          'Job à matcher',
+  rdv_to_confirm:     'RDV à confirmer',
+  qualification:      'Qualification en attente',
+  recontact:          'À recontacter',
 }
 
 // Derive waiting_for from type if column missing
