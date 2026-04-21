@@ -26,5 +26,5 @@ test('A9: portail Test Workflow au stade qualification', async ({ page }) => {
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(3000)
   await expect(page.getByText('404')).not.toBeVisible()
-  await expect(page.getByText(/Test/i).first()).toBeVisible({ timeout: 10000 })
+  await expect(page.getByText(/Workflow/i).first()).toBeVisible({ timeout: 10000 })
 })

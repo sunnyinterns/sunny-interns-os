@@ -10,7 +10,7 @@ test('A1: /fr/cases → Test Workflow visible', async ({ page }) => {
   await page.goto('/fr/cases')
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(3000)
-  await expect(page.getByText('Test').first()).toBeVisible({ timeout: 15000 })
+  await expect(page.getByText('Workflow').first()).toBeVisible({ timeout: 15000 })
 })
 
 test('A2: fiche Test Workflow charge sans 500', async ({ page }) => {

@@ -11,5 +11,5 @@ test('A26: avancer Test Workflow → active + /fr/cases', async ({ page, request
   await page.goto('/fr/cases')
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(3000)
-  await expect(page.getByText('Test').first()).toBeVisible({ timeout: 15000 })
+  await expect(page.getByText('Workflow').first()).toBeVisible({ timeout: 15000 })
 })

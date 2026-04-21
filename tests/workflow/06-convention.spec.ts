@@ -24,7 +24,7 @@ test('A14: portail Test Workflow au stade convention_signed', async ({ page }) =
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(3000)
   await expect(page.getByText('404')).not.toBeVisible()
-  await expect(page.getByText(/Test/i).first()).toBeVisible({ timeout: 10000 })
+  await expect(page.getByText(/Workflow/i).first()).toBeVisible({ timeout: 10000 })
 })
 
 test('A15: avancer Test Workflow → payment_pending', async ({ page, request }) => {

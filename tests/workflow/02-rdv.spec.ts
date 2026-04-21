@@ -25,6 +25,6 @@ test('A6: portail candidat Test Workflow charge', async ({ page }) => {
   await page.goto(`/portal/${TEST_PORTAL_TOKEN}`)
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(3000)
-  await expect(page.getByText(/Test/i).first()).toBeVisible({ timeout: 10000 })
+  await expect(page.getByText(/Workflow/i).first()).toBeVisible({ timeout: 10000 })
   await expect(page.getByText(/meet\.google\.com/i)).toBeVisible({ timeout: 10000 })
 })
