@@ -23,22 +23,22 @@ interface EnAttenteItem {
 type WaitingForKey = 'intern' | 'employer' | 'school' | 'agent' | 'manager'
 
 const WAITING_FOR_LABELS: Record<WaitingForKey, { label: string; color: string; icon: string; badgeCls: string }> = {
-  intern:   { label: 'Waiting for intern',          color: '#f59e0b', icon: '👤', badgeCls: 'bg-amber-100 text-amber-700' },
-  employer: { label: 'Waiting for employer',         color: '#3b82f6', icon: '🏢', badgeCls: 'bg-blue-100 text-blue-700' },
-  school:   { label: 'Waiting for school',           color: '#8b5cf6', icon: '🎓', badgeCls: 'bg-purple-100 text-purple-700' },
-  agent:    { label: 'Waiting for agent',            color: '#f97316', icon: '🔏', badgeCls: 'bg-orange-100 text-orange-700' },
-  manager:  { label: 'Waiting for manager action',   color: '#ef4444', icon: '⚡', badgeCls: 'bg-red-100 text-red-700' },
+  intern:   { label: 'En attente du stagiaire',     color: '#f59e0b', icon: '👤', badgeCls: 'bg-amber-100 text-amber-700' },
+  employer: { label: 'En attente de l\'employeur',  color: '#3b82f6', icon: '🏢', badgeCls: 'bg-blue-100 text-blue-700' },
+  school:   { label: 'En attente de l\'école',      color: '#8b5cf6', icon: '🎓', badgeCls: 'bg-purple-100 text-purple-700' },
+  agent:    { label: 'En attente de l\'agent',      color: '#f97316', icon: '🔏', badgeCls: 'bg-orange-100 text-orange-700' },
+  manager:  { label: 'Action manager requise',      color: '#ef4444', icon: '⚡', badgeCls: 'bg-red-100 text-red-700' },
 }
 
 const WAITING_TYPE_LABELS: Record<string, string> = {
-  cv:                 'CV upload',
-  engagement_letter:  'Engagement letter signature',
-  employer_response:  'Employer decision on CV',
-  convention:         'Internship agreement (convention)',
-  visa_docs:          'Visa documents',
-  flight_info:        'Flight info for airport transfer',
-  payment:            'Payment confirmation',
-  sponsor_contract:   'Sponsor contract signature',
+  cv:                 'Upload CV',
+  engagement_letter:  'Signature lettre d\'engagement',
+  employer_response:  'Décision employeur sur le CV',
+  convention:         'Convention de stage',
+  visa_docs:          'Documents visa',
+  flight_info:        'Infos vol pour le chauffeur',
+  payment:            'Confirmation paiement',
+  sponsor_contract:   'Signature contrat sponsor',
 }
 
 // Derive waiting_for from type if column missing

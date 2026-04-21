@@ -404,26 +404,7 @@ export default function PortalPage() {
 
   useEffect(() => { loadData() }, [loadData])
 
-  if (loading) return <p style={{ color: '#6b7280', textAlign: 'center', marginTop: 48 }}>Chargement…</p>
-  if (!data) return <p style={{ color: '#dc2626', textAlign: 'center', marginTop: 48 }}>Lien invalide ou expiré.</p>
-
-  const prenom = data.interns?.first_name ?? 'Stagiaire'
-  const currentStep = STATUS_TO_STEP[data.status] ?? 1
-  const retainedSub = (data.job_submissions ?? []).find(s => s.status === 'retained')
-  const retainedCompany = retainedSub?.jobs?.companies ?? null
-  const showPayment = PAYMENT_STATUSES.has(data.status)
-  const paymentAmount = data.payment_amount ?? 990
-  const paymentTotal = data.discount_percentage && data.discount_percentage > 0
-    ? paymentAmount * (1 - data.discount_percentage / 100)
-    : paymentAmount
-  const isPaid = ['payment_received', 'visa_docs_sent', 'visa_submitted', 'visa_received', 'arrival_prep', 'active', 'alumni'].includes(data.status)
-
-  // Determine which portal step is current
-  const allStepStatuses = PORTAL_STEPS.flatMap(s => s.statuses)
-  const currentStepIdx = PORTAL_STEPS.findIndex(s => s.statuses.includes(data.status))
-  const qualificationDone = currentStep >= 2 && data.status !== 'lead' && data.status !== 'rdv_booked'
-
-  // Actions requises urgentes (useMemo)
+  // Actions requises urgentes — DOIT être avant tout early return (règles des hooks)
   const requiredActions = useMemo(() => {
     if (!data) return []
     const acts: { href: string; icon: string; label: string }[] = []
@@ -437,10 +418,26 @@ export default function PortalPage() {
       acts.push({ href: `/portal/${token}/visa`, icon: '🛂', label: 'Uploader vos documents visa' })
     }
     if (['payment_received', 'visa_in_progress', 'visa_docs_sent'].includes(data.status) && !data.flight_number) {
-      acts.push({ href: `/portal/${token}/billet`, icon: '✈️', label: 'Renseigner votre billet d\'avion' })
+      acts.push({ href: `/portal/${token}/billet`, icon: '✈️', label: "Renseigner votre billet d'avion" })
     }
     return acts
   }, [data, token])
+
+  if (loading) return <p style={{ color: '#6b7280', textAlign: 'center', marginTop: 48 }}>Chargement…</p>
+  if (!data) return <p style={{ color: '#dc2626', textAlign: 'center', marginTop: 48 }}>Lien invalide ou expiré.</p>
+
+  const prenom = data.interns?.first_name ?? 'Stagiaire'
+  const currentStep = STATUS_TO_STEP[data.status] ?? 1
+  const retainedSub = (data.job_submissions ?? []).find(s => s.status === 'retained')
+  const retainedCompany = retainedSub?.jobs?.companies ?? null
+  const showPayment = PAYMENT_STATUSES.has(data.status)
+  const paymentAmount = data.payment_amount ?? 990
+  const paymentTotal = data.discount_percentage && data.discount_percentage > 0
+    ? paymentAmount * (1 - data.discount_percentage / 100)
+    : paymentAmount
+  const isPaid = ['payment_received', 'visa_docs_sent', 'visa_submitted', 'visa_received', 'arrival_prep', 'active', 'alumni'].includes(data.status)
+  const currentStepIdx = PORTAL_STEPS.findIndex(s => s.statuses.includes(data.status))
+  const qualificationDone = currentStep >= 2 && data.status !== 'lead' && data.status !== 'rdv_booked'
 
   // Pending actions
   const actions: { label: string; href: string; done: boolean; urgent?: boolean }[] = []
