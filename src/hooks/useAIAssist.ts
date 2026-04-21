@@ -11,10 +11,16 @@ export function useAIAssist() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, ...ctx }),
       })
+      if (res.status === 402) {
+        const d = await res.json() as { error?: string }
+        throw new Error(d.error ?? 'Crédit API épuisé')
+      }
       if (!res.ok) return null
       const data = await res.json() as { result: string }
       return data.result ?? null
-    } catch {
+    } catch (e) {
+      // Remonter les erreurs billing pour affichage
+      if (e instanceof Error && e.message.includes('Crédit')) throw e
       return null
     } finally {
       setLoadingAction(null)

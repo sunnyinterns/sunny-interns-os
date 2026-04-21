@@ -871,7 +871,7 @@ export default function JobDetailPage() {
                   const r = await assist('generate_slug', ctx)
                   if (r) { void patchJob({ seo_slug: r.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') }); generated++ }
                 }
-                if (generated === 0) setAiError('⚠️ IA indisponible — vérifier la clé API dans Vercel')
+                if (generated === 0) setAiError('💳 Crédit API épuisé — recharger sur console.anthropic.com ou aistudio.google.com')
                 generatingAllRef.current = false
               }}
               className="text-xs px-3 py-1.5 bg-purple-50 text-purple-600 rounded-xl font-semibold hover:bg-purple-100 disabled:opacity-40 transition-all"

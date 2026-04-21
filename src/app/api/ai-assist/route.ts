@@ -110,12 +110,18 @@ export async function POST(request: Request) {
         if (res.ok) {
           const data = await res.json() as { content: Array<{ type: string; text: string }> }
           const text = data.content?.find(c => c.type === 'text')?.text?.trim() ?? ''
-          console.log('[ai-assist] Anthropic OK, text length:', text.length, '| model: claude-haiku-4-5-20251001')
+          console.log('[ai-assist] Anthropic OK, text length:', text.length)
           if (text) return NextResponse.json({ result: text })
-          console.warn('[ai-assist] Anthropic OK but empty text, raw:', JSON.stringify(data).slice(0, 200))
+          console.warn('[ai-assist] Anthropic OK but empty text')
         } else {
-          const err = await res.text()
-          console.warn('[ai-assist] Anthropic failed:', res.status, err.slice(0, 200))
+          const errText = await res.text()
+          const errJson = JSON.parse(errText) as { error?: { type?: string; message?: string } }
+          const msg = errJson?.error?.message ?? errText
+          console.warn('[ai-assist] Anthropic failed:', res.status, msg.slice(0, 200))
+          // Crédit épuisé — retourner erreur explicite immédiatement
+          if (res.status === 400 && msg.includes('credit balance')) {
+            return NextResponse.json({ error: 'Crédit Anthropic épuisé — recharger sur console.anthropic.com/settings/billing', code: 'BILLING' }, { status: 402 })
+          }
         }
       } catch (e) {
         console.warn('[ai-assist] Anthropic exception:', e)
