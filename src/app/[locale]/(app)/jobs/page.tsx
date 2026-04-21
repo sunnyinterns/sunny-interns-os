@@ -430,7 +430,18 @@ export default function JobsPage() {
                   </div>
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
                     <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap" style={{ background: badge.bg, color: badge.color }}>{badge.label}</span>
-                    {j.is_public && <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-green-50 text-green-600 whitespace-nowrap">🌐 Publié</span>}
+                    {/* Badge publié cliquable → ouvre la page publique */}
+                    {j.is_public && j.seo_slug ? (
+                      <a href={`https://bali-interns.com/jobs/${j.seo_slug}`} target="_blank" rel="noopener noreferrer"
+                        onClick={e => e.stopPropagation()}
+                        className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-green-50 text-green-600 whitespace-nowrap hover:bg-green-100 transition-colors">
+                        🌐 Voir page ↗
+                      </a>
+                    ) : j.is_public ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-50 text-amber-600 whitespace-nowrap">⚠️ Sans slug</span>
+                    ) : (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-zinc-100 text-zinc-400 whitespace-nowrap">⚪ Brouillon</span>
+                    )}
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${(j.submissions_count ?? 0) > 0 ? 'bg-blue-50 text-blue-600' : 'text-zinc-300'}`}>
                       👤 {j.submissions_count ?? 0}
                     </span>

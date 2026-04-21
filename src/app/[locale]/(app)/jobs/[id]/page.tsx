@@ -347,6 +347,46 @@ export default function JobDetailPage() {
           )}
         </div>
 
+        {/* Barre publication — toujours visible dans le header */}
+        <div className="flex items-center gap-3 pt-3 mt-2 border-t border-zinc-100 flex-wrap">
+          {/* Toggle publié/brouillon */}
+          <label className="relative inline-flex items-center cursor-pointer gap-2">
+            <input type="checkbox" checked={!!job.is_public}
+              onChange={e => void patchJob({ is_public: e.target.checked })}
+              className="sr-only peer" />
+            <div className="w-9 h-5 bg-zinc-200 peer-checked:bg-[#0d9e75] rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
+            <span className={`text-xs font-semibold ${job.is_public ? 'text-[#0d9e75]' : 'text-zinc-400'}`}>
+              {job.is_public ? '🟢 Publiée' : '⚪ Brouillon'}
+            </span>
+          </label>
+
+          {/* Lien page publique */}
+          {job.is_public && job.seo_slug ? (
+            <a href={`https://bali-interns.com/jobs/${job.seo_slug}`} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-[#c8a96e] hover:underline font-medium">
+              🌐 bali-interns.com/jobs/{job.seo_slug} ↗
+            </a>
+          ) : job.is_public && !job.seo_slug ? (
+            <button onClick={() => setActiveTab('publication')}
+              className="text-xs text-amber-600 hover:underline">
+              ⚠️ Slug manquant — définir dans Publication
+            </button>
+          ) : job.seo_slug ? (
+            <span className="text-xs text-zinc-300 font-mono">/jobs/{job.seo_slug}</span>
+          ) : (
+            <button onClick={() => setActiveTab('publication')}
+              className="text-xs text-zinc-400 hover:text-zinc-600">
+              + Définir un slug pour publier
+            </button>
+          )}
+
+          {/* Lien rapide Marketing */}
+          <a href={`/${locale}/marketing/jobs?job_id=${id}`} target="_blank" rel="noopener noreferrer"
+            className="ml-auto text-xs text-purple-500 hover:text-purple-700 font-medium">
+            🎨 Marketing →
+          </a>
+        </div>
+
         {/* Infos grille */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-sm">
           <div>
