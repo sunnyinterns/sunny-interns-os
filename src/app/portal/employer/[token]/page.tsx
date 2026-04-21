@@ -103,7 +103,15 @@ export default function EmployerPortal() {
     const d = await r.json() as PortalData & { error?: string }
     if (d.error) { setError(d.error); setLoading(false); return }
     setData(d)
-    setCompany({ ...(d.company ?? d.access.companies ?? {}) })
+    // Normaliser les champs DB → champs portal Company
+    const dbCompany = d.company ?? d.access.companies ?? {}
+    const normalized: Partial<Company> = {
+      ...dbCompany,
+      address_city: (dbCompany as Record<string, unknown>).address_city as string ?? (dbCompany as Record<string, unknown>).city as string ?? '',
+      registration_country: (dbCompany as Record<string, unknown>).registration_country as string ?? (dbCompany as Record<string, unknown>).country as string ?? '',
+      registration_country_code: (dbCompany as Record<string, unknown>).registration_country_code as string ?? (((dbCompany as Record<string, unknown>).country as string)?.toUpperCase().startsWith('INDON') ? 'ID' : ''),
+    }
+    setCompany(normalized)
     setSigningContactId(d.access.signing_contact_id ?? d.access.contacts?.id ?? '')
     setLoading(false)
   }, [token])

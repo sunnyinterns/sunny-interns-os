@@ -435,14 +435,17 @@ export default function PortalPage() {
   const currentStepIdx = PORTAL_STEPS.findIndex(s => s.statuses.includes(data.status))
   const qualificationDone = currentStep >= 2 && data.status !== 'lead' && data.status !== 'rdv_booked'
 
-  // Pending actions
+  // Actions — uniquement après paiement reçu
+  const POST_PAYMENT = new Set(['payment_received','visa_docs_sent','visa_in_progress','visa_submitted','visa_received','arrival_prep','active'])
   const actions: { label: string; href: string; done: boolean; urgent?: boolean }[] = []
-  if (currentStep >= 5) {
-    actions.push({ label: 'Documents visa', href: `/portal/${token}/visa`, done: !!data.papiers_visas, urgent: currentStep >= 5 && !data.papiers_visas })
+  if (POST_PAYMENT.has(data.status)) {
+    if (currentStep >= 5) {
+      actions.push({ label: 'Documents visa', href: `/portal/${token}/visa`, done: !!data.papiers_visas, urgent: currentStep >= 5 && !data.papiers_visas })
+    }
+    actions.push({ label: 'Billet d\'avion', href: `/portal/${token}/billet`, done: !!data.billet_avion })
+    actions.push({ label: 'Lettre d\'engagement', href: `/portal/${token}/engagement`, done: !!data.engagement_letter_sent })
+    actions.push({ label: 'Logement & scooter', href: `/portal/${token}/logement`, done: !!data.housing_reserved })
   }
-  actions.push({ label: 'Billet d\'avion', href: `/portal/${token}/billet`, done: !!data.billet_avion })
-  actions.push({ label: 'Lettre d\'engagement', href: `/portal/${token}/engagement`, done: !!data.engagement_letter_sent })
-  actions.push({ label: 'Logement & scooter', href: `/portal/${token}/logement`, done: !!data.housing_reserved })
   if (data.cv_revision_requested) {
     actions.push({ label: 'Nouvelle version de CV demandée', href: `/portal/${token}/cv`, done: false, urgent: true })
   }
@@ -479,39 +482,7 @@ export default function PortalPage() {
         )}
       </div>
 
-      {/* Chronologie portal steps */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 28, overflowX: 'auto', paddingBottom: 4 }}>
-        {PORTAL_STEPS.map((step, i) => {
-          const isReached = currentStepIdx >= i
-          const isCurrent = currentStepIdx === i
-          return (
-            <div key={step.key} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-                opacity: isReached ? 1 : 0.3, flexShrink: 0,
-              }}>
-                <span style={{
-                  fontSize: 22,
-                  filter: isReached ? 'none' : 'grayscale(100%)',
-                }}>{step.icon}</span>
-                <span style={{
-                  fontSize: 9, color: isCurrent ? '#c8a96e' : '#6b7280',
-                  fontWeight: isCurrent ? 700 : 400,
-                  textAlign: 'center', maxWidth: 60, lineHeight: 1.2,
-                }}>{step.label}</span>
-              </div>
-              {i < PORTAL_STEPS.length - 1 && (
-                <div style={{
-                  width: 20, height: 2, flexShrink: 0, marginTop: -8,
-                  background: currentStepIdx > i ? '#c8a96e' : '#e5e7eb',
-                }} />
-              )}
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Progress bar */}
+      {/* Progress steps 1-8 */}
       <div style={{ marginBottom: 28 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, gap: 2 }}>
           {STEPS.map((s) => {
@@ -569,7 +540,7 @@ export default function PortalPage() {
         </div>
       )}
 
-      {/* Status < qualification_done: message d'attente */}
+      {/* Status message adapté au statut */}
       {!qualificationDone && (
         <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 12, padding: 20, marginBottom: 24, textAlign: 'center' }}>
           <p style={{ fontSize: 18, margin: '0 0 8px' }}>⏳</p>
@@ -577,7 +548,9 @@ export default function PortalPage() {
             Ton dossier est en cours d&apos;évaluation
           </p>
           <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
-            Notre équipe examine ta candidature. Tu seras notifié dès que ton entretien sera validé.
+            {data.status === 'rdv_booked'
+              ? 'Nous en reparlerons lors de ton entretien. En attendant, tu peux compléter ton profil ci-dessous.'
+              : 'Notre équipe examine ta candidature et te contactera très prochainement.'}
           </p>
         </div>
       )}

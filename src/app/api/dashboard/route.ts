@@ -126,7 +126,7 @@ export async function GET() {
       .select('id, type, waiting_for, due_date, notes, case_id, cases(id, status, interns(first_name, last_name))')
       .is('resolved_at', null)
       .order('due_date', { ascending: true })
-      .limit(5)
+      .limit(7)
 
     const { count: enAttenteTotal } = await supabase
       .from('en_attente')

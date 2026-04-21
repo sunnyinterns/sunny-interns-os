@@ -153,12 +153,14 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
   const agentName = a.visa_agents?.company_name ?? a.visa_agents?.name ?? '—'
   const fullName = `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim() || '—'
 
+  // Si le dossier a été envoyé, tous les docs sont considérés validés côté agent
+  const dossierSent = !!a.sent_at
   const docs = [
-    { label: 'Page identité passeport', url: intern?.passport_page4_url },
-    { label: "Photo d'identité", url: intern?.photo_id_url },
-    { label: 'Relevé bancaire', url: intern?.bank_statement_url },
-    { label: 'Return ticket', url: intern?.return_plane_ticket_url },
-    { label: 'Internship agreement', url: c?.convention_url ?? null },
+    { label: 'Identity / Passport page', url: dossierSent ? (intern?.passport_page4_url ?? 'validated') : intern?.passport_page4_url },
+    { label: 'ID photo', url: dossierSent ? (intern?.photo_id_url ?? 'validated') : intern?.photo_id_url },
+    { label: 'Bank statement', url: dossierSent ? (intern?.bank_statement_url ?? 'validated') : intern?.bank_statement_url },
+    { label: 'Return ticket', url: dossierSent ? (intern?.return_plane_ticket_url ?? 'validated') : intern?.return_plane_ticket_url },
+    { label: 'Internship agreement', url: dossierSent ? (c?.convention_url ?? 'validated') : c?.convention_url ?? null },
   ]
 
   // Entreprise d'accueil depuis job_submissions
@@ -174,7 +176,7 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
     <div className="min-h-screen bg-[#fafaf7] p-6 md:p-10">
       <div className="max-w-3xl mx-auto">
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 text-center">
-          <p className="text-sm font-semibold text-[#0d9e75]">✅ Visa dossier sent by Sunny Interns</p>
+          <p className="text-sm font-semibold text-[#0d9e75]">✅ Visa dossier sent by Bali Interns</p>
           <p className="text-xs text-zinc-500 mt-1">For {agentName}</p>
         </div>
 
@@ -271,7 +273,7 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
           </div>
 
           <div className="mt-4">
-            <p className="text-xs font-medium text-zinc-600 mb-1">Message to Sunny Interns</p>
+            <p className="text-xs font-medium text-zinc-600 mb-1">Message to Bali Interns</p>
             <textarea
               value={comment}
               onChange={e => setComment(e.target.value)}
@@ -286,9 +288,12 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
         </section>
 
         <section className="bg-white border border-zinc-100 rounded-2xl p-6 mb-4">
-          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Contact Sunny Interns</h2>
+          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Contact Bali Interns</h2>
           <p className="text-sm text-zinc-700">📧 team@bali-interns.com</p>
-          <p className="text-sm text-zinc-700">💬 WhatsApp: +33 6 43 48 77 36</p>
+          <a href="https://wa.me/33643487736" target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 mt-2 px-4 py-2 bg-[#25D366] text-white text-sm rounded-xl font-medium hover:bg-[#1ebe5d]">
+            💬 WhatsApp Bali Interns
+          </a>
         </section>
 
         <footer className="text-center text-xs text-zinc-400 py-6">
