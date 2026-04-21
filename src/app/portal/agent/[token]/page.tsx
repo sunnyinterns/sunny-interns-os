@@ -157,46 +157,55 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
     { label: 'Page identité passeport', url: intern?.passport_page4_url },
     { label: "Photo d'identité", url: intern?.photo_id_url },
     { label: 'Relevé bancaire', url: intern?.bank_statement_url },
-    { label: 'Billet retour', url: intern?.return_plane_ticket_url },
-    { label: 'Convention de stage', url: c?.convention_url ?? null },
+    { label: 'Return ticket', url: intern?.return_plane_ticket_url },
+    { label: 'Internship agreement', url: c?.convention_url ?? null },
   ]
+
+  // Entreprise d'accueil depuis job_submissions
+  const retainedJob = (c as Record<string, unknown> | null)
+  const hostCompanyName = (retainedJob as Record<string, unknown> | null)?.company_name as string | null
+    ?? ((retainedJob as Record<string, unknown> | null)?.companies as Record<string, unknown> | null)?.name as string | null
+    ?? '—'
+  const hostCity = (retainedJob as Record<string, unknown> | null)?.internship_city as string | null
+    ?? ((retainedJob as Record<string, unknown> | null)?.companies as Record<string, unknown> | null)?.city as string | null
+    ?? '—'
 
   return (
     <div className="min-h-screen bg-[#fafaf7] p-6 md:p-10">
       <div className="max-w-3xl mx-auto">
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 text-center">
-          <p className="text-sm font-semibold text-[#0d9e75]">✅ Dossier envoyé par Bali Interns</p>
-          <p className="text-xs text-zinc-500 mt-1">Destiné à {agentName}</p>
+          <p className="text-sm font-semibold text-[#0d9e75]">✅ Visa dossier sent by Sunny Interns</p>
+          <p className="text-xs text-zinc-500 mt-1">For {agentName}</p>
         </div>
 
         <header className="bg-white border border-zinc-100 rounded-2xl p-6 mb-4">
-          <p className="text-xs uppercase tracking-wider text-[#c8a96e] font-bold mb-1">Dossier visa</p>
+          <p className="text-xs uppercase tracking-wider text-[#c8a96e] font-bold mb-1">Visa Dossier</p>
           <h1 className="text-xl font-semibold text-[#1a1918]">{fullName}</h1>
           {c?.visa_types && <p className="text-sm text-zinc-500 mt-1">{c.visa_types.code} — {c.visa_types.name}</p>}
         </header>
 
         <section className="bg-white border border-zinc-100 rounded-2xl p-6 mb-4">
-          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Informations personnelles</h2>
+          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Personal Information</h2>
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <Field label="Prénom" value={intern?.first_name} />
-            <Field label="Nom" value={intern?.last_name} />
-            <Field label="Nationalité" value={intern?.nationalities} />
-            <Field label="Date de naissance" value={intern?.birth_date} />
-            <Field label="N° passeport" value={intern?.passport_number} />
-            <Field label="Expiration passeport" value={intern?.passport_expiry} />
-            <Field label="Prénom mère" value={intern?.mother_first_name} />
-            <Field label="Nom mère" value={intern?.mother_last_name} />
+            <Field label="First Name" value={intern?.first_name} />
+            <Field label="Last Name" value={intern?.last_name} />
+            <Field label="Nationality" value={Array.isArray(intern?.nationalities) ? intern.nationalities[0] : intern?.nationalities} />
+            <Field label="Date of Birth" value={intern?.birth_date} />
+            <Field label="Passport Number" value={intern?.passport_number} />
+            <Field label="Passport Expiry" value={intern?.passport_expiry} />
+            <Field label="Mother First Name" value={intern?.mother_first_name} />
+            <Field label="Mother Last Name" value={intern?.mother_last_name} />
           </div>
         </section>
 
         <section className="bg-white border border-zinc-100 rounded-2xl p-6 mb-4">
-          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Stage</h2>
+          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Internship Details</h2>
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <Field label="Établissement" value={intern?.school_name} />
-            <Field label="Entreprise d'accueil" value={c?.company_name ?? c?.companies?.name} />
-            <Field label="Ville du stage" value={c?.internship_city ?? c?.companies?.city} />
-            <Field label="Arrivée prévue" value={intern?.desired_start_date} />
-            <Field label="Fin de stage" value={intern?.desired_end_date} />
+            <Field label="School / University" value={intern?.school_name} />
+            <Field label="Host Company" value={hostCompanyName} />
+            <Field label="Internship City" value={hostCity} />
+            <Field label="Start Date" value={intern?.desired_start_date ?? (c as Record<string, unknown> | null)?.desired_start_date as string | null} />
+            <Field label="End Date" value={intern?.desired_end_date ?? (c as Record<string, unknown> | null)?.actual_end_date as string | null} />
           </div>
         </section>
 
@@ -210,18 +219,17 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
                   <p className="text-sm text-[#1a1918]">{d.label}</p>
                 </div>
                 {d.url ? (
-                  <a href={d.url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#c8a96e] hover:underline">Télécharger →</a>
+                  <a href={d.url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#c8a96e] hover:underline">Download →</a>
                 ) : (
-                  <span className="text-xs text-zinc-400">Manquant</span>
+                  <span className="text-xs text-zinc-400">Missing</span>
                 )}
               </div>
             ))}
           </div>
         </section>
 
-        {/* Statut + Actions agent */}
         <section className="bg-white border border-zinc-100 rounded-2xl p-6 mb-4">
-          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Statut du dossier</h2>
+          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Dossier Status</h2>
           <div className="flex items-center gap-2 mb-4 flex-wrap">
             <span className={`text-xs px-2 py-1 rounded-full font-medium ${
               a.agent_status === 'received' ? 'bg-green-50 text-green-700' :
@@ -230,61 +238,61 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
               a.agent_status === 'issue' ? 'bg-red-50 text-red-600' :
               'bg-zinc-100 text-zinc-500'
             }`}>
-              {a.agent_status === 'received' ? '✅ Dossier reçu' :
-               a.agent_status === 'in_progress' ? '⏳ En cours de traitement' :
-               a.agent_status === 'completed' ? '🎉 Traitement terminé' :
-               a.agent_status === 'issue' ? '⚠️ Problème signalé' :
-               '📋 En attente de confirmation'}
+              {a.agent_status === 'received' ? '✅ Dossier received' :
+               a.agent_status === 'in_progress' ? '⏳ In progress' :
+               a.agent_status === 'completed' ? '🎉 Completed' :
+               a.agent_status === 'issue' ? '⚠️ Issue reported' :
+               '📋 Pending confirmation'}
             </span>
           </div>
           <div className="flex gap-2 flex-wrap">
             {(!a.agent_status || a.agent_status === 'pending') && (
               <button disabled={updatingStatus} onClick={() => void updateStatus('received')}
                 className="text-xs px-3 py-1.5 bg-green-50 text-green-700 rounded-lg border border-green-200 hover:bg-green-100 disabled:opacity-50">
-                ✅ Marquer comme reçu
+                ✅ Mark as received
               </button>
             )}
             {a.agent_status === 'received' && (
               <button disabled={updatingStatus} onClick={() => void updateStatus('in_progress')}
                 className="text-xs px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 hover:bg-blue-100 disabled:opacity-50">
-                ⏳ Mettre en cours
+                ⏳ Mark in progress
               </button>
             )}
             {a.agent_status === 'in_progress' && (
               <button disabled={updatingStatus} onClick={() => void updateStatus('completed')}
                 className="text-xs px-3 py-1.5 bg-[#c8a96e]/10 text-[#c8a96e] rounded-lg border border-[#c8a96e]/30 hover:bg-[#c8a96e]/20 disabled:opacity-50">
-                🎉 Marquer terminé
+                🎉 Mark as completed
               </button>
             )}
             <button disabled={updatingStatus} onClick={() => void updateStatus('issue')}
               className="text-xs px-3 py-1.5 bg-red-50 text-red-600 rounded-lg border border-red-200 hover:bg-red-100 disabled:opacity-50">
-              ⚠️ Signaler un problème
+              ⚠️ Report an issue
             </button>
           </div>
 
           <div className="mt-4">
-            <p className="text-xs font-medium text-zinc-600 mb-1">Message pour Bali Interns</p>
+            <p className="text-xs font-medium text-zinc-600 mb-1">Message to Sunny Interns</p>
             <textarea
               value={comment}
               onChange={e => setComment(e.target.value)}
-              placeholder="Document manquant, information incorrecte, demande complémentaire..."
+              placeholder="Missing document, incorrect information, additional request..."
               className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c8a96e] min-h-[80px]"
             />
             <button disabled={savingComment} onClick={() => void saveComment()}
               className="mt-2 px-4 py-2 bg-[#c8a96e] text-white text-sm rounded-xl disabled:opacity-40 hover:bg-[#b8945a]">
-              {savingComment ? 'Envoi…' : 'Envoyer le message'}
+              {savingComment ? 'Sending…' : 'Send message'}
             </button>
           </div>
         </section>
 
         <section className="bg-white border border-zinc-100 rounded-2xl p-6 mb-4">
-          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Contact Bali Interns</h2>
+          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Contact Sunny Interns</h2>
           <p className="text-sm text-zinc-700">📧 team@bali-interns.com</p>
           <p className="text-sm text-zinc-700">💬 WhatsApp: +33 6 43 48 77 36</p>
         </section>
 
         <footer className="text-center text-xs text-zinc-400 py-6">
-          Document confidentiel — Bali Interns · {new Date().toLocaleDateString('fr-FR')}
+          Confidential document — Sunny Interns · {new Date().toLocaleDateString('en-GB')}
         </footer>
       </div>
     </div>

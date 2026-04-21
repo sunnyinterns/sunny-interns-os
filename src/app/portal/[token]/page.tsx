@@ -404,16 +404,12 @@ export default function PortalPage() {
 
   useEffect(() => { loadData() }, [loadData])
 
-  // Actions requises urgentes — DOIT être avant tout early return (règles des hooks)
+  // Actions requises — seulement APRÈS le paiement (visa, billet, etc.)
+  const POST_PAYMENT_STATUSES = new Set(['payment_received', 'visa_docs_sent', 'visa_submitted', 'visa_in_progress', 'visa_received', 'arrival_prep', 'active'])
   const requiredActions = useMemo(() => {
     if (!data) return []
+    if (!POST_PAYMENT_STATUSES.has(data.status)) return [] // Pas d'actions avant le paiement
     const acts: { href: string; icon: string; label: string }[] = []
-    if (!data.engagement_letter_sent) {
-      acts.push({ href: `/portal/${token}/engagement`, icon: '📄', label: "Signer la lettre d'engagement" })
-    }
-    if (['convention_signed', 'payment_pending'].includes(data.status) && !data.payment_amount) {
-      acts.push({ href: `/portal/${token}/facture`, icon: '💳', label: 'Voir la facture et notifier le paiement' })
-    }
     if (['payment_received', 'visa_in_progress', 'visa_docs_sent'].includes(data.status) && !data.interns?.photo_id_url) {
       acts.push({ href: `/portal/${token}/visa`, icon: '🛂', label: 'Uploader vos documents visa' })
     }

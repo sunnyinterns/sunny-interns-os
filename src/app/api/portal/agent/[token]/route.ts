@@ -30,11 +30,24 @@ export async function GET(
       .eq('id', access.case_id)
       .single() : { data: null }
 
+    // Enrichir avec la company d'accueil via job_submissions → jobs → companies
+    let hostCompany = null
+    if (access.case_id) {
+      const { data: js } = await supabase
+        .from('job_submissions')
+        .select('jobs(title, companies(name, city, internship_city))')
+        .eq('case_id', access.case_id)
+        .eq('status', 'retained')
+        .limit(1)
+        .maybeSingle()
+      hostCompany = (((js?.jobs as unknown) as Record<string, unknown> | null)?.companies as Record<string, unknown> | null) ?? null
+    }
+
     await supabase
       .from('visa_agent_portal_access')
       .update({ viewed_at: new Date().toISOString() })
       .eq('token', token)
-    return NextResponse.json({ type: 'dossier', access: { ...access, case: caseData } })
+    return NextResponse.json({ type: 'dossier', access: { ...access, case: { ...caseData, company_name: (hostCompany as Record<string, unknown> | null)?.name, internship_city: (hostCompany as Record<string, unknown> | null)?.internship_city ?? (hostCompany as Record<string, unknown> | null)?.city } } })
   }
 
   // Fallback: agent-level portal (token = visa_agents.portal_token)

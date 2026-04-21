@@ -65,10 +65,10 @@ function formatDue(dateStr: string | null | undefined): string {
   const d = new Date(dateStr)
   const diff = d.getTime() - Date.now()
   const days = Math.ceil(diff / 86400000)
-  if (days < 0) return `${Math.abs(days)}d overdue`
-  if (days === 0) return 'Due today'
-  if (days === 1) return 'Due tomorrow'
-  return `Due in ${days}d`
+  if (days < 0) return `${Math.abs(days)}j de retard`
+  if (days === 0) return "Aujourd'hui"
+  if (days === 1) return 'Demain'
+  return `Dans ${days}j`
 }
 
 export default function EnAttentePage() {
