@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { JOB_TEMPLATES, ALL_TOOLS, type JobTemplate } from '@/lib/job-templates'
 import { useAIAssist } from '@/hooks/useAIAssist'
@@ -40,7 +41,7 @@ interface Job {
   description?: string | null
   submissions_count?: number
   contacts?: { id: string; first_name: string; last_name: string | null } | null
-  companies?: { id: string; name: string } | null
+  companies?: { id: string; name: string; logo_url?: string | null } | null
   company_name?: string | null
   department_name?: string | null
   required_level?: string | null
@@ -66,7 +67,7 @@ type JobView = 'open' | 'soon' | 'recurring' | 'archived'
 type SortKey = 'recent' | 'alphabetical' | 'deadline' | 'submissions'
 
 const STATUS_BADGE: Record<string, { bg: string; color: string; label: string }> = {
-  open: { bg: '#d1fae5', color: '#065f46', label: 'Cherche stagiaire' },
+  open: { bg: '#d1fae5', color: '#065f46', label: 'Ouvert' },
   staffed: { bg: '#dbeafe', color: '#1e40af', label: 'Pourvu' },
   cancelled: { bg: '#f3f4f6', color: '#374151', label: 'Annulé' },
   closed: { bg: '#f3f4f6', color: '#374151', label: 'Fermé' },
@@ -252,43 +253,6 @@ export default function JobsPage() {
     setSaving(false)
   }
 
-
-  async function deleteJob(jobId: string, jobTitle: string) {
-    if (!confirm(`Supprimer l'offre "${jobTitle}" ? Cette action est irréversible.`)) return
-    const r = await fetch('/api/jobs/' + jobId, { method: 'DELETE' })
-    if (r.ok) setJobs(prev => prev.filter(j => j.id !== jobId))
-    else alert('Erreur lors de la suppression')
-  }
-
-  function duplicateJob(j: Job) {
-    setForm({
-      ...EMPTY_FORM,
-      title: j.title + ' (copie)',
-      public_title: j.public_title ?? '',
-      contact_id: j.contacts?.id ?? '',
-      company_id: j.companies?.id ?? '',
-      company_name: j.companies?.name ?? '',
-      department: j.department ?? '',
-      job_department_id: j.job_department_id ?? '',
-      description: j.description ?? '',
-      wished_duration_months: String(j.wished_duration_months ?? 4),
-      required_level: j.required_level ?? '',
-      location: j.location ?? 'Bali, Indonesie',
-      missions: [...(j.missions ?? []), '', '', ''].slice(0, Math.max(3, (j.missions ?? []).length)),
-      tools_required: j.tools_required ?? [],
-      profile_sought: j.profile_sought ?? '',
-      is_recurring: j.is_recurring ?? false,
-      company_type: j.company_type ?? '',
-      background_image_url: j.background_image_url ?? '',
-      parent_job_id: j.parent_job_id ?? j.id,
-    })
-    setShowModal(true)
-  }
-
-  function createInstance(j: Job) {
-    duplicateJob({ ...j, parent_job_id: j.id })
-  }
-
   // Filter by view
   const viewFiltered = useMemo(() => {
     return jobs.filter(j => {
@@ -325,12 +289,12 @@ export default function JobsPage() {
   const inputCls = 'w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm bg-white text-[#1a1918] focus:outline-none focus:ring-2 focus:ring-[#c8a96e]'
 
   return (
-    <div className="px-4 sm:px-6 py-6 max-w-6xl mx-auto">
+    <div className="px-4 sm:px-6 py-6 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-        <div className="flex items-center gap-2">
-          <h1 className="text-xl font-bold text-[#1a1918]">💼 Offres de stage</h1>
-          <span className="px-2 py-0.5 rounded-full bg-[#c8a96e]/15 text-[#c8a96e] text-sm font-semibold">{jobs.length}</span>
+        <div>
+          <h1 className="text-xl font-semibold text-[#1a1918]">Offres de stage</h1>
+          <p className="text-sm text-zinc-500 mt-0.5">{jobs.length} offres · {counts.open} ouvertes</p>
         </div>
         <button onClick={() => { resetForm(); setShowModal(true) }} className="px-4 py-2 bg-[#c8a96e] text-white text-sm font-medium rounded-lg hover:bg-[#b8945a] transition-colors">
           + Nouvelle offre
@@ -356,150 +320,128 @@ export default function JobsPage() {
         ))}
       </div>
 
-      {/* Search + Sort */}
-      <div className="flex gap-3 mb-3 flex-wrap items-center">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Rechercher…"
-            className="w-full pl-9 pr-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-          />
-        </div>
-        <select
-          value={sortBy}
-          onChange={e => setSortBy(e.target.value as SortKey)}
-          className="px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
-        >
-          <option value="recent">Tri: Récents</option>
-          <option value="alphabetical">Tri: A-Z</option>
-          <option value="deadline">Tri: Début souhaité</option>
-          <option value="submissions">Tri: Candidatures</option>
-        </select>
-      </div>
-
-      {/* Department chips */}
-      <div className="flex gap-2 mb-5 flex-wrap">
-        {DEPT_CHIPS.map(dept => (
-          <button
-            key={dept}
-            onClick={() => setDeptChip(dept)}
-            className={['px-3 py-1 text-xs rounded-full border transition-colors', deptChip === dept ? 'bg-[#c8a96e] text-white border-[#c8a96e]' : 'bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300'].join(' ')}
+      {/* Search + Sort + Dept chips */}
+      <div className="mb-4 space-y-3">
+        <div className="flex gap-3 flex-wrap items-center">
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Rechercher titre, entreprise, département…"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e]/40"
+            />
+          </div>
+          <select
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value as SortKey)}
+            className="px-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e]/40"
           >
-            {dept}
-          </button>
-        ))}
+            <option value="recent">Tri: Récents</option>
+            <option value="alphabetical">Tri: A-Z</option>
+            <option value="deadline">Tri: Début souhaité</option>
+            <option value="submissions">Tri: Candidatures</option>
+          </select>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {DEPT_CHIPS.map(dept => (
+            <button
+              key={dept}
+              onClick={() => setDeptChip(dept)}
+              className={[
+                'px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors',
+                deptChip === dept
+                  ? 'bg-[#c8a96e] text-white border-[#c8a96e]'
+                  : 'bg-white text-zinc-600 border-zinc-200 hover:border-[#c8a96e]/50',
+              ].join(' ')}
+            >
+              {dept}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* List */}
+      {/* List — dense, identique à /fr/cases */}
       {loading ? (
-        <div className="space-y-2">{[1, 2, 3].map(i => <div key={i} className="h-24 bg-zinc-100 rounded-xl animate-pulse" />)}</div>
+        <div className="space-y-2 animate-pulse">
+          {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-16 bg-zinc-100 rounded-xl" />)}
+        </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-zinc-400">
-          <p className="text-lg font-medium text-[#1a1918] mb-1">Aucune offre</p>
-          <p className="text-sm">Créez votre première offre de stage</p>
-          <button onClick={() => { resetForm(); setShowModal(true) }} className="mt-4 px-4 py-2 bg-[#c8a96e] text-white text-sm font-medium rounded-lg">+ Nouvelle offre</button>
+        <div className="py-12 text-center text-sm text-zinc-400 bg-white rounded-xl border border-zinc-100 border-dashed">
+          {search ? 'Aucune offre trouvée pour cette recherche' : 'Aucune offre — créez votre première offre de stage'}
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-2">
           {filtered.map(j => {
             const badge = STATUS_BADGE[j.status] ?? STATUS_BADGE.closed
-            const days = j.actual_end_date ? daysUntil(j.actual_end_date) : null
+            const companyName = j.company_name ?? j.companies?.name ?? '—'
+            const deptName = j.department_name ?? j.department ?? null
+            const subCount = j.submissions_count ?? 0
             return (
-              <div
+              <Link
                 key={j.id}
-                onClick={() => router.push(`/${locale}/jobs/${j.id}`)}
-                className="relative overflow-hidden border border-zinc-100 rounded-xl p-4 hover:border-[#c8a96e] transition-all cursor-pointer min-h-[120px]"
-                style={j.cover_image_url ? {
-                  backgroundImage: `linear-gradient(to bottom, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.96) 100%), url(${j.cover_image_url})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  backgroundColor: 'white',
-                } : { backgroundColor: 'white' }}
+                href={`/${locale}/jobs/${j.id}`}
+                className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-zinc-100 hover:shadow-sm hover:border-zinc-200 transition-all"
               >
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-[#1a1918] truncate">{j.public_title ?? j.title}</p>
-                    {j.title !== j.public_title && j.public_title && <p className="text-[10px] text-zinc-400 truncate">{j.title}</p>}
-                    <p className="text-xs text-zinc-500 mt-0.5 truncate">
-                      {j.company_name ?? j.companies?.name ?? '—'}{(j.department_name ?? j.department) ? ` • ${j.department_name ?? j.department}` : ''}
-                    </p>
-                    {j.contacts && <p className="text-[10px] text-zinc-400 truncate">👤 {j.contacts.first_name} {j.contacts.last_name ?? ''}</p>}
-                    {j.public_hook && <p className="text-[10px] text-[#c8a96e] italic truncate mt-0.5">&ldquo;{j.public_hook}&rdquo;</p>}
-                  </div>
-                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap" style={{ background: badge.bg, color: badge.color }}>{badge.label}</span>
-                    {/* Badge publié cliquable → ouvre la page publique */}
-                    {j.is_public && j.seo_slug ? (
-                      <a href={`https://bali-interns.com/jobs/${j.seo_slug}`} target="_blank" rel="noopener noreferrer"
-                        onClick={e => e.stopPropagation()}
-                        className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-green-50 text-green-600 whitespace-nowrap hover:bg-green-100 transition-colors">
-                        🌐 Voir page ↗
-                      </a>
-                    ) : j.is_public ? (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-50 text-amber-600 whitespace-nowrap">⚠️ Sans slug</span>
-                    ) : (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-zinc-100 text-zinc-400 whitespace-nowrap">⚪ Brouillon</span>
-                    )}
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${(j.submissions_count ?? 0) > 0 ? 'bg-blue-50 text-blue-600' : 'text-zinc-300'}`}>
-                      👤 {j.submissions_count ?? 0}
-                    </span>
-                  </div>
+                {/* Avatar — cover ou initiale */}
+                <div className="relative w-10 h-10 flex-shrink-0">
+                  {j.cover_image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={j.cover_image_url} alt="" className="w-10 h-10 rounded-full object-cover border border-zinc-100" />
+                  ) : j.companies?.logo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={j.companies.logo_url} alt="" className="w-10 h-10 rounded-full object-cover border border-zinc-100" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-[#c8a96e]/20 flex items-center justify-center text-sm font-bold text-[#c8a96e]">
+                      {(j.public_title ?? j.title ?? '?')[0]?.toUpperCase()}
+                    </div>
+                  )}
                 </div>
 
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {j.wished_start_date && (() => {
-                    const d = new Date(j.wished_start_date)
-                    return <span className="text-[10px] bg-[#c8a96e]/10 text-[#b8945a] px-2 py-0.5 rounded-full font-medium">📅 {d.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}</span>
-                  })()}
-                  {j.wished_duration_months && <span className="text-[10px] bg-zinc-50 text-zinc-500 px-2 py-0.5 rounded-full">{j.wished_duration_months} mois</span>}
-                  {j.required_level && <span className="text-[10px] bg-zinc-50 text-zinc-500 px-2 py-0.5 rounded-full">{j.required_level}</span>}
-                  {j.location && <span className="text-[10px] bg-zinc-50 text-zinc-500 px-2 py-0.5 rounded-full">📍 {j.location}</span>}
-                  {j.is_recurring && <span className="text-[10px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">🔄 Récurrent</span>}
-                  {(j.remote_ok || j.is_remote) && <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">Remote OK</span>}
+                {/* Colonne principale : titre + entreprise */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-[#1a1918] truncate">
+                    {j.public_title ?? j.title}
+                  </p>
+                  <p className="text-xs text-zinc-400 truncate">
+                    {companyName}
+                    {deptName ? ` · ${deptName}` : ''}
+                    {j.location ? ` · ${j.location}` : ''}
+                  </p>
                 </div>
 
-                {days !== null && days <= 60 && days >= 0 && (
-                  <div className="flex items-center gap-1 text-[10px] text-amber-700 bg-amber-50 px-2 py-1 rounded-lg mb-2">
-                    ⏰ Disponible dans {days}j — planifier la passation
-                  </div>
+                {/* Date souhaitée */}
+                {j.wished_start_date && (
+                  <span className="text-xs text-[#c8a96e] font-medium flex-shrink-0 hidden sm:inline">
+                    📅 {new Date(j.wished_start_date).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+                  </span>
                 )}
 
-                <div className="flex items-center gap-2 mt-2 pt-2 border-t border-zinc-50">
-                  <button
-                    onClick={e => { e.stopPropagation(); duplicateJob(j) }}
-                    className="text-[10px] text-zinc-400 hover:text-zinc-600"
-                  >
-                    📋 Dupliquer
-                  </button>
-                  {j.is_recurring && (
-                    <button
-                      onClick={e => { e.stopPropagation(); createInstance(j) }}
-                      className="text-[10px] text-[#c8a96e] hover:text-[#b8945a]"
-                    >
-                      🔄 Nouvelle instance
-                    </button>
-                  )}
-                  <button
-                    onClick={e => { e.stopPropagation(); void deleteJob(j.id, j.public_title ?? j.title ?? '') }}
-                    className="text-[10px] text-red-400 hover:text-red-600 ml-auto"
-                  >
-                    🗑 Supprimer
-                  </button>
-                  {j.is_public && j.seo_slug && (
-                    <a
-                      href={`/jobs/${j.seo_slug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={e => e.stopPropagation()}
-                      className="text-[10px] text-green-600 hover:text-green-700 font-medium"
-                    >
-                      🌐 Voir ↗
-                    </a>
-                  )}
-                </div>
-              </div>
+                {/* Badge statut */}
+                <span className="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 whitespace-nowrap" style={{ background: badge.bg, color: badge.color }}>
+                  {badge.label}
+                </span>
+
+                {/* Nb candidats */}
+                <span className={`text-xs px-2 py-0.5 rounded-full font-semibold flex-shrink-0 whitespace-nowrap ${subCount > 0 ? 'bg-blue-50 text-blue-600' : 'bg-zinc-50 text-zinc-300'}`}>
+                  👤 {subCount}
+                </span>
+
+                {/* Badge publié/brouillon */}
+                {j.is_public && j.seo_slug ? (
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-green-50 text-green-600 flex-shrink-0 whitespace-nowrap">
+                    🌐 Publiée
+                  </span>
+                ) : j.is_public ? (
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-amber-50 text-amber-600 flex-shrink-0 whitespace-nowrap" title="Slug manquant">
+                    ⚠️ Slug
+                  </span>
+                ) : (
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-zinc-100 text-zinc-400 flex-shrink-0 whitespace-nowrap">
+                    ⚪ Brouillon
+                  </span>
+                )}
+              </Link>
             )
           })}
         </div>
@@ -572,7 +514,6 @@ export default function JobsPage() {
                 </div>
               </div>
 
-              {/* Separator */}
               <div className="border-t border-zinc-100" />
 
               {/* ÉTAPE 1 — Template (optionnel) */}
@@ -604,7 +545,7 @@ export default function JobsPage() {
                   <input required className={inputCls} value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Ex: Stage Social Media Manager" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
+                  <label className="text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
                     <span>Titre public * <span className="text-amber-600 text-[10px] font-medium">🇬🇧 Visible étudiant — EN</span></span>
                     <button type="button" disabled={aiLoading || !form.title} onClick={async () => {
                       const r = await assist('generate_public_title', { title: form.title, company_name: form.company_name, department: form.department })
@@ -640,7 +581,7 @@ export default function JobsPage() {
                   ))}
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
+                  <label className="text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
                     <span>Profil recherché</span>
                     <button type="button" disabled={aiLoading || !form.title} onClick={async () => {
                       const r = await assist('generate_profile', { title: form.title, department: form.department, required_level: form.required_level, tools: form.tools_required.join(', '), languages: form.required_languages.join(', ') })
@@ -650,7 +591,7 @@ export default function JobsPage() {
                   <textarea className={inputCls} rows={2} value={form.profile_sought} onChange={e => setForm(p => ({ ...p, profile_sought: e.target.value }))} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
+                  <label className="text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
                     <span>Description interne</span>
                     <button type="button" disabled={aiLoading || !form.title} onClick={async () => {
                       const r = await assist('generate_description', { title: form.title, company_name: form.company_name, missions: form.missions.join(', '), profile_sought: form.profile_sought, tools: form.tools_required.join(', ') })
@@ -663,7 +604,7 @@ export default function JobsPage() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
+                  <label className="text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
                     <span>Description publique <span className="text-amber-600 text-[10px] font-medium">🇬🇧 EN</span></span>
                     <button type="button" disabled={aiLoading || !form.title} onClick={async () => {
                       const r = form.public_description
@@ -785,116 +726,12 @@ export default function JobsPage() {
                 <div>
                   <label className="block text-xs font-medium text-zinc-600 mb-1">Statut</label>
                   <select className={inputCls} value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))}>
-                    <option value="open">🟢 Cherche stagiaire</option>
+                    <option value="open">🟢 Ouvert</option>
                     <option value="staffed">🔵 Pourvu</option>
                     <option value="cancelled">⚫ Annulé</option>
                   </select>
                 </div>
               </div>
-
-              {/* ÉTAPE 6 — Publication & Contenu */}
-              <details className="pt-2 border-t border-zinc-100" open>
-                <summary className="text-xs font-bold uppercase tracking-wider cursor-pointer py-2 flex items-center gap-2" style={{color:'#c8a96e'}}>
-                  📢 Publication & Génération de contenu
-                </summary>
-                <div className="space-y-4 mt-3 bg-amber-50/40 rounded-xl p-4 border border-amber-100">
-
-                  {/* Activer la publication */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-[#1a1918]">Publier cette offre</p>
-                      <p className="text-xs text-zinc-400">Active la page publique + génération de contenu</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" checked={form.is_public} onChange={e => setForm(p => ({ ...p, is_public: e.target.checked }))} className="sr-only peer" />
-                      <div className="w-10 h-5 bg-zinc-200 peer-checked:bg-[#c8a96e] rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5" />
-                    </label>
-                  </div>
-
-                  {/* Accroche */}
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-600 mb-1">
-                      🎣 Accroche du post <span className="text-zinc-400 font-normal">(hook — max 100 car.)</span>
-                    </label>
-                    <input className={inputCls} maxLength={100}
-                      placeholder='Ex: "Tu veux bosser dans un resort 5⭐ à Bali ?"'
-                      value={form.public_hook}
-                      onChange={e => setForm(p => ({ ...p, public_hook: e.target.value }))} />
-                    <p className="text-[10px] text-zinc-400 mt-1">{form.public_hook.length}/100 — utilisé comme première ligne des posts social media</p>
-                  </div>
-
-                  {/* Vibe */}
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-600 mb-1">
-                      🌴 Ambiance / Culture
-                    </label>
-                    <input className={inputCls}
-                      placeholder='Ex: "Startup surf, équipe internationale, bureau face mer"'
-                      value={form.public_vibe}
-                      onChange={e => setForm(p => ({ ...p, public_vibe: e.target.value }))} />
-                  </div>
-
-                  {/* Avantages */}
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-600 mb-2">✨ Avantages mis en avant</label>
-                    <div className="space-y-1.5">
-                      {(form.public_perks.length === 0 ? [''] : [...form.public_perks, '']).map((perk, i) => (
-                        <div key={i} className="flex gap-2">
-                          <input className={inputCls + ' flex-1'} placeholder={`Avantage ${i+1} (ex: Logement géré, Vue sur mer…)`}
-                            value={perk}
-                            onChange={e => {
-                              const next = [...form.public_perks]
-                              if (i < form.public_perks.length) next[i] = e.target.value
-                              else next.push(e.target.value)
-                              setForm(p => ({ ...p, public_perks: next.filter((x,j) => x || j < next.length-1) }))
-                            }} />
-                          {i < form.public_perks.length && (
-                            <button type="button" onClick={() => setForm(p => ({ ...p, public_perks: p.public_perks.filter((_,j) => j !== i) }))}
-                              className="text-zinc-300 hover:text-red-400 px-1 text-sm">✕</button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Hashtags custom */}
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-600 mb-1">
-                      # Hashtags custom <span className="text-zinc-400 font-normal">(séparés par virgule)</span>
-                    </label>
-                    <input className={inputCls}
-                      placeholder='Ex: BaliInterns, StageMarketing, InternshipBali'
-                      value={form.public_hashtags.join(', ')}
-                      onChange={e => setForm(p => ({ ...p, public_hashtags: e.target.value.split(',').map(h => h.trim()).filter(Boolean) }))} />
-                  </div>
-
-                  {/* Slug SEO */}
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-600 mb-1">
-                      🔗 Slug URL <span className="text-zinc-400 font-normal">(auto-généré si vide)</span>
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-zinc-400 flex-shrink-0">bali-interns.com/jobs/</span>
-                      <input className={inputCls + ' flex-1'} placeholder="marketing-digital-resort-bali-4mois"
-                        value={form.seo_slug}
-                        onChange={e => setForm(p => ({ ...p, seo_slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') }))} />
-                    </div>
-                  </div>
-
-                  {/* CV Drop */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-[#1a1918]">📄 CV Drop</p>
-                      <p className="text-xs text-zinc-400">Permettre à un candidat de déposer son CV sur la page publique</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" checked={form.cv_drop_enabled} onChange={e => setForm(p => ({ ...p, cv_drop_enabled: e.target.checked }))} className="sr-only peer" />
-                      <div className="w-10 h-5 bg-zinc-200 peer-checked:bg-[#c8a96e] rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5" />
-                    </label>
-                  </div>
-
-                </div>
-              </details>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-zinc-100">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm rounded-lg border border-zinc-200 text-zinc-600">Annuler</button>
