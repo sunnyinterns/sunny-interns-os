@@ -187,6 +187,7 @@ export function Sidebar() {
         <Sep />
         {/* Tests + Paramètres + User */}
         <NavLink href="/fr/settings" label="Paramètres" d={ICONS.settings} />
+        <NavLink href="/fr/settings/marketing" label="Marketing" d={ICONS.marketing} />
         {/* User inline sous settings */}
         {userEmail && (
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg">
