@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,  // ← ANON key, pas service_role
     {
       cookies: {
         getAll() { return req.cookies.getAll() },
@@ -26,14 +26,16 @@ export async function GET(req: NextRequest) {
     }
   )
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email: 'sidney.ruby@gmail.com',
-    password: 'SunnyInterns2026!',
-  })
+  const email = process.env.E2E_TEST_EMAIL ?? 'sidney.ruby@gmail.com'
+  const password = process.env.E2E_TEST_PASSWORD ?? 'SunnyInterns2026!'
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) {
+    console.error('[auth-setup] signInWithPassword error:', error.message)
     return NextResponse.json({ error: error.message }, { status: 401 })
   }
 
+  console.log('[auth-setup] Auth OK for', email)
   return response
 }
