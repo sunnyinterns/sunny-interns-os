@@ -6,53 +6,6 @@ import Link from 'next/link'
 import { SearchableSelect, type SearchableSelectItem } from '@/components/ui/SearchableSelect'
 import { useAIAssist } from '@/hooks/useAIAssist'
 
-type Platform = 'instagram' | 'linkedin' | 'tiktok' | 'facebook'
-type PostLang = 'fr' | 'en'
-
-interface SocialPost {
-  id: string; platform: Platform; lang: PostLang; tone: string | null
-  content: string; hashtags: string[]; image_url: string | null; status: string
-  created_at: string
-}
-
-interface ActivityItem {
-  id: string; type: string; title: string; description?: string | null
-  created_at: string; icon_type?: string
-}
-
-const PLATFORM_META: Record<Platform, { label: string; icon: string; ratio: string; desc: string }> = {
-  instagram: { label: 'Instagram', icon: '📸', ratio: '1:1',  desc: '1080×1080 · carré' },
-  linkedin:  { label: 'LinkedIn',  icon: '💼', ratio: '16:9', desc: '1200×627 · paysage' },
-  tiktok:    { label: 'TikTok',    icon: '🎵', ratio: '9:16', desc: '1080×1920 · portrait' },
-  facebook:  { label: 'Facebook',  icon: '👥', ratio: '1:1',  desc: '1080×1080 · carré' },
-}
-
-function buildImagePrompt(title: string, companyName: string): string {
-  return `Professional internship job cover image for ${title} at ${companyName} in Bali Indonesia. Modern, vibrant, tropical professional atmosphere. 16:9 ratio. No text, no logo.`
-}
-
-interface JobForPrompt {
-  title?: string | null; public_title?: string | null
-  companies?: { name: string } | null; wished_duration_months?: number | null
-  location?: string | null; description?: string | null; public_hook?: string | null
-  public_vibe?: string | null; public_perks?: string[] | null; public_hashtags?: string[] | null
-}
-
-function buildPostPrompt(job: JobForPrompt, platform: Platform, tone: string, lang: PostLang): string {
-  const title = job.public_title ?? job.title ?? 'Stage'
-  const company = job.companies?.name ?? 'une entreprise partenaire'
-  const duration = job.wished_duration_months ? `${job.wished_duration_months} mois` : 'plusieurs mois'
-  const hook = job.public_hook ? `\nACCROCHE: "${job.public_hook}"` : ''
-  const vibe = job.public_vibe ? `\nAmbiance: ${job.public_vibe}` : ''
-  const perks = job.public_perks?.filter(Boolean).length ? `\nAvantages: ${job.public_perks!.filter(Boolean).join(', ')}` : ''
-  const tags = job.public_hashtags?.filter(Boolean).length ? `\nHashtags: ${job.public_hashtags!.filter(Boolean).map(h => h.startsWith('#') ? h : '#' + h).join(' ')}` : ''
-  const fmt = platform === 'instagram' ? 'Hook + storytelling + emojis + 8-12 hashtags'
-    : platform === 'linkedin' ? 'Pro + valeur carrière + 3-5 hashtags'
-    : platform === 'tiktok' ? 'Hook choc ligne 1 + max 150 mots + trending hashtags'
-    : 'Chaleureux + CTA clair + 3-5 hashtags'
-  return `Tu es community manager pour Bali Interns.\nPost ${platform} en ${lang === 'fr' ? 'français' : 'anglais'} pour: ${title} @ ${company} — ${duration} — ${job.location ?? 'Bali'}\n${job.description?.slice(0, 150) ?? ''}${hook}${vibe}${perks}${tags}\nTON: ${tone} | FORMAT: ${fmt} | CTA: "Postuler sur bali-interns.com"\nRetourne UNIQUEMENT le post complet.`
-}
-
 function daysUntil(date: string | null | undefined): number {
   if (!date) return 999
   return Math.ceil((new Date(date).getTime() - Date.now()) / 86400000)
