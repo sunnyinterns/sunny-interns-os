@@ -26,7 +26,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
     .limit(1)
     .maybeSingle()
 
-  if (error || !access) return NextResponse.json({ error: 'Invalid link' }, { status: 404 })
+  if (error || !access) {
+    console.error('[employer-portal] token not found:', token, error?.message)
+    return NextResponse.json({ error: 'Invalid link' }, { status: 404 })
+  }
+  if (!access.company_id) {
+    console.error('[employer-portal] company_id null for token:', token)
+    return NextResponse.json({ error: 'Configuration incomplète — contactez l\'équipe Sunny Interns' }, { status: 422 })
+  }
 
   if (!access.viewed_at) {
     await sb.from('employer_portal_access')
