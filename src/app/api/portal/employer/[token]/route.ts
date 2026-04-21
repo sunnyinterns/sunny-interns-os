@@ -19,9 +19,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
   const sb = svc()
   const { token } = await params
 
+  // Query séquentielle — éviter les nested joins bloqués par RLS
   const { data: access, error } = await sb
     .from('employer_portal_access')
-    .select('*, companies(*), contacts(id,first_name,last_name,email,whatsapp,job_title,nationality,date_of_birth,place_of_birth,id_type,id_number)')
+    .select('id, token, company_id, contact_id, case_id, signing_contact_id, viewed_at, last_active_at, company_info_validated, company_info_validated_at, sponsor_contract_signed_at, sponsor_contract_signed_by, partnership_variant, created_at')
     .eq('token', token)
     .limit(1)
     .maybeSingle()
@@ -41,7 +42,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
       .eq('token', token)
   }
 
-  const company = access.companies as Record<string, unknown>
+  // Fetch company séparément
+  const { data: companyData } = await sb.from('companies').select('*').eq('id', access.company_id as string).single()
+  const company = companyData as Record<string, unknown> ?? {} as Record<string, unknown>
 
   // Get all contacts of the company
   const { data: companyContacts } = await sb
