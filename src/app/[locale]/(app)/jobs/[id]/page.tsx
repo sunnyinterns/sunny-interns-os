@@ -673,12 +673,13 @@ export default function JobDetailPage() {
       </div>
 
       {/* ═══ TABS (barre identique à cases/[id]) ═══ */}
-      <div className="flex gap-0 -mb-px overflow-x-auto border-b border-zinc-100">
+      <div className="relative z-10 isolate flex gap-0 overflow-x-auto border-b border-zinc-100">
         {tabs.map(t => (
           <button
+            type="button"
             key={t.key}
             onClick={() => setActiveTab(t.key)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+            className={`relative px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap -mb-px ${
               activeTab === t.key ? 'border-[#c8a96e] text-[#c8a96e]' : 'border-transparent text-zinc-500 hover:text-zinc-800'
             }`}
           >
