@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState, use } from 'react'
+import { AgentLangToggle } from '@/components/portal/LangToggle'
+import { ta, getAgentLang, type AgentLang } from '@/lib/i18n'
 
 interface Intern {
   first_name: string | null
@@ -64,6 +66,7 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [lang, setLang] = useState<AgentLang>('en')
 
   useEffect(() => {
     fetch(`/api/portal/agent/${token}`)
@@ -76,6 +79,7 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
       })
       .then((d: PortalData | null) => { if (d) setData(d) })
       .finally(() => setLoading(false))
+    setLang(getAgentLang())
   }, [token])
 
 
@@ -156,11 +160,11 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
   // Si le dossier a été envoyé, tous les docs sont considérés validés côté agent
   const dossierSent = !!a.sent_at
   const docs = [
-    { label: 'Identity / Passport page', url: dossierSent ? (intern?.passport_page4_url ?? 'validated') : intern?.passport_page4_url },
-    { label: 'ID photo', url: dossierSent ? (intern?.photo_id_url ?? 'validated') : intern?.photo_id_url },
-    { label: 'Bank statement', url: dossierSent ? (intern?.bank_statement_url ?? 'validated') : intern?.bank_statement_url },
-    { label: 'Return ticket', url: dossierSent ? (intern?.return_plane_ticket_url ?? 'validated') : intern?.return_plane_ticket_url },
-    { label: 'Internship agreement', url: dossierSent ? (c?.convention_url ?? 'validated') : c?.convention_url ?? null },
+    { label: ta(lang, 'docPassport'), url: dossierSent ? (intern?.passport_page4_url ?? 'validated') : intern?.passport_page4_url },
+    { label: ta(lang, 'docPhoto'), url: dossierSent ? (intern?.photo_id_url ?? 'validated') : intern?.photo_id_url },
+    { label: ta(lang, 'docBank'), url: dossierSent ? (intern?.bank_statement_url ?? 'validated') : intern?.bank_statement_url },
+    { label: ta(lang, 'docTicket'), url: dossierSent ? (intern?.return_plane_ticket_url ?? 'validated') : intern?.return_plane_ticket_url },
+    { label: ta(lang, 'docConvention'), url: dossierSent ? (c?.convention_url ?? 'validated') : c?.convention_url ?? null },
   ]
 
   // Entreprise d'accueil depuis job_submissions
@@ -175,39 +179,42 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
   return (
     <div className="min-h-screen bg-[#fafaf7] p-6 md:p-10">
       <div className="max-w-3xl mx-auto">
+        <div className="flex justify-end mb-4">
+          <AgentLangToggle onLangChange={setLang} />
+        </div>
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 text-center">
-          <p className="text-sm font-semibold text-[#0d9e75]">✅ Visa dossier sent by Bali Interns</p>
-          <p className="text-xs text-zinc-500 mt-1">For {agentName}</p>
+          <p className="text-sm font-semibold text-[#0d9e75]">✅ {ta(lang, 'header')}</p>
+          <p className="text-xs text-zinc-500 mt-1">{ta(lang, 'for')} {agentName}</p>
         </div>
 
         <header className="bg-white border border-zinc-100 rounded-2xl p-6 mb-4">
-          <p className="text-xs uppercase tracking-wider text-[#c8a96e] font-bold mb-1">Visa Dossier</p>
+          <p className="text-xs uppercase tracking-wider text-[#c8a96e] font-bold mb-1">{ta(lang, 'visaDossier')}</p>
           <h1 className="text-xl font-semibold text-[#1a1918]">{fullName}</h1>
           {c?.visa_types && <p className="text-sm text-zinc-500 mt-1">{c.visa_types.code} — {c.visa_types.name}</p>}
         </header>
 
         <section className="bg-white border border-zinc-100 rounded-2xl p-6 mb-4">
-          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Personal Information</h2>
+          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">{ta(lang, 'sectionPersonal')}</h2>
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <Field label="First Name" value={intern?.first_name} />
-            <Field label="Last Name" value={intern?.last_name} />
-            <Field label="Nationality" value={Array.isArray(intern?.nationalities) ? intern.nationalities[0] : intern?.nationalities} />
-            <Field label="Date of Birth" value={intern?.birth_date} />
-            <Field label="Passport Number" value={intern?.passport_number} />
-            <Field label="Passport Expiry" value={intern?.passport_expiry} />
-            <Field label="Mother First Name" value={intern?.mother_first_name} />
-            <Field label="Mother Last Name" value={intern?.mother_last_name} />
+            <Field label={ta(lang, 'firstName')} value={intern?.first_name} />
+            <Field label={ta(lang, 'lastName')} value={intern?.last_name} />
+            <Field label={ta(lang, 'nationality')} value={Array.isArray(intern?.nationalities) ? intern.nationalities[0] : intern?.nationalities} />
+            <Field label={ta(lang, 'dob')} value={intern?.birth_date} />
+            <Field label={ta(lang, 'passportNo')} value={intern?.passport_number} />
+            <Field label={ta(lang, 'passportExpiry')} value={intern?.passport_expiry} />
+            <Field label={ta(lang, 'motherFirst')} value={intern?.mother_first_name} />
+            <Field label={ta(lang, 'motherLast')} value={intern?.mother_last_name} />
           </div>
         </section>
 
         <section className="bg-white border border-zinc-100 rounded-2xl p-6 mb-4">
-          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Internship Details</h2>
+          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">{ta(lang, 'sectionInternship')}</h2>
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <Field label="School / University" value={intern?.school_name} />
-            <Field label="Host Company" value={hostCompanyName} />
-            <Field label="Internship City" value={hostCity} />
-            <Field label="Start Date" value={intern?.desired_start_date ?? (c as Record<string, unknown> | null)?.desired_start_date as string | null} />
-            <Field label="End Date" value={intern?.desired_end_date ?? (c as Record<string, unknown> | null)?.actual_end_date as string | null} />
+            <Field label={ta(lang, 'school')} value={intern?.school_name} />
+            <Field label={ta(lang, 'hostCompany')} value={hostCompanyName} />
+            <Field label={ta(lang, 'city')} value={hostCity} />
+            <Field label={ta(lang, 'startDate')} value={intern?.desired_start_date ?? (c as Record<string, unknown> | null)?.desired_start_date as string | null} />
+            <Field label={ta(lang, 'endDate')} value={intern?.desired_end_date ?? (c as Record<string, unknown> | null)?.actual_end_date as string | null} />
           </div>
         </section>
 
@@ -231,7 +238,7 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
         </section>
 
         <section className="bg-white border border-zinc-100 rounded-2xl p-6 mb-4">
-          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Dossier Status</h2>
+          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">{ta(lang, 'sectionStatus')}</h2>
           <div className="flex items-center gap-2 mb-4 flex-wrap">
             <span className={`text-xs px-2 py-1 rounded-full font-medium ${
               a.agent_status === 'received' ? 'bg-green-50 text-green-700' :
@@ -240,11 +247,11 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
               a.agent_status === 'issue' ? 'bg-red-50 text-red-600' :
               'bg-zinc-100 text-zinc-500'
             }`}>
-              {a.agent_status === 'received' ? '✅ Dossier received' :
-               a.agent_status === 'in_progress' ? '⏳ In progress' :
-               a.agent_status === 'completed' ? '🎉 Completed' :
-               a.agent_status === 'issue' ? '⚠️ Issue reported' :
-               '📋 Pending confirmation'}
+              {a.agent_status === 'received' ? ta(lang, 'received') :
+               a.agent_status === 'in_progress' ? ta(lang, 'inProgress') :
+               a.agent_status === 'completed' ? ta(lang, 'completed') :
+               a.agent_status === 'issue' ? ta(lang, 'issue') :
+               ta(lang, 'pending')}
             </span>
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -282,13 +289,13 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
             />
             <button disabled={savingComment} onClick={() => void saveComment()}
               className="mt-2 px-4 py-2 bg-[#c8a96e] text-white text-sm rounded-xl disabled:opacity-40 hover:bg-[#b8945a]">
-              {savingComment ? 'Sending…' : 'Send message'}
+              {savingComment ? ta(lang, 'sending') : ta(lang, 'send')}
             </button>
           </div>
         </section>
 
         <section className="bg-white border border-zinc-100 rounded-2xl p-6 mb-4">
-          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Contact Bali Interns</h2>
+          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">{ta(lang, 'sectionContact')}</h2>
           <p className="text-sm text-zinc-700">📧 team@bali-interns.com</p>
           <a href="https://wa.me/33643487736" target="_blank" rel="noopener noreferrer"
             className="inline-flex items-center gap-2 mt-2 px-4 py-2 bg-[#25D366] text-white text-sm rounded-xl font-medium hover:bg-[#1ebe5d]">

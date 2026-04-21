@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
+import LangToggle from '@/components/portal/LangToggle'
+import { tp, getPortalLang, type PortalLang } from '@/lib/i18n'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 
@@ -381,6 +383,7 @@ export default function PortalPage() {
   const token = typeof params?.token === 'string' ? params.token : ''
   const [data, setData] = useState<PortalData | null>(null)
   const [portalJobs, setPortalJobs] = useState<PortalJobItem[]>([])
+  const [lang, setLang] = useState<PortalLang>('fr')
   const [partners, setPartners] = useState<PortalPartner[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -402,7 +405,7 @@ export default function PortalPage() {
     }).catch(() => setLoading(false))
   }, [token])
 
-  useEffect(() => { loadData() }, [loadData])
+  useEffect(() => { loadData(); setLang(getPortalLang()) }, [loadData])
 
   // Actions requises — seulement APRÈS le paiement (visa, billet, etc.)
   const POST_PAYMENT_STATUSES = new Set(['payment_received', 'visa_docs_sent', 'visa_submitted', 'visa_in_progress', 'visa_received', 'arrival_prep', 'active'])
@@ -464,7 +467,7 @@ export default function PortalPage() {
     <div>
       {/* Header */}
       <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a1918', marginBottom: 4 }}>
-        Bonjour {prenom} !
+        {tp(lang, 'greeting', prenom)}
       </h1>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <span style={{
@@ -545,12 +548,12 @@ export default function PortalPage() {
         <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 12, padding: 20, marginBottom: 24, textAlign: 'center' }}>
           <p style={{ fontSize: 18, margin: '0 0 8px' }}>⏳</p>
           <p style={{ fontSize: 15, fontWeight: 600, color: '#1d4ed8', margin: '0 0 4px' }}>
-            Ton dossier est en cours d&apos;évaluation
+            {tp(lang, 'dossierEnCours')}
           </p>
           <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
             {data.status === 'rdv_booked'
-              ? 'Nous en reparlerons lors de ton entretien. En attendant, tu peux compléter ton profil ci-dessous.'
-              : 'Notre équipe examine ta candidature et te contactera très prochainement.'}
+              ? tp(lang, 'rdvBookedMsg')
+              : tp(lang, 'rdvPendingMsg')}
           </p>
         </div>
       )}
@@ -558,10 +561,10 @@ export default function PortalPage() {
       {/* Ton RDV */}
       {data.intern_first_meeting_date && (
         <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>Ton entretien</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>{tp(lang, 'rdvTitle')}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 13, color: '#6b7280' }}>Date et heure</span>
+              <span style={{ fontSize: 13, color: '#6b7280' }}>{tp(lang, 'rdvDateLabel')}</span>
               <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1918' }}>
                 {new Date(data.intern_first_meeting_date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                 {' '}
@@ -572,7 +575,7 @@ export default function PortalPage() {
               {data.intern_first_meeting_link && (
                 <a href={data.intern_first_meeting_link} target="_blank" rel="noopener noreferrer"
                   style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: '#1a73e8', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
-                  Rejoindre Google Meet
+                  {tp(lang, 'joinMeet')}
                 </a>
               )}
               {data.intern_first_meeting_reschedule_link && (
@@ -607,7 +610,7 @@ export default function PortalPage() {
       {/* Actions requises */}
       {pendingActions.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 10 }}>Actions requises</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 10 }}>{tp(lang, 'actionsRequises')}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {pendingActions.map(a => (
               <Link key={a.href} href={a.href} style={{

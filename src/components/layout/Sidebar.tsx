@@ -1,4 +1,5 @@
 'use client'
+import { getAdminLang, setAdminLang, type PortalLang } from '@/lib/i18n'
 
 import Link from 'next/link'
 import Image from 'next/image'
@@ -56,6 +57,7 @@ export function Sidebar() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userInitials, setUserInitials] = useState('?')
   const [openJobsCount, setOpenJobsCount] = useState<number | null>(null)
+  const [adminLang, setAdminLangState] = useState<PortalLang>('fr')
   const [newLeadsCount, setNewLeadsCount] = useState<number | null>(null)
   const [activeClientsCount, setActiveClientsCount] = useState<number | null>(null)
   const [candidatsCount, setCandidatsCount] = useState<number | null>(null)

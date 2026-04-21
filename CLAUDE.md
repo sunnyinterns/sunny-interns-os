@@ -70,6 +70,28 @@ rdv_booked → qualification_done → job_submitted → job_retained
 
 ---
 
+
+## 🌐 Multilangue — Système i18n
+
+| Contexte | Langues | Storage | Fichier |
+|---------|---------|---------|---------|
+| OS admin | FR/EN | `localStorage:admin_lang` | `src/lib/i18n.ts` |
+| Portail candidat | FR/EN | `localStorage:portal_lang` | `src/lib/i18n.ts` |
+| Portail agent visa | EN/ID | `localStorage:agent_lang` | `src/lib/i18n.ts` |
+| Portail employeur | EN uniquement | — | hardcodé |
+
+### Fonctions clés
+- `tp(lang, key)` → traduction portail candidat
+- `ta(lang, key)` → traduction portail agent visa
+- `getPortalLang()` / `setPortalLang()` → persistence candidat
+- `getAgentLang()` / `setAgentLang()` → persistence agent
+- `getAdminLang()` / `setAdminLang()` → persistence admin
+
+### Composants
+- `<LangToggle onLangChange={setLang} />` → FR/EN dans les portails candidat
+- `<AgentLangToggle onLangChange={setLang} />` → EN/ID dans le portail agent
+
+
 ## 🌐 Portails
 
 | Portail | Route | Audience |
@@ -124,13 +146,35 @@ rdv_booked → qualification_done → job_submitted → job_retained
 
 ---
 
-## 🧪 Test E2E — Dossier de référence
+## 🧪 Test E2E — Candidats de référence (seed réaliste)
 
-- **Intern** : Test Stagiaire — `sidney.ruby@gmail.com`
-- **Case ID** : `cf00ef63-f634-4aad-808e-28cf33ffba3f`
-- **Portal token** : `f90af311-4a0a-40d9-8b6d-5ee9bf7898f8`
-- **Statut de départ test** : `rdv_booked`
-- **QA Widget** : accessible via `?qa=1` dans l'URL (persiste en localStorage)
+### Candidats actifs en DB
+| Prénom | Nom | Statut | Case ID | Portal Token |
+|--------|-----|--------|---------|--------------|
+| Emma | Dupont | rdv_booked | eee00001-0000-0000-0000-000000000001 | 3c11ad31-57b1-437f-a278-7ff5ba260327 |
+| Lucas | Martin | qualification_done | eee00002-0000-0000-0000-000000000002 | 8b037cf4-e05b-49ee-9559-4c29077072dd |
+| Chloé | Bernard | job_submitted | eee00003-0000-0000-0000-000000000003 | 0fc7ac33-d82e-43fe-b9ef-ae3b7a955768 |
+| Antoine | Lefebvre | job_retained | eee00004-0000-0000-0000-000000000004 | 35c9388c-2d22-49f5-b8aa-da30cfb550e0 |
+| Sarah | Moreau | payment_received | eee00005-0000-0000-0000-000000000005 | d08319f3-94b2-45b9-9d9a-12ef38d99fbe |
+| Thomas | Rousseau | visa_received | eee00006-0000-0000-0000-000000000006 | 95be5cc7-fbec-4870-b280-58a1092de8e5 |
+| Inès | Petit | active | eee00007-0000-0000-0000-000000000007 | 80bcd508-183c-4d50-91b3-a320c707d4f3 |
+| Maxime | Girard | alumni | eee00008-0000-0000-0000-000000000008 | 6243baac-5964-4c5e-a8b4-b68236a87592 |
+
+### Portails de test
+- **Portail étudiant** : `/portal/[portal_token]`
+- **Portail employeur Antoine** : `/portal/employer/2260fc81-5edc-4d98-b192-446b69944aac`
+- **Portail agent visa Sarah** : `/portal/agent/5f583fce-d2c6-4829-b772-efd057952e09`
+- **Agent BIBI CONSULTANT** (vue globale) : `/portal/agent/74de268c-cdd3-41c8-ad6f-24bda1b0a628`
+
+### Leads de test
+- Julie Lambert (Instagram, score 78), Théo Garcia (TikTok, 62), Camille Richard (Facebook, 71), Marie Fontaine (Parrainage, 85)
+
+### Test candidat propre
+- Utiliser le formulaire `/apply` pour créer un candidat test
+- Tous les emails de test → `sidney.ruby@gmail.com`
+
+### QA Widget
+- Accessible via `?qa=1` dans l'URL (persiste en localStorage)
 
 ---
 
