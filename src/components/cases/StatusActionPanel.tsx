@@ -150,7 +150,7 @@ export function StatusActionPanel({ caseData, onRefresh }: StatusActionPanelProp
   }
 
   async function sendPaymentEmail() {
-    setLoading('send_payment_email')
+    setLoading('payment_pending')
     await fetch(`/api/cases/${caseData.id}/send-payment-email`, { method: 'POST' }).catch(() => null)
     await fetch(`/api/cases/${caseData.id}/status`, {
       method: 'PATCH',
