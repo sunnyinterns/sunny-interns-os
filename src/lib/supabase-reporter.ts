@@ -95,6 +95,24 @@ class SupabaseReporter implements Reporter {
   async onTestBegin(test: TestCase) {
     if (!RUN_ID) return
     const testId = getTestId(test)
+
+    // Try to find a pre-created step (from trigger API) to avoid duplicates
+    try {
+      const findRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/test_steps?run_id=eq.${RUN_ID}&test_id=eq.${encodeURIComponent(testId)}&select=id&limit=1`,
+        { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } }
+      )
+      if (findRes.ok) {
+        const rows = await findRes.json()
+        if (rows?.[0]?.id) {
+          stepIds.set(test.title, rows[0].id)
+          await sbPatch('test_steps', rows[0].id, { status: 'running', started_at: new Date().toISOString() })
+          return
+        }
+      }
+    } catch {}
+
+    // Fall back to inserting a new step
     const row = await sbInsert('test_steps', {
       run_id: RUN_ID, test_id: testId, title: test.title,
       suite: testId.charAt(0), file: path.basename(test.location.file),

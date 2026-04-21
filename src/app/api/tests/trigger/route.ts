@@ -17,6 +17,17 @@ export async function POST(req: NextRequest) {
 
   const { suite = 'all' }: { suite?: Suite } = await req.json().catch(() => ({}))
 
+  // 0. S'assurer que le bucket test-screenshots existe (idempotent)
+  await fetch(`${SUPABASE_URL}/storage/v1/bucket`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: SERVICE_KEY,
+      Authorization: `Bearer ${SERVICE_KEY}`,
+    },
+    body: JSON.stringify({ id: 'test-screenshots', name: 'test-screenshots', public: true }),
+  }).catch(() => {})
+
   // 1. Créer le test_run en Supabase
   const runRes = await fetch(`${SUPABASE_URL}/rest/v1/test_runs`, {
     method: 'POST',

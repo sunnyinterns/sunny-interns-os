@@ -24,6 +24,7 @@ export default defineConfig({
   reporter: [
     ['list'],
     ['json', { outputFile: 'test-results.json' }],
+    ['./src/lib/supabase-reporter.ts'],
   ],
   projects: [
     { name: 'setup', testMatch: /.*\.setup\.ts/, use: { headless: true } },

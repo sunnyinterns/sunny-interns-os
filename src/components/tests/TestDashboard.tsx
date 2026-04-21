@@ -34,6 +34,7 @@ interface TestStep {
   started_at: string | null
   finished_at: string | null
   sort_order: number
+  screenshot_url: string | null
 }
 
 interface Props {
@@ -221,7 +222,7 @@ function StepRow({ step, runId }: { step: TestStep; runId: string }) {
   const [comment, setComment] = useState('')
   const [comments, setComments] = useState<Array<{id:string;comment:string;severity:string;created_at:string}>>([])
   const [saving, setSaving] = useState(false)
-  const screenshotUrl = (step as any).screenshot_url as string | null
+  const screenshotUrl = step.screenshot_url
 
   // Charger les commentaires dès que la step est visible
   useEffect(() => {
@@ -282,8 +283,8 @@ function StepRow({ step, runId }: { step: TestStep; runId: string }) {
           </div>
         </div>
 
-        {/* Screenshot — toujours visible si disponible */}
-        {screenshotUrl && (
+        {/* Screenshot — affiché si disponible, sinon placeholder */}
+        {screenshotUrl ? (
           <div className="mx-4 mb-3 rounded-xl overflow-hidden border border-zinc-200 shadow-sm">
             <div className="bg-zinc-800 px-3 py-1.5 flex items-center gap-2">
               <div className="flex gap-1">
@@ -308,7 +309,11 @@ function StepRow({ step, runId }: { step: TestStep; runId: string }) {
               onClick={() => setLightbox(true)}
             />
           </div>
-        )}
+        ) : step.status !== 'pending' && step.status !== 'running' ? (
+          <div className="mx-4 mb-3 rounded-xl border border-zinc-100 bg-zinc-50 flex items-center justify-center py-5">
+            <span className="text-[11px] text-zinc-400">Pas de screenshot</span>
+          </div>
+        ) : null}
 
         {/* Erreur Playwright */}
         {step.error_message && (
@@ -582,8 +587,8 @@ export function TestDashboard({ suites }: Props) {
     // Poll immédiat
     pollActiveRun(activeRunId)
 
-    // Puis toutes les 3s
-    pollRef.current = setInterval(() => pollActiveRun(activeRunId), 3000)
+    // Puis toutes les 2s
+    pollRef.current = setInterval(() => pollActiveRun(activeRunId), 2000)
     return () => {
       if (pollRef.current) clearInterval(pollRef.current)
     }
@@ -762,7 +767,7 @@ export function TestDashboard({ suites }: Props) {
             {item.label}
           </span>
         ))}
-        <span className="ml-auto">Polling 3s · GitHub Actions CI</span>
+        <span className="ml-auto">Polling 2s · GitHub Actions CI</span>
       </div>
     </div>
   )

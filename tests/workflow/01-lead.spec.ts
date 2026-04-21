@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test'
-import { fetchCases, findByStatus, getFirstName } from './helpers'
+import { fetchCases, findByStatus, getFirstName, uploadScreenshot } from './helpers'
 test.use({ storageState: 'playwright/.auth/user.json' })
+
+test.afterEach(async ({ page }, testInfo) => {
+  await uploadScreenshot(page, testInfo.title)
+})
 
 test('A1: cases page shows candidates', async ({ page }) => {
   await page.goto('/fr/cases')

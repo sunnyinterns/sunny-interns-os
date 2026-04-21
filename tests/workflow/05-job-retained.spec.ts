@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test'
-import { fetchCases, findByStatus, getToken } from './helpers'
+import { fetchCases, findByStatus, getToken, uploadScreenshot } from './helpers'
 test.use({ storageState: 'playwright/.auth/user.json' })
+
+test.afterEach(async ({ page }, testInfo) => {
+  await uploadScreenshot(page, testInfo.title)
+})
 
 test('A10: en-attente page loads without error', async ({ page }) => {
   await page.goto('/fr/en-attente')
