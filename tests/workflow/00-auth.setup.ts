@@ -1,23 +1,26 @@
 import { test as setup } from '@playwright/test'
-import { TEST_CASE_ID, TEST_INTERN_ID } from './helpers'
 
-const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const SERVICE_KEY   = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? ''
+const SERVICE_KEY   = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
+const TEST_CASE_ID  = 'ffffffff-0001-0001-0001-000000000002'
 
-setup('A0: authentification + reset candidat test', async ({ page, request }) => {
-  // Auth
+setup('A0: authentification + reset candidat test', async ({ page }) => {
   await page.goto('/fr/feed')
   await page.waitForLoadState('networkidle')
-  const loc = page.url()
-  if (loc.includes('/login')) {
-    await page.fill('input[type="email"]', process.env.TEST_USER_EMAIL ?? 'sidney.ruby@gmail.com')
-    await page.fill('input[type="password"]', process.env.TEST_USER_PASSWORD ?? '')
+  await page.waitForTimeout(2000)
+
+  if (page.url().includes('/login')) {
+    const email = process.env.PLAYWRIGHT_TEST_EMAIL ?? process.env.TEST_EMAIL ?? ''
+    const password = process.env.PLAYWRIGHT_TEST_PASSWORD ?? process.env.TEST_PASSWORD ?? ''
+    await page.fill('input[type="email"]', email)
+    await page.fill('input[type="password"]', password)
     await page.click('button[type="submit"]')
-    await page.waitForURL('/fr/**', { timeout: 15000 })
+    await page.waitForURL('**/fr/**', { timeout: 20000 })
   }
+
   await page.context().storageState({ path: 'playwright/.auth/user.json' })
 
-  // Reset le candidat test à rdv_booked
+  // Reset le candidat test à rdv_booked pour un run propre
   if (SUPABASE_URL && SERVICE_KEY) {
     await fetch(`${SUPABASE_URL}/rest/v1/cases?id=eq.${TEST_CASE_ID}`, {
       method: 'PATCH',
@@ -34,6 +37,8 @@ setup('A0: authentification + reset candidat test', async ({ page, request }) =>
         convention_signed_at: null,
         payment_amount: null,
         visa_submitted_to_agent_at: null,
+        actual_start_date: null,
+        actual_end_date: null,
       }),
     })
   }
