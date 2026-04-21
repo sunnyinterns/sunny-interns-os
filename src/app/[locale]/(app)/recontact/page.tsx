@@ -1,122 +1,120 @@
-import { createClient } from '@/lib/supabase/server'
-import { createClient as svc } from '@supabase/supabase-js'
+'use client'
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 
 interface RecontactCase {
   id: string
-  recontact_month: string | null
-  recontact_reason: string | null
-  created_at: string
-  interns: {
-    first_name: string | null
-    last_name: string | null
-    email: string | null
-    desired_domains: string[] | null
-    desired_duration_months: number | null
-  } | null
+  status: string
+  recontact_at: string | null
+  recontact_note: string | null
+  updated_at: string
+  interns?: { first_name?: string | null; last_name?: string | null; email?: string | null; photo_url?: string | null } | null
+  desired_start_date?: string | null
 }
 
-function monthLabel(ym: string) {
-  return new Date(ym + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+function daysUntil(dateStr: string) {
+  return Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86400000)
 }
 
-function isPast(ym: string) {
-  return new Date(ym + '-01') <= new Date()
-}
+export default function RecontactPage() {
+  const params = useParams()
+  const router = useRouter()
+  const locale = typeof params?.locale === 'string' ? params.locale : 'fr'
+  const [cases, setCases] = useState<RecontactCase[]>([])
+  const [loading, setLoading] = useState(true)
 
-export default async function RecontactPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/fr/login')
+  useEffect(() => {
+    fetch('/api/cases?statuses=to_recontact&limit=200')
+      .then(r => r.ok ? r.json() : [])
+      .then((data: RecontactCase[]) => { setCases(data); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
 
-  const sb = svc(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+  const past    = cases.filter(c => c.recontact_at && daysUntil(c.recontact_at) <= 0)
+  const today   = cases.filter(c => c.recontact_at && daysUntil(c.recontact_at) === 0)
+  const upcoming = cases.filter(c => c.recontact_at && daysUntil(c.recontact_at) > 0)
+  const noDate  = cases.filter(c => !c.recontact_at)
 
-  const { data: cases } = await sb
-    .from('cases')
-    .select(`
-      id, recontact_month, recontact_reason, created_at,
-      interns(first_name, last_name, email, desired_domains, desired_duration_months)
-    `)
-    .eq('status', 'to_recontact')
-    .order('recontact_month', { ascending: true })
-
-  const rows = (cases ?? []) as unknown as RecontactCase[]
-  const pastRows = rows.filter(r => r.recontact_month && isPast(r.recontact_month))
-  const futureRows = rows.filter(r => !r.recontact_month || !isPast(r.recontact_month))
+  function urgencyColor(d: number) {
+    if (d < 0) return 'bg-red-50 border-red-200 text-red-600'
+    if (d === 0) return 'bg-amber-50 border-amber-200 text-amber-700'
+    if (d <= 3) return 'bg-orange-50 border-orange-100 text-orange-600'
+    return 'bg-zinc-50 border-zinc-100 text-zinc-500'
+  }
 
   const Card = ({ c }: { c: RecontactCase }) => {
-    const past = c.recontact_month ? isPast(c.recontact_month) : false
-    const intern = c.interns
-    const name = intern ? `${intern.first_name ?? ''} ${intern.last_name ?? ''}`.trim() : 'Inconnu'
+    const name = c.interns ? `${c.interns.first_name ?? ''} ${c.interns.last_name ?? ''}`.trim() || 'Sans nom' : 'Sans nom'
+    const days = c.recontact_at ? daysUntil(c.recontact_at) : null
+    const dateLabel = c.recontact_at ? new Date(c.recontact_at).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : null
+
     return (
-      <Link href={`/fr/cases/${c.id}`}
-        className={`block p-4 rounded-2xl border-2 transition-all hover:shadow-md ${past ? 'border-amber-300 bg-amber-50' : 'border-zinc-100 bg-white hover:border-[#c8a96e]/40'}`}>
+      <Link href={`/${locale}/cases/${c.id}`}
+        className="block bg-white border border-zinc-100 rounded-xl p-4 hover:border-[#c8a96e] transition-all">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              {past && <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">⚠️ À relancer maintenant</span>}
-              <span className="text-xs text-zinc-400">{c.recontact_month ? monthLabel(c.recontact_month) : '—'}</span>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-full bg-[#c8a96e]/10 flex-shrink-0 flex items-center justify-center text-sm font-bold text-[#c8a96e]">
+              {name[0]?.toUpperCase() ?? '?'}
             </div>
-            <p className="text-sm font-bold text-[#1a1918] truncate">{name}</p>
-            <p className="text-xs text-zinc-400">{intern?.email}</p>
-            {intern?.desired_domains && intern.desired_domains.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {intern.desired_domains.slice(0, 3).map(d => (
-                  <span key={d} className="text-[10px] bg-zinc-100 text-zinc-500 px-2 py-0.5 rounded-full">{d}</span>
-                ))}
-                {intern.desired_duration_months && (
-                  <span className="text-[10px] bg-[#c8a96e]/10 text-[#c8a96e] px-2 py-0.5 rounded-full">{intern.desired_duration_months} mois</span>
-                )}
-              </div>
-            )}
-            {c.recontact_reason && (
-              <p className="text-xs text-zinc-400 mt-2 line-clamp-2 italic">"{c.recontact_reason}"</p>
-            )}
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[#1a1918] truncate">{name}</p>
+              {c.interns?.email && <p className="text-xs text-zinc-400 truncate">{c.interns.email}</p>}
+              {c.recontact_note && <p className="text-xs text-zinc-500 italic mt-0.5 truncate">"{c.recontact_note}"</p>}
+            </div>
           </div>
-          <span className="text-zinc-300 text-lg flex-shrink-0">→</span>
+          {dateLabel && days !== null && (
+            <div className={`flex-shrink-0 text-center px-2.5 py-1 rounded-lg border text-xs font-semibold ${urgencyColor(days)}`}>
+              <div>{dateLabel}</div>
+              <div className="text-[10px] font-normal mt-0.5">
+                {days < 0 ? `${Math.abs(days)}j de retard` : days === 0 ? 'Aujourd\'hui' : `Dans ${days}j`}
+              </div>
+            </div>
+          )}
+          {!dateLabel && (
+            <span className="flex-shrink-0 text-xs px-2 py-1 rounded-lg bg-zinc-100 text-zinc-400">Sans date</span>
+          )}
         </div>
       </Link>
     )
   }
 
-  return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
+  const Section = ({ title, items, accent }: { title: string; items: RecontactCase[]; accent?: string }) => {
+    if (!items.length) return null
+    return (
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#1a1918]">📅 À recontacter</h1>
-        <p className="text-sm text-zinc-400 mt-1">
-          Candidats intéressants mais pas encore disponibles — {rows.length} dossier{rows.length > 1 ? 's' : ''}
-        </p>
+        <p className={`text-xs font-bold uppercase tracking-wider mb-3 ${accent ?? 'text-zinc-400'}`}>{title} ({items.length})</p>
+        <div className="space-y-2">{items.map(c => <Card key={c.id} c={c} />)}</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="p-6 max-w-2xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-xl font-bold text-[#1a1918]">🔄 À recontacter</h1>
+          <p className="text-sm text-zinc-400 mt-0.5">{cases.length} dossier{cases.length > 1 ? 's' : ''} en attente</p>
+        </div>
+        <button onClick={() => router.push(`/${locale}/cases`)} className="text-xs text-zinc-400 hover:text-zinc-600">
+          Voir tous les candidats →
+        </button>
       </div>
 
-      {rows.length === 0 && (
+      {loading ? (
+        <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-16 bg-zinc-100 rounded-xl animate-pulse"/>)}</div>
+      ) : cases.length === 0 ? (
         <div className="text-center py-16 text-zinc-400">
-          <p className="text-4xl mb-3">📭</p>
-          <p className="text-sm">Aucun candidat à recontacter pour l'instant.</p>
-          <p className="text-xs mt-1">Ils apparaîtront ici après un débrief d'entretien.</p>
+          <p className="text-2xl mb-2">✅</p>
+          <p className="font-medium text-[#1a1918]">Aucun dossier à recontacter</p>
+          <p className="text-sm mt-1">Tous les suivis sont à jour</p>
         </div>
-      )}
-
-      {pastRows.length > 0 && (
-        <section className="mb-8">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-amber-600 mb-3 flex items-center gap-2">
-            <span>⚠️</span> À relancer maintenant ({pastRows.length})
-          </h2>
-          <div className="space-y-3">
-            {pastRows.map(c => <Card key={c.id} c={c} />)}
-          </div>
-        </section>
-      )}
-
-      {futureRows.length > 0 && (
-        <section>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-2">
-            <span>📅</span> Relances planifiées ({futureRows.length})
-          </h2>
-          <div className="space-y-3">
-            {futureRows.map(c => <Card key={c.id} c={c} />)}
-          </div>
-        </section>
+      ) : (
+        <>
+          <Section title="🔴 En retard" items={past.filter(c => daysUntil(c.recontact_at!) < 0)} accent="text-red-500" />
+          <Section title="🟡 Aujourd'hui" items={today} accent="text-amber-600" />
+          <Section title="📅 À venir" items={upcoming} accent="text-zinc-500" />
+          <Section title="⚪ Sans date planifiée" items={noDate} />
+        </>
       )}
     </div>
   )

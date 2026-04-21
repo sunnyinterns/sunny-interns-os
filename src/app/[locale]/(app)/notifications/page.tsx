@@ -10,6 +10,7 @@ interface AdminNotification {
   title: string
   message?: string | null
   link?: string | null
+  action_url?: string | null
   is_read: boolean
   created_at: string
   case_id?: string | null
@@ -17,12 +18,23 @@ interface AdminNotification {
 
 const TYPE_CONFIG: Record<string, { color: string; emoji: string }> = {
   new_lead:          { color: '#6b7280', emoji: '👤' },
+  lead:              { color: '#6b7280', emoji: '👤' },
+  rdv:               { color: '#3b82f6', emoji: '📅' },
+  qualif:            { color: '#8b5cf6', emoji: '✅' },
+  job:               { color: '#f59e0b', emoji: '💼' },
+  contract:          { color: '#3b82f6', emoji: '📝' },
+  payment:           { color: '#10b981', emoji: '💰' },
   payment_received:  { color: '#10b981', emoji: '💳' },
   payment_notified:  { color: '#f59e0b', emoji: '💰' },
+  visa:              { color: '#0ea5e9', emoji: '🛂' },
+  visa_received:     { color: '#0ea5e9', emoji: '🛂' },
+  stage:             { color: '#10b981', emoji: '🌴' },
+  alumni:            { color: '#f59e0b', emoji: '🎓' },
+  recontact:         { color: '#f97316', emoji: '🔄' },
   convention_signed: { color: '#3b82f6', emoji: '📝' },
   engagement_signed: { color: '#8b5cf6', emoji: '✍️' },
-  visa_received:     { color: '#0ea5e9', emoji: '🛂' },
   employer_response: { color: '#f97316', emoji: '🏢' },
+  info:              { color: '#c8a96e', emoji: '💡' },
 }
 const DEFAULT_CONFIG = { color: '#c8a96e', emoji: '🔔' }
 
@@ -96,6 +108,7 @@ export default function NotificationsPage() {
   }
 
   function href(n: AdminNotification): string {
+    if (n.action_url) return n.action_url.startsWith('/') ? `/${locale}${n.action_url.replace(/^\/fr/, '')}` : n.action_url
     if (n.link) return n.link
     if (n.case_id) return `/${locale}/cases/${n.case_id}`
     return '#'
