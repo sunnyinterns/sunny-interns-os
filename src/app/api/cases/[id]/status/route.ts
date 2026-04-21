@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import {
   sendPaymentRequest, sendQualificationEmail,
+  sendRdvConfirmationIntern, sendVisaReceived, sendAlumniCongrats,
   sendJobRetenu, sendWelcomeKit, sendAlerteArrivee,
   sendNewCustomerFazza, sendDossierPretAgent,
 } from '@/lib/email/resend'
@@ -165,6 +166,35 @@ export async function PATCH(
   })
 
   // ── Triggers ────────────────────────────────────────────────────────────
+
+  // ── Email confirmation RDV candidat ─────────────────────────────────────
+  if (newStatus === 'rdv_booked' && oldStatus !== 'rdv_booked') {
+    try {
+      const adminRdv = getAdmin()
+      const { data: rdvRow } = await adminRdv
+        .from('cases')
+        .select('portal_token, intern_first_meeting_date, google_meet_link, interns(first_name, email)')
+        .eq('id', id).single()
+      if (rdvRow) {
+        const rdvIntern = (rdvRow as Record<string,unknown>).interns as { first_name?: string; email?: string } | null
+        const rdvToken = (rdvRow as Record<string,unknown>).portal_token as string | null
+        const rdvDate = (rdvRow as Record<string,unknown>).intern_first_meeting_date as string | null
+        const rdvMeet = (rdvRow as Record<string,unknown>).google_meet_link as string | null
+        if (rdvIntern?.email && rdvToken) {
+          void sendRdvConfirmationIntern({
+            internEmail: rdvIntern.email,
+            prenom: rdvIntern.first_name ?? 'Candidat',
+            rdvDate: rdvDate
+              ? new Date(rdvDate).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })
+              : 'à confirmer',
+            meetLink: rdvMeet,
+            portalToken: rdvToken,
+          })
+        }
+      }
+    } catch { /* non-blocking */ }
+  }
+
   if (newStatus === 'qualification_done') {
     try {
       const admin = getAdmin()
@@ -350,6 +380,28 @@ export async function PATCH(
   }
 
   // ── arrival_prep → send arrival guide to intern ───────────────────────────
+
+  // ── Email visa reçu ───────────────────────────────────────────────────
+  if (newStatus === 'visa_received' && oldStatus !== 'visa_received') {
+    try {
+      const adminVr = getAdmin()
+      const { data: vrRow } = await adminVr.from('cases').select('portal_token, desired_start_date, interns(first_name, email)').eq('id', id).single()
+      if (vrRow) {
+        const vrIntern = (vrRow as Record<string,unknown>).interns as { first_name?: string; email?: string } | null
+        const vrToken = (vrRow as Record<string,unknown>).portal_token as string | null
+        const vrStart = (vrRow as Record<string,unknown>).desired_start_date as string | null
+        if (vrIntern?.email && vrToken) {
+          void sendVisaReceived({
+            internEmail: vrIntern.email,
+            prenom: vrIntern.first_name ?? 'Candidat',
+            portalToken: vrToken,
+            startDate: vrStart ? new Date(vrStart).toLocaleDateString('fr-FR') : null,
+          })
+        }
+      }
+    } catch { /* non-blocking */ }
+  }
+
   if (newStatus === 'arrival_prep' && oldStatus !== 'arrival_prep') {
     try {
       const admin = getAdmin()
@@ -396,6 +448,24 @@ export async function PATCH(
           })
         }
         await admin.from('cases').update({ welcome_kit_sent_at: new Date().toISOString() }).eq('id', id)
+      }
+    } catch { /* non-blocking */ }
+  }
+
+
+  // ── Email alumni ──────────────────────────────────────────────────────
+  if (newStatus === 'alumni' && oldStatus !== 'alumni') {
+    try {
+      const adminAl = getAdmin()
+      const { data: alRow } = await adminAl.from('cases').select('portal_token, interns(first_name, email)').eq('id', id).single()
+      if (alRow) {
+        const alIntern = (alRow as Record<string,unknown>).interns as { first_name?: string; email?: string } | null
+        const alToken = (alRow as Record<string,unknown>).portal_token as string | null
+        if (alIntern?.email && alToken) {
+          const { data: jsData } = await adminAl.from('job_submissions').select('jobs(companies(name))').eq('case_id', id).eq('status', 'retained').limit(1).maybeSingle()
+          const coName = (((jsData?.jobs as unknown) as Record<string,unknown> | null)?.companies as Record<string,unknown> | null)?.name as string ?? 'votre entreprise'
+          void sendAlumniCongrats({ internEmail: alIntern.email, prenom: alIntern.first_name ?? 'Candidat', companyName: coName, portalToken: alToken })
+        }
       }
     } catch { /* non-blocking */ }
   }

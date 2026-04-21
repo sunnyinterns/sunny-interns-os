@@ -483,6 +483,7 @@ export default function PortalPage() {
             Manager : {data.assigned_manager_name}
           </span>
         )}
+        <LangToggle onLangChange={setLang} />
       </div>
 
       {/* Progress steps 1-8 */}

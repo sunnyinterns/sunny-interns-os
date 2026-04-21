@@ -387,3 +387,65 @@ export async function sendVisaDocsRequest(params: {
 export async function sendWelcomeKitShort(p: { internEmail: string; prenom: string }) {
   await send({ to: p.internEmail, cc: CHARLY, subject: `Welcome Kit Bali Interns`, html: `<p>Hey <strong>${p.prenom}</strong>, ton départ approche ! Nous t'envoyons toutes les infos pratiques très vite. Charly</p>` })
 }
+
+/** Confirmation RDV envoyée au candidat quand rdv_booked */
+export async function sendRdvConfirmationIntern(p: {
+  internEmail: string
+  prenom: string
+  rdvDate: string
+  meetLink?: string | null
+  portalToken: string
+}) {
+  const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'}/portal/${p.portalToken}`
+  await send({
+    to: p.internEmail,
+    cc: CHARLY,
+    subject: `Bali Interns — Ton entretien est confirmé 📅`,
+    html: `<p>Bonjour <strong>${p.prenom}</strong>,</p>
+<p>Ton entretien de qualification est confirmé !</p>
+<p><strong>Date :</strong> ${p.rdvDate}</p>
+${p.meetLink ? `<p><strong>Lien Google Meet :</strong> <a href="${p.meetLink}">${p.meetLink}</a></p>` : ''}
+<p>En attendant, tu peux <a href="${portalUrl}">accéder à ton espace candidat</a> pour compléter ton profil.</p>
+<p>À très bientôt,<br>Charly<br><em>team@bali-interns.com</em></p>`,
+  })
+}
+
+/** Email candidat quand visa reçu */
+export async function sendVisaReceived(p: {
+  internEmail: string
+  prenom: string
+  portalToken: string
+  startDate?: string | null
+}) {
+  const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'}/portal/${p.portalToken}`
+  await send({
+    to: p.internEmail,
+    cc: CHARLY,
+    subject: `Bali Interns — Ton visa est arrivé ! 🛂✅`,
+    html: `<p>Bonjour <strong>${p.prenom}</strong>,</p>
+<p>🎉 Excellente nouvelle : <strong>ton visa a été accordé !</strong></p>
+<p>Tu peux maintenant préparer ton départ pour Bali${p.startDate ? ` prévu le <strong>${p.startDate}</strong>` : ''}.</p>
+<p>Retrouve toutes les infos pratiques sur <a href="${portalUrl}">ton espace candidat</a> : logement, scooter, chauffeur aéroport.</p>
+<p>On est là pour toi,<br>Charly<br><em>team@bali-interns.com</em></p>`,
+  })
+}
+
+/** Email candidat quand alumni */
+export async function sendAlumniCongrats(p: {
+  internEmail: string
+  prenom: string
+  companyName: string
+  portalToken: string
+}) {
+  const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'}/portal/${p.portalToken}`
+  await send({
+    to: p.internEmail,
+    cc: CHARLY,
+    subject: `Bali Interns — Félicitations pour ton stage ! 🌴🎓`,
+    html: `<p>Bonjour <strong>${p.prenom}</strong>,</p>
+<p>Ton stage chez <strong>${p.companyName}</strong> est officiellement terminé. Félicitations !</p>
+<p>Tu fais maintenant partie de la famille des <strong>Bali Interns alumni</strong>. 🌴</p>
+<p>N'oublie pas notre <a href="${portalUrl}">programme de parrainage</a> : 100€ pour chaque ami que tu nous envoies.</p>
+<p>Garde le contact,<br>Charly<br><em>team@bali-interns.com</em></p>`,
+  })
+}
