@@ -40,10 +40,9 @@ async function getJob(slug: string): Promise<Job | null> {
     .select(`
       id, title, public_title, description, public_description,
       public_hook, public_vibe, public_perks, public_hashtags,
-      seo_slug, cover_image_url, cv_drop_enabled, is_public, status,
+      seo_slug, cover_image_url, background_image_url, cv_drop_enabled, is_public, status,
       location, wished_duration_months, wished_start_date,
-      department, missions, skills_required, required_level, required_languages,
-      companies(id, name, logo_url)
+      department, missions, skills_required, required_level, required_languages
     `)
     .eq('seo_slug', slug)
     .eq('is_public', true)
@@ -56,29 +55,29 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   if (!job) return { title: 'Offre introuvable – Bali Interns' }
 
   const title = job.public_title ?? job.title
-  const company = job.companies?.name ?? 'une entreprise partenaire'
-  const duration = job.wished_duration_months ? `${job.wished_duration_months} mois` : ''
+  const duration = job.wished_duration_months ? `${job.wished_duration_months} months` : ''
+  const heroImg = (job as unknown as { background_image_url?: string }).background_image_url ?? job.cover_image_url
   const desc = job.public_hook
     ?? job.public_description
-    ?? `Stage ${title} chez ${company} à Bali${duration ? ` · ${duration}` : ''}`
+    ?? `${title} internship in Bali${duration ? ` · ${duration}` : ''} — exclusively via Bali Interns`
 
   return {
-    title: `${title} @ ${company} – Stage Bali | Bali Interns`,
+    title: `${title} – Internship in Bali | Bali Interns`,
     description: desc,
     openGraph: {
-      title: `${title} @ ${company}`,
+      title,
       description: desc,
-      images: job.cover_image_url ? [{ url: job.cover_image_url, width: 1200, height: 630 }] : [],
+      images: heroImg ? [{ url: heroImg, width: 1200, height: 630 }] : [],
       type: 'website',
       siteName: 'Bali Interns',
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${title} @ ${company}`,
+      title,
       description: desc,
-      images: job.cover_image_url ? [job.cover_image_url] : [],
+      images: heroImg ? [heroImg] : [],
     },
-    alternates: { canonical: `https://bali-interns.com/jobs/${params.slug}` },
+    alternates: { canonical: `https://sunny-interns-os.vercel.app/jobs/${params.slug}` },
   }
 }
 
