@@ -9,9 +9,9 @@ Company: ${ctx.company_name ?? ''}. Department: ${ctx.department ?? ''}.
 Max 8 words, engaging, mention Bali if relevant. Reply ONLY with the title, no quotes.`,
 
   generate_description: (ctx) =>
-    `Tu travailles pour Bali Interns à Bali. Rédige une description interne de 3-4 phrases pour: "${ctx.title ?? ''}".
-Entreprise: ${ctx.company_name ?? ''}. Missions: ${ctx.missions ?? ''}. Profil: ${ctx.profile_sought ?? ''}.
-Ton professionnel. Réponds uniquement avec la description.`,
+    `You work for Bali Interns in Bali. Write a concise internal description (3-4 sentences) IN ENGLISH for: "${ctx.title ?? ''}".
+Company: ${ctx.company_name ?? ''}. Missions: ${ctx.missions ?? ''}. Profile: ${ctx.profile_sought ?? ''}.
+Professional tone. Reply only with the description IN ENGLISH.`,
 
   generate_public_description: (ctx) =>
     `You work for Bali Interns in Bali. Write an attractive PUBLIC description IN ENGLISH (visible to student candidates)
@@ -25,42 +25,42 @@ Department: ${ctx.department ?? ''}. Level: ${ctx.required_level ?? 'Bac+3'}. To
 2-3 sentences max. Reply only with the profile IN ENGLISH.`,
 
   prefill_company: (ctx) =>
-    `Tu es un assistant pour Bali Interns. Génère un JSON avec les infos de l'entreprise "${ctx.website ?? ''}".
-Réponds UNIQUEMENT avec ce JSON valide:
-{"name":"Nom officiel","description":"Description courte (2-3 phrases)","industry":"Secteur","company_type":"Type","city":"Ville si Bali","instagram":null,"linkedin":null}
-Si info manquante, mets null. JSON uniquement, sans explication.`,
+    `You are an assistant for Bali Interns. Generate a JSON with company info for "${ctx.website ?? ''}".
+Reply ONLY with valid JSON:
+{"name":"Official name","description":"Short description (2-3 sentences)","industry":"Industry","company_type":"Type","city":"City if Bali","instagram":null,"linkedin":null}
+If info is missing, use null. JSON only, no explanation.`,
 
   improve_text: (ctx) =>
-    `Améliore ce texte pour une offre de stage à Bali. Rends-le plus attractif et professionnel.
-Texte: "${ctx.text ?? ''}". Contexte: ${ctx.context ?? ''}. Même longueur. Réponds uniquement avec le texte amélioré.`,
+    `Improve this text for an internship offer in Bali. Make it more attractive and professional IN ENGLISH.
+Text: "${ctx.text ?? ''}". Context: ${ctx.context ?? ''}. Same length. Reply only with the improved text IN ENGLISH.`,
 
   improve_description: (ctx) =>
-    `Améliore cette description interne pour une offre de stage à Bali. Ton professionnel.
-Texte: "${ctx.text ?? ''}". Réponds uniquement avec le texte amélioré.`,
+    `Improve this internal description for an internship offer in Bali. Professional tone, IN ENGLISH.
+Text: "${ctx.text ?? ''}". Reply only with the improved text IN ENGLISH.`,
 
   improve_profile: (ctx) =>
-    `Améliore ce profil recherché pour une offre de stage à Bali. Précis et attractif.
-Texte: "${ctx.text ?? ''}". Réponds uniquement avec le texte amélioré.`,
+    `Improve this candidate profile for an internship offer in Bali. Precise and attractive, IN ENGLISH.
+Text: "${ctx.text ?? ''}". Reply only with the improved text IN ENGLISH.`,
 
   generate_hook: (ctx) =>
-    `Tu travailles pour Bali Interns à Bali. Génère UNE accroche courte (max 80 caractères) pour: "${ctx.title ?? ''}".
-Entreprise: ${ctx.company_name ?? ''}. Style: direct, émotionnel. Ex: "Tu veux bosser dans un resort 5⭐ à Bali ?".
-Réponds UNIQUEMENT avec l'accroche, sans guillemets.`,
+    `You work for Bali Interns in Bali. Generate ONE short hook (max 80 characters) IN ENGLISH for: "${ctx.title ?? ''}".
+Company: ${ctx.company_name ?? ''}. Style: direct, emotional. Ex: "Ready to work in a 5⭐ resort in Bali?".
+Reply ONLY with the hook, no quotes, IN ENGLISH.`,
 
   generate_vibe: (ctx) =>
-    `Tu travailles pour Bali Interns. Génère une ambiance / culture d'entreprise (1-2 phrases) pour: "${ctx.title ?? ''}".
-Entreprise: ${ctx.company_name ?? ''}. Type: ${ctx.company_type ?? ''}.
-Style: décontracté, concret. Ex: "Startup surf, équipe internationale, bureau face mer". Sans ponctuation finale.`,
+    `You work for Bali Interns. Generate a company vibe / culture description (1-2 sentences) IN ENGLISH for: "${ctx.title ?? ''}".
+Company: ${ctx.company_name ?? ''}. Type: ${ctx.company_type ?? ''}.
+Style: casual, concrete. Ex: "Surf startup, international team, ocean view office". No trailing punctuation.`,
 
   generate_perks: (ctx) =>
-    `Tu travailles pour Bali Interns. Génère 3 avantages concrets pour: "${ctx.title ?? ''}".
-Entreprise: ${ctx.company_name ?? ''}. Ex: "Logement géré", "Vue sur mer", "Équipe internationale".
-Réponds avec EXACTEMENT 3 avantages, un par ligne, sans puces.`,
+    `You work for Bali Interns. Generate 3 concrete perks IN ENGLISH for: "${ctx.title ?? ''}".
+Company: ${ctx.company_name ?? ''}. Ex: "Housing arranged", "Ocean view", "International team".
+Reply with EXACTLY 3 perks, one per line, no bullets.`,
 
   generate_slug: (ctx) =>
-    `Génère un slug SEO (minuscules, tirets) pour: "${ctx.title ?? ''}".
-Durée: ${ctx.duration ?? ''}. Département: ${ctx.department ?? ''}. Max 60 caractères.
-Ex: "social-media-manager-bali-4mois". Réponds UNIQUEMENT avec le slug.`,
+    `Generate an SEO slug (lowercase, hyphens) for: "${ctx.title ?? ''}".
+Duration: ${ctx.duration ?? ''}. Department: ${ctx.department ?? ''}. Max 60 characters.
+Ex: "social-media-manager-bali-4months". Reply ONLY with the slug.`,
 
   raw_prompt: (ctx) => ctx.prompt ?? '',
 }

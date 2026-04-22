@@ -67,10 +67,10 @@ type JobView = 'open' | 'soon' | 'recurring' | 'archived'
 type SortKey = 'recent' | 'alphabetical' | 'deadline' | 'submissions'
 
 const STATUS_BADGE: Record<string, { bg: string; color: string; label: string }> = {
-  open: { bg: '#d1fae5', color: '#065f46', label: 'Ouvert' },
-  staffed: { bg: '#dbeafe', color: '#1e40af', label: 'Pourvu' },
-  cancelled: { bg: '#f3f4f6', color: '#374151', label: 'Annulé' },
-  closed: { bg: '#f3f4f6', color: '#374151', label: 'Fermé' },
+  open: { bg: '#d1fae5', color: '#065f46', label: 'Open' },
+  staffed: { bg: '#dbeafe', color: '#1e40af', label: 'Staffed' },
+  cancelled: { bg: '#f3f4f6', color: '#374151', label: 'Cancelled' },
+  closed: { bg: '#f3f4f6', color: '#374151', label: 'Closed' },
 }
 
 const DEPT_CHIPS = ['Tous', 'Marketing', 'Design', 'Tech', 'Business', 'Finance', 'Hôtellerie', 'RH']
@@ -328,7 +328,7 @@ export default function JobsPage() {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Rechercher titre, entreprise, département…"
+              placeholder="Search title, company, department…"
               className="w-full pl-9 pr-3 py-2 text-sm border border-zinc-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e]/40"
             />
           </div>
@@ -462,7 +462,7 @@ export default function JobsPage() {
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">① Contact employeur</p>
                 <div>
                   <SearchableSelect
-                    label="Contact employeur"
+                    label="Employer contact"
                     required
                     items={contacts.map<SearchableSelectItem>(c => ({
                       id: c.id,
@@ -482,7 +482,7 @@ export default function JobsPage() {
                       selectContact(c)
                     }}
                     searchPlaceholder="Rechercher par nom, entreprise…"
-                    placeholder="Sélectionner un contact…"
+                    placeholder="Select a contact…"
                     emptyText="Aucun contact trouvé"
                   />
                   {prefilledFrom && (
@@ -541,21 +541,21 @@ export default function JobsPage() {
               <div className="space-y-3">
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">③ Identification du poste</p>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1">Titre interne * <span className="text-zinc-400 text-[10px]">(usage interne — FR ok)</span></label>
-                  <input required className={inputCls} value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Ex: Stage Social Media Manager" />
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Internal title * <span className="text-zinc-400 text-[10px]">(internal use only)</span></label>
+                  <input required className={inputCls} value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="Ex: Social Media Manager Internship" />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
                     <span>Titre public * <span className="text-amber-600 text-[10px] font-medium">🇬🇧 Visible étudiant — EN</span></span>
                     <button type="button" disabled={aiLoading || !form.title} onClick={async () => {
-                      const r = await assist('generate_public_title', { title: form.title, company_name: form.company_name, department: form.department })
+                      const r = await assist('generate_public_title', { lang: 'en', title: form.title, company_name: form.company_name, department: form.department })
                       if (r) setForm(p => ({ ...p, public_title: r }))
-                    }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
+                    }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ AI'}</button>
                   </label>
-                  <input className={inputCls} value={form.public_title} onChange={e => setForm(p => ({ ...p, public_title: e.target.value }))} placeholder="Visible par les candidats" />
+                  <input className={inputCls} value={form.public_title} onChange={e => setForm(p => ({ ...p, public_title: e.target.value }))} placeholder="Visible to candidates" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1">Département / Métier *</label>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Department / Job type *</label>
                   <select className={inputCls} value={form.job_department_id} onChange={e => {
                     const dept = jobDepartments.find(d => d.id === e.target.value)
                     setForm(p => ({ ...p, job_department_id: e.target.value, department: dept?.name ?? p.department }))
@@ -582,21 +582,21 @@ export default function JobsPage() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
-                    <span>Profil recherché</span>
+                    <span>Required profile</span>
                     <button type="button" disabled={aiLoading || !form.title} onClick={async () => {
-                      const r = await assist('generate_profile', { title: form.title, department: form.department, required_level: form.required_level, tools: form.tools_required.join(', '), languages: form.required_languages.join(', ') })
+                      const r = await assist('generate_profile', { lang: 'en', title: form.title, department: form.department, required_level: form.required_level, tools: form.tools_required.join(', '), languages: form.required_languages.join(', ') })
                       if (r) setForm(p => ({ ...p, profile_sought: r }))
-                    }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
+                    }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ AI'}</button>
                   </label>
                   <textarea className={inputCls} rows={2} value={form.profile_sought} onChange={e => setForm(p => ({ ...p, profile_sought: e.target.value }))} />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-zinc-600 mb-1 flex items-center justify-between">
-                    <span>Description interne</span>
+                    <span>Internal description</span>
                     <button type="button" disabled={aiLoading || !form.title} onClick={async () => {
-                      const r = await assist('generate_description', { title: form.title, company_name: form.company_name, missions: form.missions.join(', '), profile_sought: form.profile_sought, tools: form.tools_required.join(', ') })
+                      const r = await assist('generate_description', { lang: 'en', title: form.title, company_name: form.company_name, missions: form.missions.join(', '), profile_sought: form.profile_sought, tools: form.tools_required.join(', ') })
                       if (r) setForm(p => ({ ...p, description: r }))
-                    }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
+                    }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ AI'}</button>
                   </label>
                   <textarea className={inputCls} rows={2} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} />
                   {form.description && form.description === selectedContact?.companies?.description && (
@@ -608,10 +608,10 @@ export default function JobsPage() {
                     <span>Description publique <span className="text-amber-600 text-[10px] font-medium">🇬🇧 EN</span></span>
                     <button type="button" disabled={aiLoading || !form.title} onClick={async () => {
                       const r = form.public_description
-                        ? await assist('improve_text', { text: form.public_description, context: `Offre ${form.title} à Bali` })
-                        : await assist('generate_public_description', { title: form.title, public_title: form.public_title, company_type: form.company_type, missions: form.missions.join(','), tools: form.tools_required.join(', ') })
+                        ? await assist('improve_text', { lang: 'en', text: form.public_description, context: `Offre ${form.title} à Bali` })
+                        : await assist('generate_public_description', { lang: 'en', title: form.title, public_title: form.public_title, company_type: form.company_type, missions: form.missions.join(','), tools: form.tools_required.join(', ') })
                       if (r) setForm(p => ({ ...p, public_description: r }))
-                    }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ IA'}</button>
+                    }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{aiLoading ? '...' : '✨ AI'}</button>
                   </label>
                   <textarea className={inputCls} rows={3} value={form.public_description} onChange={e => setForm(p => ({ ...p, public_description: e.target.value }))} />
                 </div>
@@ -641,24 +641,24 @@ export default function JobsPage() {
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">⑥ Modalités</p>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1">Durée (mois) *</label>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1">Duration (months) *</label>
                     <select className={inputCls} value={form.wished_duration_months} onChange={e => setForm(p => ({ ...p, wished_duration_months: e.target.value }))}>
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => <option key={n} value={n}>{n}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1">Démarrage</label>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1">Start date</label>
                     <input type="date" className={inputCls} value={form.wished_start_date} onChange={e => setForm(p => ({ ...p, wished_start_date: e.target.value }))} />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1">Niveau requis</label>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1">Required level</label>
                     <select className={inputCls} value={form.required_level} onChange={e => setForm(p => ({ ...p, required_level: e.target.value }))}>
                       <option value="">—</option>
                       {['Bac', 'Bac+2', 'Bac+3', 'Bac+4', 'Bac+5'].map(l => <option key={l} value={l}>{l}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1">Lieu</label>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1">Location</label>
                     <select className={inputCls} value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))}>
                       <option value="">— Ville du stage —</option>
                       {['South Bali','Central Bali','Bukit Peninsula','Capital','North Bali','East Bali'].map(area => {
@@ -674,7 +674,7 @@ export default function JobsPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-600 mb-1">Langues</label>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1">Languages</label>
                   <div className="flex flex-wrap gap-1.5">
                     {['FR', 'EN', 'ES', 'DE', 'IT', 'PT', 'ZH'].map(lang => (
                       <button key={lang} type="button"
@@ -706,11 +706,11 @@ export default function JobsPage() {
                 {/* Rémunération */}
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-xs font-medium text-zinc-600 mb-1">💰 Type de rémunération</label>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1">💰 Compensation type</label>
                     <select className={inputCls} value={form.compensation_type ?? ''} onChange={e => setForm(p => ({ ...p, compensation_type: e.target.value || null }))}>
-                      <option value="">— Non rémunéré —</option>
-                      <option value="gratification">Gratification obligatoire</option>
-                      <option value="salaire">Salaire</option>
+                      <option value="">— Unpaid —</option>
+                      <option value="gratification">Paid internship obligatoire</option>
+                      <option value="salaire">Salary</option>
                       <option value="indemnite">Indemnité</option>
                     </select>
                   </div>
@@ -734,7 +734,7 @@ export default function JobsPage() {
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-zinc-100">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm rounded-lg border border-zinc-200 text-zinc-600">Annuler</button>
+                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm rounded-lg border border-zinc-200 text-zinc-600">Cancel</button>
                 <button type="submit" disabled={saving} className="px-4 py-2 text-sm font-medium rounded-lg bg-[#c8a96e] text-white disabled:opacity-50">
                   {saving ? 'Création…' : 'Créer l\'offre'}
                 </button>

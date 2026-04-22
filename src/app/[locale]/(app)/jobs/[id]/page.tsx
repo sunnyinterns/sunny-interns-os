@@ -124,8 +124,8 @@ interface ActivityItem {
 
 const STATUS_BADGE: Record<string, { bg: string; color: string; label: string }> = {
   open: { bg: '#d1fae5', color: '#065f46', label: 'Cherche stagiaire' },
-  staffed: { bg: '#dbeafe', color: '#1e40af', label: 'Pourvu' },
-  cancelled: { bg: '#f3f4f6', color: '#374151', label: 'Annulé' },
+  staffed: { bg: '#dbeafe', color: '#1e40af', label: 'Staffed' },
+  cancelled: { bg: '#f3f4f6', color: '#374151', label: 'Cancelled' },
 }
 
 const SUB_STATUS: Record<string, { bg: string; color: string; label: string }> = {
@@ -135,7 +135,7 @@ const SUB_STATUS: Record<string, { bg: string; color: string; label: string }> =
   interview: { bg: '#dbeafe', color: '#1e40af', label: 'Entretien' },
   retained: { bg: '#d1fae5', color: '#065f46', label: 'Retenu' },
   rejected: { bg: '#fee2e2', color: '#991b1b', label: 'Refusé' },
-  cancelled: { bg: '#f3f4f6', color: '#6b7280', label: 'Annulé' },
+  cancelled: { bg: '#f3f4f6', color: '#6b7280', label: 'Cancelled' },
 }
 
 const PD: Record<Platform, { label: string; icon: string; color: string; ratio: string; desc: string }> = {
@@ -325,7 +325,7 @@ export default function JobDetailPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     })
-    if (res.ok) { void load(); showToast(status === 'retained' ? 'Candidat retenu !' : 'Statut mis à jour') }
+    if (res.ok) { void load(); showToast(status === 'retained' ? 'Candidat retenu !' : 'Status mis à jour') }
   }
 
   // ── Image generation ──
@@ -492,7 +492,7 @@ export default function JobDetailPage() {
               </h1>
             )}
             {job.title && job.title !== displayTitle && (
-              <p className="text-xs text-zinc-400 mt-0.5">Titre interne : {job.title}</p>
+              <p className="text-xs text-zinc-400 mt-0.5">Internal title : {job.title}</p>
             )}
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: statusBadge.bg, color: statusBadge.color }}>
@@ -554,7 +554,7 @@ export default function JobDetailPage() {
               className="sr-only peer" />
             <div className="w-9 h-5 bg-zinc-200 peer-checked:bg-[#0d9e75] rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
             <span className={`text-xs font-semibold ${job.is_public ? 'text-[#0d9e75]' : 'text-zinc-400'}`}>
-              {job.is_public ? '🟢 Publiée' : '⚪ Brouillon'}
+              {job.is_public ? '🟢 Published' : '⚪ Draft'}
             </span>
           </label>
 
@@ -581,7 +581,7 @@ export default function JobDetailPage() {
         {/* Grille infos */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-sm">
           <div>
-            <p className="text-xs text-zinc-400 mb-1">Durée souhaitée</p>
+            <p className="text-xs text-zinc-400 mb-1">Duration</p>
             {editing.wished_duration_months ? (
               <select
                 className="px-2 py-1 text-sm border border-[#c8a96e] rounded-lg focus:outline-none"
@@ -610,7 +610,7 @@ export default function JobDetailPage() {
             )}
           </div>
           <div>
-            <p className="text-xs text-zinc-400 mb-1">Niveau requis</p>
+            <p className="text-xs text-zinc-400 mb-1">Required level</p>
             {editing.required_level ? (
               <select
                 className="px-2 py-1 text-sm border border-[#c8a96e] rounded-lg focus:outline-none"
@@ -650,8 +650,8 @@ export default function JobDetailPage() {
             className="text-xs px-2 py-1 rounded-lg border border-zinc-200 focus:outline-none focus:border-[#c8a96e]"
           >
             <option value="open">🟢 Cherche stagiaire</option>
-            <option value="staffed">🔵 Pourvu</option>
-            <option value="cancelled">⚫ Annulé</option>
+            <option value="staffed">🔵 Staffed</option>
+            <option value="cancelled">⚫ Cancelled</option>
           </select>
           {job.status === 'staffed' && (
             <div className="flex items-center gap-2">
@@ -712,7 +712,7 @@ export default function JobDetailPage() {
               )}
               {job.tools_required && job.tools_required.length > 0 && (
                 <div>
-                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Outils requis</p>
+                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Required tools</p>
                   <div className="flex flex-wrap gap-1.5">
                     {job.tools_required.map(t => (
                       <span key={t} className="text-xs bg-zinc-100 text-zinc-600 px-2.5 py-1 rounded-full">{t}</span>
@@ -723,19 +723,19 @@ export default function JobDetailPage() {
             </div>
           )}
 
-          {/* Description interne + profil + notes */}
+          {/* Internal description + profil + notes */}
           <div className="bg-white border border-zinc-100 rounded-xl p-5 space-y-4">
             <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Description</h2>
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <p className="text-xs text-zinc-400">Description interne</p>
+                <p className="text-xs text-zinc-400">Internal description</p>
                 <button type="button" disabled={isLoading('generate_description') || isLoading('improve_description') || !job.title} onClick={async () => {
                   const r = job.description
-                    ? await assist('improve_description', { text: job.description })
-                    : await assist('generate_description', { title: job.title ?? '', company_name: job.companies?.name ?? '', missions: (job.missions ?? []).join(', '), profile_sought: job.profile_sought ?? '', tools: (job.tools_required ?? []).join(', ') })
+                    ? await assist('improve_description', { lang: 'en', text: job.description })
+                    : await assist('generate_description', { lang: 'en', title: job.title ?? '', company_name: job.companies?.name ?? '', missions: (job.missions ?? []).join(', '), profile_sought: job.profile_sought ?? '', tools: (job.tools_required ?? []).join(', ') })
                   if (r) void patchJob({ description: r })
-                }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{isLoading('generate_description') || isLoading('improve_description') ? '...' : '✨ IA'}</button>
+                }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{isLoading('generate_description') || isLoading('improve_description') ? '...' : '✨ AI'}</button>
               </div>
               {editing.description ? (
                 <textarea
@@ -755,13 +755,13 @@ export default function JobDetailPage() {
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <p className="text-xs text-zinc-400">Profil recherché</p>
+                <p className="text-xs text-zinc-400">Required profile</p>
                 <button type="button" disabled={isLoading('generate_profile') || isLoading('improve_profile') || !job.title} onClick={async () => {
                   const r = job.profile_sought
                     ? await assist('improve_profile', { text: job.profile_sought })
-                    : await assist('generate_profile', { title: job.title ?? '', department: departmentName ?? '', required_level: job.required_level ?? '', tools: (job.tools_required ?? []).join(', '), languages: (job.required_languages ?? []).join(', ') })
+                    : await assist('generate_profile', { lang: 'en', title: job.title ?? '', department: departmentName ?? '', required_level: job.required_level ?? '', tools: (job.tools_required ?? []).join(', '), languages: (job.required_languages ?? []).join(', ') })
                   if (r) void patchJob({ profile_sought: r })
-                }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{isLoading('generate_profile') || isLoading('improve_profile') ? '...' : '✨ IA'}</button>
+                }} className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 disabled:opacity-50">{isLoading('generate_profile') || isLoading('improve_profile') ? '...' : '✨ AI'}</button>
               </div>
               {editing.profile_sought ? (
                 <textarea
@@ -798,10 +798,10 @@ export default function JobDetailPage() {
             </div>
           </div>
 
-          {/* Contact employeur */}
+          {/* Employer contact */}
           {(job.contacts || job.companies?.contact_email) && (
             <div className="bg-white border border-zinc-100 rounded-xl p-5">
-              <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Contact employeur</h2>
+              <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Employer contact</h2>
               {job.contacts ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-3 mb-3">
@@ -890,7 +890,7 @@ export default function JobDetailPage() {
               }}
               className="text-xs px-3 py-1.5 bg-purple-50 text-purple-600 rounded-xl font-semibold hover:bg-purple-100 disabled:opacity-40 transition-all"
             >
-              {isLoading('generate_public_description') || isLoading('generate_hook') || isLoading('generate_vibe') || isLoading('generate_perks') || isLoading('generate_slug') ? '⏳ Génération…' : '✨ Générer tout'}
+              {isLoading('generate_public_description') || isLoading('generate_hook') || isLoading('generate_vibe') || isLoading('generate_perks') || isLoading('generate_slug') ? '⏳ Génération…' : '✨ Generate tout'}
             </button>
           </div>
 
@@ -901,9 +901,9 @@ export default function JobDetailPage() {
             </div>
           )}
 
-          {/* Description publique EN */}
+          {/* Public description EN */}
           <div>
-            <p className="text-xs text-zinc-400 mb-1">Description publique <span className="text-amber-600 text-[10px]">🇬🇧 visible candidats</span></p>
+            <p className="text-xs text-zinc-400 mb-1">Public description <span className="text-amber-600 text-[10px]">🇬🇧 visible candidats</span></p>
             {editing.public_description ? (
               <textarea className="w-full px-3 py-2 text-sm border border-[#c8a96e] rounded-xl focus:outline-none resize-none" autoFocus rows={3}
                 defaultValue={job.public_description ?? ''}
@@ -1019,7 +1019,7 @@ export default function JobDetailPage() {
               <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">🖼 Image principale (Cover)</h3>
               <button onClick={() => void generateCover()} disabled={generatingCover}
                 className="text-xs px-3 py-1.5 bg-[#c8a96e] text-white rounded-xl font-bold disabled:opacity-40 hover:bg-[#b8945a] transition-colors">
-                {generatingCover ? '⏳ Génération…' : job.cover_image_url ? '🔄 Regénérer' : '✨ Générer'}
+                {generatingCover ? '⏳ Génération…' : job.cover_image_url ? '🔄 Regénérer' : '✨ Generate'}
               </button>
             </div>
             {job.cover_image_url ? (
@@ -1034,7 +1034,7 @@ export default function JobDetailPage() {
             ) : (
               <div className="w-full aspect-square max-h-96 bg-zinc-50 rounded-xl flex flex-col items-center justify-center text-zinc-300 border-2 border-dashed border-zinc-200">
                 <span className="text-4xl mb-2">🖼</span>
-                <p className="text-xs">Clique &quot;Générer&quot; pour créer l&apos;image via Gemini</p>
+                <p className="text-xs">Clique &quot;Generate&quot; pour créer l&apos;image via Gemini</p>
               </div>
             )}
           </div>
@@ -1138,7 +1138,7 @@ export default function JobDetailPage() {
                   </div>
                   <button onClick={() => void generatePost(activePlatform)} disabled={generatingPost === activePlatform}
                     className="text-xs px-3 py-1.5 bg-[#c8a96e] text-white rounded-xl font-bold disabled:opacity-40 hover:bg-[#b8945a] transition-colors">
-                    {generatingPost === activePlatform ? '⏳ Génération…' : post ? '🔄 Regénérer' : '✨ Générer'}
+                    {generatingPost === activePlatform ? '⏳ Génération…' : post ? '🔄 Regénérer' : '✨ Generate'}
                   </button>
                 </div>
                 <div className={`${post?.image_url || platformImages[activePlatform] ? 'grid grid-cols-2' : ''}`}>
@@ -1150,7 +1150,7 @@ export default function JobDetailPage() {
                     {!post ? (
                       <div className="py-8 text-center text-zinc-300">
                         <p className="text-3xl mb-2">✍️</p>
-                        <p className="text-xs">Clique &quot;Générer&quot; pour créer le post {pd.label}</p>
+                        <p className="text-xs">Clique &quot;Generate&quot; pour créer le post {pd.label}</p>
                       </div>
                     ) : editingPost === activePlatform ? (
                       <div className="space-y-2">
@@ -1159,7 +1159,7 @@ export default function JobDetailPage() {
                         <div className="flex gap-2">
                           <button onClick={() => { setPostsByPlatform(prev => ({ ...prev, [activePlatform]: { ...post, content: editContent } })); setEditingPost(null) }}
                             className="px-3 py-1.5 text-xs font-bold bg-[#c8a96e] text-white rounded-lg">✓ Valider</button>
-                          <button onClick={() => setEditingPost(null)} className="px-3 py-1.5 text-xs border border-zinc-200 rounded-lg text-zinc-500">Annuler</button>
+                          <button onClick={() => setEditingPost(null)} className="px-3 py-1.5 text-xs border border-zinc-200 rounded-lg text-zinc-500">Cancel</button>
                         </div>
                       </div>
                     ) : (
@@ -1209,7 +1209,7 @@ export default function JobDetailPage() {
                 <thead>
                   <tr className="border-b border-zinc-100">
                     <th className="text-left text-xs font-medium text-zinc-400 pb-2">Candidat</th>
-                    <th className="text-left text-xs font-medium text-zinc-400 pb-2">Statut</th>
+                    <th className="text-left text-xs font-medium text-zinc-400 pb-2">Status</th>
                     <th className="text-left text-xs font-medium text-zinc-400 pb-2">Réponse</th>
                     <th className="text-left text-xs font-medium text-zinc-400 pb-2">CV</th>
                     <th className="text-left text-xs font-medium text-zinc-400 pb-2">Date</th>

@@ -90,7 +90,7 @@ export async function POST(request: Request) {
     const { data, error } = await supabase
       .from('jobs')
       .insert(safeBody)
-      .select('*, companies(id, name), contacts(id, first_name, last_name)')
+      .select('*, companies(id, name), contacts!jobs_contact_id_fkey(id, first_name, last_name)')
       .single()
 
     if (error) {
