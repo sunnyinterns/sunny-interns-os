@@ -50,7 +50,7 @@ async function getJob(slug: string): Promise<Job | null> {
   return data as Job | null
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: { locale: string; slug: string } }): Promise<Metadata> {
   const job = await getJob(params.slug)
   if (!job) return { title: 'Offre introuvable – Bali Interns' }
 
@@ -81,7 +81,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
 }
 
-export default async function JobSlugPage({ params }: { params: { slug: string } }) {
+export default async function JobSlugPage({ params }: { params: { locale: string; slug: string } }) {
   const job = await getJob(params.slug)
   if (!job) notFound()
   return <JobPublicPage job={job} />
