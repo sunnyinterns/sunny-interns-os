@@ -187,8 +187,8 @@ export async function PATCH(
             rdvDate: rdvDate
               ? new Date(rdvDate).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })
               : 'à confirmer',
-            meetLink: rdvMeet,
-            portalToken: rdvToken,
+            meetLink: rdvMeet ?? '',
+            portalToken: rdvToken ?? undefined,
           })
         }
       }
@@ -394,8 +394,7 @@ export async function PATCH(
           void sendVisaReceived({
             internEmail: vrIntern.email,
             prenom: vrIntern.first_name ?? 'Candidat',
-            portalToken: vrToken,
-            startDate: vrStart ? new Date(vrStart).toLocaleDateString('fr-FR') : null,
+            portalToken: vrToken ?? undefined,
           })
         }
       }

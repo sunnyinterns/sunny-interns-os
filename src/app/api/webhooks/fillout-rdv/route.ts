@@ -241,7 +241,7 @@ export async function POST(request: Request) {
         internEmail: email,
         internFirstName: intern?.first_name ?? '',
         rdvDate: rdvStart ?? (updateData.intern_first_meeting_date as string | undefined) ?? new Date().toISOString(),
-        meetLink: finalMeetLink,
+        meetLink: finalMeetLink ?? '',
         cancelLink,
         lang: intern?.preferred_language ?? 'fr',
       })
