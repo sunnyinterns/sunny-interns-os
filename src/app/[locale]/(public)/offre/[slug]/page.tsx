@@ -50,8 +50,9 @@ async function getJob(slug: string): Promise<Job | null> {
   return data as Job | null
 }
 
-export async function generateMetadata({ params }: { params: { locale: string; slug: string } }): Promise<Metadata> {
-  const job = await getJob(params.slug)
+export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const job = await getJob(slug)
   if (!job) return { title: 'Offre introuvable – Bali Interns' }
 
   const title = job.public_title ?? job.title
@@ -77,12 +78,13 @@ export async function generateMetadata({ params }: { params: { locale: string; s
       description: desc,
       images: heroImg ? [heroImg] : [],
     },
-    alternates: { canonical: `https://sunny-interns-os.vercel.app/offre/${params.slug}` },
+    alternates: { canonical: `https://sunny-interns-os.vercel.app/offre/${slug}` },
   }
 }
 
-export default async function JobSlugPage({ params }: { params: { locale: string; slug: string } }) {
-  const job = await getJob(params.slug)
+export default async function JobSlugPage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
+  const { slug } = await params
+  const job = await getJob(slug)
   if (!job) notFound()
   return <JobPublicPage job={job} />
 }
