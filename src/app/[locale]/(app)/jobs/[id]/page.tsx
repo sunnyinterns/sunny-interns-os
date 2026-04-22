@@ -204,6 +204,14 @@ export default function JobDetailPage() {
   const id = typeof params?.id === 'string' ? params.id : ''
   const locale = typeof params?.locale === 'string' ? params.locale : 'fr'
 
+  // If id is not a UUID (e.g. a slug), redirect to the public job page
+  // This handles the case where next-intl redirects /jobs/slug → /fr/jobs/slug
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (id && !UUID_RE.test(id)) {
+    router.replace(`/jobs/${id}`)
+    return null
+  }
+
   const [job, setJob] = useState<JobDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
