@@ -204,12 +204,13 @@ export default function JobDetailPage() {
   const id = typeof params?.id === 'string' ? params.id : ''
   const locale = typeof params?.locale === 'string' ? params.locale : 'fr'
 
-  // If id is not a UUID (e.g. a slug), redirect to the public job page
-  // Use window.location for a full reload (not client-side) to avoid layout bleed
+  // If id is not a UUID (e.g. a slug), redirect to the public job page (same locale prefix)
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   if (id && !UUID_RE.test(id)) {
+    // Use locale-prefixed URL so next-intl doesn't loop
+    const prefix = locale === 'fr' ? '' : `/${locale}`
     if (typeof window !== 'undefined') {
-      window.location.replace(`/jobs/${id}`)
+      window.location.replace(`${prefix}/jobs/${id}`)
     }
     return null
   }
