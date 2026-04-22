@@ -77,7 +77,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       description: desc,
       images: heroImg ? [heroImg] : [],
     },
-    alternates: { canonical: `https://sunny-interns-os.vercel.app/jobs/${params.slug}` },
+    alternates: { canonical: `https://sunny-interns-os.vercel.app/offre/${params.slug}` },
   }
 }
 
