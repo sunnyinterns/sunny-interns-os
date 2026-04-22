@@ -71,7 +71,6 @@ interface JobDetail {
   actual_end_date?: string | null
   company_type?: string | null
   tools_required?: string[] | null
-  background_image_url?: string | null
   parent_job_id?: string | null
   created_at?: string | null
   updated_at?: string | null
@@ -82,6 +81,9 @@ interface JobDetail {
   seo_slug?: string | null
   cv_drop_enabled?: boolean | null
   cover_image_url?: string | null
+  background_image_url?: string | null
+  background_image_prompt?: string | null
+  job_card_image_url?: string | null
   is_public?: boolean | null
   companies?: {
     id: string
@@ -109,7 +111,7 @@ interface QualifiedCase {
 
 type Platform = 'instagram' | 'linkedin' | 'tiktok' | 'facebook'
 type Lang = 'fr' | 'en'
-type TabKey = 'infos' | 'publication' | 'media' | 'posts' | 'candidatures' | 'activite'
+type TabKey = 'infos' | 'publication' | 'background' | 'job-card' | 'video' | 'captions' | 'candidatures' | 'activite'
 
 interface SocialPost {
   id: string; platform: Platform; lang: Lang; tone: string | null
@@ -145,40 +147,55 @@ const PD: Record<Platform, { label: string; icon: string; color: string; ratio: 
   facebook:  { label: 'Facebook',  icon: '👥', color: '#1877F2', ratio: '1:1',  desc: '1080×1080 · carré' },
 }
 
-function imagePromptFor(job: JobDetail, platform: Platform | 'cover'): string {
-  const title = job.public_title ?? job.title ?? ''
-  const company = job.companies?.name ?? 'une entreprise'
+/** Auto-generate background image prompt from job data — NEVER mentions the employer company name */
+function buildBackgroundPrompt(job: JobDetail): string {
+  const dept = job.department ?? 'professional'
+  const location = job.location ?? 'Bali, Indonesia'
   const vibe = job.public_vibe ? `Atmosphere: ${job.public_vibe}.` : ''
-  const perks = job.public_perks?.filter(Boolean).slice(0, 3).join(', ') ?? ''
-  const styles: Record<Platform | 'cover', string> = {
-    cover:     'vibrant tropical lifestyle, golden hour, young professional in Bali, warm orange tones, photorealistic editorial',
-    instagram: 'vibrant tropical lifestyle, golden hour, young professional in Bali, warm orange tones, photorealistic editorial',
-    linkedin:  'clean professional tropical coworking, brand gold and dark tones, minimalist, photorealistic',
-    tiktok:    'dynamic energetic, young 25yo professional, bold colors, Bali adventure meets career, photorealistic',
-    facebook:  'friendly approachable, professional casual, Bali tropical, warm golden community feel, photorealistic',
+  const deptStyles: Record<string, string> = {
+    'marketing-communication': 'creative agency workspace, mood boards, vibrant tropical office, young team collaborating',
+    'design-graphisme':        'design studio with large screens, mood boards, creative tools, sunlit tropical space',
+    'tech-dev':                'modern coworking space, laptops and dual screens, focused developer, open air tropical office',
+    'business-dev-sales':      'professional meeting, handshake, confident young executive, tropical city backdrop',
+    'finance-comptabilite':    'clean minimal office, financial charts, focused professional, bright tropical light',
+    'operations':              'hospitality setting, hotel lobby or beachfront resort, warm welcoming atmosphere',
+    'default':                 'young professional working in a tropical coworking space, golden hour light',
   }
-  return `Professional marketing photograph for a ${title} internship at ${company} in Bali. ${vibe}${perks ? `Selling points: ${perks}.` : ''} Style: ${styles[platform]}. Colors: warm gold #F5A623 accents. NO text, logos, watermarks. Ultra high quality, editorial photography.`
+  const style = deptStyles[dept] ?? deptStyles['default']
+  return `Editorial lifestyle photograph for a ${dept} internship in ${location}. ${vibe}Scene: ${style}. Color palette: warm gold and sunset orange tones. Cinematic quality, photorealistic. NO text, NO logos, NO watermarks, NO faces visible.`
 }
 
+function imagePromptFor(job: JobDetail, platform: Platform | 'cover'): string {
+  // Use saved prompt if available, otherwise auto-generate
+  if (job.background_image_prompt) return job.background_image_prompt
+  return buildBackgroundPrompt(job)
+}
+
+/** Caption/post prompt — NEVER mentions employer company name (confidential) */
 function textPromptFor(job: JobDetail, platform: Platform, tone: string, lang: Lang): string {
   const title = job.public_title ?? job.title ?? ''
-  const company = job.companies?.name ?? 'une entreprise partenaire'
-  const duration = job.wished_duration_months ? `${job.wished_duration_months} mois` : 'plusieurs mois'
-  const hook = job.public_hook ? `\nACCROCHE: "${job.public_hook}"` : ''
-  const vibe = job.public_vibe ? `\nAmbiance: ${job.public_vibe}` : ''
-  const perks = job.public_perks?.filter(Boolean).length ? `\nAvantages: ${job.public_perks!.filter(Boolean).join(', ')}` : ''
+  // ⚠️ RULE: Never mention company name in public posts — commercial confidentiality
+  const duration = job.wished_duration_months ? `${job.wished_duration_months} months` : 'several months'
+  const hook = job.public_hook ? `\nHOOK: "${job.public_hook}"` : ''
+  const vibe = job.public_vibe ? `\nVibe: ${job.public_vibe}` : ''
+  const perks = job.public_perks?.filter(Boolean).length ? `\nPerks: ${job.public_perks!.filter(Boolean).join(', ')}` : ''
   const tags = job.public_hashtags?.filter(Boolean).length
     ? `\nHashtags: ${job.public_hashtags!.filter(Boolean).map(h => h.startsWith('#') ? h : '#'+h).join(' ')}`
     : ''
-  const fmt = platform === 'instagram' ? 'Hook + storytelling + emojis + 8-12 hashtags'
-            : platform === 'linkedin'  ? 'Pro + valeur carrière + 3-5 hashtags'
-            : platform === 'tiktok'    ? 'Hook choc ligne 1 + max 150 mots + trending hashtags'
-            : 'Chaleureux + CTA clair + 3-5 hashtags'
-  return `Tu es community manager pour Bali Interns.
-Post ${platform} en ${lang === 'fr' ? 'français' : 'anglais'} pour: ${title} @ ${company} — ${duration} — ${job.location ?? 'Bali'}
-${job.description?.slice(0, 150) ?? ''}${hook}${vibe}${perks}${tags}
-TON: ${tone} | FORMAT: ${fmt} | CTA: "Apply on sunny-interns-os.vercel.app"
-Retourne UNIQUEMENT le post complet.`
+  const fmt = platform === 'instagram' ? 'Hook + storytelling + emojis + 8-12 hashtags. Max 2200 chars.'
+            : platform === 'linkedin'  ? 'Professional tone + career value + 3-5 hashtags. Max 700 chars.'
+            : platform === 'tiktok'    ? 'First line = hook (max 10 words) + max 150 words + trending hashtags'
+            : 'Friendly + clear CTA + 3-5 hashtags. Max 500 chars.'
+  const langLabel = lang === 'fr' ? 'French' : 'English'
+  return `You are a social media manager for Bali Interns, an internship agency placing French students in Bali.
+Write a ${platform} post in ${langLabel} for this internship: ${title} — ${duration} — ${job.location ?? 'Bali, Indonesia'}
+${job.public_description?.slice(0, 150) ?? ''}${hook}${vibe}${perks}${tags}
+TONE: ${tone} | FORMAT: ${fmt} | CTA: "Apply → sunny-interns-os.vercel.app"
+⚠️ IMPORTANT RULES:
+- NEVER mention the employer company name (confidential commercial info)
+- Say "a partner company" or "our partner" if you need to reference the employer
+- Always position Bali Interns as the exclusive placement agency
+- Output ONLY the post content, no explanation.`
 }
 
 export default function JobDetailPage() {
@@ -208,6 +225,8 @@ export default function JobDetailPage() {
   const [generatingImg, setGeneratingImg] = useState<Platform | null>(null)
   const [mediaError, setMediaError] = useState<string | null>(null)
   const [platformImages, setPlatformImages] = useState<Partial<Record<Platform, string>>>({})
+  const [bgPrompt, setBgPrompt] = useState<string>('')
+  const [bgPromptDirty, setBgPromptDirty] = useState(false)
 
   // ── Posts ──
   const [activePlatform, setActivePlatform] = useState<Platform>('instagram')
@@ -268,9 +287,9 @@ export default function JobDetailPage() {
       .catch(() => null)
   }, [])
 
-  // Charge posts existants quand on ouvre l'onglet posts
+  // Charge posts existants quand on ouvre l'onglet captions
   useEffect(() => {
-    if (activeTab !== 'posts' || !id) return
+    if (activeTab !== 'captions' || !id) return
     fetch(`/api/content/posts?job_id=${id}`)
       .then(r => r.ok ? r.json() as Promise<SocialPost[]> : [])
       .then(d => {
@@ -452,12 +471,14 @@ export default function JobDetailPage() {
   const submissionsCount = (job.job_submissions ?? []).length
 
   const tabs: { key: TabKey; label: string }[] = [
-    { key: 'infos', label: '📋 Infos' },
-    { key: 'publication', label: '🌐 Publication' },
-    { key: 'media', label: '🖼 Image & Vidéo' },
-    { key: 'posts', label: '✍️ Posts' },
-    { key: 'candidatures', label: `👥 Candidatures${submissionsCount > 0 ? ` (${submissionsCount})` : ''}` },
-    { key: 'activite', label: '📊 Activité' },
+    { key: 'infos',         label: '📋 Infos' },
+    { key: 'publication',   label: '🌐 Publication' },
+    { key: 'background',    label: '🎨 Background' },
+    { key: 'job-card',      label: '📸 Job Card' },
+    { key: 'video',         label: '🎬 Vidéo' },
+    { key: 'captions',      label: '✍️ Captions' },
+    { key: 'candidatures',  label: `👥 Candidatures${submissionsCount > 0 ? ` (${submissionsCount})` : ''}` },
+    { key: 'activite',      label: '📊 Activité' },
   ]
 
   return (
@@ -1004,7 +1025,8 @@ export default function JobDetailPage() {
       )}
 
       {/* ─── ONGLET MEDIA ─── */}
-      {activeTab === 'media' && (
+      {/* ─── ONGLET BACKGROUND IMAGE ─── */}
+      {activeTab === 'background' && (
         <div className="space-y-5">
           {mediaError && (
             <div className="px-3 py-2 bg-red-50 border border-red-100 rounded-xl text-xs text-red-600 flex items-center justify-between">
@@ -1013,78 +1035,173 @@ export default function JobDetailPage() {
             </div>
           )}
 
-          {/* Image principale (cover) */}
-          <div className="bg-white rounded-xl border border-zinc-100 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">🖼 Image principale (Cover)</h3>
-              <button onClick={() => void generateCover()} disabled={generatingCover}
-                className="text-xs px-3 py-1.5 bg-[#c8a96e] text-white rounded-xl font-bold disabled:opacity-40 hover:bg-[#b8945a] transition-colors">
-                {generatingCover ? '⏳ Génération…' : job.cover_image_url ? '🔄 Regénérer' : '✨ Generate'}
+          {/* Prompt éditable — auto-généré, modifiable */}
+          <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">🎨 Background Image Prompt</h3>
+                <p className="text-[10px] text-zinc-400 mt-0.5">Auto-generated from job data — edit to refine. Never includes employer name.</p>
+              </div>
+              <button onClick={() => { const p = buildBackgroundPrompt(job!); setBgPrompt(p); setBgPromptDirty(false) }}
+                className="text-[10px] px-2 py-1 bg-zinc-100 rounded-lg hover:bg-zinc-200 text-zinc-500">↺ Reset</button>
+            </div>
+            <textarea
+              value={bgPrompt || (job?.background_image_prompt ?? buildBackgroundPrompt(job!))}
+              onChange={e => { setBgPrompt(e.target.value); setBgPromptDirty(true) }}
+              rows={4}
+              className="w-full text-xs text-zinc-700 border border-zinc-200 rounded-xl p-3 resize-none focus:outline-none focus:ring-2 focus:ring-[#c8a96e] font-mono"
+            />
+            <div className="flex gap-2">
+              {bgPromptDirty && (
+                <button onClick={() => void patchJob({ background_image_prompt: bgPrompt }).then(() => setBgPromptDirty(false))}
+                  className="text-xs px-3 py-1.5 bg-[#c8a96e] text-white rounded-xl font-bold hover:bg-[#b8945a]">
+                  💾 Save prompt
+                </button>
+              )}
+              <button
+                onClick={async () => {
+                  if (!job) return
+                  const prompt = bgPrompt || job.background_image_prompt || buildBackgroundPrompt(job)
+                  setMediaError(null); setGeneratingCover(true)
+                  try {
+                    const res = await fetch('/api/content/generate-image', {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ prompt, job_id: job.id, platform: 'background' }),
+                    })
+                    const d = await res.json() as { image_url?: string; error?: string }
+                    if (!res.ok || !d.image_url) { setMediaError(d.error ?? 'Generation error'); return }
+                    void patchJob({ background_image_url: d.image_url, background_image_prompt: prompt })
+                  } catch (err) {
+                    setMediaError(err instanceof Error ? err.message : 'Network error')
+                  } finally { setGeneratingCover(false) }
+                }}
+                disabled={generatingCover}
+                className="text-xs px-4 py-1.5 bg-[#1a1918] text-white rounded-xl font-bold disabled:opacity-40 hover:bg-zinc-800 transition-colors">
+                {generatingCover ? '⏳ Generating…' : job?.background_image_url ? '🔄 Regenerate background' : '✨ Generate background'}
               </button>
             </div>
-            {job.cover_image_url ? (
+          </div>
+
+          {/* Aperçu de l'image de fond */}
+          {job?.background_image_url ? (
+            <div className="bg-white rounded-xl border border-zinc-100 p-5">
+              <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">📸 Background preview</h3>
               <div className="relative group">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={job.cover_image_url} alt="" className="w-full aspect-square object-cover rounded-xl max-h-96" />
+                <img src={job.background_image_url} alt="" className="w-full aspect-video object-cover rounded-xl" />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-3">
-                  <button onClick={() => downloadImage(job.cover_image_url!, `cover-${job.id}.png`)}
-                    className="text-xs px-3 py-2 bg-[#c8a96e] text-white rounded-lg font-bold">⬇ Télécharger</button>
+                  <button onClick={() => downloadImage(job.background_image_url!, `background-${job.id}.png`)}
+                    className="text-xs px-3 py-2 bg-[#c8a96e] text-white rounded-lg font-bold">⬇ Download</button>
                 </div>
               </div>
-            ) : (
-              <div className="w-full aspect-square max-h-96 bg-zinc-50 rounded-xl flex flex-col items-center justify-center text-zinc-300 border-2 border-dashed border-zinc-200">
-                <span className="text-4xl mb-2">🖼</span>
-                <p className="text-xs">Clique &quot;Generate&quot; pour créer l&apos;image via Gemini</p>
-              </div>
-            )}
-          </div>
-
-          {/* 4 formats réseau */}
-          <div className="bg-white rounded-xl border border-zinc-100 p-5">
-            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-4">📐 Images adaptées par réseau</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {(Object.entries(PD) as [Platform, typeof PD[Platform]][]).map(([p, pd]) => (
-                <div key={p} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-bold" style={{ color: pd.color }}>{pd.icon} {pd.label}</p>
-                      <p className="text-[10px] text-zinc-400">{pd.desc}</p>
-                    </div>
-                    <button onClick={() => void generatePlatformImg(p)} disabled={generatingImg === p}
-                      className="text-[10px] px-2 py-1 bg-zinc-100 rounded-lg hover:bg-zinc-200 disabled:opacity-40">
-                      {generatingImg === p ? '⏳' : '✨'}
-                    </button>
-                  </div>
-                  {platformImages[p] ? (
-                    <div className="relative group">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={platformImages[p]} alt="" className={`w-full object-cover rounded-lg ${p === 'linkedin' ? 'aspect-video' : p === 'tiktok' ? 'aspect-[9/16] max-h-48' : 'aspect-square'}`} />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
-                        <button onClick={() => downloadImage(platformImages[p]!, `${p}-${job.id}.png`)} className="text-[10px] px-2 py-1 bg-[#c8a96e] text-white rounded font-bold">⬇</button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className={`w-full bg-zinc-50 rounded-lg border-2 border-dashed border-zinc-200 flex items-center justify-center text-zinc-300 ${p === 'linkedin' ? 'aspect-video' : p === 'tiktok' ? 'aspect-[9/16] max-h-48' : 'aspect-square'}`}>
-                      <span className="text-2xl">{pd.icon}</span>
-                    </div>
-                  )}
-                </div>
-              ))}
             </div>
-          </div>
-
-          {/* Vidéo placeholder */}
-          <div className="bg-white rounded-xl border border-zinc-100 p-6 text-center">
-            <div className="text-5xl mb-3">🎬</div>
-            <h3 className="text-base font-bold text-[#1a1918] mb-2">Génération vidéo</h3>
-            <p className="text-sm text-zinc-500 mb-4">Les vidéos animées pour Reels, TikTok et Stories sont en cours de développement (Creatomate).</p>
-            <div className="inline-block px-4 py-2 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-700 font-medium">🔜 Bientôt disponible</div>
-          </div>
+          ) : (
+            <div className="w-full aspect-video bg-zinc-50 rounded-xl flex flex-col items-center justify-center text-zinc-300 border-2 border-dashed border-zinc-200">
+              <span className="text-5xl mb-3">🎨</span>
+              <p className="text-sm font-medium text-zinc-400">Edit the prompt above then click Generate</p>
+            </div>
+          )}
         </div>
       )}
 
-      {/* ─── ONGLET POSTS ─── */}
-      {activeTab === 'posts' && (
+      {/* ─── ONGLET JOB CARD ─── */}
+      {activeTab === 'job-card' && (
+        <div className="space-y-5">
+          <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+            <p className="text-xs text-amber-700 font-medium">📸 Job Card = Background image + Bali Interns overlay (title, duration, department, logo).</p>
+            <p className="text-[11px] text-amber-600 mt-1">Generate the background first in the 🎨 Background tab, then come back here to compose the card.</p>
+          </div>
+
+          {job?.background_image_url ? (
+            <div className="bg-white rounded-xl border border-zinc-100 p-5 space-y-4">
+              <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">📐 Job Card formats</h3>
+
+              {/* Preview — Square (Instagram/TikTok) */}
+              <div>
+                <p className="text-[10px] font-bold text-zinc-500 uppercase mb-2">Square 1:1 — Instagram / TikTok</p>
+                <div className="relative w-full max-w-sm mx-auto aspect-square rounded-xl overflow-hidden shadow-lg">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={job.background_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  {/* Bali Interns badge */}
+                  <div className="absolute top-4 right-4 bg-[#c8a96e] text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-wider shadow">
+                    Bali Interns
+                  </div>
+                  {/* Exclusivité badge */}
+                  <div className="absolute top-4 left-4 bg-white/10 backdrop-blur text-white text-[9px] font-bold px-2.5 py-1 rounded-full border border-white/30 uppercase tracking-wider">
+                    Exclusivité 🌴
+                  </div>
+                  {/* Bottom info */}
+                  <div className="absolute bottom-0 left-0 right-0 p-5">
+                    <p className="text-[10px] font-bold text-[#c8a96e] uppercase tracking-widest mb-1">{job.department ?? 'Internship'}</p>
+                    <h2 className="text-white text-xl font-black leading-tight mb-2">{job.public_title ?? job.title}</h2>
+                    <div className="flex items-center gap-3">
+                      {job.wished_duration_months && (
+                        <span className="text-white/80 text-xs font-medium">⏱ {job.wished_duration_months} months</span>
+                      )}
+                      {job.location && (
+                        <span className="text-white/80 text-xs font-medium">📍 {job.location}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-center mt-3">
+                  <button
+                    onClick={() => {
+                      // CSS-rendered card — user screenshots or we generate server-side
+                      alert('💡 To download: right-click on the card → Save image, or use the screenshot shortcut.')
+                    }}
+                    className="text-xs px-4 py-2 bg-zinc-100 rounded-xl text-zinc-600 hover:bg-zinc-200">
+                    ⬇ Download (screenshot)
+                  </button>
+                </div>
+              </div>
+
+              {/* Story 9:16 */}
+              <div>
+                <p className="text-[10px] font-bold text-zinc-500 uppercase mb-2">Story 9:16 — Instagram / TikTok</p>
+                <div className="relative w-48 mx-auto aspect-[9/16] rounded-xl overflow-hidden shadow-lg">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={job.background_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+                  <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-[#c8a96e] text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-wider">Bali Interns</div>
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <p className="text-[9px] font-bold text-[#c8a96e] uppercase tracking-widest mb-1">{job.department}</p>
+                    <h2 className="text-white text-base font-black leading-tight mb-2">{job.public_title ?? job.title}</h2>
+                    {job.wished_duration_months && <p className="text-white/70 text-[10px]">⏱ {job.wished_duration_months} months · 📍 {job.location ?? 'Bali'}</p>}
+                    <div className="mt-3 text-center">
+                      <span className="text-[9px] bg-white/20 backdrop-blur text-white px-3 py-1 rounded-full border border-white/30">🌴 Exclusivité Bali Interns</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl border border-zinc-100 p-10 text-center">
+              <p className="text-5xl mb-4">🎨</p>
+              <p className="text-zinc-500 text-sm font-medium">Generate a background image first</p>
+              <p className="text-zinc-400 text-xs mt-1">Go to the 🎨 Background tab to generate your background image</p>
+              <button onClick={() => setActiveTab('background')}
+                className="mt-4 text-xs px-4 py-2 bg-[#c8a96e] text-white rounded-xl font-bold hover:bg-[#b8945a]">
+                → Go to Background tab
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── ONGLET VIDEO ─── */}
+      {activeTab === 'video' && (
+        <div className="bg-white rounded-xl border border-zinc-100 p-10 text-center">
+          <div className="text-6xl mb-4">🎬</div>
+          <h3 className="text-lg font-bold text-[#1a1918] mb-2">Job Video</h3>
+          <p className="text-sm text-zinc-500 mb-2 max-w-sm mx-auto">Animated videos for Reels, TikTok, and Stories — coming soon via Remotion templates.</p>
+          <p className="text-xs text-zinc-400 mb-5">Remotion will let you generate branded videos automatically from job data using a pre-built Bali Interns template.</p>
+          <div className="inline-block px-5 py-2 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-700 font-bold">🔜 Coming soon</div>
+        </div>
+      )}
+
+      {activeTab === 'captions' && (
         <div className="space-y-4">
           {aiError && (
             <div className="px-3 py-2 bg-red-50 border border-red-100 rounded-xl text-xs text-red-600 flex items-center justify-between">
