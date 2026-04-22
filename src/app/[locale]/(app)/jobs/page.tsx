@@ -518,8 +518,8 @@ export default function JobsPage() {
 
               {/* ÉTAPE 1 — Template (optionnel) */}
               <div className="space-y-2">
-                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">② Partir d&apos;un template <span className="text-zinc-300 font-normal normal-case">— optionnel, pré-remplit la suite</span></p>
-                <p className="text-[11px] text-zinc-400">Vous pouvez choisir un template ou remplir manuellement.</p>
+                <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">② Start from a template <span className="text-zinc-300 font-normal normal-case">— optional, pre-fills the form</span></p>
+                <p className="text-[11px] text-zinc-400">Choose a template or fill in manually.</p>
                 <div className="grid grid-cols-3 gap-2">
                   {JOB_TEMPLATES.map(t => (
                     <button key={t.id} type="button"
