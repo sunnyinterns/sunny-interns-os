@@ -13,8 +13,9 @@ export async function GET(request: Request) {
     let query = supabase
       .from('contacts')
       .select(`
-        id, first_name, last_name, email, whatsapp, job_title,
-        created_at, updated_at, company_id, is_primary, nationality,
+        id, company_id, first_name, last_name, job_title, email, whatsapp,
+        nationality, is_primary, created_at, linkedin_url, phone, notes,
+        temperature, last_contacted_at, is_legal_signatory, signatory_title,
         companies!contacts_company_id_fkey(id, name, logo_url)
       `)
       .order('first_name')
