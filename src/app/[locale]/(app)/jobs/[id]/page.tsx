@@ -177,7 +177,7 @@ function textPromptFor(job: JobDetail, platform: Platform, tone: string, lang: L
   return `Tu es community manager pour Bali Interns.
 Post ${platform} en ${lang === 'fr' ? 'français' : 'anglais'} pour: ${title} @ ${company} — ${duration} — ${job.location ?? 'Bali'}
 ${job.description?.slice(0, 150) ?? ''}${hook}${vibe}${perks}${tags}
-TON: ${tone} | FORMAT: ${fmt} | CTA: "Postuler sur bali-interns.com"
+TON: ${tone} | FORMAT: ${fmt} | CTA: "Apply on sunny-interns-os.vercel.app"
 Retourne UNIQUEMENT le post complet.`
 }
 
@@ -559,9 +559,9 @@ export default function JobDetailPage() {
           </label>
 
           {job.is_public && job.seo_slug ? (
-            <a href={`https://bali-interns.com/jobs/${job.seo_slug}`} target="_blank" rel="noopener noreferrer"
+            <a href={`https://sunny-interns-os.vercel.app/jobs/${job.seo_slug}`} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-xs text-[#c8a96e] hover:underline font-medium">
-              🌐 bali-interns.com/jobs/{job.seo_slug} ↗
+              🌐 sunny-interns-os.vercel.app/jobs/{job.seo_slug} ↗
             </a>
           ) : job.is_public && !job.seo_slug ? (
             <button onClick={() => setActiveTab('publication')}
@@ -981,7 +981,7 @@ export default function JobDetailPage() {
           <div className="flex items-center justify-between pt-3 border-t border-zinc-100">
             <div>
               <p className="text-sm font-medium text-[#1a1918]">Page publique activée</p>
-              <p className="text-xs text-zinc-400">La page est visible sur bali-interns.com</p>
+              <p className="text-xs text-zinc-400">Page visible on sunny-interns-os.vercel.app</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" checked={!!job.is_public} onChange={e => void patchJob({ is_public: e.target.checked })} className="sr-only peer" />

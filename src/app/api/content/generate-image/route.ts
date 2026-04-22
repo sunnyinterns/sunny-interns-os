@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as svc } from '@supabase/supabase-js'
 
-const GEMINI_IMAGE_MODEL = 'gemini-2.0-flash-preview-image-generation'
+// TODO: mettre à jour si Google change encore le nom du modèle
+// gemini-2.0-flash-preview-image-generation → déprécié (404)
+// gemini-3.1-flash-image-preview → actif avril 2026
+const GEMINI_IMAGE_MODEL = 'gemini-3.1-flash-image-preview'
 
 export async function POST(req: NextRequest) {
   try {
