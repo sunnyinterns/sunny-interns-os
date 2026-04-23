@@ -31,36 +31,36 @@ function buildAutoPrompt(title: string, category: string): string {
 }
 
 
-// Pure CSS blog card preview — mirrors the real card design, no external requests
+// Pure CSS blog card preview
 function BlogCardPreview({ post }: { post: BlogPost }) {
   const category = (post.category || 'guide').replace(/-/g, ' ')
+  const fs = post.title_en.length > 70 ? 13 : post.title_en.length > 50 ? 16 : post.title_en.length > 35 ? 19 : 22
   return (
     <div className="relative w-full aspect-[1200/630] rounded-xl overflow-hidden border border-zinc-200 bg-[#1a1918]">
-      {/* Background image */}
       {post.cover_image_url && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={post.cover_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
       )}
-      {/* Gradient scrim */}
-      <div className="absolute inset-0" style={{background: 'linear-gradient(to top, rgba(26,25,24,0.95) 38%, rgba(26,25,24,0.4) 68%, rgba(0,0,0,0.1) 100%)'}} />
+      {/* Deep gradient — more coverage for legibility */}
+      <div className="absolute inset-0" style={{background:'linear-gradient(to top, rgba(10,8,8,0.97) 45%, rgba(15,12,10,0.6) 72%, rgba(0,0,0,0.15) 100%)'}} />
       {/* Top: logo + category */}
-      <div className="absolute top-3 left-3 right-3 flex items-center gap-2">
-        <div className="flex items-center px-3 py-1.5 rounded-full bg-white/10 border border-white/18">
+      <div className="absolute top-3 left-4 right-4 flex items-center">
+        <div className="flex items-center px-3 py-2 rounded-full bg-white/15 border border-white/25" style={{backdropFilter:'blur(4px)'}}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="https://djoqjgiyseobotsjqcgz.supabase.co/storage/v1/object/public/brand-assets/logos/logo_landscape_white.png" alt="Bali Interns" className="h-4 w-auto" style={{filter:'brightness(0) invert(1)'}} />
+          <img src="https://djoqjgiyseobotsjqcgz.supabase.co/storage/v1/object/public/brand-assets/logos/logo_landscape_white.png" alt="Bali Interns" style={{height:18, width:'auto', filter:'brightness(0) invert(1)'}} />
         </div>
-        <div className="ml-auto px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/40">
-          <span className="text-amber-300 text-[9px] font-bold uppercase tracking-wider">{category}</span>
+        <div className="ml-auto px-3 py-1 rounded-full bg-amber-500/25 border border-amber-400/50">
+          <span className="text-amber-200 font-bold uppercase tracking-wider" style={{fontSize:9}}>{category}</span>
         </div>
       </div>
-      {/* Bottom: title + url */}
-      <div className="absolute bottom-3 left-3 right-3">
-        <p className="text-white font-bold leading-tight mb-1" style={{fontSize: post.title_en.length > 60 ? 11 : post.title_en.length > 40 ? 13 : 15}}>
+      {/* Bottom: title + url — large and bold */}
+      <div className="absolute bottom-4 left-4 right-4">
+        <p className="text-white font-black leading-tight mb-2 drop-shadow-lg" style={{fontSize:fs, textShadow:'0 2px 8px rgba(0,0,0,0.8)'}}>
           {post.title_en || "Article title"}
         </p>
-        <div className="flex items-center gap-1">
-          <span className="w-1 h-1 rounded-full bg-amber-400 inline-block" />
-          <span className="text-white/50 text-[9px]">bali-interns.com/blog</span>
+        <div className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
+          <span className="text-white/60 font-medium" style={{fontSize:10}}>bali-interns.com/blog</span>
         </div>
       </div>
     </div>
