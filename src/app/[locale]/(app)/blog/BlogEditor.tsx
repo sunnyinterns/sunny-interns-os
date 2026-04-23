@@ -22,6 +22,7 @@ export interface BlogPostFull {
   category: Category | null
   tags: string[] | null
   cover_image_url: string | null
+  cover_image_prompt?: string | null
   author_name: string | null
   status: Status
   featured: boolean | null
@@ -56,6 +57,7 @@ const EMPTY: BlogPostFull = {
   seo_desc_en: '', seo_desc_fr: '',
   category: null, tags: [],
   cover_image_url: '',
+  cover_image_prompt: null,
   author_name: '',
   status: 'draft', featured: false, reading_time_min: null,
 }
@@ -66,6 +68,43 @@ export function BlogEditor({ locale, initial }: { locale: string; initial?: Blog
   const [saving, setSaving] = useState(false)
   const [slugDirty, setSlugDirty] = useState(Boolean(initial?.slug))
   const [tagsInput, setTagsInput] = useState((initial?.tags ?? []).join(', '))
+  const [bgPrompt, setBgPrompt] = useState(initial?.cover_image_prompt ?? '')
+  const [bgPromptDirty, setBgPromptDirty] = useState(false)
+  const [generatingCover, setGeneratingCover] = useState(false)
+  const [coverError, setCoverError] = useState<string | null>(null)
+
+  function autoBuildPrompt(title: string, cat: string) {
+    return `Professional blog cover photograph for an article titled "${title}" about internships in Bali, Indonesia. Category: ${cat}. Style: warm tropical light, cinematic, editorial photography, golden hour, lush greenery, ocean or rice terraces in background. High quality, vibrant colors, no text, no people, 16:9 landscape.`
+  }
+
+  async function generateCover() {
+    if (!form.title_en) return
+    setCoverError(null)
+    setGeneratingCover(true)
+    try {
+      const prompt = bgPrompt.trim() || autoBuildPrompt(form.title_en, form.category ?? 'living-in-bali')
+      const res = await fetch('/api/ai/generate-blog-cover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.title_en,
+          category: form.category ?? 'living-in-bali',
+          slug: form.slug || 'draft',
+          post_id: form.id,
+          prompt,
+        }),
+      })
+      const d = await res.json() as { url?: string; error?: string; prompt?: string }
+      if (!res.ok || !d.url) { setCoverError(d.error ?? 'Erreur génération'); return }
+      setForm(p => ({ ...p, cover_image_url: d.url ?? p.cover_image_url, cover_image_prompt: prompt }))
+      setBgPrompt(prompt)
+      setBgPromptDirty(false)
+    } catch (e) {
+      setCoverError(e instanceof Error ? e.message : 'Erreur réseau')
+    } finally {
+      setGeneratingCover(false)
+    }
+  }
 
   useEffect(() => {
     if (!slugDirty && form.title_en) {
@@ -378,21 +417,107 @@ export function BlogEditor({ locale, initial }: { locale: string; initial?: Blog
             </div>
           </div>
 
-          <div className="bg-white border border-zinc-100 rounded-xl p-5 space-y-3">
-            <h2 className="text-sm font-semibold text-[#1a1918]">Cover image</h2>
-            <input
-              className={inputCls}
-              value={form.cover_image_url ?? ''}
-              onChange={e => set('cover_image_url', e.target.value)}
-              placeholder="https://…"
-            />
-            {form.cover_image_url && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={form.cover_image_url}
-                alt=""
-                className="w-full h-32 object-cover rounded-lg border border-zinc-100"
+          {/* ── COVER IMAGE ── */}
+          <div className="bg-white border border-zinc-100 rounded-xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-[#1a1918]">🎨 Cover image</h2>
+              {form.cover_image_url && (
+                <button onClick={() => setForm(p => ({...p, cover_image_url: null}))}
+                  className="text-[10px] text-zinc-400 hover:text-red-500">✕ Supprimer</button>
+              )}
+            </div>
+
+            {/* Prompt */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Prompt image</label>
+                <button onClick={() => { setBgPrompt(autoBuildPrompt(form.title_en, form.category ?? 'living-in-bali')); setBgPromptDirty(true) }}
+                  className="text-[10px] px-2 py-0.5 bg-zinc-100 rounded-lg hover:bg-zinc-200 text-zinc-500">↺ Reset</button>
+              </div>
+              <textarea
+                rows={3}
+                value={bgPrompt || autoBuildPrompt(form.title_en || 'Blog post', form.category ?? 'living-in-bali')}
+                onChange={e => { setBgPrompt(e.target.value); setBgPromptDirty(true) }}
+                className="w-full text-xs text-zinc-700 border border-zinc-200 rounded-xl p-3 resize-none focus:outline-none focus:ring-2 focus:ring-[#c8a96e] font-mono"
               />
+            </div>
+
+            {/* Error */}
+            {coverError && (
+              <div className="px-3 py-2 bg-red-50 border border-red-100 rounded-xl text-xs text-red-600 flex items-center justify-between">
+                <span>{coverError}</span>
+                <button onClick={() => setCoverError(null)} className="ml-2">×</button>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex gap-2">
+              {bgPromptDirty && form.id && (
+                <button
+                  onClick={async () => {
+                    await fetch(`/api/blog-posts/${form.id}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({cover_image_prompt: bgPrompt}) })
+                    setBgPromptDirty(false)
+                  }}
+                  className="text-[11px] px-3 py-1.5 bg-[#c8a96e] text-white rounded-xl font-bold hover:bg-[#b8945a]">
+                  💾 Sauver prompt
+                </button>
+              )}
+              <button onClick={() => void generateCover()} disabled={generatingCover || !form.title_en}
+                className="text-[11px] px-4 py-1.5 bg-[#1a1918] text-white rounded-xl font-bold disabled:opacity-40 hover:bg-zinc-800">
+                {generatingCover ? '⏳ Génération…' : form.cover_image_url ? '🔄 Régénérer' : '✨ Générer avec IA'}
+              </button>
+            </div>
+
+            {/* URL manuelle */}
+            <div>
+              <label className="text-[10px] font-medium text-zinc-400 mb-1 block">Ou coller une URL</label>
+              <input className={inputCls} value={form.cover_image_url ?? ''} onChange={e => set('cover_image_url', e.target.value)} placeholder="https://…" />
+            </div>
+
+            {/* Background preview */}
+            {form.cover_image_url && (
+              <div className="space-y-2">
+                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">📸 Background</p>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={form.cover_image_url} alt="" className="w-full aspect-video object-cover rounded-xl border border-zinc-100" />
+              </div>
+            )}
+
+            {/* Blog card preview */}
+            {form.cover_image_url && (
+              <div className="space-y-2">
+                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">🃏 Blog card (preview)</p>
+                <div className="relative w-full aspect-[1200/630] rounded-xl overflow-hidden border border-zinc-200">
+                  {/* Background */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={form.cover_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                  {/* Gradient overlay */}
+                  <div className="absolute inset-0" style={{background: 'linear-gradient(to top, rgba(26,25,24,0.95) 40%, rgba(26,25,24,0.3) 100%)'}} />
+                  {/* Top bar */}
+                  <div className="absolute top-4 left-4 right-4 flex items-center gap-3">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/20 bg-white/10">
+                      <span className="text-xs">🌴</span>
+                      <span className="text-white text-xs font-bold">Bali Interns</span>
+                    </div>
+                    <div className="ml-auto px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/40">
+                      <span className="text-amber-300 text-[10px] font-bold uppercase tracking-wider">{form.category ?? 'blog'}</span>
+                    </div>
+                  </div>
+                  {/* Bottom: title + url */}
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <p className="text-white font-bold leading-tight mb-1.5" style={{fontSize: form.title_en.length > 60 ? '12px' : '14px'}}>{form.title_en || "Titre de l'article"}</p>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 rounded-full bg-amber-400" />
+                      <span className="text-white/55 text-[9px]">bali-interns.com/blog</span>
+                    </div>
+                  </div>
+                </div>
+                <a href={`/api/og/blog-card?title=${encodeURIComponent(form.title_en)}&category=${encodeURIComponent(form.category ?? 'blog')}&bg=${encodeURIComponent(form.cover_image_url)}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="text-[10px] text-amber-700 hover:underline no-underline">
+                  → Ouvrir la vraie blog-card OG (1200×630) ↗
+                </a>
+              </div>
             )}
           </div>
         </aside>

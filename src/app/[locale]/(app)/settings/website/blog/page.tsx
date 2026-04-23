@@ -10,7 +10,7 @@ interface BlogPost {
   body_en: string | null; body_fr: string | null
   seo_title_en: string | null; seo_title_fr: string | null
   seo_desc_en: string | null; seo_desc_fr: string | null
-  category: string; tags: string[]; cover_image_url: string | null
+  category: string; tags: string[]; cover_image_url: string | null; cover_image_prompt: string | null
   author_name: string; status: string
   created_at: string; updated_at: string
   [key: string]: unknown // for dynamic locale fields
@@ -25,6 +25,10 @@ const LANGS = [
   { code: 'ro', flag: '🇷🇴', name: 'RO' }, { code: 'cs', flag: '🇨🇿', name: 'CS' },
 ]
 
+function buildAutoPrompt(title: string, category: string): string {
+  return `Professional blog cover photograph for an article titled "${title}" about internships in Bali, Indonesia. Category: ${category}. Style: warm tropical light, cinematic, editorial photography, golden hour, lush greenery, ocean or rice terraces in background. High quality, vibrant colors, no text, no people, 16:9 landscape.`
+}
+
 export default function BlogManagerPage() {
   const router = useRouter()
   const params = useParams()
@@ -37,6 +41,8 @@ export default function BlogManagerPage() {
   const [saved, setSaved] = useState<string | null>(null)
   const [uploading, setUploading] = useState<string | null>(null)
   const [generating, setGenerating] = useState<string | null>(null)
+  const [promptEditor, setPromptEditor] = useState<{ postId: string; prompt: string } | null>(null)
+  const [promptDirty, setPromptDirty] = useState(false)
   const [editLang, setEditLang] = useState('en')
   const fileRef = useRef<HTMLInputElement>(null)
   const uploadPostId = useRef<string | null>(null)
@@ -81,7 +87,7 @@ export default function BlogManagerPage() {
     fetchPosts()
   }
 
-  async function generateCover(post: BlogPost) {
+  async function generateCover(post: BlogPost, customPrompt?: string) {
     setGenerating(post.id)
     try {
       const res = await fetch('/api/ai/generate-blog-cover', {
@@ -162,9 +168,9 @@ export default function BlogManagerPage() {
                     className="text-[10px] bg-white text-charcoal px-1.5 py-0.5 rounded font-bold border-none cursor-pointer" title="Upload image">
                     {uploading === post.id ? '⏳' : '📁'}
                   </button>
-                  <button onClick={() => generateCover(post)}
+                  <button onClick={() => { const p = post.cover_image_prompt || buildAutoPrompt(post.title_en, post.category); setPromptEditor({ postId: post.id, prompt: p }); setPromptDirty(false) }}
                     className="text-[10px] bg-amber-500 text-white px-1.5 py-0.5 rounded font-bold border-none cursor-pointer" title="Generate with AI">
-                    {generating === post.id ? '⏳' : '✨'}
+                    ✨
                   </button>
                 </div>
               </div>
@@ -225,6 +231,64 @@ export default function BlogManagerPage() {
                   {(editData.cover_image_url as string) && (
                     <img src={editData.cover_image_url as string} alt="" className="h-24 rounded-xl mt-2 border border-zinc-100 object-cover" />
                   )}
+                </div>
+
+                {/* Cover Image Prompt Editor — same UI as jobs */}
+                <div className="bg-zinc-50 rounded-xl border border-zinc-100 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">🎨 Cover Image Prompt</h3>
+                      <p className="text-[10px] text-zinc-400 mt-0.5">Auto-generated from title & category — edit to refine before generating.</p>
+                    </div>
+                    <button
+                      onClick={() => setPromptEditor({ postId: post.id, prompt: buildAutoPrompt(post.title_en, post.category) })}
+                      className="text-[10px] px-2 py-1 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 text-zinc-400 cursor-pointer">
+                      ↺ Reset
+                    </button>
+                  </div>
+                  <textarea
+                    value={promptEditor?.postId === post.id ? promptEditor.prompt : (post.cover_image_prompt || buildAutoPrompt(post.title_en, post.category))}
+                    onChange={e => { setPromptEditor({ postId: post.id, prompt: e.target.value }); setPromptDirty(true) }}
+                    onFocus={() => { if (promptEditor?.postId !== post.id) setPromptEditor({ postId: post.id, prompt: post.cover_image_prompt || buildAutoPrompt(post.title_en, post.category) }) }}
+                    rows={3}
+                    className="w-full text-xs text-zinc-700 border border-zinc-200 rounded-xl p-3 resize-none focus:outline-none focus:ring-2 focus:ring-[#c8a96e] font-mono bg-white"
+                  />
+                  <div className="flex gap-2 flex-wrap">
+                    {promptDirty && promptEditor?.postId === post.id && (
+                      <button
+                        onClick={async () => {
+                          const sb = createClient(); await sb.from('blog_posts').update({ cover_image_prompt: promptEditor.prompt }).eq('id', post.id)
+                          setPromptDirty(false)
+                        }}
+                        className="text-[10px] px-3 py-1.5 bg-[#c8a96e] text-white rounded-xl font-bold hover:bg-[#b8945a] cursor-pointer">
+                        💾 Save prompt
+                      </button>
+                    )}
+                    <button
+                      onClick={() => void generateCover(post, promptEditor?.postId === post.id ? promptEditor.prompt : undefined)}
+                      disabled={generating === post.id}
+                      className="text-xs px-4 py-1.5 bg-[#1a1918] text-white rounded-xl font-bold disabled:opacity-40 hover:bg-zinc-800 transition-colors cursor-pointer border-none">
+                      {generating === post.id ? '⏳ Generating…' : (post.cover_image_url ? '🔄 Regenerate cover' : '✨ Generate cover')}
+                    </button>
+                  </div>
+
+                  {/* Blog-card preview — shows the branded OG card */}
+                  <div>
+                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2">📋 Blog-card preview (OG fallback)</p>
+                    <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-zinc-200 bg-zinc-100">
+                      <img
+                        src={`/api/og/blog-card?title=${encodeURIComponent(post.title_en)}&category=${encodeURIComponent(post.category)}${post.cover_image_url ? `&bg=${encodeURIComponent(post.cover_image_url)}` : ""}&t=${Date.now()}`}
+                        alt="Blog card preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute bottom-2 right-2">
+                        <span className="text-[9px] font-bold bg-charcoal/70 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">
+                          bali-interns.com/blog
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-[9px] text-zinc-400 mt-1">Cette carte est utilisée comme image OG sur le site si aucune cover n&apos;est définie.</p>
+                  </div>
                 </div>
 
                 {/* Title + SEO for selected language */}
