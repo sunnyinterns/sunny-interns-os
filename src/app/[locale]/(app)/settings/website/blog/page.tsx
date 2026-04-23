@@ -31,26 +31,38 @@ function buildAutoPrompt(title: string, category: string): string {
 }
 
 
-// Lazy-rendered blog card preview — uses iframe to avoid CORS issues with img src
+// Pure CSS blog card preview — mirrors the real card design, no external requests
 function BlogCardPreview({ post }: { post: BlogPost }) {
-  const [loaded, setLoaded] = React.useState(false)
-  const url = `/api/og/blog-card?title=${encodeURIComponent(post.title_en)}&category=${encodeURIComponent(post.category)}${post.cover_image_url ? `&bg=${encodeURIComponent(post.cover_image_url)}` : ""}`
+  const category = (post.category || 'guide').replace(/-/g, ' ')
   return (
-    <div className="relative w-full aspect-[1200/630] rounded-xl overflow-hidden border border-zinc-200 bg-zinc-100">
-      {!loaded && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-5 h-5 border-2 border-zinc-300 border-t-[#c8a96e] rounded-full animate-spin" />
-        </div>
+    <div className="relative w-full aspect-[1200/630] rounded-xl overflow-hidden border border-zinc-200 bg-[#1a1918]">
+      {/* Background image */}
+      {post.cover_image_url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={post.cover_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
       )}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        key={url}
-        src={url}
-        alt="Blog card preview"
-        className={"w-full h-full object-cover transition-opacity duration-300 " + (loaded ? "opacity-100" : "opacity-0")}
-        onLoad={() => setLoaded(true)}
-        onError={() => setLoaded(true)}
-      />
+      {/* Gradient scrim */}
+      <div className="absolute inset-0" style={{background: 'linear-gradient(to top, rgba(26,25,24,0.95) 38%, rgba(26,25,24,0.4) 68%, rgba(0,0,0,0.1) 100%)'}} />
+      {/* Top: logo + category */}
+      <div className="absolute top-3 left-3 right-3 flex items-center gap-2">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/18">
+          <span className="text-xs">🌴</span>
+          <span className="text-white text-[11px] font-bold">Bali Interns</span>
+        </div>
+        <div className="ml-auto px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/40">
+          <span className="text-amber-300 text-[9px] font-bold uppercase tracking-wider">{category}</span>
+        </div>
+      </div>
+      {/* Bottom: title + url */}
+      <div className="absolute bottom-3 left-3 right-3">
+        <p className="text-white font-bold leading-tight mb-1" style={{fontSize: post.title_en.length > 60 ? 11 : post.title_en.length > 40 ? 13 : 15}}>
+          {post.title_en || "Article title"}
+        </p>
+        <div className="flex items-center gap-1">
+          <span className="w-1 h-1 rounded-full bg-amber-400 inline-block" />
+          <span className="text-white/50 text-[9px]">bali-interns.com/blog</span>
+        </div>
+      </div>
     </div>
   )
 }
@@ -305,13 +317,15 @@ export default function BlogManagerPage() {
                       <BlogCardPreview post={post} />
                       <div className="flex items-center justify-between">
                         <p className="text-[9px] text-zinc-400">Image OG utilisée pour les partages réseaux sociaux.</p>
-                        <a
-                          href={`/api/og/blog-card?title=${encodeURIComponent(post.title_en)}&category=${encodeURIComponent(post.category)}${post.cover_image_url ? `&bg=${encodeURIComponent(post.cover_image_url)}` : ""}`}
-                          target="_blank" rel="noopener noreferrer"
-                          className="text-[10px] text-amber-700 hover:underline no-underline shrink-0 ml-3"
-                        >
-                          → Ouvrir OG 1200×630 ↗
-                        </a>
+                        {post.cover_image_url && (
+                          <a
+                            href={post.cover_image_url}
+                            target="_blank" rel="noopener noreferrer"
+                            className="text-[10px] text-amber-700 hover:underline no-underline shrink-0 ml-3"
+                          >
+                            → Voir la cover ↗
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>
