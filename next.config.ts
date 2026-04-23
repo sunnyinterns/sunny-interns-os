@@ -30,5 +30,7 @@ export default withSentryConfig(
     project: 'sunny-interns-os',
     sourcemaps: { disable: true },
     disableLogger: true,
+    excludeServerRoutes: ['/api/og'],
+    tunnelRoute: undefined,
   }
 )
