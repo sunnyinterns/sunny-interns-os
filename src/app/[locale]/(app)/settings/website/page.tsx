@@ -9,7 +9,7 @@ import { useParams } from 'next/navigation'
 // Types
 interface Page { id: string; slug: string; title_en: string; title_fr: string | null; enabled: boolean; seo_title_en: string | null; seo_title_fr: string | null }
 interface Section { id: string; page_slug: string; section_type: string; display_order: number; enabled: boolean; config: Record<string, unknown>; }
-interface Translation { id: string; key: string; en: string; fr: string; es: string | null; de: string | null; pt: string | null; context: string | null }
+interface Translation { id: string; key: string; en: string; fr: string; context: string | null; [lang: string]: string | null }
 interface ContentItem { id: string; section_key: string; content_type: string; value: string; label: string | null; description: string | null }
 
 const SECTION_LABELS: Record<string, { icon: string; name: string; desc: string }> = {
@@ -34,6 +34,21 @@ const SECTION_LABELS: Record<string, { icon: string; name: string; desc: string 
   cta_final: { icon: '🎯', name: 'Final CTA', desc: 'Closing call to action' },
 }
 
+const LANGS = [
+  { code: 'en', flag: '🇬🇧', name: 'English' }, { code: 'fr', flag: '🇫🇷', name: 'French' },
+  { code: 'es', flag: '🇪🇸', name: 'Spanish' }, { code: 'de', flag: '🇩🇪', name: 'German' },
+  { code: 'pt', flag: '🇵🇹', name: 'Portuguese' }, { code: 'it', flag: '🇮🇹', name: 'Italian' },
+  { code: 'nl', flag: '🇳🇱', name: 'Dutch' }, { code: 'pl', flag: '🇵🇱', name: 'Polish' },
+  { code: 'sv', flag: '🇸🇪', name: 'Swedish' }, { code: 'da', flag: '🇩🇰', name: 'Danish' },
+  { code: 'ro', flag: '🇷🇴', name: 'Romanian' }, { code: 'cs', flag: '🇨🇿', name: 'Czech' },
+  { code: 'hu', flag: '🇭🇺', name: 'Hungarian' }, { code: 'el', flag: '🇬🇷', name: 'Greek' },
+  { code: 'bg', flag: '🇧🇬', name: 'Bulgarian' }, { code: 'hr', flag: '🇭🇷', name: 'Croatian' },
+  { code: 'sk', flag: '🇸🇰', name: 'Slovak' }, { code: 'fi', flag: '🇫🇮', name: 'Finnish' },
+  { code: 'no', flag: '🇳🇴', name: 'Norwegian' }, { code: 'lt', flag: '🇱🇹', name: 'Lithuanian' },
+  { code: 'lv', flag: '🇱🇻', name: 'Latvian' }, { code: 'et', flag: '🇪🇪', name: 'Estonian' },
+  { code: 'sl', flag: '🇸🇮', name: 'Slovenian' },
+]
+
 const AVAILABLE_BLOCKS = Object.keys(SECTION_LABELS)
 
 type Tab = 'sections' | 'pages' | 'translations' | 'media'
@@ -49,6 +64,7 @@ export default function WebsiteCMSPage() {
   const [media, setMedia] = useState<ContentItem[]>([])
   const [selectedPage, setSelectedPage] = useState('/')
   const [loading, setLoading] = useState(true)
+  const [activeLangs, setActiveLangs] = useState<Set<string>>(new Set(['en', 'fr', 'es', 'de', 'it']))
   const [saving, setSaving] = useState<string | null>(null)
   const [saved, setSaved] = useState<string | null>(null)
 
@@ -139,6 +155,9 @@ export default function WebsiteCMSPage() {
     { key: 'translations', icon: '🌍', label: 'Translations' },
     { key: 'media', icon: '📁', label: 'Media & Assets' },
   ]
+
+  const visibleLangs = LANGS.filter(l => activeLangs.has(l.code))
+  const toggleLang = (code: string) => setActiveLangs(prev => { const n = new Set(prev); if (n.has(code)) n.delete(code); else n.add(code); return n })
 
   const sortedSections = [...sections].sort((a, b) => a.display_order - b.display_order)
   const usedTypes = new Set(sections.map(s => s.section_type))
@@ -260,33 +279,38 @@ export default function WebsiteCMSPage() {
       {/* ==================== TRANSLATIONS TAB ==================== */}
       {tab === 'translations' && (
         <div className="space-y-4">
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">
-            💡 Edit translations inline. Changes reflect on the website within 60 seconds. To add a new language, contact the dev team to add a column.
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700 mb-3">
+            💡 23 European languages available. Toggle which ones to display. Edit inline — saves on blur.
+          </div>
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            {LANGS.map(l => (
+              <button key={l.code} onClick={() => toggleLang(l.code)}
+                className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${activeLangs.has(l.code) ? 'bg-[#c8a96e] text-white border-[#c8a96e]' : 'bg-white text-zinc-400 border-zinc-200 hover:border-[#c8a96e]'}`}>
+                {l.flag} {l.code.toUpperCase()}
+              </button>
+            ))}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-zinc-100">
-                  <th className="text-left py-2 px-2 text-[10px] font-bold text-zinc-400 uppercase tracking-wider w-[200px]">Key</th>
-                  <th className="text-left py-2 px-2 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">🇬🇧 English</th>
-                  <th className="text-left py-2 px-2 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">🇫🇷 French</th>
-                  <th className="text-left py-2 px-2 text-[10px] font-bold text-zinc-400 uppercase tracking-wider w-[120px]">Context</th>
+                  <th className="text-left py-2 px-2 text-[10px] font-bold text-zinc-400 uppercase tracking-wider w-[160px] sticky left-0 bg-white z-10">Key</th>
+                  {visibleLangs.map(l => (
+                    <th key={l.code} className="text-left py-2 px-2 text-[10px] font-bold text-zinc-400 uppercase tracking-wider min-w-[180px]">{l.flag} {l.name}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {translations.map(t => (
                   <tr key={t.id} className="border-b border-zinc-50 hover:bg-zinc-50/50">
-                    <td className="py-1.5 px-2 font-mono text-[10px] text-zinc-400 align-top">{t.key}</td>
-                    <td className="py-1.5 px-2 align-top">
-                      <input defaultValue={t.en} onBlur={e => { if (e.target.value !== t.en) saveTranslation(t, 'en', e.target.value) }}
-                        className="w-full text-xs border border-transparent hover:border-zinc-200 focus:border-[#c8a96e] rounded-lg px-2 py-1 focus:outline-none bg-transparent" />
-                    </td>
-                    <td className="py-1.5 px-2 align-top">
-                      <input defaultValue={t.fr} onBlur={e => { if (e.target.value !== t.fr) saveTranslation(t, 'fr', e.target.value) }}
-                        className="w-full text-xs border border-transparent hover:border-zinc-200 focus:border-[#c8a96e] rounded-lg px-2 py-1 focus:outline-none bg-transparent" />
-                    </td>
-                    <td className="py-1.5 px-2 text-[10px] text-zinc-300 align-top">{t.context}</td>
-                    {saved === t.id && <td className="text-green-600 font-bold">✓</td>}
+                    <td className="py-1.5 px-2 font-mono text-[10px] text-zinc-400 align-top sticky left-0 bg-white z-10">{t.key}</td>
+                    {visibleLangs.map(l => (
+                      <td key={l.code} className="py-1.5 px-2 align-top">
+                        <input defaultValue={(t as Record<string, string>)[l.code] || ''} onBlur={e => { if (e.target.value !== (t as Record<string, string>)[l.code]) saveTranslation(t, l.code, e.target.value) }}
+                          className="w-full text-xs border border-transparent hover:border-zinc-200 focus:border-[#c8a96e] rounded-lg px-2 py-1 focus:outline-none bg-transparent" />
+                      </td>
+                    ))}
+                    {saved === t.id && <td className="text-green-600 font-bold text-[10px]">✓</td>}
                   </tr>
                 ))}
               </tbody>
