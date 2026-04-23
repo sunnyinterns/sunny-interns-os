@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     title: string; category: string; slug: string; post_id?: string; prompt?: string
   }
 
-  const geminiKey = process.env.GEMINI_API_KEY
+  const geminiKey = (process.env.GOOGLE_AI_STUDIO_KEY ?? process.env.GEMINI_API_KEY ?? '').trim()
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://sunny-interns-os.vercel.app'
   const fallbackUrl = `${baseUrl}/api/og/blog-card?title=${encodeURIComponent(title)}&category=${encodeURIComponent(category)}`
 
@@ -37,13 +37,13 @@ export async function POST(req: Request) {
 
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=${geminiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseModalities: ['IMAGE', 'TEXT'] },
+          generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
         }),
       }
     )
