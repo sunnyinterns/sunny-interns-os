@@ -45,9 +45,9 @@ function BlogCardPreview({ post }: { post: BlogPost }) {
       <div className="absolute inset-0" style={{background: 'linear-gradient(to top, rgba(26,25,24,0.95) 38%, rgba(26,25,24,0.4) 68%, rgba(0,0,0,0.1) 100%)'}} />
       {/* Top: logo + category */}
       <div className="absolute top-3 left-3 right-3 flex items-center gap-2">
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/18">
-          <span className="text-xs">🌴</span>
-          <span className="text-white text-[11px] font-bold">Bali Interns</span>
+        <div className="flex items-center px-3 py-1.5 rounded-full bg-white/10 border border-white/18">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="https://djoqjgiyseobotsjqcgz.supabase.co/storage/v1/object/public/brand-assets/logos/logo_landscape_white.png" alt="Bali Interns" className="h-4 w-auto" style={{filter:'brightness(0) invert(1)'}} />
         </div>
         <div className="ml-auto px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/40">
           <span className="text-amber-300 text-[9px] font-bold uppercase tracking-wider">{category}</span>

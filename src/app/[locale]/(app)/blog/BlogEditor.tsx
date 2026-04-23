@@ -495,9 +495,9 @@ export function BlogEditor({ locale, initial }: { locale: string; initial?: Blog
                   <div className="absolute inset-0" style={{background: 'linear-gradient(to top, rgba(26,25,24,0.95) 40%, rgba(26,25,24,0.3) 100%)'}} />
                   {/* Top bar */}
                   <div className="absolute top-4 left-4 right-4 flex items-center gap-3">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/20 bg-white/10">
-                      <span className="text-xs">🌴</span>
-                      <span className="text-white text-xs font-bold">Bali Interns</span>
+                    <div className="flex items-center px-3 py-1.5 rounded-full border border-white/20 bg-white/10">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="https://djoqjgiyseobotsjqcgz.supabase.co/storage/v1/object/public/brand-assets/logos/logo_landscape_white.png" alt="Bali Interns" style={{height:16, width:'auto', filter:'brightness(0) invert(1)'}} />
                     </div>
                     <div className="ml-auto px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/40">
                       <span className="text-amber-300 text-[10px] font-bold uppercase tracking-wider">{form.category ?? 'blog'}</span>
