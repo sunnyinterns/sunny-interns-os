@@ -154,35 +154,125 @@ export default function BlogManagerPage() {
     setGenerating(null)
   }
 
-  function startEdit(post: BlogPost) {
-    setEditing(post.id)
+  function startEdit(p: BlogPost) {
+    setEditing(p.id)
     setEditData({
-      title_en: post.title_en, title_fr: post.title_fr,
-      title_es: (post as Record<string,unknown>).title_es as string ?? '',
-      title_de: (post as Record<string,unknown>).title_de as string ?? '',
-      title_pt: (post as Record<string,unknown>).title_pt as string ?? '',
-      title_it: (post as Record<string,unknown>).title_it as string ?? '',
-      excerpt_en: post.excerpt_en, excerpt_fr: post.excerpt_fr,
-      excerpt_es: (post as Record<string,unknown>).excerpt_es as string ?? '',
-      excerpt_de: (post as Record<string,unknown>).excerpt_de as string ?? '',
-      excerpt_pt: (post as Record<string,unknown>).excerpt_pt as string ?? '',
-      excerpt_it: (post as Record<string,unknown>).excerpt_it as string ?? '',
-      body_en: post.body_en, body_fr: post.body_fr,
-      body_es: (post as Record<string,unknown>).body_es as string ?? '',
-      body_de: (post as Record<string,unknown>).body_de as string ?? '',
-      body_pt: (post as Record<string,unknown>).body_pt as string ?? '',
-      body_it: (post as Record<string,unknown>).body_it as string ?? '',
-      seo_title_en: post.seo_title_en, seo_title_fr: post.seo_title_fr,
-      seo_title_es: (post as Record<string,unknown>).seo_title_es as string ?? '',
-      seo_title_de: (post as Record<string,unknown>).seo_title_de as string ?? '',
-      seo_title_pt: (post as Record<string,unknown>).seo_title_pt as string ?? '',
-      seo_title_it: (post as Record<string,unknown>).seo_title_it as string ?? '',
-      seo_desc_en: post.seo_desc_en, seo_desc_fr: post.seo_desc_fr,
-      seo_desc_es: (post as Record<string,unknown>).seo_desc_es as string ?? '',
-      seo_desc_de: (post as Record<string,unknown>).seo_desc_de as string ?? '',
-      seo_desc_pt: (post as Record<string,unknown>).seo_desc_pt as string ?? '',
-      seo_desc_it: (post as Record<string,unknown>).seo_desc_it as string ?? '',
-      category: post.category, cover_image_url: post.cover_image_url,
+      title_en: (p as Record<string,unknown>).title_en as string ?? '',
+      title_fr: (p as Record<string,unknown>).title_fr as string ?? '',
+      title_es: (p as Record<string,unknown>).title_es as string ?? '',
+      title_de: (p as Record<string,unknown>).title_de as string ?? '',
+      title_pt: (p as Record<string,unknown>).title_pt as string ?? '',
+      title_it: (p as Record<string,unknown>).title_it as string ?? '',
+      title_nl: (p as Record<string,unknown>).title_nl as string ?? '',
+      title_pl: (p as Record<string,unknown>).title_pl as string ?? '',
+      title_sv: (p as Record<string,unknown>).title_sv as string ?? '',
+      title_da: (p as Record<string,unknown>).title_da as string ?? '',
+      title_ro: (p as Record<string,unknown>).title_ro as string ?? '',
+      title_cs: (p as Record<string,unknown>).title_cs as string ?? '',
+      title_hu: (p as Record<string,unknown>).title_hu as string ?? '',
+      title_el: (p as Record<string,unknown>).title_el as string ?? '',
+      title_bg: (p as Record<string,unknown>).title_bg as string ?? '',
+      title_hr: (p as Record<string,unknown>).title_hr as string ?? '',
+      title_sk: (p as Record<string,unknown>).title_sk as string ?? '',
+      title_fi: (p as Record<string,unknown>).title_fi as string ?? '',
+      title_no: (p as Record<string,unknown>).title_no as string ?? '',
+      title_lt: (p as Record<string,unknown>).title_lt as string ?? '',
+      title_lv: (p as Record<string,unknown>).title_lv as string ?? '',
+      title_et: (p as Record<string,unknown>).title_et as string ?? '',
+      title_sl: (p as Record<string,unknown>).title_sl as string ?? '',
+      excerpt_en: (p as Record<string,unknown>).excerpt_en as string ?? '',
+      excerpt_fr: (p as Record<string,unknown>).excerpt_fr as string ?? '',
+      excerpt_es: (p as Record<string,unknown>).excerpt_es as string ?? '',
+      excerpt_de: (p as Record<string,unknown>).excerpt_de as string ?? '',
+      excerpt_pt: (p as Record<string,unknown>).excerpt_pt as string ?? '',
+      excerpt_it: (p as Record<string,unknown>).excerpt_it as string ?? '',
+      excerpt_nl: (p as Record<string,unknown>).excerpt_nl as string ?? '',
+      excerpt_pl: (p as Record<string,unknown>).excerpt_pl as string ?? '',
+      excerpt_sv: (p as Record<string,unknown>).excerpt_sv as string ?? '',
+      excerpt_da: (p as Record<string,unknown>).excerpt_da as string ?? '',
+      excerpt_ro: (p as Record<string,unknown>).excerpt_ro as string ?? '',
+      excerpt_cs: (p as Record<string,unknown>).excerpt_cs as string ?? '',
+      excerpt_hu: (p as Record<string,unknown>).excerpt_hu as string ?? '',
+      excerpt_el: (p as Record<string,unknown>).excerpt_el as string ?? '',
+      excerpt_bg: (p as Record<string,unknown>).excerpt_bg as string ?? '',
+      excerpt_hr: (p as Record<string,unknown>).excerpt_hr as string ?? '',
+      excerpt_sk: (p as Record<string,unknown>).excerpt_sk as string ?? '',
+      excerpt_fi: (p as Record<string,unknown>).excerpt_fi as string ?? '',
+      excerpt_no: (p as Record<string,unknown>).excerpt_no as string ?? '',
+      excerpt_lt: (p as Record<string,unknown>).excerpt_lt as string ?? '',
+      excerpt_lv: (p as Record<string,unknown>).excerpt_lv as string ?? '',
+      excerpt_et: (p as Record<string,unknown>).excerpt_et as string ?? '',
+      excerpt_sl: (p as Record<string,unknown>).excerpt_sl as string ?? '',
+      body_en: (p as Record<string,unknown>).body_en as string ?? '',
+      body_fr: (p as Record<string,unknown>).body_fr as string ?? '',
+      body_es: (p as Record<string,unknown>).body_es as string ?? '',
+      body_de: (p as Record<string,unknown>).body_de as string ?? '',
+      body_pt: (p as Record<string,unknown>).body_pt as string ?? '',
+      body_it: (p as Record<string,unknown>).body_it as string ?? '',
+      body_nl: (p as Record<string,unknown>).body_nl as string ?? '',
+      body_pl: (p as Record<string,unknown>).body_pl as string ?? '',
+      body_sv: (p as Record<string,unknown>).body_sv as string ?? '',
+      body_da: (p as Record<string,unknown>).body_da as string ?? '',
+      body_ro: (p as Record<string,unknown>).body_ro as string ?? '',
+      body_cs: (p as Record<string,unknown>).body_cs as string ?? '',
+      body_hu: (p as Record<string,unknown>).body_hu as string ?? '',
+      body_el: (p as Record<string,unknown>).body_el as string ?? '',
+      body_bg: (p as Record<string,unknown>).body_bg as string ?? '',
+      body_hr: (p as Record<string,unknown>).body_hr as string ?? '',
+      body_sk: (p as Record<string,unknown>).body_sk as string ?? '',
+      body_fi: (p as Record<string,unknown>).body_fi as string ?? '',
+      body_no: (p as Record<string,unknown>).body_no as string ?? '',
+      body_lt: (p as Record<string,unknown>).body_lt as string ?? '',
+      body_lv: (p as Record<string,unknown>).body_lv as string ?? '',
+      body_et: (p as Record<string,unknown>).body_et as string ?? '',
+      body_sl: (p as Record<string,unknown>).body_sl as string ?? '',
+      seo_title_en: (p as Record<string,unknown>).seo_title_en as string ?? '',
+      seo_title_fr: (p as Record<string,unknown>).seo_title_fr as string ?? '',
+      seo_title_es: (p as Record<string,unknown>).seo_title_es as string ?? '',
+      seo_title_de: (p as Record<string,unknown>).seo_title_de as string ?? '',
+      seo_title_pt: (p as Record<string,unknown>).seo_title_pt as string ?? '',
+      seo_title_it: (p as Record<string,unknown>).seo_title_it as string ?? '',
+      seo_title_nl: (p as Record<string,unknown>).seo_title_nl as string ?? '',
+      seo_title_pl: (p as Record<string,unknown>).seo_title_pl as string ?? '',
+      seo_title_sv: (p as Record<string,unknown>).seo_title_sv as string ?? '',
+      seo_title_da: (p as Record<string,unknown>).seo_title_da as string ?? '',
+      seo_title_ro: (p as Record<string,unknown>).seo_title_ro as string ?? '',
+      seo_title_cs: (p as Record<string,unknown>).seo_title_cs as string ?? '',
+      seo_title_hu: (p as Record<string,unknown>).seo_title_hu as string ?? '',
+      seo_title_el: (p as Record<string,unknown>).seo_title_el as string ?? '',
+      seo_title_bg: (p as Record<string,unknown>).seo_title_bg as string ?? '',
+      seo_title_hr: (p as Record<string,unknown>).seo_title_hr as string ?? '',
+      seo_title_sk: (p as Record<string,unknown>).seo_title_sk as string ?? '',
+      seo_title_fi: (p as Record<string,unknown>).seo_title_fi as string ?? '',
+      seo_title_no: (p as Record<string,unknown>).seo_title_no as string ?? '',
+      seo_title_lt: (p as Record<string,unknown>).seo_title_lt as string ?? '',
+      seo_title_lv: (p as Record<string,unknown>).seo_title_lv as string ?? '',
+      seo_title_et: (p as Record<string,unknown>).seo_title_et as string ?? '',
+      seo_title_sl: (p as Record<string,unknown>).seo_title_sl as string ?? '',
+      seo_desc_en: (p as Record<string,unknown>).seo_desc_en as string ?? '',
+      seo_desc_fr: (p as Record<string,unknown>).seo_desc_fr as string ?? '',
+      seo_desc_es: (p as Record<string,unknown>).seo_desc_es as string ?? '',
+      seo_desc_de: (p as Record<string,unknown>).seo_desc_de as string ?? '',
+      seo_desc_pt: (p as Record<string,unknown>).seo_desc_pt as string ?? '',
+      seo_desc_it: (p as Record<string,unknown>).seo_desc_it as string ?? '',
+      seo_desc_nl: (p as Record<string,unknown>).seo_desc_nl as string ?? '',
+      seo_desc_pl: (p as Record<string,unknown>).seo_desc_pl as string ?? '',
+      seo_desc_sv: (p as Record<string,unknown>).seo_desc_sv as string ?? '',
+      seo_desc_da: (p as Record<string,unknown>).seo_desc_da as string ?? '',
+      seo_desc_ro: (p as Record<string,unknown>).seo_desc_ro as string ?? '',
+      seo_desc_cs: (p as Record<string,unknown>).seo_desc_cs as string ?? '',
+      seo_desc_hu: (p as Record<string,unknown>).seo_desc_hu as string ?? '',
+      seo_desc_el: (p as Record<string,unknown>).seo_desc_el as string ?? '',
+      seo_desc_bg: (p as Record<string,unknown>).seo_desc_bg as string ?? '',
+      seo_desc_hr: (p as Record<string,unknown>).seo_desc_hr as string ?? '',
+      seo_desc_sk: (p as Record<string,unknown>).seo_desc_sk as string ?? '',
+      seo_desc_fi: (p as Record<string,unknown>).seo_desc_fi as string ?? '',
+      seo_desc_no: (p as Record<string,unknown>).seo_desc_no as string ?? '',
+      seo_desc_lt: (p as Record<string,unknown>).seo_desc_lt as string ?? '',
+      seo_desc_lv: (p as Record<string,unknown>).seo_desc_lv as string ?? '',
+      seo_desc_et: (p as Record<string,unknown>).seo_desc_et as string ?? '',
+      seo_desc_sl: (p as Record<string,unknown>).seo_desc_sl as string ?? '',
+      category: p.category, cover_image_url: p.cover_image_url,
     })
     setEditLang('en')
   }
@@ -203,16 +293,10 @@ export default function BlogManagerPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'raw_prompt',
-          prompt: `You are a professional translator. Translate this blog article content from English to French, Spanish, German, Portuguese (European), and Italian.
+          prompt: `You are a professional translator. Translate this blog article content from English to all these languages: French (fr), Spanish (es), German (de), Portuguese European (pt), Italian (it), Dutch (nl), Polish (pl), Swedish (sv), Danish (da), Romanian (ro), Czech (cs), Hungarian (hu), Greek (el), Bulgarian (bg), Croatian (hr), Slovak (sk), Finnish (fi), Norwegian (no), Lithuanian (lt), Latvian (lv), Estonian (et), Slovenian (sl).
 
-Return ONLY a JSON object with this structure (no markdown, no preamble):
-{
-  "fr": { "title": "", "excerpt": "", "seo_title": "", "seo_desc": "", "body": "" },
-  "es": { "title": "", "excerpt": "", "seo_title": "", "seo_desc": "", "body": "" },
-  "de": { "title": "", "excerpt": "", "seo_title": "", "seo_desc": "", "body": "" },
-  "pt": { "title": "", "excerpt": "", "seo_title": "", "seo_desc": "", "body": "" },
-  "it": { "title": "", "excerpt": "", "seo_title": "", "seo_desc": "", "body": "" }
-}
+Return ONLY a valid JSON object with ISO language codes as keys (fr, es, de, pt, it, nl, pl, sv, da, ro, cs, hu, el, bg, hr, sk, fi, no, lt, lv, et, sl). No markdown, no preamble, no trailing commas.
+Each language has: { "title": "", "excerpt": "", "seo_title": "", "seo_desc": "", "body": "" }
 
 CONTENT TO TRANSLATE:
 Title: ${src_title}
@@ -320,7 +404,7 @@ Body (HTML/Markdown): ${(src_body || '').slice(0, 3000)}`
                 {/* Language tabs + AI translate */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <div className="flex gap-1 bg-zinc-100 p-0.5 rounded-xl">
-                    {LANGS.filter(l => ['en', 'fr', 'es', 'de', 'pt', 'it'].includes(l.code)).map(l => (
+                    {LANGS.map(l => (
                       <button key={l.code} onClick={() => setEditLang(l.code)}
                         className={`text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-all border-none cursor-pointer ${editLang === l.code ? 'bg-white text-[#1a1918] shadow-sm' : 'bg-transparent text-zinc-400'}`}>
                         {l.flag} {l.name}
@@ -333,7 +417,7 @@ Body (HTML/Markdown): ${(src_body || '').slice(0, 3000)}`
                     className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 disabled:opacity-50 transition-colors cursor-pointer"
                     title="Traduit EN → FR/ES/DE/PT/IT avec Claude IA"
                   >
-                    {translating ? '⏳ Traduction…' : '🌐 Traduire FR/ES/DE/PT/IT'}
+                    {translating ? '⏳ Traduction…' : '🌐 Traduire toutes les langues (22)'}
                   </button>
                 </div>
 
