@@ -1,267 +1,331 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import Link from 'next/link'
+import { useParams } from 'next/navigation'
 
-interface ContentItem {
-  id: string
-  section_key: string
-  content_type: 'text' | 'image' | 'video' | 'url' | 'json'
-  value: string
-  locale: string
-  label: string | null
-  description: string | null
-  updated_at: string
-  updated_by: string | null
+// Types
+interface Page { id: string; slug: string; title_en: string; title_fr: string | null; enabled: boolean; seo_title_en: string | null; seo_title_fr: string | null }
+interface Section { id: string; page_slug: string; section_type: string; display_order: number; enabled: boolean; config: Record<string, unknown>; }
+interface Translation { id: string; key: string; en: string; fr: string; es: string | null; de: string | null; pt: string | null; context: string | null }
+interface ContentItem { id: string; section_key: string; content_type: string; value: string; label: string | null; description: string | null }
+
+const SECTION_LABELS: Record<string, { icon: string; name: string; desc: string }> = {
+  hero: { icon: '🏔️', name: 'Hero', desc: 'Video/photo background + headline + CTA' },
+  trust: { icon: '🛡️', name: 'Trust', desc: 'Proof cards + school logos carousel' },
+  stats_bar: { icon: '📊', name: 'Stats Bar', desc: 'Animated counters (370, 54, 22...)' },
+  top_roles: { icon: '📣', name: 'Top Roles', desc: 'Marketing / Communication / Business Dev' },
+  employer_types: { icon: '🏢', name: 'Employer Types', desc: '6 industry categories' },
+  process: { icon: '🚀', name: 'Process', desc: '4 steps: Apply → Call → Agreement → Arrive' },
+  gallery: { icon: '🖼️', name: 'Bali Gallery', desc: '6 photos linked to blog articles' },
+  testimonials: { icon: '💬', name: 'Testimonials', desc: 'Rotating quote carousel' },
+  video_testimonials: { icon: '🎬', name: 'Video Testimonials', desc: '3 video cards' },
+  simulator_teaser: { icon: '🧭', name: 'Simulator Teaser', desc: 'Dark CTA section → simulator' },
+  sectors: { icon: '🏭', name: 'Industry Sectors', desc: '8 sectors with company counts' },
+  schools: { icon: '🎓', name: 'Schools', desc: 'Schools represented with intern counts' },
+  nationalities: { icon: '🌍', name: 'Nationalities', desc: '20 flags + counts' },
+  success_callout: { icon: '🏆', name: 'Success Callout', desc: 'Dark banner → success stories' },
+  pricing: { icon: '💰', name: 'Pricing', desc: '€990 spotlight card' },
+  faq_teaser: { icon: '❓', name: 'FAQ Teaser', desc: '6 inline questions' },
+  blog_featured: { icon: '📝', name: 'Blog Featured', desc: '3 latest blog posts' },
+  newsletter: { icon: '📧', name: 'Newsletter', desc: 'Email capture form' },
+  cta_final: { icon: '🎯', name: 'Final CTA', desc: 'Closing call to action' },
 }
+
+const AVAILABLE_BLOCKS = Object.keys(SECTION_LABELS)
+
+type Tab = 'sections' | 'pages' | 'translations' | 'media'
 
 export default function WebsiteCMSPage() {
   const router = useRouter()
-  const [items, setItems] = useState<ContentItem[]>([])
+  const params = useParams()
+  const locale = typeof params?.locale === 'string' ? params.locale : 'fr'
+  const [tab, setTab] = useState<Tab>('sections')
+  const [pages, setPages] = useState<Page[]>([])
+  const [sections, setSections] = useState<Section[]>([])
+  const [translations, setTranslations] = useState<Translation[]>([])
+  const [media, setMedia] = useState<ContentItem[]>([])
+  const [selectedPage, setSelectedPage] = useState('/')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<string | null>(null)
   const [saved, setSaved] = useState<string | null>(null)
-  const [editValues, setEditValues] = useState<Record<string, string>>({})
-  const [uploading, setUploading] = useState<string | null>(null)
-  const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
-  useEffect(() => {
-    fetchItems()
-  }, [])
-
-  async function fetchItems() {
-    const res = await fetch('/api/website-content')
-    if (res.status === 401) { router.push('/auth/login'); return }
-    if (res.ok) {
-      const data = (await res.json()) as ContentItem[]
-      setItems(data)
-      const vals: Record<string, string> = {}
-      data.forEach(item => { vals[item.section_key] = item.value })
-      setEditValues(vals)
-    }
+  const fetchAll = useCallback(async () => {
+    const [pRes, sRes, tRes, mRes] = await Promise.all([
+      fetch('/api/website-pages'),
+      fetch(`/api/website-sections?page=${encodeURIComponent(selectedPage)}`),
+      fetch('/api/website-translations'),
+      fetch('/api/website-content'),
+    ])
+    if (pRes.status === 401) { router.push('/auth/login'); return }
+    setPages(pRes.ok ? await pRes.json() : [])
+    setSections(sRes.ok ? await sRes.json() : [])
+    setTranslations(tRes.ok ? await tRes.json() : [])
+    setMedia(mRes.ok ? await mRes.json() : [])
     setLoading(false)
+  }, [selectedPage, router])
+
+  useEffect(() => { fetchAll() }, [fetchAll])
+
+  function flash(id: string) { setSaved(id); setTimeout(() => setSaved(null), 2000) }
+
+  async function toggleSection(s: Section) {
+    setSaving(s.id)
+    await fetch('/api/website-sections', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id, enabled: !s.enabled }) })
+    flash(s.id); setSaving(null); fetchAll()
   }
 
-  async function saveItem(key: string) {
+  async function moveSection(s: Section, dir: -1 | 1) {
+    const sorted = [...sections].sort((a, b) => a.display_order - b.display_order)
+    const idx = sorted.findIndex(x => x.id === s.id)
+    const swapIdx = idx + dir
+    if (swapIdx < 0 || swapIdx >= sorted.length) return
+    const other = sorted[swapIdx]
+    await Promise.all([
+      fetch('/api/website-sections', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id, display_order: other.display_order }) }),
+      fetch('/api/website-sections', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: other.id, display_order: s.display_order }) }),
+    ])
+    fetchAll()
+  }
+
+  async function addBlock(type: string) {
+    const maxOrder = sections.reduce((m, s) => Math.max(m, s.display_order), 0)
+    await fetch('/api/website-sections', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page_slug: selectedPage, section_type: type, display_order: maxOrder + 1, enabled: true, config: {} }) })
+    fetchAll()
+  }
+
+  async function removeSection(s: Section) {
+    if (!confirm(`Remove "${SECTION_LABELS[s.section_type]?.name || s.section_type}" from this page?`)) return
+    await fetch('/api/website-sections', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id }) })
+    fetchAll()
+  }
+
+  async function togglePage(p: Page) {
+    await fetch('/api/website-pages', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: p.id, enabled: !p.enabled }) })
+    flash(p.id); fetchAll()
+  }
+
+  async function saveTranslation(t: Translation, field: string, value: string) {
+    setSaving(t.id)
+    await fetch('/api/website-translations', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: t.id, [field]: value }) })
+    flash(t.id); setSaving(null); fetchAll()
+  }
+
+  async function saveMedia(key: string, value: string) {
     setSaving(key)
-    const res = await fetch('/api/website-content', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ section_key: key, value: editValues[key] ?? '' }),
-    })
-    if (res.ok) {
-      setSaved(key)
-      setTimeout(() => setSaved(null), 2000)
-      fetchItems()
-    }
-    setSaving(null)
+    await fetch('/api/website-content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ section_key: key, value }) })
+    flash(key); setSaving(null); fetchAll()
   }
 
-  async function uploadFile(key: string, file: File) {
-    setUploading(key)
-    try {
-      const supabase = createClient()
-      const ext = file.name.split('.').pop()
-      const fileName = `${key}-${Date.now()}.${ext}`
-      const { error: uploadError } = await supabase.storage
-        .from('website-assets')
-        .upload(fileName, file, { cacheControl: '3600', upsert: true })
-      if (uploadError) throw uploadError
-
-      const { data: urlData } = supabase.storage
-        .from('website-assets')
-        .getPublicUrl(fileName)
-
-      const publicUrl = urlData.publicUrl
-      setEditValues(prev => ({ ...prev, [key]: publicUrl }))
-
-      // Save to DB
-      await fetch('/api/website-content', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ section_key: key, value: publicUrl }),
-      })
-      setSaved(key)
-      setTimeout(() => setSaved(null), 2000)
-      fetchItems()
-    } catch (err) {
-      console.error('Upload failed:', err)
-      alert('Upload failed — check console for details')
-    }
-    setUploading(null)
+  async function uploadMediaFile(key: string, file: File) {
+    setSaving(key)
+    const supabase = createClient()
+    const ext = file.name.split('.').pop()
+    const fileName = `${key.replace(/[^a-z0-9]/g, '-')}-${Date.now()}.${ext}`
+    const { error } = await supabase.storage.from('website-assets').upload(fileName, file, { upsert: true })
+    if (error) { alert('Upload failed: ' + error.message); setSaving(null); return }
+    const { data: urlData } = supabase.storage.from('website-assets').getPublicUrl(fileName)
+    await fetch('/api/website-content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ section_key: key, value: urlData.publicUrl }) })
+    flash(key); setSaving(null); fetchAll()
   }
 
-  async function addItem() {
-    const key = prompt('Section key (e.g. gallery_image_1, about_text_fr):')
-    if (!key) return
-    const type = prompt('Content type (text / image / video):') as ContentItem['content_type']
-    if (!type || !['text', 'image', 'video', 'url', 'json'].includes(type)) return
-    const label = prompt('Label (human-readable name):') || key
+  if (loading) return <div className="max-w-4xl mx-auto px-4 py-12 text-center text-zinc-400">Loading CMS...</div>
 
-    await fetch('/api/website-content', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ section_key: key, content_type: type, value: '', label }),
-    })
-    fetchItems()
-  }
+  const TABS: { key: Tab; icon: string; label: string }[] = [
+    { key: 'sections', icon: '🧱', label: 'Sections' },
+    { key: 'pages', icon: '📄', label: 'Pages' },
+    { key: 'translations', icon: '🌍', label: 'Translations' },
+    { key: 'media', icon: '📁', label: 'Media & Assets' },
+  ]
 
-  if (loading) return <div className="max-w-3xl mx-auto px-4 py-12 text-center text-zinc-400">Loading...</div>
-
-  const grouped: Record<string, ContentItem[]> = {}
-  items.forEach(item => {
-    const group = item.section_key.split('_')[0] // hero, gallery, about, etc.
-    if (!grouped[group]) grouped[group] = []
-    grouped[group].push(item)
-  })
+  const sortedSections = [...sections].sort((a, b) => a.display_order - b.display_order)
+  const usedTypes = new Set(sections.map(s => s.section_type))
+  const availableToAdd = AVAILABLE_BLOCKS.filter(t => !usedTypes.has(t))
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[#1a1918]">Website CMS</h1>
-          <p className="text-sm text-zinc-500 mt-1">Manage content on bali-interns.com — images, videos, text</p>
+          <p className="text-sm text-zinc-500 mt-1">Full control over bali-interns.com</p>
         </div>
-        <button onClick={addItem} className="text-sm font-bold bg-[#c8a96e] text-white px-4 py-2 rounded-xl hover:bg-[#b8994e] transition-colors">
-          + Add content
-        </button>
+        <div className="flex gap-2">
+          <Link href={`/${locale}/settings/website/blog`} className="text-xs font-bold border border-zinc-200 text-zinc-600 px-4 py-2 rounded-xl hover:border-[#c8a96e] transition-colors no-underline">📝 Blog</Link>
+          <a href="https://bali-interns-website.vercel.app" target="_blank" rel="noopener" className="text-xs font-bold bg-[#c8a96e] text-white px-4 py-2 rounded-xl hover:bg-[#b8994e] transition-colors no-underline flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> Preview site
+          </a>
+        </div>
       </div>
 
-      {/* Live preview link */}
-      <a href="https://bali-interns-website.vercel.app" target="_blank" rel="noopener"
-        className="flex items-center gap-2 text-sm text-[#c8a96e] font-semibold hover:underline">
-        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-        Preview live site →
-      </a>
+      {/* Tabs */}
+      <div className="flex gap-1 bg-zinc-100 p-1 rounded-2xl">
+        {TABS.map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)}
+            className={`flex-1 text-xs font-bold py-2.5 rounded-xl transition-all border-none cursor-pointer ${tab === t.key ? 'bg-white text-[#1a1918] shadow-sm' : 'bg-transparent text-zinc-400 hover:text-zinc-600'}`}>
+            {t.icon} {t.label}
+          </button>
+        ))}
+      </div>
 
-      {Object.entries(grouped).map(([group, groupItems]) => (
-        <div key={group}>
-          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">
-            {group.charAt(0).toUpperCase() + group.slice(1)} section
-          </h2>
-          <div className="space-y-3">
-            {groupItems.map(item => (
-              <div key={item.section_key} className="bg-white border border-zinc-100 rounded-2xl p-4 hover:border-[#c8a96e]/30 transition-all">
-                <div className="flex items-start justify-between gap-4 mb-2">
-                  <div>
-                    <p className="text-sm font-bold text-[#1a1918]">{item.label || item.section_key}</p>
-                    <div className="flex gap-2 mt-0.5">
-                      <span className="text-[10px] font-mono bg-zinc-50 text-zinc-400 px-1.5 py-0.5 rounded">{item.section_key}</span>
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                        item.content_type === 'video' ? 'bg-purple-50 text-purple-600' :
-                        item.content_type === 'image' ? 'bg-blue-50 text-blue-600' :
-                        'bg-zinc-50 text-zinc-500'
-                      }`}>{item.content_type}</span>
-                      {item.locale !== 'all' && (
-                        <span className="text-[10px] font-bold bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded">{item.locale.toUpperCase()}</span>
-                      )}
-                    </div>
-                    {item.description && <p className="text-[11px] text-zinc-400 mt-1">{item.description}</p>}
-                  </div>
-                  <div className="flex gap-1.5 shrink-0">
-                    {saved === item.section_key && (
-                      <span className="text-xs text-green-600 font-bold">✓ Saved</span>
-                    )}
-                    <button
-                      onClick={() => saveItem(item.section_key)}
-                      disabled={saving === item.section_key || editValues[item.section_key] === item.value}
-                      className="text-xs font-bold bg-[#c8a96e] text-white px-3 py-1.5 rounded-lg disabled:opacity-30 hover:bg-[#b8994e] transition-colors"
-                    >
-                      {saving === item.section_key ? '...' : 'Save'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Content editor based on type */}
-                {item.content_type === 'text' && (
-                  <textarea
-                    value={editValues[item.section_key] ?? ''}
-                    onChange={e => setEditValues(prev => ({ ...prev, [item.section_key]: e.target.value }))}
-                    rows={2}
-                    className="w-full mt-2 text-sm border border-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-[#c8a96e] resize-y"
-                  />
-                )}
-
-                {(item.content_type === 'image' || item.content_type === 'video') && (
-                  <div className="mt-2 space-y-2">
-                    {/* URL input */}
-                    <input
-                      type="text"
-                      value={editValues[item.section_key] ?? ''}
-                      onChange={e => setEditValues(prev => ({ ...prev, [item.section_key]: e.target.value }))}
-                      placeholder="Paste URL or upload below..."
-                      className="w-full text-sm border border-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-[#c8a96e] font-mono text-xs"
-                    />
-
-                    {/* Upload button */}
-                    <div className="flex items-center gap-3">
-                      <input
-                        ref={el => { fileRefs.current[item.section_key] = el }}
-                        type="file"
-                        accept={item.content_type === 'video' ? 'video/mp4,video/webm' : 'image/*'}
-                        className="hidden"
-                        onChange={e => {
-                          const file = e.target.files?.[0]
-                          if (file) uploadFile(item.section_key, file)
-                        }}
-                      />
-                      <button
-                        onClick={() => fileRefs.current[item.section_key]?.click()}
-                        disabled={uploading === item.section_key}
-                        className="text-xs font-semibold border border-zinc-200 px-3 py-1.5 rounded-lg hover:border-[#c8a96e] transition-colors"
-                      >
-                        {uploading === item.section_key ? '⏳ Uploading...' : `📁 Upload ${item.content_type}`}
-                      </button>
-                      {editValues[item.section_key] && item.content_type === 'image' && (
-                        <img src={editValues[item.section_key]} alt="" className="h-12 rounded-lg border border-zinc-100 object-cover" />
-                      )}
-                      {editValues[item.section_key] && item.content_type === 'video' && (
-                        <video src={editValues[item.section_key]} className="h-16 rounded-lg border border-zinc-100" muted />
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {item.content_type === 'url' && (
-                  <input
-                    type="url"
-                    value={editValues[item.section_key] ?? ''}
-                    onChange={e => setEditValues(prev => ({ ...prev, [item.section_key]: e.target.value }))}
-                    className="w-full mt-2 text-sm border border-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-[#c8a96e] font-mono text-xs"
-                  />
-                )}
-
-                {/* Last updated */}
-                {item.updated_by && (
-                  <p className="text-[10px] text-zinc-300 mt-2">
-                    Last updated {new Date(item.updated_at).toLocaleDateString()} by {item.updated_by}
-                  </p>
-                )}
-              </div>
+      {/* ==================== SECTIONS TAB ==================== */}
+      {tab === 'sections' && (
+        <div className="space-y-4">
+          {/* Page selector */}
+          <div className="flex gap-2 flex-wrap">
+            {pages.filter(p => p.enabled).map(p => (
+              <button key={p.slug} onClick={() => setSelectedPage(p.slug)}
+                className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${selectedPage === p.slug ? 'bg-[#c8a96e] text-white border-[#c8a96e]' : 'bg-white text-zinc-500 border-zinc-200 hover:border-[#c8a96e]'}`}>
+                {p.title_en} <span className="text-[10px] opacity-60">{p.slug}</span>
+              </button>
             ))}
           </div>
-        </div>
-      ))}
 
-      {items.length === 0 && (
-        <div className="text-center py-12 text-zinc-400">
-          <p className="text-lg mb-2">No website content yet</p>
-          <p className="text-sm">Click &quot;+ Add content&quot; to create your first entry</p>
+          {/* Section list */}
+          <div className="space-y-2">
+            {sortedSections.map((s, i) => {
+              const meta = SECTION_LABELS[s.section_type] || { icon: '📦', name: s.section_type, desc: 'Custom block' }
+              return (
+                <div key={s.id} className={`bg-white border rounded-2xl p-4 flex items-center gap-4 transition-all ${s.enabled ? 'border-zinc-100' : 'border-zinc-100 opacity-50'}`}>
+                  {/* Order controls */}
+                  <div className="flex flex-col gap-0.5">
+                    <button onClick={() => moveSection(s, -1)} disabled={i === 0} className="text-[10px] w-6 h-5 rounded bg-zinc-100 hover:bg-zinc-200 disabled:opacity-20 border-none cursor-pointer">▲</button>
+                    <span className="text-[10px] text-zinc-300 text-center">{s.display_order}</span>
+                    <button onClick={() => moveSection(s, 1)} disabled={i === sortedSections.length - 1} className="text-[10px] w-6 h-5 rounded bg-zinc-100 hover:bg-zinc-200 disabled:opacity-20 border-none cursor-pointer">▼</button>
+                  </div>
+                  {/* Icon + info */}
+                  <span className="text-2xl">{meta.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-[#1a1918]">{meta.name}</p>
+                    <p className="text-[11px] text-zinc-400">{meta.desc}</p>
+                  </div>
+                  {/* Toggle */}
+                  <button onClick={() => toggleSection(s)}
+                    className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${s.enabled ? 'bg-green-50 text-green-700 border-green-200' : 'bg-zinc-50 text-zinc-400 border-zinc-200'}`}>
+                    {saving === s.id ? '...' : s.enabled ? '● ON' : '○ OFF'}
+                  </button>
+                  {/* Remove */}
+                  <button onClick={() => removeSection(s)} className="text-xs text-zinc-300 hover:text-red-500 border-none bg-transparent cursor-pointer transition-colors">✕</button>
+                  {saved === s.id && <span className="text-[10px] text-green-600 font-bold">✓</span>}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Add block */}
+          {availableToAdd.length > 0 && (
+            <div>
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">+ Add a section</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {availableToAdd.map(type => {
+                  const meta = SECTION_LABELS[type] || { icon: '📦', name: type, desc: '' }
+                  return (
+                    <button key={type} onClick={() => addBlock(type)}
+                      className="text-left bg-zinc-50 border border-dashed border-zinc-200 rounded-xl p-3 hover:border-[#c8a96e] hover:bg-amber-50/30 transition-all cursor-pointer">
+                      <span className="text-lg">{meta.icon}</span>
+                      <p className="text-xs font-bold text-zinc-600 mt-1">{meta.name}</p>
+                      <p className="text-[10px] text-zinc-400">{meta.desc}</p>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Help section */}
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
-        <h3 className="text-sm font-bold text-amber-800 mb-2">💡 How it works</h3>
-        <ul className="text-xs text-amber-700 space-y-1.5">
-          <li>• Edit text content inline, click <strong>Save</strong> — the website updates within 60 seconds</li>
-          <li>• Upload videos/images with the <strong>📁 Upload</strong> button — they go to Supabase Storage</li>
-          <li>• For the <strong>Hero video</strong>: upload a .mp4 file, the site switches from photo to video automatically</li>
-          <li>• <strong>Section keys</strong> follow the pattern: <code className="bg-amber-100 px-1 rounded">section_field_locale</code> (e.g. hero_video_url, hero_title_fr)</li>
-          <li>• Changes are reflected on <a href="https://bali-interns-website.vercel.app" target="_blank" rel="noopener" className="underline font-bold">bali-interns.com</a> after ~60s (SSG revalidation)</li>
-        </ul>
-      </div>
+      {/* ==================== PAGES TAB ==================== */}
+      {tab === 'pages' && (
+        <div className="space-y-2">
+          {pages.map(p => (
+            <div key={p.id} className={`bg-white border border-zinc-100 rounded-2xl p-4 flex items-center gap-4 ${!p.enabled ? 'opacity-50' : ''}`}>
+              <span className="text-lg">📄</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-[#1a1918]">{p.title_en} {p.title_fr ? `/ ${p.title_fr}` : ''}</p>
+                <p className="text-[11px] text-zinc-400 font-mono">{p.slug}</p>
+              </div>
+              <a href={`https://bali-interns-website.vercel.app${p.slug}`} target="_blank" rel="noopener" className="text-[10px] text-[#c8a96e] no-underline hover:underline">Preview →</a>
+              <button onClick={() => togglePage(p)}
+                className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${p.enabled ? 'bg-green-50 text-green-700 border-green-200' : 'bg-zinc-50 text-zinc-400 border-zinc-200'}`}>
+                {p.enabled ? '● Enabled' : '○ Disabled'}
+              </button>
+              {saved === p.id && <span className="text-[10px] text-green-600 font-bold">✓</span>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ==================== TRANSLATIONS TAB ==================== */}
+      {tab === 'translations' && (
+        <div className="space-y-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">
+            💡 Edit translations inline. Changes reflect on the website within 60 seconds. To add a new language, contact the dev team to add a column.
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-zinc-100">
+                  <th className="text-left py-2 px-2 text-[10px] font-bold text-zinc-400 uppercase tracking-wider w-[200px]">Key</th>
+                  <th className="text-left py-2 px-2 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">🇬🇧 English</th>
+                  <th className="text-left py-2 px-2 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">🇫🇷 French</th>
+                  <th className="text-left py-2 px-2 text-[10px] font-bold text-zinc-400 uppercase tracking-wider w-[120px]">Context</th>
+                </tr>
+              </thead>
+              <tbody>
+                {translations.map(t => (
+                  <tr key={t.id} className="border-b border-zinc-50 hover:bg-zinc-50/50">
+                    <td className="py-1.5 px-2 font-mono text-[10px] text-zinc-400 align-top">{t.key}</td>
+                    <td className="py-1.5 px-2 align-top">
+                      <input defaultValue={t.en} onBlur={e => { if (e.target.value !== t.en) saveTranslation(t, 'en', e.target.value) }}
+                        className="w-full text-xs border border-transparent hover:border-zinc-200 focus:border-[#c8a96e] rounded-lg px-2 py-1 focus:outline-none bg-transparent" />
+                    </td>
+                    <td className="py-1.5 px-2 align-top">
+                      <input defaultValue={t.fr} onBlur={e => { if (e.target.value !== t.fr) saveTranslation(t, 'fr', e.target.value) }}
+                        className="w-full text-xs border border-transparent hover:border-zinc-200 focus:border-[#c8a96e] rounded-lg px-2 py-1 focus:outline-none bg-transparent" />
+                    </td>
+                    <td className="py-1.5 px-2 text-[10px] text-zinc-300 align-top">{t.context}</td>
+                    {saved === t.id && <td className="text-green-600 font-bold">✓</td>}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== MEDIA TAB ==================== */}
+      {tab === 'media' && (
+        <div className="space-y-3">
+          {media.map(item => (
+            <div key={item.section_key} className="bg-white border border-zinc-100 rounded-2xl p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-[#1a1918]">{item.label || item.section_key}</p>
+                  <div className="flex gap-2 mt-0.5">
+                    <span className="text-[10px] font-mono bg-zinc-50 text-zinc-400 px-1.5 py-0.5 rounded">{item.section_key}</span>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${item.content_type === 'video' ? 'bg-purple-50 text-purple-600' : item.content_type === 'image' ? 'bg-blue-50 text-blue-600' : 'bg-zinc-50 text-zinc-500'}`}>{item.content_type}</span>
+                  </div>
+                  {item.description && <p className="text-[10px] text-zinc-400 mt-1">{item.description}</p>}
+                </div>
+                {saved === item.section_key && <span className="text-xs text-green-600 font-bold">✓ Saved</span>}
+              </div>
+              <div className="mt-3 flex gap-2 items-center">
+                <input defaultValue={item.value} onBlur={e => { if (e.target.value !== item.value) saveMedia(item.section_key, e.target.value) }}
+                  className="flex-1 text-xs font-mono border border-zinc-200 rounded-xl px-3 py-2 focus:outline-none focus:border-[#c8a96e]" placeholder="Paste URL or upload..." />
+                <label className="text-xs font-semibold border border-zinc-200 px-3 py-2 rounded-xl hover:border-[#c8a96e] transition-colors cursor-pointer">
+                  {saving === item.section_key ? '⏳' : '📁 Upload'}
+                  <input type="file" className="hidden" accept={item.content_type === 'video' ? 'video/*' : 'image/*'}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) uploadMediaFile(item.section_key, f) }} />
+                </label>
+              </div>
+              {item.value && item.content_type === 'image' && <img src={item.value} alt="" className="h-16 rounded-lg mt-2 border border-zinc-100 object-cover" />}
+              {item.value && item.content_type === 'video' && <video src={item.value} className="h-20 rounded-lg mt-2 border border-zinc-100" muted controls />}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
