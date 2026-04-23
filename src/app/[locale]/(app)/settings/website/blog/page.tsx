@@ -82,6 +82,7 @@ export default function BlogManagerPage() {
   const [promptEditor, setPromptEditor] = useState<{ postId: string; prompt: string } | null>(null)
   const [promptDirty, setPromptDirty] = useState(false)
   const [editLang, setEditLang] = useState('en')
+  const [translating, setTranslating] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const uploadPostId = useRef<string | null>(null)
 
@@ -157,13 +158,88 @@ export default function BlogManagerPage() {
     setEditing(post.id)
     setEditData({
       title_en: post.title_en, title_fr: post.title_fr,
+      title_es: (post as Record<string,unknown>).title_es as string ?? '',
+      title_de: (post as Record<string,unknown>).title_de as string ?? '',
+      title_pt: (post as Record<string,unknown>).title_pt as string ?? '',
+      title_it: (post as Record<string,unknown>).title_it as string ?? '',
       excerpt_en: post.excerpt_en, excerpt_fr: post.excerpt_fr,
+      excerpt_es: (post as Record<string,unknown>).excerpt_es as string ?? '',
+      excerpt_de: (post as Record<string,unknown>).excerpt_de as string ?? '',
+      excerpt_pt: (post as Record<string,unknown>).excerpt_pt as string ?? '',
+      excerpt_it: (post as Record<string,unknown>).excerpt_it as string ?? '',
       body_en: post.body_en, body_fr: post.body_fr,
+      body_es: (post as Record<string,unknown>).body_es as string ?? '',
+      body_de: (post as Record<string,unknown>).body_de as string ?? '',
+      body_pt: (post as Record<string,unknown>).body_pt as string ?? '',
+      body_it: (post as Record<string,unknown>).body_it as string ?? '',
       seo_title_en: post.seo_title_en, seo_title_fr: post.seo_title_fr,
+      seo_title_es: (post as Record<string,unknown>).seo_title_es as string ?? '',
+      seo_title_de: (post as Record<string,unknown>).seo_title_de as string ?? '',
+      seo_title_pt: (post as Record<string,unknown>).seo_title_pt as string ?? '',
+      seo_title_it: (post as Record<string,unknown>).seo_title_it as string ?? '',
       seo_desc_en: post.seo_desc_en, seo_desc_fr: post.seo_desc_fr,
+      seo_desc_es: (post as Record<string,unknown>).seo_desc_es as string ?? '',
+      seo_desc_de: (post as Record<string,unknown>).seo_desc_de as string ?? '',
+      seo_desc_pt: (post as Record<string,unknown>).seo_desc_pt as string ?? '',
+      seo_desc_it: (post as Record<string,unknown>).seo_desc_it as string ?? '',
       category: post.category, cover_image_url: post.cover_image_url,
     })
     setEditLang('en')
+  }
+
+
+  async function translateAll() {
+    const src_title = editData.title_en as string
+    const src_excerpt = editData.excerpt_en as string
+    const src_body = editData.body_en as string
+    const src_seo_title = editData.seo_title_en as string
+    const src_seo_desc = editData.seo_desc_en as string
+    if (!src_title) return
+
+    setTranslating(true)
+    try {
+      const res = await fetch('/api/ai-assist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'raw_prompt',
+          prompt: `You are a professional translator. Translate this blog article content from English to French, Spanish, German, Portuguese (European), and Italian.
+
+Return ONLY a JSON object with this structure (no markdown, no preamble):
+{
+  "fr": { "title": "", "excerpt": "", "seo_title": "", "seo_desc": "", "body": "" },
+  "es": { "title": "", "excerpt": "", "seo_title": "", "seo_desc": "", "body": "" },
+  "de": { "title": "", "excerpt": "", "seo_title": "", "seo_desc": "", "body": "" },
+  "pt": { "title": "", "excerpt": "", "seo_title": "", "seo_desc": "", "body": "" },
+  "it": { "title": "", "excerpt": "", "seo_title": "", "seo_desc": "", "body": "" }
+}
+
+CONTENT TO TRANSLATE:
+Title: ${src_title}
+SEO Title: ${src_seo_title || src_title}
+Excerpt: ${src_excerpt || ''}
+SEO Description: ${src_seo_desc || src_excerpt || ''}
+Body (HTML/Markdown): ${(src_body || '').slice(0, 3000)}`
+        })
+      })
+      if (!res.ok) throw new Error('AI request failed')
+      const data = await res.json() as { result: string }
+      const raw = data.result.replace(/```json|```/g, '').trim()
+      const translations = JSON.parse(raw) as Record<string, Record<string, string>>
+      const updates: Record<string, string> = {}
+      for (const [lang, fields] of Object.entries(translations)) {
+        if (fields.title) updates[`title_${lang}`] = fields.title
+        if (fields.excerpt) updates[`excerpt_${lang}`] = fields.excerpt
+        if (fields.seo_title) updates[`seo_title_${lang}`] = fields.seo_title
+        if (fields.seo_desc) updates[`seo_desc_${lang}`] = fields.seo_desc
+        if (fields.body) updates[`body_${lang}`] = fields.body
+      }
+      setEditData(d => ({ ...d, ...updates }))
+    } catch (e) {
+      alert('Translation error: ' + (e instanceof Error ? e.message : 'unknown'))
+    } finally {
+      setTranslating(false)
+    }
   }
 
   if (loading) return <div className="max-w-4xl mx-auto px-4 py-12 text-center text-zinc-400">Loading blog posts...</div>
@@ -241,14 +317,24 @@ export default function BlogManagerPage() {
             {/* Edit panel */}
             {editing === post.id && (
               <div className="border-t border-zinc-100 p-4 bg-zinc-50/50 space-y-4">
-                {/* Language tabs */}
-                <div className="flex gap-1 bg-zinc-100 p-0.5 rounded-xl w-fit">
-                  {LANGS.filter(l => ['en', 'fr', 'es', 'de', 'pt', 'it'].includes(l.code)).map(l => (
-                    <button key={l.code} onClick={() => setEditLang(l.code)}
-                      className={`text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-all border-none cursor-pointer ${editLang === l.code ? 'bg-white text-[#1a1918] shadow-sm' : 'bg-transparent text-zinc-400'}`}>
-                      {l.flag} {l.name}
-                    </button>
-                  ))}
+                {/* Language tabs + AI translate */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex gap-1 bg-zinc-100 p-0.5 rounded-xl">
+                    {LANGS.filter(l => ['en', 'fr', 'es', 'de', 'pt', 'it'].includes(l.code)).map(l => (
+                      <button key={l.code} onClick={() => setEditLang(l.code)}
+                        className={`text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-all border-none cursor-pointer ${editLang === l.code ? 'bg-white text-[#1a1918] shadow-sm' : 'bg-transparent text-zinc-400'}`}>
+                        {l.flag} {l.name}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => { void translateAll() }}
+                    disabled={translating || !editData.title_en}
+                    className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 disabled:opacity-50 transition-colors cursor-pointer"
+                    title="Traduit EN → FR/ES/DE/PT/IT avec Claude IA"
+                  >
+                    {translating ? '⏳ Traduction…' : '🌐 Traduire FR/ES/DE/PT/IT'}
+                  </button>
                 </div>
 
                 {/* Cover image section */}
