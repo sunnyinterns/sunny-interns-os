@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 
 interface EventType {
   id: string; slug: string; title: string; title_en: string
@@ -18,248 +18,198 @@ const DAY_LABELS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
 const inp = 'w-full px-3 py-2 text-sm border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#c8a96e] bg-white'
 const lbl = 'block text-xs font-medium text-zinc-500 mb-1'
 
-function getLocalTzInfo() {
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
-  const now = new Date()
-  const offsetMin = -now.getTimezoneOffset()
-  const sign = offsetMin >= 0 ? '+' : '-'
-  const h = String(Math.floor(Math.abs(offsetMin) / 60)).padStart(2, '0')
-  const m = String(Math.abs(offsetMin) % 60).padStart(2, '0')
-  return { tz, offsetLabel: `GMT${sign}${h}:${m}`, offsetMin }
+const SLUG_META: Record<string, { icon: string; label: string; color: string }> = {
+  entretien: { icon: '🎓', label: 'Candidats', color: 'text-amber-600 bg-amber-50 border-amber-200' },
+  employeur: { icon: '🏢', label: 'Employeurs', color: 'text-blue-600 bg-blue-50 border-blue-200' },
+  ecole:     { icon: '🎒', label: 'Écoles',     color: 'text-green-600 bg-green-50 border-green-200' },
 }
 
 export default function SchedulingSettingsPage() {
-  const [et, setEt] = useState<EventType | null>(null)
+  const [eventTypes, setEventTypes] = useState<EventType[]>([])
   const [managers, setManagers] = useState<Manager[]>([])
+  const [activeSlug, setActiveSlug] = useState('entretien')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [bookingUrl, setBookingUrl] = useState('')
-  const [localTz, setLocalTz] = useState(getLocalTzInfo())
-  const [tzAlert, setTzAlert] = useState<string | null>(null)
-  const prevTzRef = useRef(localTz.tz)
-
-  // Détection changement timezone (polling toutes les 30s)
-  useEffect(() => {
-    const check = () => {
-      const info = getLocalTzInfo()
-      setLocalTz(info)
-      if (prevTzRef.current && prevTzRef.current !== info.tz) {
-        setTzAlert(`⚠️ Changement de fuseau détecté : ${prevTzRef.current} → ${info.tz} (${info.offsetLabel})`)
-        prevTzRef.current = info.tz
-      }
-    }
-    const iv = setInterval(check, 30000)
-    return () => clearInterval(iv)
-  }, [])
 
   useEffect(() => {
     setBookingUrl(window.location.origin + '/book')
     fetch('/api/scheduling/settings')
       .then(r => r.ok ? r.json() : null)
-      .then((d: { event_type: EventType; managers: Manager[] } | null) => {
-        if (d) { setEt(d.event_type); setManagers(d.managers) }
+      .then((d: { event_types: EventType[]; managers: Manager[] } | null) => {
+        if (d) {
+          setEventTypes(d.event_types ?? [])
+          setManagers(d.managers ?? [])
+          if (d.event_types?.length) setActiveSlug(d.event_types[0].slug)
+        }
         setLoading(false)
       })
       .catch(() => setLoading(false))
   }, [])
 
-  async function save() {
-    if (!et) return
-    setSaving(true)
-    try {
-      await fetch('/api/scheduling/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event_type: et, managers }),
-      })
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2500)
-    } finally { setSaving(false) }
+  const et = eventTypes.find(e => e.slug === activeSlug) ?? null
+
+  function updateEt(patch: Partial<EventType>) {
+    setEventTypes(prev => prev.map(e => e.slug === activeSlug ? { ...e, ...patch } : e))
   }
 
-  function updateEt(patch: Partial<EventType>) { setEt(p => p ? { ...p, ...patch } : p) }
   function toggleWorkDay(mgr: Manager, day: number) {
     setManagers(prev => prev.map(m => m.id === mgr.id
       ? { ...m, work_days: m.work_days.includes(day) ? m.work_days.filter(d => d !== day) : [...m.work_days, day].sort() }
       : m))
   }
 
-  // Convertir heure locale du manager en heure locale actuelle
-  function toLocalHour(mgrHour: number, mgrTz: string): string {
+  async function save() {
+    setSaving(true)
     try {
-      const ref = new Date()
-      ref.setHours(mgrHour, 0, 0, 0)
-      // Calcul offset entre timezone manager et timezone locale
-      const mgrOffset = new Date().toLocaleString('en-US', { timeZone: mgrTz, hour: 'numeric', hour12: false })
-      const localHour = new Date(ref.toLocaleString('en-US', { timeZone: mgrTz }))
-      const localStr = localHour.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: localTz.tz })
-      void mgrOffset
-      return localStr
-    } catch { return `${mgrHour}h00` }
+      for (const e of eventTypes) {
+        await fetch('/api/scheduling/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event_type: e, managers }),
+        })
+      }
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+    } finally { setSaving(false) }
   }
 
   if (loading) return <div className="p-8 text-sm text-zinc-400">Chargement…</div>
-  if (!et) return <div className="p-8 text-sm text-red-500">Erreur de chargement</div>
+  if (!eventTypes.length) return <div className="p-8 text-sm text-red-500">Erreur de chargement</div>
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
 
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-[#1a1918]">Scheduling</h1>
-          <p className="text-sm text-zinc-400">Prise de RDV native Google Calendar</p>
+          <p className="text-xs text-zinc-400 mt-0.5">Prise de RDV native Google Calendar</p>
         </div>
-        <div className="flex items-center gap-2">
-          <a href="/book" target="_blank" rel="noopener noreferrer"
-            className="text-xs px-3 py-2 border border-zinc-200 rounded-xl text-zinc-600 hover:bg-zinc-50">
-            ↗ Voir la page publique
-          </a>
+        <div className="flex items-center gap-3">
+          <a href="/fr/book" target="_blank" className="text-xs text-zinc-400 hover:text-zinc-600 underline">Voir la page publique</a>
           <button onClick={() => { void save() }} disabled={saving}
-            className="px-4 py-2 text-sm font-semibold bg-[#1a1918] text-[#c8a96e] rounded-xl hover:bg-zinc-800 disabled:opacity-50 transition-colors">
+            className="px-4 py-2 bg-[#1a1918] text-white text-sm font-medium rounded-xl disabled:opacity-50 transition-colors hover:bg-zinc-800">
             {saving ? 'Sauvegarde…' : saved ? '✓ Sauvegardé' : 'Sauvegarder'}
           </button>
         </div>
       </div>
 
-      {/* Alerte changement timezone */}
-      {tzAlert && (
-        <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-300 rounded-xl">
-          <span className="text-amber-600 text-sm flex-1">{tzAlert}</span>
-          <button onClick={() => setTzAlert(null)} className="text-amber-400 hover:text-amber-600 text-xs">✕</button>
-        </div>
-      )}
-
-      {/* Timezone actuelle */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl">
-        <div className="w-8 h-8 rounded-full bg-[#c8a96e]/20 flex items-center justify-center text-sm">🌍</div>
-        <div className="flex-1">
-          <p className="text-xs text-zinc-500 mb-0.5">Fuseau horaire actuel de cet appareil</p>
-          <p className="text-sm font-semibold text-[#1a1918]">{localTz.tz} <span className="text-zinc-400 font-normal">· {localTz.offsetLabel}</span></p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs text-zinc-400">Les créneaux s'affichent</p>
-          <p className="text-xs text-zinc-400">dans ce fuseau + Bali</p>
-        </div>
-      </div>
-
-      {/* Booking URL */}
-      <div className="bg-[#c8a96e]/10 border border-[#c8a96e]/30 rounded-2xl p-4">
-        <p className="text-xs font-semibold text-[#c8a96e] uppercase tracking-wider mb-2">Lien de réservation public</p>
+      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+        <p className="text-xs font-medium text-amber-700 mb-2">LIEN DE RÉSERVATION — {(SLUG_META[activeSlug] ?? { label: activeSlug }).label.toUpperCase()}</p>
         <div className="flex items-center gap-2">
-          <code className="flex-1 text-xs bg-white px-3 py-2 rounded-xl border border-zinc-100 text-zinc-600 truncate">{bookingUrl}</code>
-          <button onClick={() => navigator.clipboard.writeText(bookingUrl)}
-            className="text-xs px-3 py-2 bg-white border border-zinc-200 rounded-xl hover:bg-zinc-50">Copier</button>
+          <code className="flex-1 text-xs bg-white px-3 py-2 rounded-xl border border-zinc-100 text-zinc-600 truncate">
+            {bookingUrl}?event={activeSlug}
+          </code>
+          <button onClick={() => { void navigator.clipboard.writeText(bookingUrl + '?event=' + activeSlug) }}
+            className="text-xs px-3 py-2 bg-white border border-zinc-200 rounded-xl hover:bg-zinc-50 text-zinc-600 shrink-0">Copier</button>
         </div>
+        <p className="text-xs text-amber-600 mt-1.5">Chaque audience a sa propre URL de réservation.</p>
       </div>
 
-      {/* Event Type */}
-      <div className="bg-white border border-zinc-100 rounded-2xl p-5 space-y-4">
-        <p className="text-sm font-semibold text-[#1a1918]">Type d'événement</p>
-        <div className="grid grid-cols-1 gap-4">
-          <div><label className={lbl}>Titre (FR)</label><input className={inp} value={et.title} onChange={e => updateEt({ title: e.target.value })} /></div>
-          <div><label className={lbl}>Titre (EN)</label><input className={inp} value={et.title_en} onChange={e => updateEt({ title_en: e.target.value })} /></div>
-          <div><label className={lbl}>Description (FR)</label><textarea className={inp} rows={2} value={et.description} onChange={e => updateEt({ description: e.target.value })} style={{ resize: 'none' }} /></div>
-          <div><label className={lbl}>Description (EN)</label><textarea className={inp} rows={2} value={et.description_en} onChange={e => updateEt({ description_en: e.target.value })} style={{ resize: 'none' }} /></div>
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          <div><label className={lbl}>Durée (min)</label><input type="number" className={inp} value={et.duration_minutes} onChange={e => updateEt({ duration_minutes: parseInt(e.target.value) })} min={15} max={120} step={15} /></div>
-          <div><label className={lbl}>Buffer avant (min)</label><input type="number" className={inp} value={et.buffer_before_minutes} onChange={e => updateEt({ buffer_before_minutes: parseInt(e.target.value) })} min={0} max={60} step={5} /></div>
-          <div><label className={lbl}>Buffer après (min)</label><input type="number" className={inp} value={et.buffer_after_minutes} onChange={e => updateEt({ buffer_after_minutes: parseInt(e.target.value) })} min={0} max={60} step={5} /></div>
-          <div><label className={lbl}>Notice minimum (h)</label><input type="number" className={inp} value={et.min_notice_hours} onChange={e => updateEt({ min_notice_hours: parseInt(e.target.value) })} min={1} max={72} /></div>
-          <div><label className={lbl}>Fenêtre max (jours)</label><input type="number" className={inp} value={et.max_future_days} onChange={e => updateEt({ max_future_days: parseInt(e.target.value) })} min={7} max={90} /></div>
-          <div><label className={lbl}>Limite / jour</label><input type="number" className={inp} value={et.daily_limit ?? ''} onChange={e => updateEt({ daily_limit: e.target.value ? parseInt(e.target.value) : null })} min={1} max={20} placeholder="Illimité" /></div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div><label className={lbl}>Bouton réservation (FR)</label><input className={inp} value={et.booking_button_text} onChange={e => updateEt({ booking_button_text: e.target.value })} /></div>
-          <div><label className={lbl}>Bouton réservation (EN)</label><input className={inp} value={et.booking_button_text_en} onChange={e => updateEt({ booking_button_text_en: e.target.value })} /></div>
-        </div>
-      </div>
-
-      {/* Managers */}
-      <div className="bg-white border border-zinc-100 rounded-2xl p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-[#1a1918]">Managers & disponibilités</p>
-          <p className="text-xs text-zinc-400">Round-robin par priorité · Freebusy Google Calendar en temps réel</p>
+      <div>
+        <div className="flex gap-2 mb-4">
+          {eventTypes.map(e => {
+            const meta = SLUG_META[e.slug] ?? { icon: '📅', label: e.slug, color: 'text-zinc-600 bg-zinc-50 border-zinc-200' }
+            const isActive = e.slug === activeSlug
+            return (
+              <button key={e.slug} onClick={() => setActiveSlug(e.slug)}
+                className={'flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all ' + (isActive ? meta.color + ' shadow-sm' : 'text-zinc-400 bg-white border-zinc-200 hover:border-zinc-300')}>
+                <span>{meta.icon}</span><span>{meta.label}</span>
+                {!e.is_active && <span className="text-xs opacity-50">(off)</span>}
+              </button>
+            )
+          })}
         </div>
 
-        {managers.map(mgr => (
-          <div key={mgr.id} className="border border-zinc-100 rounded-xl p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#c8a96e]/20 flex items-center justify-center text-xs font-bold text-[#c8a96e]">
-                  {mgr.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-[#1a1918]">{mgr.name}</p>
-                  <p className="text-xs text-zinc-400">{mgr.email} · {mgr.calendar_id}</p>
-                </div>
+        {et && (
+          <div className="bg-white border border-zinc-100 rounded-2xl p-5 space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+              <div>
+                <p className="text-sm font-medium text-[#1a1918]">Activer ce type de RDV</p>
+                <p className="text-xs text-zinc-400">Si désactivé, ce lien ne sera plus accessible</p>
               </div>
-              <div className="flex items-center gap-3">
-                {/* Fuseau du manager vs actuel */}
-                <div className="text-right">
-                  <p className="text-xs text-zinc-400">{mgr.timezone}</p>
-                  {mgr.timezone !== localTz.tz && (
-                    <p className="text-xs text-amber-500">≠ {localTz.tz}</p>
-                  )}
-                </div>
-                <div className={`w-9 h-5 rounded-full cursor-pointer transition-colors ${mgr.is_active ? 'bg-[#0d9e75]' : 'bg-zinc-200'}`}
-                  onClick={() => setManagers(prev => prev.map(m => m.id === mgr.id ? { ...m, is_active: !m.is_active } : m))}>
-                  <div className={`w-4 h-4 bg-white rounded-full shadow mt-0.5 transition-transform ${mgr.is_active ? 'translate-x-4' : 'translate-x-0.5'}`} />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className={lbl}>Jours de travail</label>
-              <div className="flex gap-2">
-                {DAY_LABELS.map((day, i) => (
-                  <button key={i} onClick={() => toggleWorkDay(mgr, i)}
-                    className={`w-9 h-8 text-xs font-medium rounded-lg border transition-colors ${mgr.work_days.includes(i) ? 'bg-[#c8a96e] text-white border-[#c8a96e]' : 'bg-white text-zinc-400 border-zinc-200'}`}>
-                    {day}
-                  </button>
-                ))}
-              </div>
+              <button onClick={() => updateEt({ is_active: !et.is_active })}
+                className={'relative inline-flex h-6 w-11 items-center rounded-full transition-colors ' + (et.is_active ? 'bg-[#c8a96e]' : 'bg-zinc-200')}>
+                <span className={'inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ' + (et.is_active ? 'translate-x-6' : 'translate-x-1')} />
+              </button>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={lbl}>
-                  Début journée
-                  <span className="ml-1 text-zinc-400 font-normal">({mgr.timezone} · GMT{new Date().toLocaleTimeString('en-US', { timeZone: mgr.timezone, timeZoneName: 'shortOffset' }).split(' ').pop()})</span>
-                </label>
-                <div className="flex items-center gap-2">
-                  <input type="number" className={inp} value={mgr.work_start_hour} min={6} max={12}
-                    onChange={e => setManagers(prev => prev.map(m => m.id === mgr.id ? { ...m, work_start_hour: parseInt(e.target.value) } : m))} />
-                  {mgr.timezone !== localTz.tz && (
-                    <span className="text-xs text-zinc-400 whitespace-nowrap">= {toLocalHour(mgr.work_start_hour, mgr.timezone)} {localTz.tz.split('/').pop()}</span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label className={lbl}>
-                  Fin journée
-                  <span className="ml-1 text-zinc-400 font-normal">({mgr.timezone})</span>
-                </label>
-                <div className="flex items-center gap-2">
-                  <input type="number" className={inp} value={mgr.work_end_hour} min={14} max={22}
-                    onChange={e => setManagers(prev => prev.map(m => m.id === mgr.id ? { ...m, work_end_hour: parseInt(e.target.value) } : m))} />
-                  {mgr.timezone !== localTz.tz && (
-                    <span className="text-xs text-zinc-400 whitespace-nowrap">= {toLocalHour(mgr.work_end_hour, mgr.timezone)} {localTz.tz.split('/').pop()}</span>
-                  )}
-                </div>
-              </div>
+              <div><label className={lbl}>Titre affiché (FR)</label><input className={inp} value={et.title} onChange={e => updateEt({ title: e.target.value })} /></div>
+              <div><label className={lbl}>Titre affiché (EN)</label><input className={inp} value={et.title_en} onChange={e => updateEt({ title_en: e.target.value })} /></div>
             </div>
-
-            <div className="text-xs text-zinc-400 bg-zinc-50 rounded-lg px-3 py-2 flex items-center gap-2">
-              <span>📡</span>
-              <span>Disponibilités calculées en temps réel via Google Calendar freebusy · Fuseau agenda : <strong>{mgr.timezone}</strong></span>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className={lbl}>Description (FR)</label><textarea className={inp + ' resize-none'} rows={3} value={et.description} onChange={e => updateEt({ description: e.target.value })} /></div>
+              <div><label className={lbl}>Description (EN)</label><textarea className={inp + ' resize-none'} rows={3} value={et.description_en} onChange={e => updateEt({ description_en: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><label className={lbl}>Durée (min)</label><input type="number" className={inp} value={et.duration_minutes} onChange={e => updateEt({ duration_minutes: +e.target.value })} /></div>
+              <div><label className={lbl}>Buffer avant (min)</label><input type="number" className={inp} value={et.buffer_before_minutes} onChange={e => updateEt({ buffer_before_minutes: +e.target.value })} /></div>
+              <div><label className={lbl}>Buffer après (min)</label><input type="number" className={inp} value={et.buffer_after_minutes} onChange={e => updateEt({ buffer_after_minutes: +e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><label className={lbl}>Notice minimum (h)</label><input type="number" className={inp} value={et.min_notice_hours} onChange={e => updateEt({ min_notice_hours: +e.target.value })} /></div>
+              <div><label className={lbl}>Fenêtre max (jours)</label><input type="number" className={inp} value={et.max_future_days} onChange={e => updateEt({ max_future_days: +e.target.value })} /></div>
+              <div><label className={lbl}>Limite / jour</label><input type="number" className={inp} value={et.daily_limit ?? ''} placeholder="Illimité" onChange={e => updateEt({ daily_limit: e.target.value === '' ? null : +e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className={lbl}>Bouton réservation (FR)</label><input className={inp} value={et.booking_button_text} onChange={e => updateEt({ booking_button_text: e.target.value })} /></div>
+              <div><label className={lbl}>Bouton réservation (EN)</label><input className={inp} value={et.booking_button_text_en} onChange={e => updateEt({ booking_button_text_en: e.target.value })} /></div>
             </div>
           </div>
-        ))}
+        )}
       </div>
 
+      <div>
+        <div className="mb-3">
+          <h2 className="text-sm font-semibold text-[#1a1918]">Managers & disponibilités</h2>
+          <p className="text-xs text-zinc-400">Round-robin par priorité · Freebusy Google Calendar en temps réel</p>
+        </div>
+        <div className="space-y-3">
+          {managers.map(mgr => (
+            <div key={mgr.id} className="bg-white border border-zinc-100 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-sm font-bold text-amber-700">{mgr.name.charAt(0)}</div>
+                  <div>
+                    <p className="text-sm font-medium text-[#1a1918]">{mgr.name}</p>
+                    <p className="text-xs text-zinc-400">{mgr.email} · Priorité {mgr.priority}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={'text-xs px-2 py-0.5 rounded-full font-medium ' + (mgr.is_active ? 'bg-green-50 text-green-600' : 'bg-zinc-100 text-zinc-400')}>
+                    {mgr.is_active ? '● Actif' : '○ Inactif'}
+                  </span>
+                  <button onClick={() => setManagers(prev => prev.map(m => m.id === mgr.id ? { ...m, is_active: !m.is_active } : m))}
+                    className={'relative inline-flex h-5 w-9 items-center rounded-full transition-colors ' + (mgr.is_active ? 'bg-[#c8a96e]' : 'bg-zinc-200')}>
+                    <span className={'inline-block h-3 w-3 transform rounded-full bg-white transition-transform shadow-sm ' + (mgr.is_active ? 'translate-x-5' : 'translate-x-1')} />
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div><label className={lbl}>Timezone</label>
+                  <input className={inp} value={mgr.timezone} onChange={e => setManagers(prev => prev.map(m => m.id === mgr.id ? { ...m, timezone: e.target.value } : m))} /></div>
+                <div><label className={lbl}>Début (h)</label>
+                  <input type="number" min={0} max={23} className={inp} value={mgr.work_start_hour} onChange={e => setManagers(prev => prev.map(m => m.id === mgr.id ? { ...m, work_start_hour: +e.target.value } : m))} /></div>
+                <div><label className={lbl}>Fin (h)</label>
+                  <input type="number" min={0} max={23} className={inp} value={mgr.work_end_hour} onChange={e => setManagers(prev => prev.map(m => m.id === mgr.id ? { ...m, work_end_hour: +e.target.value } : m))} /></div>
+              </div>
+              <div>
+                <label className={lbl}>Jours travaillés</label>
+                <div className="flex gap-1.5 mt-1">
+                  {DAY_LABELS.map((label, idx) => (
+                    <button key={idx} onClick={() => toggleWorkDay(mgr, idx)}
+                      className={'w-9 h-9 rounded-lg text-xs font-medium transition-all border ' + (mgr.work_days.includes(idx) ? 'bg-[#1a1918] text-white border-[#1a1918]' : 'bg-white text-zinc-400 border-zinc-200 hover:border-zinc-300')}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
