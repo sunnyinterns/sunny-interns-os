@@ -5,14 +5,12 @@ import { useSearchParams } from 'next/navigation'
 interface SlotItem {
   start: string
   end: string
-  label_fr: string
-  label_en: string
+  label: string
   manager_id: string
 }
 interface DayItem {
   date: string
   label: string
-  label_en: string
   slots: SlotItem[]
 }
 interface EventType {
@@ -53,7 +51,7 @@ function BookingForm() {
     meetBtn: lang === 'fr' ? '📹 Rejoindre Google Meet' : '📹 Join Google Meet',
     addCal: lang === 'fr' ? '📅 Ajouter à Google Calendar' : '📅 Add to Google Calendar',
     slot: lang === 'fr' ? 'Créneau sélectionné' : 'Selected slot',
-    timezone: lang === 'fr' ? 'Heures affichées en heure de France (Paris) et Bali' : 'Times shown in France (Paris) and Bali time',
+    timezone: lang === 'fr' ? 'Heures affichées dans votre fuseau horaire local' : 'Times shown in your local timezone',
   }
 
   const [step, setStep] = useState<Step>('loading')
@@ -71,7 +69,7 @@ function BookingForm() {
   const [booking, setBooking] = useState<{ meet_link: string; start: string } | null>(null)
 
   useEffect(() => {
-    fetch(`/api/scheduling/slots?event=${searchParams.get('event') ?? 'entretien'}`)
+    fetch(`/api/scheduling/slots?event=${searchParams.get('event') ?? 'entretien'}&tz=${encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone)}`)
       .then(r => r.ok ? r.json() : Promise.reject('fetch failed'))
       .then((data: { days: DayItem[]; event_type: EventType }) => {
         setDays(data.days ?? [])
@@ -163,7 +161,7 @@ function BookingForm() {
           <div style={{ background: '#fdf8f0', borderRadius: 10, padding: 16, marginBottom: 20 }}>
             <p style={{ fontSize: 13, color: '#92400e', margin: '0 0 4px', fontWeight: 500 }}>{t.slot}</p>
             <p style={{ fontSize: 15, color: '#1a1918', margin: 0, fontWeight: 500 }}>
-              {selectedSlot ? (lang === 'fr' ? selectedSlot.label_fr : selectedSlot.label_en) : ''}
+              {selectedSlot ? (lang === 'fr' ? selectedSlot.label : selectedSlot.label) : ''}
             </p>
           </div>
           {booking.meet_link && (
@@ -190,12 +188,12 @@ function BookingForm() {
         {/* STEP: pick slot */}
         {step === 'pick' && (
           <div>
-            <p style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center', marginBottom: 16 }}>{t.timezone}</p>
+            <p style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center', marginBottom: 16 }}><span style={{color:'#9ca3af',fontSize:11}}>{Intl.DateTimeFormat().resolvedOptions().timeZone}</span></p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {days.map(day => (
                 <div key={day.date}>
                   <p style={{ fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 8, textTransform: 'capitalize' }}>
-                    {lang === 'fr' ? day.label : day.label_en}
+                    {lang === 'fr' ? day.label : day.label}
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
                     {day.slots.map(slot => (
@@ -204,7 +202,7 @@ function BookingForm() {
                         style={{ padding: '10px 14px', background: 'white', border: '0.5px solid #e5e7eb', borderRadius: 10, cursor: 'pointer', textAlign: 'left', fontSize: 13, color: '#1a1918', transition: 'border-color 0.15s' }}
                         onMouseEnter={e => (e.currentTarget.style.borderColor = '#c8a96e')}
                         onMouseLeave={e => (e.currentTarget.style.borderColor = '#e5e7eb')}>
-                        {lang === 'fr' ? slot.label_fr : slot.label_en}
+                        {slot.label}
                       </button>
                     ))}
                   </div>
@@ -222,7 +220,7 @@ function BookingForm() {
             {/* Selected slot recap */}
             <div style={{ background: '#fdf8f0', borderRadius: 10, padding: 12, marginBottom: 20 }}>
               <p style={{ fontSize: 11, color: '#c8a96e', fontWeight: 500, margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.slot}</p>
-              <p style={{ fontSize: 14, color: '#1a1918', margin: 0, fontWeight: 500 }}>{lang === 'fr' ? selectedSlot.label_fr : selectedSlot.label_en}</p>
+              <p style={{ fontSize: 14, color: '#1a1918', margin: 0, fontWeight: 500 }}>{lang === 'fr' ? selectedSlot.label : selectedSlot.label}</p>
             </div>
 
             {/* Form */}
