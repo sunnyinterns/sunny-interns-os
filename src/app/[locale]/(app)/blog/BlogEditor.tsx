@@ -502,8 +502,8 @@ export function BlogEditor({ locale, initial }: { locale: string; initial?: Blog
                     </div>
                   </div>
                   {/* Bottom: titre massif centré */}
-                  <div className="absolute inset-0 flex items-end justify-center pb-4 px-4">
-                    <div className="text-center">
+                  <div className="absolute inset-0 flex items-end justify-center pb-5 px-5">
+                    <div style={{width:"100%", textAlign:"center"}}>
                       <p className="text-white font-black leading-tight" style={{fontSize: form.title_en.length > 80 ? 12 : form.title_en.length > 60 ? 15 : form.title_en.length > 40 ? 18 : 22, textShadow:'0 3px 16px rgba(0,0,0,1)'}}>
                         {form.title_en || "Article title"}
                       </p>
