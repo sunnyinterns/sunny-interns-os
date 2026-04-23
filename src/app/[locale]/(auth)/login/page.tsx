@@ -79,9 +79,7 @@ export default function LoginPage() {
         </button>
 
         <p className="text-center text-xs text-zinc-400 mt-2">
-          Accès agenda Google Calendar inclus
-          {' · '}
-          <span className="text-amber-500">À configurer dans Supabase Dashboard</span>
+          Accès agenda Google Calendar inclus ✓
         </p>
 
         {/* Divider */}
