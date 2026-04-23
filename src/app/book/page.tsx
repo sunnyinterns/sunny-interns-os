@@ -71,7 +71,7 @@ function BookingForm() {
   const [booking, setBooking] = useState<{ meet_link: string; start: string } | null>(null)
 
   useEffect(() => {
-    fetch('/api/scheduling/slots')
+    fetch(`/api/scheduling/slots?event=${searchParams.get('event') ?? 'entretien'}`)
       .then(r => r.ok ? r.json() : Promise.reject('fetch failed'))
       .then((data: { days: DayItem[]; event_type: EventType }) => {
         setDays(data.days ?? [])
@@ -101,6 +101,7 @@ function BookingForm() {
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Paris',
           prefill_case_id: caseId || undefined,
           source: caseId ? 'apply_form' : 'direct_link',
+          event_slug: searchParams.get('event') ?? 'entretien',
         }),
       })
       if (!r.ok) throw new Error('confirm failed')

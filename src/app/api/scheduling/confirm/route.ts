@@ -17,6 +17,7 @@ const schema = z.object({
   // From apply form pre-fill
   prefill_case_id: z.string().uuid().optional(),
   source: z.string().optional().default('apply_form'),
+  event_slug: z.string().optional().default('entretien'),
 })
 
 export async function POST(request: Request) {
@@ -31,9 +32,10 @@ export async function POST(request: Request) {
   const { data: mgr } = await admin.from('scheduling_managers').select('*').eq('id', d.manager_id).single()
   if (!mgr) return NextResponse.json({ error: 'Manager not found' }, { status: 404 })
 
-  // Fetch event type
-  const { data: et } = await admin.from('scheduling_event_types').select('*').eq('is_active', true).single()
-  if (!et) return NextResponse.json({ error: 'No event type' }, { status: 404 })
+  // Fetch event type by slug
+  const eventSlug = d.event_slug ?? 'entretien'
+  const { data: et } = await admin.from('scheduling_event_types').select('*').eq('is_active', true).eq('slug', eventSlug).single()
+  if (!et) return NextResponse.json({ error: 'No event type for slug: ' + eventSlug }, { status: 404 })
 
   const inviteeName = `${d.first_name} ${d.last_name}`
   const summary = `${et.title as string} — ${inviteeName}`
@@ -226,6 +228,36 @@ export async function POST(request: Request) {
       .update({ status: 'converted', converted_case_id: finalCaseId, converted_at: new Date().toISOString() })
       .eq('email', d.email.toLowerCase().trim())
       .neq('status', 'converted')
+  }
+
+  // ── Notification email to team@ for employer/school bookings ──
+  if (['employeur', 'ecole'].includes(d.event_slug ?? 'entretien')) {
+    try {
+      const { Resend } = await import('resend')
+      const resend = new Resend(process.env.RESEND_API_KEY)
+      const timeDisplay = new Date(d.start).toLocaleString('fr-FR', {
+        weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta'
+      })
+      const typeLabel = d.event_slug === 'employeur' ? '🏢 Nouvel Employeur' : '🎓 Nouvelle École'
+      await resend.emails.send({
+        from: 'Bali Interns Booking <team@bali-interns.com>',
+        to: 'team@bali-interns.com',
+        subject: `${typeLabel} — RDV confirmé : ${inviteeName}`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;">
+          <h2>${typeLabel}</h2>
+          <p><strong>${inviteeName}</strong> vient de planifier un RDV.</p>
+          <div style="background:#f9f7f2;border-radius:12px;padding:16px;margin:16px 0;">
+            <p><strong>📅</strong> ${timeDisplay} (heure Bali)</p>
+            <p><strong>📧</strong> ${d.email}</p>
+            ${d.phone ? `<p><strong>📱</strong> ${d.phone}</p>` : ''}
+            ${d.message ? `<p><strong>💬</strong> ${d.message}</p>` : ''}
+          </div>
+          ${gcalResult.meetLink ? `<p><a href="${gcalResult.meetLink}" style="background:#1a73e8;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:bold;">📹 Rejoindre Google Meet</a></p>` : ''}
+        </div>`,
+      })
+    } catch (notifErr) {
+      console.error('[booking] admin notif error:', notifErr)
+    }
   }
 
   return NextResponse.json({

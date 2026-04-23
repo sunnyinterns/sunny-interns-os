@@ -7,10 +7,11 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const days = Math.min(parseInt(searchParams.get('days') ?? '21'), 30)
+  const eventSlug = searchParams.get('event') ?? 'entretien'
   const admin = createAdminClient()
 
-  const { data: et } = await admin.from('scheduling_event_types').select('*').eq('is_active', true).single()
-  if (!et) return NextResponse.json({ error: 'No active event type' }, { status: 404 })
+  const { data: et } = await admin.from('scheduling_event_types').select('*').eq('is_active', true).eq('slug', eventSlug).single()
+  if (!et) return NextResponse.json({ error: 'No active event type for slug: ' + eventSlug }, { status: 404 })
 
   const { data: managers } = await admin.from('scheduling_managers').select('*').eq('is_active', true).order('priority', { ascending: true })
   if (!managers?.length) return NextResponse.json({ slots: [], event_type: et })
