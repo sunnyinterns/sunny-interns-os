@@ -1,4 +1,5 @@
 'use client'
+import React from 'react'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
@@ -27,6 +28,31 @@ const LANGS = [
 
 function buildAutoPrompt(title: string, category: string): string {
   return `Professional blog cover photograph for an article titled "${title}" about internships in Bali, Indonesia. Category: ${category}. Style: warm tropical light, cinematic, editorial photography, golden hour, lush greenery, ocean or rice terraces in background. High quality, vibrant colors, no text, no people, 16:9 landscape.`
+}
+
+
+// Lazy-rendered blog card preview — uses iframe to avoid CORS issues with img src
+function BlogCardPreview({ post }: { post: BlogPost }) {
+  const [loaded, setLoaded] = React.useState(false)
+  const url = `/api/og/blog-card?title=${encodeURIComponent(post.title_en)}&category=${encodeURIComponent(post.category)}${post.cover_image_url ? `&bg=${encodeURIComponent(post.cover_image_url)}` : ""}`
+  return (
+    <div className="relative w-full aspect-[1200/630] rounded-xl overflow-hidden border border-zinc-200 bg-zinc-100">
+      {!loaded && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-5 h-5 border-2 border-zinc-300 border-t-[#c8a96e] rounded-full animate-spin" />
+        </div>
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        key={url}
+        src={url}
+        alt="Blog card preview"
+        className={"w-full h-full object-cover transition-opacity duration-300 " + (loaded ? "opacity-100" : "opacity-0")}
+        onLoad={() => setLoaded(true)}
+        onError={() => setLoaded(true)}
+      />
+    </div>
+  )
 }
 
 export default function BlogManagerPage() {
@@ -275,19 +301,19 @@ export default function BlogManagerPage() {
                   {/* Blog-card preview — shows the branded OG card */}
                   <div>
                     <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2">📋 Blog-card preview (OG fallback)</p>
-                    <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-zinc-200 bg-zinc-100">
-                      <img
-                        src={`/api/og/blog-card?title=${encodeURIComponent(post.title_en)}&category=${encodeURIComponent(post.category)}${post.cover_image_url ? `&bg=${encodeURIComponent(post.cover_image_url)}` : ""}&t=${Date.now()}`}
-                        alt="Blog card preview"
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute bottom-2 right-2">
-                        <span className="text-[9px] font-bold bg-charcoal/70 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">
-                          bali-interns.com/blog
-                        </span>
+                    <div className="space-y-2">
+                      <BlogCardPreview post={post} />
+                      <div className="flex items-center justify-between">
+                        <p className="text-[9px] text-zinc-400">Image OG utilisée pour les partages réseaux sociaux.</p>
+                        <a
+                          href={`/api/og/blog-card?title=${encodeURIComponent(post.title_en)}&category=${encodeURIComponent(post.category)}${post.cover_image_url ? `&bg=${encodeURIComponent(post.cover_image_url)}` : ""}`}
+                          target="_blank" rel="noopener noreferrer"
+                          className="text-[10px] text-amber-700 hover:underline no-underline shrink-0 ml-3"
+                        >
+                          → Ouvrir OG 1200×630 ↗
+                        </a>
                       </div>
                     </div>
-                    <p className="text-[9px] text-zinc-400 mt-1">Cette carte est utilisée comme image OG sur le site si aucune cover n&apos;est définie.</p>
                   </div>
                 </div>
 
