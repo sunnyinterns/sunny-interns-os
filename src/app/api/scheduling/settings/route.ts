@@ -4,11 +4,13 @@ import { NextResponse } from 'next/server'
 
 export async function GET() {
   const admin = createAdminClient()
-  const [{ data: et }, { data: managers }] = await Promise.all([
-    admin.from('scheduling_event_types').select('*').eq('is_active', true).single(),
-    admin.from('scheduling_managers').select('*').order('priority'),
+  const [{ data: eventTypes }, { data: managers }] = await Promise.all([
+    admin.from('scheduling_event_types').select('*').eq('is_active', true).order('created_at'),
+    admin.from('scheduling_managers').select('id, name, email, calendar_id, is_active, priority, work_days, work_start_hour, work_end_hour, timezone').order('priority'),
   ])
-  return NextResponse.json({ event_type: et, managers: managers ?? [] })
+  // Keep backward compat: event_type = first one (entretien), event_types = all
+  const et = eventTypes?.find(e => e.slug === 'entretien') ?? eventTypes?.[0] ?? null
+  return NextResponse.json({ event_type: et, event_types: eventTypes ?? [], managers: managers ?? [] })
 }
 
 export async function PUT(request: Request) {
