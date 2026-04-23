@@ -34,33 +34,35 @@ function buildAutoPrompt(title: string, category: string): string {
 // Pure CSS blog card preview
 function BlogCardPreview({ post }: { post: BlogPost }) {
   const category = (post.category || 'guide').replace(/-/g, ' ')
-  const fs = post.title_en.length > 70 ? 13 : post.title_en.length > 50 ? 16 : post.title_en.length > 35 ? 19 : 22
+  const fs = post.title_en.length > 80 ? 15 : post.title_en.length > 60 ? 19 : post.title_en.length > 40 ? 23 : 28
   return (
     <div className="relative w-full aspect-[1200/630] rounded-xl overflow-hidden border border-zinc-200 bg-[#1a1918]">
       {post.cover_image_url && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={post.cover_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
       )}
-      {/* Deep gradient — more coverage for legibility */}
-      <div className="absolute inset-0" style={{background:'linear-gradient(to top, rgba(10,8,8,0.97) 45%, rgba(15,12,10,0.6) 72%, rgba(0,0,0,0.15) 100%)'}} />
-      {/* Top: logo + category */}
-      <div className="absolute top-3 left-4 right-4 flex items-center">
-        <div className="flex items-center px-3 py-2 rounded-full bg-white/15 border border-white/25" style={{backdropFilter:'blur(4px)'}}>
+      {/* Deep gradient */}
+      <div className="absolute inset-0" style={{background:'linear-gradient(to top, rgba(5,4,4,0.98) 50%, rgba(10,8,6,0.55) 78%, rgba(0,0,0,0.1) 100%)'}} />
+      {/* Top: logo centré + category badge */}
+      <div className="absolute top-4 left-0 right-0 flex flex-col items-center gap-2">
+        <div className="flex items-center px-5 py-2.5 rounded-full bg-white/15 border border-white/30" style={{backdropFilter:'blur(6px)'}}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="https://djoqjgiyseobotsjqcgz.supabase.co/storage/v1/object/public/brand-assets/logos/logo_landscape_white.png" alt="Bali Interns" style={{height:18, width:'auto', filter:'brightness(0) invert(1)'}} />
+          <img src="https://djoqjgiyseobotsjqcgz.supabase.co/storage/v1/object/public/brand-assets/logos/logo_landscape_white.png" alt="Bali Interns" style={{height:24, width:'auto', filter:'brightness(0) invert(1)'}} />
         </div>
-        <div className="ml-auto px-3 py-1 rounded-full bg-amber-500/25 border border-amber-400/50">
-          <span className="text-amber-200 font-bold uppercase tracking-wider" style={{fontSize:9}}>{category}</span>
+        <div className="px-3 py-1 rounded-full bg-amber-500/30 border border-amber-400/60">
+          <span className="text-amber-200 font-bold uppercase tracking-widest" style={{fontSize:9}}>{category}</span>
         </div>
       </div>
-      {/* Bottom: title + url — large and bold */}
-      <div className="absolute bottom-4 left-4 right-4">
-        <p className="text-white font-black leading-tight mb-2 drop-shadow-lg" style={{fontSize:fs, textShadow:'0 2px 8px rgba(0,0,0,0.8)'}}>
-          {post.title_en || "Article title"}
-        </p>
-        <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
-          <span className="text-white/60 font-medium" style={{fontSize:10}}>bali-interns.com/blog</span>
+      {/* Center: title — massif et centré */}
+      <div className="absolute inset-0 flex items-end justify-center pb-6 px-5">
+        <div className="text-center">
+          <p className="text-white font-black leading-tight" style={{fontSize:fs, textShadow:'0 3px 16px rgba(0,0,0,1), 0 1px 4px rgba(0,0,0,0.9)'}}>
+            {post.title_en || "Article title"}
+          </p>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
+            <span className="text-white/55 font-medium" style={{fontSize:10}}>bali-interns.com/blog</span>
+          </div>
         </div>
       </div>
     </div>
@@ -278,47 +280,73 @@ export default function BlogManagerPage() {
   }
 
 
+  // Batch translate — 6 langs per call to avoid JSON truncation
   async function translateAll() {
     const src_title = editData.title_en as string
-    const src_excerpt = editData.excerpt_en as string
-    const src_body = editData.body_en as string
-    const src_seo_title = editData.seo_title_en as string
-    const src_seo_desc = editData.seo_desc_en as string
+    const src_excerpt = (editData.excerpt_en as string) || ''
+    const src_body = (editData.body_en as string) || ''
+    const src_seo_title = (editData.seo_title_en as string) || src_title
+    const src_seo_desc = (editData.seo_desc_en as string) || src_excerpt
     if (!src_title) return
 
-    setTranslating(true)
-    try {
-      const res = await fetch('/api/ai-assist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'raw_prompt',
-          prompt: `You are a professional translator. Translate this blog article content from English to all these languages: French (fr), Spanish (es), German (de), Portuguese European (pt), Italian (it), Dutch (nl), Polish (pl), Swedish (sv), Danish (da), Romanian (ro), Czech (cs), Hungarian (hu), Greek (el), Bulgarian (bg), Croatian (hr), Slovak (sk), Finnish (fi), Norwegian (no), Lithuanian (lt), Latvian (lv), Estonian (et), Slovenian (sl).
+    // 22 target languages split into 4 batches of ~6
+    const BATCHES: [string, string][][] = [
+      [['fr','French'],['es','Spanish'],['de','German'],['pt','Portuguese (European)'],['it','Italian'],['nl','Dutch']],
+      [['pl','Polish'],['sv','Swedish'],['da','Danish'],['ro','Romanian'],['cs','Czech'],['hu','Hungarian']],
+      [['el','Greek'],['bg','Bulgarian'],['hr','Croatian'],['sk','Slovak'],['fi','Finnish'],['no','Norwegian']],
+      [['lt','Lithuanian'],['lv','Latvian'],['et','Estonian'],['sl','Slovenian']],
+    ]
 
-Return ONLY a valid JSON object with ISO language codes as keys (fr, es, de, pt, it, nl, pl, sv, da, ro, cs, hu, el, bg, hr, sk, fi, no, lt, lv, et, sl). No markdown, no preamble, no trailing commas.
-Each language has: { "title": "", "excerpt": "", "seo_title": "", "seo_desc": "", "body": "" }
-
-CONTENT TO TRANSLATE:
+    const makePrompt = (langs: [string,string][]) => {
+      const langList = langs.map(([code, name]) => `${name} (${code})`).join(', ')
+      const keys = langs.map(([code]) => code).join(', ')
+      return `Translate from English to: ${langList}.
+Return ONLY valid JSON with keys [${keys}]. Each key: {"title":"","excerpt":"","seo_title":"","seo_desc":"","body":""}.
+No markdown, no preamble.
+---
 Title: ${src_title}
-SEO Title: ${src_seo_title || src_title}
-Excerpt: ${src_excerpt || ''}
-SEO Description: ${src_seo_desc || src_excerpt || ''}
-Body (HTML/Markdown): ${(src_body || '').slice(0, 3000)}`
+SEO Title: ${src_seo_title}
+Excerpt: ${src_excerpt}
+SEO Desc: ${src_seo_desc}
+Body: ${src_body.slice(0, 800)}`
+    }
+
+    setTranslating(true)
+    const allUpdates: Record<string, string> = {}
+    let batchNum = 0
+    try {
+      for (const batch of BATCHES) {
+        batchNum++
+        const res = await fetch('/api/ai-assist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'raw_prompt', prompt: makePrompt(batch) })
         })
-      })
-      if (!res.ok) throw new Error('AI request failed')
-      const data = await res.json() as { result: string }
-      const raw = data.result.replace(/```json|```/g, '').trim()
-      const translations = JSON.parse(raw) as Record<string, Record<string, string>>
-      const updates: Record<string, string> = {}
-      for (const [lang, fields] of Object.entries(translations)) {
-        if (fields.title) updates[`title_${lang}`] = fields.title
-        if (fields.excerpt) updates[`excerpt_${lang}`] = fields.excerpt
-        if (fields.seo_title) updates[`seo_title_${lang}`] = fields.seo_title
-        if (fields.seo_desc) updates[`seo_desc_${lang}`] = fields.seo_desc
-        if (fields.body) updates[`body_${lang}`] = fields.body
+        if (!res.ok) throw new Error(`Batch ${batchNum} failed`)
+        const data = await res.json() as { result: string }
+        const raw = data.result.replace(/```json[\s\S]*?```|```/g, '').trim()
+        // Attempt to fix truncated JSON
+        let fixed = raw
+        if (!fixed.endsWith('}')) {
+          // Count open braces and close them
+          const opens = (fixed.match(/\{/g) || []).length
+          const closes = (fixed.match(/\}/g) || []).length
+          fixed += '}'.repeat(Math.max(0, opens - closes))
+        }
+        try {
+          const translations = JSON.parse(fixed) as Record<string, Record<string, string>>
+          for (const [lang, fields] of Object.entries(translations)) {
+            if (fields.title) allUpdates[`title_${lang}`] = fields.title
+            if (fields.excerpt) allUpdates[`excerpt_${lang}`] = fields.excerpt
+            if (fields.seo_title) allUpdates[`seo_title_${lang}`] = fields.seo_title
+            if (fields.seo_desc) allUpdates[`seo_desc_${lang}`] = fields.seo_desc
+            if (fields.body) allUpdates[`body_${lang}`] = fields.body
+          }
+        } catch {
+          console.warn(`Batch ${batchNum} JSON parse failed, skipping`)
+        }
       }
-      setEditData(d => ({ ...d, ...updates }))
+      setEditData(d => ({ ...d, ...allUpdates }))
     } catch (e) {
       alert('Translation error: ' + (e instanceof Error ? e.message : 'unknown'))
     } finally {

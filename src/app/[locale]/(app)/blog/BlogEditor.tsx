@@ -490,25 +490,27 @@ export function BlogEditor({ locale, initial }: { locale: string; initial?: Blog
                 <div className="relative w-full aspect-[1200/630] rounded-xl overflow-hidden border border-zinc-200">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={form.cover_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                  <div className="absolute inset-0" style={{background:'linear-gradient(to top, rgba(10,8,8,0.97) 45%, rgba(15,12,10,0.6) 72%, rgba(0,0,0,0.15) 100%)'}} />
-                  {/* Top: logo + category */}
-                  <div className="absolute top-3 left-4 right-4 flex items-center">
-                    <div className="flex items-center px-3 py-2 rounded-full border border-white/25 bg-white/15">
+                  <div className="absolute inset-0" style={{background:'linear-gradient(to top, rgba(5,4,4,0.98) 50%, rgba(10,8,6,0.55) 78%, rgba(0,0,0,0.1) 100%)'}} />
+                  {/* Top: logo + category centré */}
+                  <div className="absolute top-3 left-0 right-0 flex flex-col items-center gap-1.5">
+                    <div className="flex items-center px-4 py-2 rounded-full border border-white/30 bg-white/15">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="https://djoqjgiyseobotsjqcgz.supabase.co/storage/v1/object/public/brand-assets/logos/logo_landscape_white.png" alt="Bali Interns" style={{height:18, width:'auto', filter:'brightness(0) invert(1)'}} />
+                      <img src="https://djoqjgiyseobotsjqcgz.supabase.co/storage/v1/object/public/brand-assets/logos/logo_landscape_white.png" alt="Bali Interns" style={{height:20, width:'auto', filter:'brightness(0) invert(1)'}} />
                     </div>
-                    <div className="ml-auto px-3 py-1 rounded-full bg-amber-500/25 border border-amber-400/50">
-                      <span className="text-amber-200 text-[9px] font-bold uppercase tracking-wider">{form.category ?? 'blog'}</span>
+                    <div className="px-2.5 py-0.5 rounded-full bg-amber-500/30 border border-amber-400/60">
+                      <span className="text-amber-200 text-[8px] font-bold uppercase tracking-widest">{form.category ?? 'blog'}</span>
                     </div>
                   </div>
-                  {/* Bottom: title + url */}
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <p className="text-white font-black leading-tight mb-2" style={{fontSize: form.title_en.length > 70 ? 13 : form.title_en.length > 50 ? 16 : form.title_en.length > 35 ? 19 : 22, textShadow:'0 2px 8px rgba(0,0,0,0.8)'}}>
-                      {form.title_en || "Article title"}
-                    </p>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                      <span className="text-white/60 text-[10px] font-medium">bali-interns.com/blog</span>
+                  {/* Bottom: titre massif centré */}
+                  <div className="absolute inset-0 flex items-end justify-center pb-4 px-4">
+                    <div className="text-center">
+                      <p className="text-white font-black leading-tight" style={{fontSize: form.title_en.length > 80 ? 12 : form.title_en.length > 60 ? 15 : form.title_en.length > 40 ? 18 : 22, textShadow:'0 3px 16px rgba(0,0,0,1)'}}>
+                        {form.title_en || "Article title"}
+                      </p>
+                      <div className="flex items-center justify-center gap-1.5 mt-1">
+                        <span className="w-1 h-1 rounded-full bg-amber-400 inline-block" />
+                        <span className="text-white/55 text-[9px]">bali-interns.com/blog</span>
+                      </div>
                     </div>
                   </div>
                 </div>
