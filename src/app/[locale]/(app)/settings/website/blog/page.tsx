@@ -55,8 +55,8 @@ function BlogCardPreview({ post }: { post: BlogPost }) {
       </div>
       {/* Center: title — massif et centré */}
       <div className="absolute inset-0 flex items-end justify-center pb-5 px-5">
-        <div style={{width:"100%", textAlign:"center"}}>
-          <p className="text-white font-black leading-tight" style={{fontSize:fs, textShadow:'0 3px 16px rgba(0,0,0,1), 0 1px 4px rgba(0,0,0,0.9)'}}>
+        <div style={{width:"100%", display:"flex", flexDirection:"column", alignItems:"center"}}>
+          <p className="text-white font-black leading-tight" style={{textAlign:"center", fontSize:fs, textShadow:'0 3px 16px rgba(0,0,0,1), 0 1px 4px rgba(0,0,0,0.9)'}}>
             {post.title_en || "Article title"}
           </p>
           <div className="flex items-center justify-center gap-2 mt-2">
