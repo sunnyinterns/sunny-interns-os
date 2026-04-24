@@ -431,10 +431,10 @@ Body: ${src_body.slice(0, 800)}`
               <div className="border-t border-zinc-100 p-4 bg-zinc-50/50 space-y-4">
                 {/* Language tabs + AI translate */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <div className="flex gap-1 bg-zinc-100 p-0.5 rounded-xl">
+                  <div className="flex gap-0.5 bg-zinc-100 p-0.5 rounded-xl overflow-x-auto max-w-full" style={{scrollbarWidth:"none"}}>
                     {LANGS.map(l => (
                       <button key={l.code} onClick={() => setEditLang(l.code)}
-                        className={`text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-all border-none cursor-pointer ${editLang === l.code ? 'bg-white text-[#1a1918] shadow-sm' : 'bg-transparent text-zinc-400'}`}>
+                        className={`text-[10px] font-bold px-2 py-1 rounded-lg transition-all border-none cursor-pointer whitespace-nowrap ${editLang === l.code ? 'bg-white text-[#1a1918] shadow-sm' : 'bg-transparent text-zinc-400'}`}>
                         {l.flag} {l.name}
                       </button>
                     ))}
@@ -442,7 +442,7 @@ Body: ${src_body.slice(0, 800)}`
                   <button
                     onClick={() => { void translateAll() }}
                     disabled={translating || !editData.title_en}
-                    className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 disabled:opacity-50 transition-colors cursor-pointer"
+                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 disabled:opacity-50 transition-colors cursor-pointer whitespace-nowrap shrink-0"
                     title="Traduit EN → FR/ES/DE/PT/IT avec Claude IA"
                   >
                     {translating ? '⏳ Traduction…' : '🌐 Traduire toutes les langues (22)'}
