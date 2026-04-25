@@ -441,9 +441,10 @@ function ApplyPageInner() {
       return saved ? Math.min(parseInt(saved), 5) : 0
     } catch { return 0 }
   })
-  // Detect language from URL param or default
-  const langParam = searchParams?.get('lang') as 'fr' | 'en' | null
-  const [lang, setLang] = useState<'fr'|'en'>(langParam ?? 'fr')
+  // Detect language from URL param — fr stays fr, everything else → en
+  const langParam = searchParams?.get('lang')
+  const resolvedLang: 'fr' | 'en' = langParam === 'fr' ? 'fr' : 'en'
+  const [lang, setLang] = useState<'fr'|'en'>(resolvedLang)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [stepErrors, setStepErrors] = useState<Record<number, string>>({})
@@ -935,6 +936,10 @@ function ApplyPageInner() {
                   <span>{l.label}</span>
                 </button>
               ))}
+              {/* If user came from a non fr/en locale, show their flag */}
+              {langParam && langParam !== 'fr' && langParam !== 'en' && (
+                <span className="ml-1 text-xs text-zinc-400 px-2">· {langParam.toUpperCase()}</span>
+              )}
             </div>
           </div>
         )}
