@@ -83,7 +83,8 @@ export async function POST(req: Request) {
           .eq('id', post.id)
           .single()
         
-        if ((existing as Record<string,unknown>)?.[`title_${firstLang}`]) continue
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((existing as any)?.[`title_${firstLang}`]) continue
 
         const translations = await translatePost(client, post, batch)
         for (const [lang, fields] of Object.entries(translations)) {
