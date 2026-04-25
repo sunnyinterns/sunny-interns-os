@@ -354,6 +354,29 @@ Body: ${src_body.slice(0, 800)}`
     }
   }
 
+
+  async function translateAllPosts() {
+    const posts2 = posts
+    const untranslated = posts2 // assume all need it for now
+    if (!confirm(`Traduire ${untranslated.length} articles en 22 langues ? (env. 2 min par article)`)) return
+    
+    let done = 0
+    for (const post of untranslated) {
+      try {
+        const res = await fetch('/api/admin/translate-all-posts', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({secret: 'bali2026', slugs: [post.slug]})
+        })
+        const d = await res.json() as {translated?: number; message?: string}
+        if (d.translated && d.translated > 0) done++
+        else if (d.message) { /* already translated */ done++ }
+      } catch { /* continue */ }
+    }
+    alert(`✅ ${done}/${untranslated.length} articles traités`)
+    void fetchPosts()
+  }
+
   if (loading) return <div className="max-w-4xl mx-auto px-4 py-12 text-center text-zinc-400">Loading blog posts...</div>
 
   return (
