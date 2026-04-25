@@ -85,6 +85,7 @@ export default function BlogManagerPage() {
   const [promptDirty, setPromptDirty] = useState(false)
   const [editLang, setEditLang] = useState('en')
   const [translating, setTranslating] = useState(false)
+  const [translatingAll, setTranslatingAll] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const uploadPostId = useRef<string | null>(null)
 
