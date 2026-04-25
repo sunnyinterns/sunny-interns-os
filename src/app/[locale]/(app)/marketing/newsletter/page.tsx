@@ -95,6 +95,33 @@ export default function NewsletterPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+      {/* Automation Plan */}
+      <div className="bg-white border border-zinc-100 rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-bold text-[#1a1918]">📋 Plan Newsletter Automatisé — Backlog</h2>
+          <span className="text-[10px] px-2 py-0.5 bg-zinc-100 text-zinc-500 rounded-full font-bold uppercase tracking-wider">Non actif — en attente Resend</span>
+        </div>
+        <div className="space-y-2">
+          {NEWSLETTER_PLAN.map(seq => (
+            <div key={seq.seq} className="flex items-start gap-4 p-3 bg-zinc-50 rounded-xl border border-zinc-100">
+              <span className="w-7 h-7 rounded-full bg-[#FFCC00] text-black text-xs font-black flex items-center justify-center shrink-0">{seq.seq}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold text-[#1a1918]">{seq.subject_fr}</span>
+                  <span className="text-[10px] text-zinc-400">·</span>
+                  <span className="text-[10px] text-zinc-400 italic">{seq.subject_en}</span>
+                  <span className="ml-auto text-[10px] px-2 py-0.5 bg-zinc-200 text-zinc-600 rounded-full font-bold">{seq.delay}</span>
+                </div>
+                <p className="text-[11px] text-zinc-500 mt-0.5">{seq.content}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-[11px] text-zinc-400 mt-4">
+          → Configurer Resend dans Settings pour activer l&apos;envoi automatique
+        </p>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
