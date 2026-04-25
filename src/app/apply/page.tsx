@@ -441,7 +441,9 @@ function ApplyPageInner() {
       return saved ? Math.min(parseInt(saved), 5) : 0
     } catch { return 0 }
   })
-  const [lang, setLang] = useState<'fr'|'en'>('fr')
+  // Detect language from URL param or default
+  const langParam = searchParams?.get('lang') as 'fr' | 'en' | null
+  const [lang, setLang] = useState<'fr'|'en'>(langParam ?? 'fr')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [stepErrors, setStepErrors] = useState<Record<number, string>>({})
@@ -912,23 +914,30 @@ function ApplyPageInner() {
             </div>
           </div>
         )}
-        {/* Toggle langue — caché à step 5 */}
-        {step !== 5 && <div className="flex justify-end mb-4">
-          <div className="inline-flex rounded-lg border border-zinc-200 bg-white overflow-hidden text-xs font-medium">
-            <button
-              onClick={() => setLang('fr')}
-              className={`px-3 py-1.5 transition-colors ${lang === 'fr' ? 'bg-[#c8a96e] text-white' : 'text-zinc-500 hover:bg-zinc-50'}`}
-            >
-              {'\u{1F1EB}\u{1F1F7}'} FR
-            </button>
-            <button
-              onClick={() => setLang('en')}
-              className={`px-3 py-1.5 transition-colors ${lang === 'en' ? 'bg-[#c8a96e] text-white' : 'text-zinc-500 hover:bg-zinc-50'}`}
-            >
-              {'\u{1F1EC}\u{1F1E7}'} EN
-            </button>
+        {/* Locale switcher — même design que la vitrine */}
+        {step !== 5 && (
+          <div className="flex justify-end mb-4">
+            <div className="inline-flex items-center gap-0.5 bg-zinc-100 p-0.5 rounded-full">
+              {[
+                { code: 'fr', flag: '🇫🇷', label: 'FR' },
+                { code: 'en', flag: '🇬🇧', label: 'EN' },
+              ].map(l => (
+                <button
+                  key={l.code}
+                  onClick={() => setLang(l.code as 'fr' | 'en')}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all border-none cursor-pointer ${
+                    lang === l.code
+                      ? 'bg-white text-[#1a1918] shadow-sm'
+                      : 'bg-transparent text-zinc-400 hover:text-zinc-600'
+                  }`}
+                >
+                  <span>{l.flag}</span>
+                  <span>{l.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>}
+        )}
         {step !== 5 && <h1 className="text-2xl font-bold text-[#1a1918] mb-6">{stepTitles[step]}</h1>}
 
         {/* ════════════════════════════════════════════════════════
