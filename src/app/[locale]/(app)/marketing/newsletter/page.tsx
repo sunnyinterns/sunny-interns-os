@@ -68,7 +68,10 @@ export default function NewsletterPage() {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+
+
   const supabase = createClient()
+  const [newsletterJobs, setNewsletterJobs] = useState<{id:string;title:string;company_id:string}[]>([])
 
   useEffect(() => {
     async function load() {
@@ -80,6 +83,14 @@ export default function NewsletterPage() {
       setLoading(false)
     }
     void load()
+  }, [supabase])
+
+  useEffect(() => {
+    async function loadJobs() {
+      const { data } = await supabase.from('newsletter_jobs_next').select('*').limit(10)
+      setNewsletterJobs(data ?? [])
+    }
+    void loadJobs()
   }, [supabase])
 
   const filtered = subscribers.filter(s =>
