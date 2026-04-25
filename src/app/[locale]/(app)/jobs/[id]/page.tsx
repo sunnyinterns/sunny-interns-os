@@ -74,6 +74,8 @@ interface JobDetail {
   parent_job_id?: string | null
   created_at?: string | null
   updated_at?: string | null
+  include_in_newsletter?: boolean | null
+  newsletter_month?: string | null
   public_hook?: string | null
   public_vibe?: string | null
   public_perks?: string[] | null
@@ -700,6 +702,29 @@ export default function JobDetailPage() {
                 </span>
               )}
             </div>
+          )}
+        </div>
+
+        {/* Newsletter toggle */}
+        <div className="flex items-center gap-3 mt-2 pt-2 border-t border-zinc-50">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={job.include_in_newsletter ?? false}
+              onChange={e => void patchJob({ include_in_newsletter: e.target.checked })}
+              className="w-4 h-4 rounded accent-amber-500"
+            />
+            <span className="text-xs font-medium text-zinc-600">
+              📧 Inclure dans la newsletter du mois
+            </span>
+          </label>
+          {job.include_in_newsletter && (
+            <input
+              type="month"
+              defaultValue={job.newsletter_month ?? new Date().toISOString().slice(0, 7)}
+              onBlur={e => void patchJob({ newsletter_month: e.target.value })}
+              className="text-xs border border-zinc-200 rounded-lg px-2 py-1 focus:outline-none focus:border-[#c8a96e]"
+            />
           )}
         </div>
       </div>
