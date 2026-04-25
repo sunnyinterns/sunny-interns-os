@@ -3,115 +3,98 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 
 export const maxDuration = 300
+export const dynamic = 'force-dynamic'
 
-const LANGS = [
-  {code:'es',name:'Spanish'},{code:'de',name:'German'},{code:'pt',name:'Portuguese (European)'},
-  {code:'it',name:'Italian'},{code:'nl',name:'Dutch'},{code:'pl',name:'Polish'},
-  {code:'sv',name:'Swedish'},{code:'da',name:'Danish'},{code:'ro',name:'Romanian'},
-  {code:'cs',name:'Czech'},{code:'hu',name:'Hungarian'},{code:'el',name:'Greek'},
-  {code:'bg',name:'Bulgarian'},{code:'hr',name:'Croatian'},{code:'sk',name:'Slovak'},
-  {code:'fi',name:'Finnish'},{code:'no',name:'Norwegian'},{code:'lt',name:'Lithuanian'},
-  {code:'lv',name:'Latvian'},{code:'et',name:'Estonian'},{code:'sl',name:'Slovenian'},
+const BATCHES: string[][] = [
+  ['French (fr)', 'Spanish (es)', 'German (de)', 'Portuguese European (pt)', 'Italian (it)', 'Dutch (nl)'],
+  ['Polish (pl)', 'Swedish (sv)', 'Danish (da)', 'Romanian (ro)', 'Czech (cs)', 'Hungarian (hu)'],
+  ['Greek (el)', 'Bulgarian (bg)', 'Croatian (hr)', 'Slovak (sk)', 'Finnish (fi)', 'Norwegian (no)'],
+  ['Lithuanian (lt)', 'Latvian (lv)', 'Estonian (et)', 'Slovenian (sl)'],
 ]
+const CODES: Record<string, string> = {
+  'French (fr)': 'fr', 'Spanish (es)': 'es', 'German (de)': 'de',
+  'Portuguese European (pt)': 'pt', 'Italian (it)': 'it', 'Dutch (nl)': 'nl',
+  'Polish (pl)': 'pl', 'Swedish (sv)': 'sv', 'Danish (da)': 'da',
+  'Romanian (ro)': 'ro', 'Czech (cs)': 'cs', 'Hungarian (hu)': 'hu',
+  'Greek (el)': 'el', 'Bulgarian (bg)': 'bg', 'Croatian (hr)': 'hr',
+  'Slovak (sk)': 'sk', 'Finnish (fi)': 'fi', 'Norwegian (no)': 'no',
+  'Lithuanian (lt)': 'lt', 'Latvian (lv)': 'lv', 'Estonian (et)': 'et',
+  'Slovenian (sl)': 'sl',
+}
 
-const BATCHES = [
-  LANGS.slice(0,6), LANGS.slice(6,12), LANGS.slice(12,18), LANGS.slice(18),
-]
-
-async function translatePost(
-  client: Anthropic,
-  post: {id:string;title_en:string;excerpt_en:string;body_en:string;seo_title_en:string;seo_desc_en:string},
-  batch: {code:string;name:string}[]
-): Promise<Record<string,Record<string,string>>> {
-  const langList = batch.map(l => `${l.name} (${l.code})`).join(', ')
-  const keys = batch.map(l => l.code).join(', ')
-  const prompt = `Translate from English to: ${langList}.
-Return ONLY valid JSON with keys [${keys}]. Each key: {"title":"","excerpt":"","seo_title":"","seo_desc":"","body":""}.
-No markdown, no preamble.
----
-Title: ${post.title_en}
-SEO Title: ${post.seo_title_en || post.title_en}
-Excerpt: ${(post.excerpt_en || '').slice(0,300)}
-SEO Desc: ${(post.seo_desc_en || post.excerpt_en || '').slice(0,200)}
-Body: ${(post.body_en || '').slice(0,1200)}`
-
-  const msg = await client.messages.create({
-    model: 'claude-sonnet-4-5-20250929',
-    max_tokens: 4096,
-    messages: [{ role: 'user', content: prompt }],
-  })
-  const raw = (msg.content[0] as {text:string}).text.replace(/```json|```/g,'').trim()
-  // Auto-fix truncated JSON
-  let fixed = raw
-  if (!fixed.endsWith('}')) {
-    const opens = (fixed.match(/\{/g)||[]).length
-    const closes = (fixed.match(/\}/g)||[]).length
-    fixed += '}'.repeat(Math.max(0, opens - closes))
-  }
-  return JSON.parse(fixed) as Record<string,Record<string,string>>
+function fixJson(text: string): string {
+  let s = text.replace(/```json|```/g, '').trim()
+  const opens = (s.match(/\{/g) || []).length
+  const closes = (s.match(/\}/g) || []).length
+  if (opens > closes) s += '}'.repeat(opens - closes)
+  return s
 }
 
 export async function POST(req: Request) {
-  const { secret, post_id } = await req.json() as {secret?:string;post_id?:string}
+  const { secret, slug } = await req.json() as { secret?: string; slug?: string }
   if (secret !== (process.env.ADMIN_SECRET ?? 'bali2026')) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-  const query = db.from('blog_posts')
-    .select('id,slug,title_en,excerpt_en,body_en,seo_title_en,seo_desc_en')
+  // Get posts to translate
+  let query = db.from('blog_posts')
+    .select('id,slug,title_en,excerpt_en,seo_title_en,seo_desc_en,title_es')
     .eq('status', 'published')
-  
-  if (post_id) query.eq('id', post_id)
-  
-  const { data: posts } = await query
-  if (!posts?.length) return NextResponse.json({ message: 'No posts', count: 0 })
 
-  const results: {slug:string;status:string;langs_updated?:number}[] = []
-
-  for (const post of posts) {
-    try {
-      const updates: Record<string,string> = {}
-      
-      for (const batch of BATCHES) {
-        // Skip if already translated (check first lang of batch)
-        const firstLang = batch[0].code
-        const { data: existing } = await db.from('blog_posts')
-          .select(`title_${firstLang}`)
-          .eq('id', post.id)
-          .single()
-        
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((existing as any)?.[`title_${firstLang}`]) continue
-
-        const translations = await translatePost(client, post, batch)
-        for (const [lang, fields] of Object.entries(translations)) {
-          if (fields.title) updates[`title_${lang}`] = fields.title
-          if (fields.excerpt) updates[`excerpt_${lang}`] = fields.excerpt
-          if (fields.seo_title) updates[`seo_title_${lang}`] = fields.seo_title
-          if (fields.seo_desc) updates[`seo_desc_${lang}`] = fields.seo_desc
-          if (fields.body) updates[`body_${lang}`] = fields.body
-        }
-        await new Promise(r => setTimeout(r, 500))
-      }
-
-      if (Object.keys(updates).length) {
-        await db.from('blog_posts').update(updates).eq('id', post.id)
-        results.push({ slug: post.slug, status: 'ok', langs_updated: Object.keys(updates).length })
-      } else {
-        results.push({ slug: post.slug, status: 'already_translated' })
-      }
-    } catch (e) {
-      results.push({ slug: post.slug, status: 'error' })
-      console.error(e)
-    }
+  if (slug) {
+    query = query.eq('slug', slug)
+  } else {
+    query = query.is('title_es', null)
   }
 
-  return NextResponse.json({
-    results,
-    total: posts.length,
-    translated: results.filter(r => r.status === 'ok').length,
-  })
+  const { data: posts } = await query
+  if (!posts?.length) return NextResponse.json({ message: 'All translated', count: 0 })
+
+  const results: Record<string, string>[] = []
+
+  for (const post of posts) {
+    const updates: Record<string, string> = {}
+
+    for (const batch of BATCHES) {
+      const codes = batch.map(l => CODES[l])
+      const prompt = `Translate this blog content from English to: ${batch.join(', ')}.
+Return ONLY valid JSON with ISO codes as keys (${codes.join(', ')}).
+Each key: {"title":"","excerpt":"","seo_title":"","seo_desc":""}
+No markdown, no preamble.
+---
+Title: ${post.title_en}
+Excerpt: ${post.excerpt_en || post.title_en}
+SEO Title: ${post.seo_title_en || post.title_en}
+SEO Desc: ${post.seo_desc_en || post.excerpt_en || post.title_en}`
+
+      try {
+        const msg = await anthropic.messages.create({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 2000,
+          messages: [{ role: 'user', content: prompt }],
+        })
+        const text = (msg.content[0] as { text: string }).text
+        const parsed = JSON.parse(fixJson(text)) as Record<string, Record<string, string>>
+
+        for (const [code, fields] of Object.entries(parsed)) {
+          if (fields.title) updates[`title_${code}`] = fields.title
+          if (fields.excerpt) updates[`excerpt_${code}`] = fields.excerpt
+          if (fields.seo_title) updates[`seo_title_${code}`] = fields.seo_title
+          if (fields.seo_desc) updates[`seo_desc_${code}`] = fields.seo_desc
+        }
+      } catch (e) {
+        console.error(`Batch ${batch[0]} for ${post.slug}:`, e)
+      }
+    }
+
+    if (Object.keys(updates).length) {
+      await db.from('blog_posts').update(updates).eq('id', post.id)
+    }
+    results.push({ slug: post.slug, fields: String(Object.keys(updates).length) })
+  }
+
+  return NextResponse.json({ results, total: posts.length })
 }
