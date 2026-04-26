@@ -12,9 +12,9 @@ const LANGS = [
   ['lt','Lithuanian'],['lv','Latvian'],['et','Estonian'],['sl','Slovenian'],
 ]
 
-const BATCHES: [string, string][][] = [
+const BATCHES = [
   LANGS.slice(0,6), LANGS.slice(6,12), LANGS.slice(12,18), LANGS.slice(18),
-]
+] as [string,string][][]
 
 async function translatePost(
   post: { id: string; title_en: string; excerpt_en: string; body_en: string; seo_title_en: string; seo_desc_en: string; category: string },
