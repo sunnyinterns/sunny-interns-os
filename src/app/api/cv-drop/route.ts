@@ -120,7 +120,7 @@ If a field is not found, use null. desired_fields: marketing/communication/busin
       source: "website_hero",
       status: "extracted",
       lead_id: leadId ?? null,
-    }).then(() => null).catch(() => null); // non-blocking
+    }); // non-blocking - errors ignored
 
     return NextResponse.json({ extracted, lead_id: leadId, cv_url: publicUrl }, { headers: CORS_HEADERS });
   } catch (e) {
