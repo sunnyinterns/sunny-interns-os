@@ -1,4 +1,5 @@
 'use client'
+import { CVDropperInline } from '@/components/cv-dropper-inline'
 import { DatePickerInput } from '@/components/ui/DatePickerInput'
 import { NativeBookingEmbed } from '@/components/booking/NativeBookingEmbed'
 import { useState, useRef, useEffect, useCallback, useMemo, Suspense } from 'react'
@@ -435,12 +436,20 @@ function ApplyPageInner() {
   const cvLeadId = searchParams?.get('lead_id') ?? ''
   const cvPrefilled = cvPrefillSource === 'cv_dropper'
   const [leadId, setLeadId] = useState<string | null>(cvLeadId || null)
-  const [step, setStep] = useState(() => {
+  // step -1 = CVDropper screen (shown when no prefill)
+  // step 0..5 = normal form steps
+  const [step, setStep] = useState<number>(-2) // -2 = not yet initialized (SSR safe)
+  useEffect(() => {
     try {
-      const saved = typeof window !== 'undefined' ? localStorage.getItem('apply_desktop_step_v1') : null
-      return saved ? Math.min(parseInt(saved), 5) : 0
-    } catch { return 0 }
-  })
+      const hasPrefill = searchParams?.get('source') === 'cv_dropper'
+      if (hasPrefill) { setStep(0); return }
+      const saved = localStorage.getItem('apply_desktop_step_v1')
+      const savedStep = saved ? Math.min(parseInt(saved), 5) : -1
+      // If they have saved progress → resume, else show CVDropper
+      setStep(savedStep >= 0 ? savedStep : -1)
+    } catch { setStep(-1) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   // Detect language from URL param — fr stays fr, everything else → en
   const langParam = searchParams?.get('lang')
   const resolvedLang: 'fr' | 'en' = langParam === 'fr' ? 'fr' : 'en'
@@ -948,6 +957,48 @@ function ApplyPageInner() {
         {/* ════════════════════════════════════════════════════════
             ÉTAPE 1 — Ce que tu cherches
             ════════════════════════════════════════════════════════ */}
+        {/* ── STEP -1 : CV Dropper (first screen) ── */}
+        {(step === -1 || step === -2) && (
+          <div className="min-h-[60vh] flex flex-col items-center justify-center py-12 px-4">
+            <div className="max-w-[480px] w-full text-center">
+              <p className="font-body text-[11px] font-bold tracking-[2.5px] uppercase text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full inline-block mb-4">
+                {lang === 'fr' ? 'Étape 1 / 6' : 'Step 1 / 6'}
+              </p>
+              <h2 className="font-display text-[clamp(24px,4vw,36px)] text-[#1a1918] mb-3 leading-tight">
+                {lang === 'fr' ? <>Dépose ton CV <span className="text-amber-700">pour commencer</span></> 
+                               : <>Drop your CV <span className="text-amber-700">to get started</span></>}
+              </h2>
+              <p className="font-body text-sm text-zinc-500 mb-8 leading-relaxed">
+                {lang === 'fr' 
+                  ? 'On lit ton CV automatiquement et on pré-remplit le formulaire. Tu peux aussi continuer sans CV.'
+                  : 'We read your CV automatically and pre-fill the form. You can also continue without CV.'}
+              </p>
+              
+              {/* Inline CV Drop Zone */}
+              <CVDropperInline lang={lang} onComplete={(data, cvUrl) => {
+                // Prefill form with extracted data
+                setForm(f => {
+                  const next = { ...f }
+                  if (data.first_name) next.first_name = data.first_name
+                  if (data.last_name) next.last_name = data.last_name
+                  if (data.email) next.email = data.email
+                  if (data.school) { next.school_custom_name = data.school; next.school_not_found = true }
+                  if (cvUrl) next.cv_url = cvUrl
+                  return next
+                })
+                setStep(0)
+              }} />
+              
+              <button 
+                onClick={() => setStep(0)}
+                className="mt-4 font-body text-sm text-zinc-400 hover:text-zinc-600 underline bg-transparent border-none cursor-pointer"
+              >
+                {lang === 'fr' ? 'Continuer sans CV →' : 'Continue without CV →'}
+              </button>
+            </div>
+          </div>
+        )}
+
         {step === 0 && (
           <div className="space-y-4">
             {/* Email */}
