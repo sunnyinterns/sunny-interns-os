@@ -12,6 +12,7 @@ interface Lead {
   whatsapp: string | null
   source: string
   sub_source: string | null
+  cv_url?: string | null
   status: string
   abandon_reason: string | null
   form_step: number | null

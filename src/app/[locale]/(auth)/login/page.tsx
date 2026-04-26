@@ -16,6 +16,22 @@ export default function LoginPage() {
     setGoogleLoading(true)
     setError(null)
     const supabase = createClient()
+
+    // Check if user already has a refresh token saved — if yes, no need to re-consent
+    // Only force consent if no refresh token exists in scheduling_managers
+    let needConsent = true
+    try {
+      const { data: user } = await supabase.auth.getUser()
+      if (user?.user?.email) {
+        const { data: mgr } = await supabase
+          .from('scheduling_managers')
+          .select('google_refresh_token')
+          .eq('email', user.user.email)
+          .single()
+        needConsent = !mgr?.google_refresh_token
+      }
+    } catch { /* first login — need consent */ }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -29,7 +45,8 @@ export default function LoginPage() {
         ].join(' '),
         queryParams: {
           access_type: 'offline',
-          prompt: 'consent',
+          // Only prompt consent if we don't have a refresh token yet
+          prompt: needConsent ? 'consent' : 'select_account',
         },
       },
     })
