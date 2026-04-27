@@ -2,190 +2,195 @@
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-// ── Types ────────────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
+type PageStatus = "draft" | "review" | "validated" | "live";
+
+interface CmsPage {
+  id: string; name_fr: string; name_en: string; path: string;
+  status: PageStatus; notes: string | null;
+  validated_at: string | null; validated_by: string | null;
+}
+
+interface CmsSection {
+  id: string; page_id: string; section_key: string; label_fr: string;
+  display_order: number; bg_type: "color" | "image" | "none";
+  bg_color: string; bg_image_url: string | null; bg_overlay: number;
+  enabled: boolean;
+}
+
 interface SiteImage {
-  id: string;
-  page: string;
-  section: string;
-  slot: string;
-  label_fr: string;
-  image_url: string;
-  image_type: "photo" | "video" | "avatar" | "logo";
-  aspect: string;
-  notes: string | null;
-  updated_at: string;
+  id: string; page: string; section: string; slot: string;
+  label_fr: string; image_url: string; image_type: string;
+  aspect: string; notes: string | null;
 }
 
 interface GalleryTile {
-  id: string;
-  loc_en: string;
-  loc_fr: string;
-  label_en: string;
-  label_fr: string;
-  image_url: string;
-  display_order: number;
-  is_active: boolean;
+  id: string; loc_en: string; loc_fr: string;
+  label_en: string; label_fr: string; image_url: string;
+  display_order: number; is_active: boolean;
 }
 
-// ── Badge helper ─────────────────────────────────────────────────────────────
-const TYPE_BADGE: Record<string, string> = {
-  photo: "📷 Photo",
-  video: "🎬 Vidéo",
-  avatar: "👤 Avatar",
-  logo: "🏷️ Logo",
+// ── Status config ─────────────────────────────────────────────────────────────
+const STATUS: Record<PageStatus, { label: string; color: string; bg: string }> = {
+  draft:     { label: "Brouillon",  color: "text-gray-500",   bg: "bg-gray-100" },
+  review:    { label: "En révision",color: "text-amber-600",  bg: "bg-amber-100" },
+  validated: { label: "Validé ✓",  color: "text-emerald-600",bg: "bg-emerald-100" },
+  live:      { label: "En ligne 🟢",color: "text-blue-600",   bg: "bg-blue-100" },
 };
 
-const ASPECT_STYLE: Record<string, string> = {
-  "16/9": "aspect-video",
-  "9/16": "aspect-[9/16] max-h-48",
-  "1/1": "aspect-square",
-  "4/3": "aspect-[4/3]",
-};
+const BG_PRESETS = [
+  { label: "Crème clair", value: "#FAFAF8" },
+  { label: "Crème", value: "#F5F0E8" },
+  { label: "Blanc", value: "#FFFFFF" },
+  { label: "Charcoal", value: "#1a1918" },
+  { label: "Jaune primaire", value: "#FFCC00" },
+  { label: "Amber clair", value: "#FFFBF0" },
+];
 
-// ── ImageCard component ───────────────────────────────────────────────────────
-function ImageCard({
-  img,
-  onSave,
-  saving,
-}: {
-  img: SiteImage;
-  onSave: (id: string, url: string) => Promise<void>;
-  saving: boolean;
+// ── SectionRow component ──────────────────────────────────────────────────────
+function SectionRow({ sec, images, tiles, onSaveSection, onSaveImage, onSaveTile, saving }: {
+  sec: CmsSection;
+  images: SiteImage[];
+  tiles: GalleryTile[];
+  onSaveSection: (id: string, patch: Partial<CmsSection>) => Promise<void>;
+  onSaveImage: (id: string, url: string) => Promise<void>;
+  onSaveTile: (id: string, patch: Partial<GalleryTile>) => Promise<void>;
+  saving: string | null;
 }) {
-  const [url, setUrl] = useState(img.image_url);
-  const [preview, setPreview] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [local, setLocal] = useState({ ...sec });
   const [dirty, setDirty] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const valid = url.startsWith("http://") || url.startsWith("https://");
+  const set = (patch: Partial<CmsSection>) => { setLocal(p => ({ ...p, ...patch })); setDirty(true); };
+
+  const save = async () => { await onSaveSection(sec.id, local); setDirty(false); };
 
   return (
-    <div className={`bg-white rounded-xl border p-4 flex gap-4 transition-all ${dirty ? "border-amber-400 shadow-sm" : "border-gray-100"}`}>
-      {/* Thumbnail */}
-      <div
-        className="shrink-0 cursor-pointer relative group"
-        style={{ width: img.image_type === "avatar" ? 64 : 112 }}
-        onClick={() => setPreview(true)}
-      >
-        <div className={`${ASPECT_STYLE[img.aspect] || "aspect-video"} rounded-lg overflow-hidden bg-gray-100 border border-gray-200`}>
-          <img
-            src={url}
-            alt={img.label_fr}
-            className="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
-            onError={(e) => { (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='60'%3E%3Crect fill='%23f3f4f6' width='100' height='60'/%3E%3Ctext fill='%239ca3af' font-size='10' x='50%25' y='50%25' text-anchor='middle' dy='.35em'%3E✕%3C/text%3E%3C/svg%3E"; }}
-          />
+    <div className={`border rounded-xl overflow-hidden transition-all ${local.enabled ? "border-gray-200" : "border-dashed border-gray-200 opacity-60"}`}>
+      {/* Section header */}
+      <div className={`flex items-center gap-3 px-4 py-3 cursor-pointer select-none ${open ? "bg-gray-50" : "bg-white"} hover:bg-gray-50 transition-colors`}
+        onClick={() => setOpen(o => !o)}>
+        <span className="text-xs font-bold text-gray-400 w-5 text-center">{sec.display_order}</span>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-[13px] text-gray-900 leading-none">{sec.label_fr}</p>
+          <p className="text-[10px] text-gray-400 mt-0.5 font-mono">{sec.section_key}</p>
         </div>
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <span className="text-xs bg-black/60 text-white px-2 py-0.5 rounded">Aperçu</span>
+        {/* BG badge */}
+        <div className="flex items-center gap-1.5">
+          {sec.bg_type === "color" && (
+            <div className="w-5 h-5 rounded-full border border-gray-200 shadow-sm shrink-0"
+              style={{ background: local.bg_color }} />
+          )}
+          {sec.bg_type === "image" && <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">📷 Image</span>}
+          {sec.bg_type === "none" && <span className="text-[10px] text-gray-400">Transparent</span>}
         </div>
+        {dirty && <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">modifié</span>}
+        <label className="flex items-center gap-1 text-[11px] text-gray-500 cursor-pointer" onClick={e => e.stopPropagation()}>
+          <input type="checkbox" checked={local.enabled} onChange={e => set({ enabled: e.target.checked })}
+            className="rounded w-3 h-3" />
+          Visible
+        </label>
+        <span className={`transition-transform text-gray-400 ${open ? "rotate-180" : ""}`}>▾</span>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2 mb-1.5">
+      {open && (
+        <div className="border-t border-gray-100 bg-white p-5 space-y-5">
+          {/* ── Background ── */}
           <div>
-            <p className="font-bold text-[13px] text-gray-900 leading-snug">{img.label_fr}</p>
-            <p className="text-[11px] text-gray-400">{img.slot}</p>
+            <p className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-3">Arrière-plan</p>
+            <div className="flex gap-2 mb-3">
+              {(["color","image","none"] as const).map(t => (
+                <button key={t} onClick={() => set({ bg_type: t })}
+                  className={`text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all ${local.bg_type === t ? "bg-amber-400 border-amber-400 text-white" : "bg-white border-gray-200 text-gray-600 hover:border-amber-300"}`}>
+                  {t === "color" ? "🎨 Couleur" : t === "image" ? "📷 Image" : "⬜ Aucun"}
+                </button>
+              ))}
+            </div>
+
+            {local.bg_type === "color" && (
+              <div className="flex flex-wrap gap-2 items-center">
+                {BG_PRESETS.map(p => (
+                  <button key={p.value} title={p.label} onClick={() => set({ bg_color: p.value })}
+                    className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-110 ${local.bg_color === p.value ? "border-amber-500 scale-110" : "border-gray-200"}`}
+                    style={{ background: p.value }} />
+                ))}
+                <div className="flex items-center gap-2 ml-2">
+                  <input type="color" value={local.bg_color || "#FAFAF8"}
+                    onChange={e => set({ bg_color: e.target.value })}
+                    className="w-8 h-8 rounded cursor-pointer border border-gray-200" />
+                  <input value={local.bg_color || ""} onChange={e => set({ bg_color: e.target.value })}
+                    placeholder="#FAFAF8" className="text-[11px] font-mono border border-gray-200 rounded-lg px-2 py-1.5 w-24 focus:outline-none focus:ring-2 focus:ring-amber-300" />
+                </div>
+              </div>
+            )}
+
+            {local.bg_type === "image" && (
+              <div className="space-y-2.5">
+                <div className="flex gap-2">
+                  <input value={local.bg_image_url || ""} onChange={e => set({ bg_image_url: e.target.value })}
+                    placeholder="https://images.unsplash.com/photo-..."
+                    className="flex-1 text-[11px] font-mono border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-300" />
+                  <button onClick={() => setPreviewUrl(local.bg_image_url)}
+                    className="text-[11px] px-2.5 py-1.5 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50">👁</button>
+                </div>
+                {local.bg_image_url && (
+                  <div className="relative rounded-lg overflow-hidden h-20 bg-gray-100">
+                    <img src={local.bg_image_url} alt="bg" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${local.bg_overlay})` }} />
+                  </div>
+                )}
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] text-gray-500 shrink-0">Overlay obscurité :</span>
+                  <input type="range" min="0" max="1" step="0.05" value={local.bg_overlay}
+                    onChange={e => set({ bg_overlay: parseFloat(e.target.value) })}
+                    className="flex-1 accent-amber-500" />
+                  <span className="text-[11px] font-mono text-gray-600 w-8">{Math.round(local.bg_overlay * 100)}%</span>
+                </div>
+              </div>
+            )}
           </div>
-          <span className="shrink-0 text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-            {TYPE_BADGE[img.image_type]}
-          </span>
-        </div>
 
-        {img.notes && (
-          <p className="text-[11px] text-gray-400 mb-2 leading-relaxed">{img.notes}</p>
-        )}
+          {/* ── Médias liés à cette section ── */}
+          {images.length > 0 && (
+            <div>
+              <p className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-3">Médias de cette section ({images.length})</p>
+              <div className="space-y-2.5">
+                {images.map(img => (
+                  <ImageSlot key={img.id} img={img} onSave={onSaveImage} saving={saving === img.id} />
+                ))}
+              </div>
+            </div>
+          )}
 
-        <div className="flex gap-2">
-          <input
-            value={url}
-            onChange={(e) => { setUrl(e.target.value); setDirty(e.target.value !== img.image_url); }}
-            placeholder="https://images.unsplash.com/..."
-            className="flex-1 text-[11px] font-mono border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-300 min-w-0"
-          />
-          <button
-            onClick={() => setPreview(true)}
-            className="shrink-0 text-[11px] px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
-          >
-            👁
-          </button>
-          <button
-            onClick={async () => { await onSave(img.id, url); setDirty(false); }}
-            disabled={saving || !valid || !dirty}
-            className="shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {saving ? "⏳" : "💾 Sauver"}
-          </button>
+          {/* ── Tiles galerie ── */}
+          {tiles.length > 0 && (
+            <div>
+              <p className="text-[11px] font-bold text-gray-500 tracking-wider uppercase mb-3">Photos quartiers ({tiles.length})</p>
+              <div className="space-y-2">
+                {tiles.map(tile => (
+                  <TileSlot key={tile.id} tile={tile} onSave={onSaveTile} saving={saving === tile.id} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Save button */}
+          <div className="flex justify-end pt-2 border-t border-gray-100">
+            <button onClick={save} disabled={!dirty || saving === sec.id}
+              className="text-[12px] font-bold px-4 py-2 rounded-lg bg-amber-400 hover:bg-amber-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+              {saving === sec.id ? "⏳ Sauvegarde..." : "💾 Sauvegarder la section"}
+            </button>
+          </div>
         </div>
-        {!valid && url && (
-          <p className="text-[11px] text-red-500 mt-1">URL invalide — doit commencer par https://</p>
-        )}
-      </div>
+      )}
 
       {/* Preview modal */}
-      {preview && (
-        <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-6" onClick={() => setPreview(false)}>
-          <div className="max-w-2xl w-full bg-white rounded-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-gray-100 relative">
-              <img src={url} alt={img.label_fr} className="w-full max-h-[70vh] object-contain" />
-            </div>
-            <div className="p-4 flex justify-between items-center">
-              <p className="text-[11px] text-gray-400 font-mono truncate max-w-[80%]">{url}</p>
-              <button onClick={() => setPreview(false)} className="text-sm font-bold text-gray-500 hover:text-gray-800">✕ Fermer</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── GalleryTileCard ───────────────────────────────────────────────────────────
-function GalleryTileCard({
-  tile,
-  onSave,
-  saving,
-}: {
-  tile: GalleryTile;
-  onSave: (id: string, updates: Partial<GalleryTile>) => Promise<void>;
-  saving: boolean;
-}) {
-  const [url, setUrl] = useState(tile.image_url);
-  const [labelEn, setLabelEn] = useState(tile.label_en);
-  const [labelFr, setLabelFr] = useState(tile.label_fr);
-  const [preview, setPreview] = useState(false);
-  const [dirty, setDirty] = useState(false);
-  const valid = url.startsWith("http://") || url.startsWith("https://");
-
-  return (
-    <div className={`bg-white rounded-xl border p-4 flex gap-4 ${dirty ? "border-amber-400 shadow-sm" : "border-gray-100"}`}>
-      <div className="shrink-0 w-28 cursor-pointer group" onClick={() => setPreview(true)}>
-        <div className="aspect-[4/3] rounded-lg overflow-hidden bg-gray-100 border border-gray-200 relative">
-          <img src={url} alt={tile.loc_en} className="w-full h-full object-cover group-hover:opacity-80 transition-opacity" />
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <span className="text-xs bg-black/60 text-white px-2 py-0.5 rounded">Aperçu</span>
-          </div>
-        </div>
-      </div>
-      <div className="flex-1 min-w-0 space-y-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">#{tile.display_order}</span>
-          <span className="font-bold text-[13px] text-gray-900">{tile.loc_en} / {tile.loc_fr}</span>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <input value={labelEn} onChange={e => { setLabelEn(e.target.value); setDirty(true); }} placeholder="Label EN" className="text-[11px] border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-300" />
-          <input value={labelFr} onChange={e => { setLabelFr(e.target.value); setDirty(true); }} placeholder="Label FR" className="text-[11px] border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-300" />
-        </div>
-        <div className="flex gap-2">
-          <input value={url} onChange={e => { setUrl(e.target.value); setDirty(true); }} placeholder="https://images.unsplash.com/..." className="flex-1 text-[11px] font-mono border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-300" />
-          <button onClick={() => setPreview(true)} className="shrink-0 text-[11px] px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">👁</button>
-          <button onClick={async () => { await onSave(tile.id, { image_url: url, label_en: labelEn, label_fr: labelFr }); setDirty(false); }} disabled={saving || !valid || !dirty} className="shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-500 text-white disabled:opacity-40 disabled:cursor-not-allowed">{saving ? "⏳" : "💾"}</button>
-        </div>
-      </div>
-      {preview && (
-        <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-6" onClick={() => setPreview(false)}>
+      {previewUrl && (
+        <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-6" onClick={() => setPreviewUrl(null)}>
           <div className="max-w-2xl w-full bg-white rounded-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-            <img src={url} alt={tile.loc_en} className="w-full max-h-[70vh] object-contain" />
-            <div className="p-4 flex justify-between"><p className="text-[11px] text-gray-400 font-mono truncate">{url}</p><button onClick={() => setPreview(false)} className="text-sm font-bold text-gray-500">✕</button></div>
+            <img src={previewUrl} alt="Preview" className="w-full max-h-[70vh] object-contain" />
+            <div className="p-4 flex justify-end"><button onClick={() => setPreviewUrl(null)} className="text-sm font-bold text-gray-500">✕ Fermer</button></div>
           </div>
         </div>
       )}
@@ -193,15 +198,93 @@ function GalleryTileCard({
   );
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────────
+// ── ImageSlot ─────────────────────────────────────────────────────────────────
+function ImageSlot({ img, onSave, saving }: { img: SiteImage; onSave: (id: string, url: string) => Promise<void>; saving: boolean }) {
+  const [url, setUrl] = useState(img.image_url);
+  const [dirty, setDirty] = useState(false);
+  const [preview, setPreview] = useState(false);
+  return (
+    <div className={`flex gap-3 items-center bg-gray-50 rounded-lg p-3 ${dirty ? "ring-1 ring-amber-300" : ""}`}>
+      <div className="w-16 h-12 rounded-lg overflow-hidden bg-gray-200 shrink-0 cursor-pointer" onClick={() => setPreview(true)}>
+        <img src={url} alt={img.label_fr} className="w-full h-full object-cover" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[12px] font-semibold text-gray-800 leading-none mb-1">{img.label_fr}</p>
+        <p className="text-[10px] text-gray-400 mb-1.5">{img.image_type === "avatar" ? "👤 Avatar 1:1" : img.image_type === "photo" ? `📷 Photo ${img.aspect}` : img.image_type}</p>
+        <div className="flex gap-1.5">
+          <input value={url} onChange={e => { setUrl(e.target.value); setDirty(e.target.value !== img.image_url); }}
+            className="flex-1 text-[10px] font-mono border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-amber-300 min-w-0" />
+          <button onClick={() => setPreview(true)} className="text-[10px] px-1.5 py-1 border border-gray-200 rounded text-gray-400 hover:text-gray-600">👁</button>
+          <button onClick={async () => { await onSave(img.id, url); setDirty(false); }} disabled={saving || !dirty}
+            className="text-[10px] font-bold px-2 py-1 rounded bg-amber-400 hover:bg-amber-500 text-white disabled:opacity-40">
+            {saving ? "⏳" : "💾"}
+          </button>
+        </div>
+      </div>
+      {preview && (
+        <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-6" onClick={() => setPreview(false)}>
+          <div className="max-w-xl w-full bg-white rounded-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <img src={url} alt={img.label_fr} className="w-full max-h-[60vh] object-contain" />
+            <div className="p-3 flex justify-between">
+              <p className="text-[10px] text-gray-400 font-mono truncate">{url}</p>
+              <button onClick={() => setPreview(false)} className="text-xs font-bold text-gray-500">✕</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── TileSlot ──────────────────────────────────────────────────────────────────
+function TileSlot({ tile, onSave, saving }: { tile: GalleryTile; onSave: (id: string, patch: Partial<GalleryTile>) => Promise<void>; saving: boolean }) {
+  const [url, setUrl] = useState(tile.image_url);
+  const [lEn, setLEn] = useState(tile.label_en);
+  const [lFr, setLFr] = useState(tile.label_fr);
+  const dirty = url !== tile.image_url || lEn !== tile.label_en || lFr !== tile.label_fr;
+  return (
+    <div className={`flex gap-3 items-center bg-gray-50 rounded-lg p-3 ${dirty ? "ring-1 ring-amber-300" : ""}`}>
+      <div className="w-20 h-14 rounded-lg overflow-hidden bg-gray-200 shrink-0">
+        <img src={url} alt={tile.loc_en} className="w-full h-full object-cover" />
+      </div>
+      <div className="flex-1 min-w-0 space-y-1.5">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">#{tile.display_order}</span>
+          <span className="text-[12px] font-semibold text-gray-800">{tile.loc_en}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-1.5">
+          <input value={lEn} onChange={e => setLEn(e.target.value)} placeholder="Label EN"
+            className="text-[10px] border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-amber-300" />
+          <input value={lFr} onChange={e => setLFr(e.target.value)} placeholder="Label FR"
+            className="text-[10px] border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-amber-300" />
+        </div>
+        <div className="flex gap-1.5">
+          <input value={url} onChange={e => setUrl(e.target.value)}
+            className="flex-1 text-[10px] font-mono border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-amber-300 min-w-0" />
+          <button onClick={async () => { await onSave(tile.id, { image_url: url, label_en: lEn, label_fr: lFr }); }}
+            disabled={saving || !dirty}
+            className="text-[10px] font-bold px-2 py-1 rounded bg-amber-400 hover:bg-amber-500 text-white disabled:opacity-40">
+            {saving ? "⏳" : "💾"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main CMS page ─────────────────────────────────────────────────────────────
 export default function WebsiteCMS() {
   const supabase = createClient();
+  const [pages, setPages] = useState<CmsPage[]>([]);
+  const [sections, setSections] = useState<CmsSection[]>([]);
   const [images, setImages] = useState<SiteImage[]>([]);
   const [tiles, setTiles] = useState<GalleryTile[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [activePage, setActivePage] = useState<string>("homepage");
   const [saving, setSaving] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
-  const [activeTab, setActiveTab] = useState<string>("Homepage");
+  const [loading, setLoading] = useState(true);
+  const [pageNotes, setPageNotes] = useState<string>("");
+  const [noteDirty, setNoteDirty] = useState(false);
 
   const showToast = (msg: string, ok = true) => {
     setToast({ msg, ok });
@@ -210,166 +293,225 @@ export default function WebsiteCMS() {
 
   useEffect(() => {
     Promise.all([
-      supabase.from("website_images").select("*").order("page").order("section").order("slot"),
+      supabase.from("cms_pages").select("*").order("name_fr"),
+      supabase.from("cms_sections").select("*").order("display_order"),
+      supabase.from("website_images").select("*").order("section").order("slot"),
       supabase.from("gallery_tiles").select("*").order("display_order"),
-    ]).then(([{ data: imgs }, { data: gal }]) => {
-      setImages(imgs || []);
-      setTiles(gal || []);
+    ]).then(([{ data: p }, { data: s }, { data: i }, { data: g }]) => {
+      setPages(p || []);
+      setSections(s || []);
+      setImages(i || []);
+      setTiles(g || []);
       setLoading(false);
     });
   }, []);
 
+  useEffect(() => {
+    const pg = pages.find(p => p.id === activePage);
+    setPageNotes(pg?.notes || "");
+    setNoteDirty(false);
+  }, [activePage, pages]);
+
+  const currentPage = pages.find(p => p.id === activePage);
+  const currentSections = sections.filter(s => s.page_id === activePage).sort((a, b) => a.display_order - b.display_order);
+
+  const savePageStatus = async (id: string, status: PageStatus) => {
+    const patch: Partial<CmsPage> = { status };
+    if (status === "validated") { patch.validated_at = new Date().toISOString(); patch.validated_by = "admin"; }
+    await supabase.from("cms_pages").update(patch).eq("id", id);
+    setPages(prev => prev.map(p => p.id === id ? { ...p, ...patch } : p));
+    showToast(`✅ Page "${currentPage?.name_fr}" → ${STATUS[status].label}`);
+  };
+
+  const savePageNotes = async () => {
+    await supabase.from("cms_pages").update({ notes: pageNotes }).eq("id", activePage);
+    setPages(prev => prev.map(p => p.id === activePage ? { ...p, notes: pageNotes } : p));
+    setNoteDirty(false);
+    showToast("✅ Notes sauvegardées");
+  };
+
+  const saveSection = async (id: string, patch: Partial<CmsSection>) => {
+    setSaving(id);
+    await supabase.from("cms_sections").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id);
+    setSections(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
+    setSaving(null);
+    showToast("✅ Section mise à jour");
+  };
+
   const saveImage = async (id: string, url: string) => {
     setSaving(id);
-    const { error } = await supabase.from("website_images").update({ image_url: url, updated_at: new Date().toISOString() }).eq("id", id);
+    await supabase.from("website_images").update({ image_url: url, updated_at: new Date().toISOString() }).eq("id", id);
+    setImages(prev => prev.map(i => i.id === id ? { ...i, image_url: url } : i));
     setSaving(null);
-    if (error) showToast("Erreur: " + error.message, false);
-    else {
-      setImages(prev => prev.map(i => i.id === id ? { ...i, image_url: url } : i));
-      showToast("✅ Image mise à jour — visible sur le site en quelques secondes");
-    }
+    showToast("✅ Image mise à jour — visible sur le site instantanément");
   };
 
-  const saveGalleryTile = async (id: string, updates: Partial<GalleryTile>) => {
+  const saveTile = async (id: string, patch: Partial<GalleryTile>) => {
     setSaving(id);
-    const { error } = await supabase.from("gallery_tiles").update(updates).eq("id", id);
+    await supabase.from("gallery_tiles").update(patch).eq("id", id);
+    setTiles(prev => prev.map(t => t.id === id ? { ...t, ...patch } : t));
     setSaving(null);
-    if (error) showToast("Erreur: " + error.message, false);
-    else {
-      setTiles(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
-      showToast("✅ Quartier mis à jour — visible sur le site en quelques secondes");
-    }
+    showToast("✅ Quartier mis à jour");
   };
-
-  // Group images by page → section
-  const grouped = images.reduce<Record<string, Record<string, SiteImage[]>>>((acc, img) => {
-    if (!acc[img.page]) acc[img.page] = {};
-    if (!acc[img.page][img.section]) acc[img.page][img.section] = [];
-    acc[img.page][img.section].push(img);
-    return acc;
-  }, {});
-
-  // Add gallery as a special group under Homepage
-  const pages = Object.keys(grouped);
-  const tabs = [...new Set([...pages, "Homepage"])];
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-3">
-      <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full" />
-      <p className="text-gray-400 text-sm">Chargement du CMS…</p>
+    <div className="flex items-center justify-center min-h-screen gap-3">
+      <div className="animate-spin w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full" />
+      <span className="text-gray-400 text-sm">Chargement du CMS…</span>
     </div>
   );
 
-  const currentImages = grouped[activeTab] || {};
-  const sections = Object.entries(currentImages);
-  const showGallery = activeTab === "Homepage";
-
   return (
-    <div className="max-w-5xl mx-auto px-5 py-10">
+    <div className="flex h-screen overflow-hidden bg-gray-50">
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-5 right-5 z-50 px-5 py-3 rounded-xl text-sm font-bold shadow-xl text-white transition-all ${toast.ok ? "bg-emerald-600" : "bg-red-600"}`}>
+        <div className={`fixed top-4 right-4 z-50 px-5 py-3 rounded-xl text-sm font-bold shadow-xl text-white ${toast.ok ? "bg-emerald-600" : "bg-red-500"}`}>
           {toast.msg}
         </div>
       )}
 
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">🖼️ CMS — Images du site</h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Gère toutes les photos du site vitrine. Colle une URL et clique Sauver — le changement est visible instantanément.
-        </p>
-        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800">
-          <strong>💡 Astuce Unsplash :</strong> Va sur <a href="https://unsplash.com/s/photos/bali" target="_blank" className="underline font-medium">unsplash.com/s/photos/bali</a> → clique une photo → clic droit → "Copier l'adresse de l'image" → colle ici. Ajoute <code className="bg-blue-100 px-1 rounded">?w=1200&q=80&auto=format&fit=crop</code> à la fin pour optimiser.
+      {/* ── SIDEBAR — Pages ── */}
+      <aside className="w-60 bg-white border-r border-gray-200 flex flex-col overflow-hidden shrink-0">
+        <div className="px-4 py-5 border-b border-gray-100">
+          <h1 className="font-bold text-gray-900 text-base">🖥️ CMS Vitrine</h1>
+          <p className="text-[11px] text-gray-400 mt-0.5">Pages & sections</p>
         </div>
-      </div>
-
-      {/* Page tabs */}
-      <div className="flex gap-2 mb-6 flex-wrap">
-        {["Homepage", ...pages.filter(p => p !== "Homepage")].map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`px-4 py-1.5 rounded-full text-sm font-bold border transition-all ${activeTab === tab ? "bg-amber-400 text-white border-amber-400" : "bg-white text-gray-600 border-gray-200 hover:border-amber-300"}`}>
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Sections */}
-      <div className="space-y-8">
-        {sections.map(([section, sectionImages]) => (
-          <div key={section}>
-            <div className="flex items-center gap-3 mb-3">
-              <h2 className="font-bold text-gray-800 text-base">{section}</h2>
-              <span className="text-xs text-gray-400">{sectionImages.length} image{sectionImages.length > 1 ? "s" : ""}</span>
-              <div className="flex-1 h-px bg-gray-100" />
-            </div>
-            <div className="space-y-3">
-              {sectionImages.map(img => (
-                <ImageCard key={img.id} img={img} onSave={saveImage} saving={saving === img.id} />
-              ))}
-            </div>
-          </div>
-        ))}
-
-        {/* Gallery tiles — special section */}
-        {showGallery && (
-          <div>
-            <div className="flex items-center gap-3 mb-3">
-              <h2 className="font-bold text-gray-800 text-base">This is where you'll live — Quartiers</h2>
-              <span className="text-xs text-gray-400">{tiles.length} quartiers</span>
-              <div className="flex-1 h-px bg-gray-100" />
-            </div>
-            <p className="text-xs text-gray-400 mb-3">Photos de la grille galerie homepage. Tu peux aussi modifier les labels EN/FR de chaque quartier.</p>
-            <div className="space-y-3">
-              {tiles.map(tile => (
-                <GalleryTileCard key={tile.id} tile={tile} onSave={saveGalleryTile} saving={saving === tile.id} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Empty state */}
-        {sections.length === 0 && !showGallery && (
-          <div className="text-center py-16 text-gray-400">
-            <p className="text-4xl mb-3">🖼️</p>
-            <p className="font-bold text-gray-600">Aucune image configurée pour cette page</p>
-            <p className="text-sm mt-1">Les images de cette page sont encore gérées directement dans le code.</p>
-          </div>
-        )}
-      </div>
-
-      {/* How to use Unsplash */}
-      <div className="mt-10 p-5 bg-gray-50 rounded-2xl border border-gray-200">
-        <h3 className="font-bold text-gray-900 text-sm mb-3">📖 Guide — Comment mettre à jour une image</h3>
-        <div className="grid md:grid-cols-2 gap-6 text-sm text-gray-600">
-          <div>
-            <p className="font-semibold text-gray-800 mb-2">Option A — Unsplash (recommandé)</p>
-            <ol className="list-decimal list-inside space-y-1 text-xs">
-              <li>Va sur <a href="https://unsplash.com" target="_blank" className="text-amber-600 underline">unsplash.com</a> et cherche "Bali [sujet]"</li>
-              <li>Clique sur la photo qui te convient</li>
-              <li>Clic droit → "Copier l'adresse de l'image"</li>
-              <li>Colle dans le champ, ajoute <code className="bg-gray-200 px-1 rounded text-[10px]">?w=1200&q=80&auto=format&fit=crop</code></li>
-              <li>Clique "👁 Aperçu" pour vérifier</li>
-              <li>Clique "💾 Sauver"</li>
-            </ol>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-800 mb-2">Option B — Ta propre photo</p>
-            <ol className="list-decimal list-inside space-y-1 text-xs">
-              <li>Upload ta photo sur Supabase Storage (bucket "brand-assets")</li>
-              <li>Copie l'URL publique depuis Supabase</li>
-              <li>Colle dans le champ et sauvegarde</li>
-            </ol>
-            <div className="mt-3 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-              <strong>Format recommandé :</strong><br/>
-              Photos paysage : 1920×1080 min<br/>
-              Photos portrait (stories) : 1080×1920<br/>
-              Avatars : 400×400 carré<br/>
-              Taille max : 5 MB
-            </div>
+        <nav className="flex-1 overflow-y-auto py-2">
+          {pages.map(pg => {
+            const st = STATUS[pg.status];
+            return (
+              <button key={pg.id} onClick={() => setActivePage(pg.id)}
+                className={`w-full text-left px-4 py-2.5 flex items-center gap-2.5 transition-colors ${activePage === pg.id ? "bg-amber-50 border-r-2 border-amber-500" : "hover:bg-gray-50"}`}>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-[13px] font-semibold leading-none truncate ${activePage === pg.id ? "text-amber-700" : "text-gray-800"}`}>{pg.name_fr}</p>
+                  <p className="text-[10px] text-gray-400 font-mono mt-0.5 truncate">{pg.path}</p>
+                </div>
+                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${st.bg} ${st.color}`}>
+                  {pg.status === "validated" ? "✓" : pg.status === "live" ? "🟢" : pg.status === "review" ? "…" : "○"}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+        <div className="px-4 py-3 border-t border-gray-100">
+          <div className="text-[10px] text-gray-400 space-y-0.5">
+            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gray-200 inline-block" /> Brouillon</div>
+            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-300 inline-block" /> En révision</div>
+            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block" /> Validé</div>
+            <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-400 inline-block" /> En ligne</div>
           </div>
         </div>
-      </div>
+      </aside>
+
+      {/* ── MAIN — Page detail ── */}
+      <main className="flex-1 overflow-y-auto">
+        {currentPage && (
+          <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+
+            {/* Page header */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">{currentPage.name_fr}</h2>
+                  <p className="text-sm text-gray-400 font-mono mt-0.5">
+                    <a href={`https://bali-interns-website.vercel.app${currentPage.path}`} target="_blank"
+                      className="hover:text-amber-600 transition-colors no-underline">
+                      bali-interns.com{currentPage.path} ↗
+                    </a>
+                  </p>
+                  {currentPage.validated_at && (
+                    <p className="text-[11px] text-gray-400 mt-1">
+                      Validé le {new Date(currentPage.validated_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}
+                    </p>
+                  )}
+                </div>
+                {/* Status selector */}
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Statut</p>
+                  <div className="flex gap-1.5 flex-wrap justify-end">
+                    {(Object.keys(STATUS) as PageStatus[]).map(s => {
+                      const st = STATUS[s];
+                      return (
+                        <button key={s} onClick={() => savePageStatus(currentPage.id, s)}
+                          className={`text-[11px] font-bold px-3 py-1.5 rounded-full border transition-all ${currentPage.status === s ? `${st.bg} ${st.color} border-transparent` : "bg-white border-gray-200 text-gray-500 hover:border-gray-300"}`}>
+                          {st.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Notes internes</label>
+                <textarea value={pageNotes} onChange={e => { setPageNotes(e.target.value); setNoteDirty(true); }}
+                  placeholder="Notes de révision, points bloquants, corrections en attente…"
+                  rows={2}
+                  className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-amber-300" />
+                {noteDirty && (
+                  <div className="flex justify-end mt-1.5">
+                    <button onClick={savePageNotes}
+                      className="text-[11px] font-bold px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-white rounded-lg transition-colors">
+                      Sauvegarder les notes
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Sections */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold text-gray-700 text-sm">Sections ({currentSections.length})</h3>
+                <p className="text-[11px] text-gray-400">Cliquez sur une section pour la modifier</p>
+              </div>
+              <div className="space-y-2">
+                {currentSections.map(sec => {
+                  const secImages = images.filter(i =>
+                    i.section.toLowerCase().replace(/\s/g, "_").includes(sec.section_key) ||
+                    i.id.includes(sec.page_id + "." + sec.section_key.split(".").pop())
+                  );
+                  const secTiles = sec.section_key === "gallery" ? tiles : [];
+                  return (
+                    <SectionRow key={sec.id} sec={sec}
+                      images={secImages}
+                      tiles={secTiles}
+                      onSaveSection={saveSection}
+                      onSaveImage={saveImage}
+                      onSaveTile={saveTile}
+                      saving={saving} />
+                  );
+                })}
+                {currentSections.length === 0 && (
+                  <div className="text-center py-12 text-gray-400">
+                    <p className="text-3xl mb-2">📋</p>
+                    <p className="font-semibold text-gray-600 text-sm">Aucune section configurée pour cette page</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Media library for this page */}
+            {images.filter(i => i.page === currentPage.name_en || i.id.startsWith(activePage)).length > 0 && (
+              <div className="bg-white rounded-2xl border border-gray-200 p-5">
+                <h3 className="font-bold text-gray-700 text-sm mb-4">
+                  🖼️ Médiathèque — {currentPage.name_fr}
+                  <span className="ml-2 text-[11px] font-normal text-gray-400">
+                    ({images.filter(i => i.id.startsWith(activePage)).length} médias)
+                  </span>
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {images.filter(i => i.id.startsWith(activePage)).map(img => (
+                    <ImageSlot key={img.id} img={img} onSave={saveImage} saving={saving === img.id} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+          </div>
+        )}
+      </main>
     </div>
   );
 }
