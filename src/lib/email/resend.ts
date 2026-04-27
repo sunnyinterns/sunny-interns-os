@@ -325,9 +325,9 @@ export async function sendDossierPretAgent(opts: {
 
     if (!cas) { console.error('[sendDossierPretAgent] Case not found:', caseId); return }
 
-    const intern = cas.interns as Record<string, unknown> | null
-    const job    = cas.jobs    as Record<string, unknown> | null
-    const comp   = job ? (job.companies as Record<string, unknown> | null) : null
+    const intern = cas.interns as unknown as Record<string, unknown> | null
+    const job    = cas.jobs as unknown as Record<string, unknown> | null
+    const comp   = job ? (job.companies as unknown as Record<string, unknown> | null) : null
 
     // 2. Fetch visa type label
     let visaTypeLabel = '—'
@@ -363,7 +363,7 @@ export async function sendDossierPretAgent(opts: {
     const cvUrl = String(intern?.cv_url ?? intern?.local_cv_url ?? '')
     if (cvUrl) attachments.push({ filename: `CV_${String(intern?.last_name ?? 'intern')}.pdf`, path: cvUrl })
 
-    const extraDocs = Array.isArray(intern?.extra_docs_urls) ? intern.extra_docs_urls as string[] : []
+    const rawExtra = intern?.extra_docs_urls; const extraDocs = Array.isArray(rawExtra) ? rawExtra as string[] : []
     extraDocs.forEach((url, i) => {
       if (url) attachments.push({ filename: `document_${i + 1}.pdf`, path: url })
     })
