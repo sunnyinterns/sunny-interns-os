@@ -51,6 +51,32 @@ function ImageSlot({ img, onSave, saving }: {
   const [url, setUrl] = useState(img.image_url);
   const [dirty, setDirty] = useState(false);
   const [preview, setPreview] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const supabase = createClient();
+      const ext = file.name.split(".").pop();
+      const fileName = `cms/${img.id}-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("website-assets").upload(fileName, file, { upsert: true });
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from("website-assets").getPublicUrl(fileName);
+      const publicUrl = urlData.publicUrl;
+      setUrl(publicUrl);
+      setDirty(true);
+      await onSave(img.id, publicUrl);
+      setDirty(false);
+    } catch (err) {
+      alert("Erreur upload: " + (err as Error).message);
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
   return (
     <div className={`flex gap-3 items-center bg-gray-50 rounded-lg p-3 ${dirty ? "ring-1 ring-amber-300" : ""}`}>
       <div className="w-16 h-12 rounded-lg overflow-hidden bg-gray-200 shrink-0 cursor-pointer" onClick={() => setPreview(true)}>
@@ -60,16 +86,23 @@ function ImageSlot({ img, onSave, saving }: {
         <p className="text-[12px] font-semibold text-gray-800 leading-none mb-0.5">{img.label_fr}</p>
         <p className="text-[10px] text-gray-400 mb-1.5">{img.image_type === "avatar" ? "👤 Avatar 1:1" : `📷 ${img.aspect}`}</p>
         {img.notes && <p className="text-[10px] text-gray-400 mb-1.5 italic">{img.notes}</p>}
-        <div className="flex gap-1.5">
+        {/* URL input row */}
+        <div className="flex gap-1.5 mb-1.5">
           <input value={url} onChange={e => { setUrl(e.target.value); setDirty(e.target.value !== img.image_url); }}
+            placeholder="https://..."
             className="flex-1 text-[10px] font-mono border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-amber-300 min-w-0" />
-          <button onClick={() => setPreview(true)} className="text-[10px] px-1.5 py-1 border border-gray-200 rounded text-gray-400 hover:text-gray-600">👁</button>
+          <button onClick={() => setPreview(true)} className="text-[10px] px-1.5 py-1 border border-gray-200 rounded text-gray-400 hover:text-gray-600 cursor-pointer" title="Aperçu">👁</button>
           <button onClick={async () => { await onSave(img.id, url); setDirty(false); }}
             disabled={saving || !dirty}
             className="text-[10px] font-bold px-2 py-1 rounded bg-amber-400 hover:bg-amber-500 text-white disabled:opacity-40 border-none cursor-pointer">
             {saving ? "⏳" : "💾"}
           </button>
         </div>
+        {/* Upload button */}
+        <label className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded border border-dashed border-gray-300 text-gray-500 hover:border-amber-400 hover:text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+          {uploading ? "⏳ Upload en cours…" : "📁 Uploader depuis mon ordinateur"}
+          <input type="file" className="hidden" accept="image/*,video/*" onChange={handleUpload} />
+        </label>
       </div>
       {preview && (
         <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-6" onClick={() => setPreview(false)}>
@@ -112,8 +145,8 @@ function TileSlot({ tile, onSave, saving }: {
           <input value={lFr} onChange={e => setLFr(e.target.value)} placeholder="Label FR"
             className="text-[10px] border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-amber-300" />
         </div>
-        <div className="flex gap-1.5">
-          <input value={url} onChange={e => setUrl(e.target.value)}
+        <div className="flex gap-1.5 mb-1">
+          <input value={url} onChange={e => { setUrl(e.target.value); }}
             className="flex-1 text-[10px] font-mono border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-amber-300 min-w-0" />
           <button onClick={async () => { await onSave(tile.id, { image_url: url, label_en: lEn, label_fr: lFr }); }}
             disabled={saving || !dirty}
@@ -121,6 +154,21 @@ function TileSlot({ tile, onSave, saving }: {
             {saving ? "⏳" : "💾"}
           </button>
         </div>
+        <label className="inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded border border-dashed border-gray-300 text-gray-500 hover:border-amber-400 hover:text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer">
+          📁 Uploader
+          <input type="file" className="hidden" accept="image/*" onChange={async (e) => {
+            const file = e.target.files?.[0]; if (!file) return;
+            const supabase = createClient();
+            const ext = file.name.split(".").pop();
+            const fileName = `cms/gallery-${tile.id}-${Date.now()}.${ext}`;
+            const { error } = await supabase.storage.from("website-assets").upload(fileName, file, { upsert: true });
+            if (error) { alert("Erreur: " + error.message); return; }
+            const { data } = supabase.storage.from("website-assets").getPublicUrl(fileName);
+            setUrl(data.publicUrl);
+            await onSave(tile.id, { image_url: data.publicUrl, label_en: lEn, label_fr: lFr });
+            e.target.value = "";
+          }} />
+        </label>
       </div>
     </div>
   );
