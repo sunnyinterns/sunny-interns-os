@@ -26,134 +26,165 @@ const EXAMPLE_VARIABLES: Record<string, string> = {
   dropoff_address: 'Villa Sunset, Seminyak',
   payment_amount: '€990',
   payment_link: 'https://pay.sunnyinterns.com/xxx',
+  invoice_number: 'INV-2026-042',
+  package_name: 'Bali Standard',
+  intern_name: 'Emma Johnson',
+  rdv_time: '10:00 AM',
+  score: '85',
 }
 
 function substituteVariables(text: string): string {
   return text.replace(/\{(\w+)\}/g, (_, key: string) => EXAMPLE_VARIABLES[key] ?? `{${key}}`)
 }
 
-// Normalize legacy categories to current ones
-function normalizeCategory(cat: string | null | undefined): string {
-  const legacyMap: Record<string, string> = {
-    onboarding: 'intern_qualification',
-    billing: 'intern_payment',
-    arrival: 'intern_departure',
-    visa: 'intern_visa',
-    general: 'intern_lead',
-  }
-  if (!cat) return 'internal'
-  return legacyMap[cat] ?? cat
+// ─── Architecture workflow ────────────────────────────────────────────────────
+// Each section maps to a stage in the intern journey
+// recipient: who receives this email
+// trigger: when it fires
+
+interface WorkflowSection {
+  id: string
+  label: string
+  emoji: string
+  description: string
+  recipient: 'intern' | 'employer' | 'agent' | 'internal' | 'partner'
+  badgeCls: string
+  slugs: string[]
 }
 
-// Derive category from slug (DB has slug, not category)
-function getCategoryFromSlug(slug: string | null | undefined): string {
-  if (!slug) return 'intern_qualification'
-
-  // 🔏 AGENT — emails vers l'agent visa uniquement
-  if (slug === 'visa_agent_submission') return 'agent'
-
-  // 🏢 EMPLOYER — emails vers les employeurs
-  if (['job_submitted_employer', 'employer_welcome', 'employer_welcome_portal',
-    'employer_document_reminder', 'sponsor_contract_employer'].includes(slug)) return 'employer'
-
-  // 🔔 INTERNAL — notifications internes manager + chauffeur + partenaires
-  if (['new_lead_internal', 'driver_notification', 'partner_welcome',
-    'password_reset', 'intern_card_ready'].includes(slug)) return 'internal'
-
-  // ✈️ INTERN PRE-DEPARTURE — J-14 et J-3 avant départ (basés sur actual_start_date)
-  if (['arrival_prep', 'all_indonesia_j3'].includes(slug)) return 'intern_departure'
-
-  // 🌴 INTERN ACTIVE/ALUMNI — pendant et après le stage
-  if (['touchpoint_j3', 'touchpoint_j30', 'touchpoint_j60', 'touchpoint_end',
-    'welcome_kit', 'alumni_welcome', 'ugc_thank_you'].includes(slug)) return 'intern_internship'
-
-  // 🛂 INTERN VISA
-  if (['visa_docs_request', 'visa_submitted', 'visa_received', 'visa_refused'].includes(slug)) return 'intern_visa'
-
-  // 💳 INTERN PAYMENT
-  if (['payment_request', 'payment_confirmed', 'invoice_sent'].includes(slug)) return 'intern_payment'
-
-  // 📝 INTERN CONVENTION
-  if (slug === 'convention_request') return 'intern_convention'
-
-  // 💼 INTERN JOBS
-  if (slug === 'new_job_alert') return 'intern_jobs'
-
-  // 🎙️ INTERN QUALIFICATION
-  if (['booking_confirmation', 'rdv_confirmation', 'rdv_reminder',
-    'qualification_recap', 'welcome_portal'].includes(slug)) return 'intern_qualification'
-
-  return 'intern_qualification' // fallback
-}
-
-// Recipient for a normalized category
-function getRecipient(normalizedCat: string): string {
-  if (normalizedCat.startsWith('intern_')) return 'intern'
-  if (normalizedCat === 'employer') return 'employer'
-  if (normalizedCat === 'agent') return 'agent'
-  return 'internal'
-}
-
-type Stage = { id: string; label: string; statuses: string[] }
-type RecipientGroup = { id: string; label: string; badgeCls: string; stages: Stage[] }
-
-const RECIPIENT_GROUPS: RecipientGroup[] = [
+const WORKFLOW: WorkflowSection[] = [
+  // ── INTERN JOURNEY ──────────────────────────────────────────────────────────
   {
-    id: 'intern',
-    label: 'Intern',
-    badgeCls: 'bg-blue-100 text-blue-700',
-    stages: [
-      { id: 'intern_lead', label: 'Lead & Booking', statuses: ['lead'] },
-      { id: 'intern_qualification', label: 'Qualification', statuses: ['rdv_booked', 'qualification_done'] },
-      { id: 'intern_jobs', label: 'Jobs', statuses: ['job_submitted', 'job_retained'] },
-      { id: 'intern_convention', label: 'Convention', statuses: ['convention_signed'] },
-      { id: 'intern_payment', label: 'Payment', statuses: ['payment_pending', 'payment_received'] },
-      { id: 'intern_visa', label: 'Visa', statuses: ['visa_in_progress', 'visa_received'] },
-      { id: 'intern_departure', label: 'Pre-departure (J-14 & J-3 crons — based on start date)', statuses: ['arrival_prep'] },
-      { id: 'intern_internship', label: 'During & After Internship (D+3, D+30, D+60 crons)', statuses: ['active', 'alumni'] },
-    ],
-  },
-  {
-    id: 'employer',
-    label: 'Employer',
-    badgeCls: 'bg-orange-100 text-orange-700',
-    stages: [
-      { id: 'employer', label: 'Employer emails', statuses: ['job_submitted', 'convention_signed'] },
-    ],
-  },
-  {
-    id: 'agent',
-    label: 'Visa Agent',
-    badgeCls: 'bg-purple-100 text-purple-700',
-    stages: [
-      { id: 'agent', label: 'Visa process', statuses: ['visa_in_progress'] },
-    ],
-  },
-  {
-    id: 'internal',
-    label: 'Internal',
+    id: 'leads',
+    label: 'Leads',
+    emoji: '📋',
+    description: 'Application submitted — not yet qualified',
+    recipient: 'intern',
     badgeCls: 'bg-zinc-100 text-zinc-600',
-    stages: [
-      { id: 'internal', label: 'Manager notifications', statuses: [] },
-    ],
+    slugs: ['apply_confirmation_en', 'new_lead_internal'],
+  },
+  {
+    id: 'candidates',
+    label: 'Candidates',
+    emoji: '🎓',
+    description: 'Interview booked → qualification done',
+    recipient: 'intern',
+    badgeCls: 'bg-blue-100 text-blue-700',
+    slugs: ['booking_confirmation', 'rdv_reminder', 'qualification_recap', 'welcome_portal'],
+  },
+  {
+    id: 'jobs',
+    label: 'Jobs',
+    emoji: '💼',
+    description: 'Job matching & submission',
+    recipient: 'intern',
+    badgeCls: 'bg-violet-100 text-violet-700',
+    slugs: ['new_job_alert'],
+  },
+  {
+    id: 'convention',
+    label: 'Convention',
+    emoji: '📝',
+    description: 'Internship agreement to sign',
+    recipient: 'intern',
+    badgeCls: 'bg-amber-100 text-amber-700',
+    slugs: ['convention_request'],
+  },
+  {
+    id: 'payment',
+    label: 'Payment',
+    emoji: '💳',
+    description: 'Invoice & payment confirmation',
+    recipient: 'intern',
+    badgeCls: 'bg-emerald-100 text-emerald-700',
+    slugs: ['payment_request', 'payment_confirmed', 'invoice_sent'],
+  },
+  {
+    id: 'visa',
+    label: 'Visa',
+    emoji: '🛂',
+    description: 'Visa documents, processing & result',
+    recipient: 'intern',
+    badgeCls: 'bg-indigo-100 text-indigo-700',
+    slugs: ['visa_docs_request', 'visa_submitted', 'visa_received', 'visa_refused'],
+  },
+  {
+    id: 'predeparture',
+    label: 'Pre-departure',
+    emoji: '✈️',
+    description: 'J-14 & J-3 crons — triggered by start date',
+    recipient: 'intern',
+    badgeCls: 'bg-orange-100 text-orange-700',
+    slugs: ['arrival_prep', 'all_indonesia_j3', 'welcome_kit', 'intern_card_ready'],
+  },
+  {
+    id: 'internship',
+    label: 'During & After',
+    emoji: '🌴',
+    description: 'D+3, D+30, D+60 crons + alumni',
+    recipient: 'intern',
+    badgeCls: 'bg-teal-100 text-teal-700',
+    slugs: ['touchpoint_j3', 'touchpoint_j30', 'touchpoint_j60', 'touchpoint_end', 'ugc_thank_you', 'alumni_welcome'],
+  },
+  // ── EMPLOYERS ───────────────────────────────────────────────────────────────
+  {
+    id: 'employers',
+    label: 'Employers',
+    emoji: '🏢',
+    description: 'Onboarding, CV submission, documents',
+    recipient: 'employer',
+    badgeCls: 'bg-orange-100 text-orange-700',
+    slugs: ['employer_welcome', 'job_submitted_employer', 'employer_document_reminder', 'sponsor_contract_employer'],
+  },
+  // ── PARTNERS & AGENTS ───────────────────────────────────────────────────────
+  {
+    id: 'partners',
+    label: 'Partners & Agents',
+    emoji: '🤝',
+    description: 'Visa agent & partner network',
+    recipient: 'agent',
+    badgeCls: 'bg-purple-100 text-purple-700',
+    slugs: ['visa_agent_submission', 'partner_welcome'],
+  },
+  // ── SYSTEM / INTERNAL ────────────────────────────────────────────────────────
+  {
+    id: 'system',
+    label: 'System',
+    emoji: '⚙️',
+    description: 'Internal notifications & auth',
+    recipient: 'internal',
+    badgeCls: 'bg-zinc-100 text-zinc-500',
+    slugs: ['driver_notification', 'password_reset'],
   },
 ]
 
-const STATUS_BADGE_CLS: Record<string, string> = {
-  lead: 'bg-zinc-100 text-zinc-600',
-  rdv_booked: 'bg-blue-100 text-blue-700',
-  qualification_done: 'bg-emerald-100 text-emerald-700',
-  job_submitted: 'bg-purple-100 text-purple-700',
-  job_retained: 'bg-orange-100 text-orange-700',
-  convention_signed: 'bg-amber-100 text-amber-700',
-  payment_pending: 'bg-red-100 text-red-700',
-  payment_received: 'bg-teal-100 text-teal-700',
-  visa_in_progress: 'bg-blue-100 text-blue-700',
-  visa_received: 'bg-emerald-100 text-emerald-700',
-  arrival_prep: 'bg-red-100 text-red-700',
-  active: 'bg-emerald-100 text-emerald-700',
-  alumni: 'bg-amber-100 text-amber-700',
+// Slug → section ID mapping (built from WORKFLOW)
+const SLUG_TO_SECTION: Record<string, string> = {}
+for (const section of WORKFLOW) {
+  for (const slug of section.slugs) {
+    SLUG_TO_SECTION[slug] = section.id
+  }
 }
+
+function getSectionId(slug: string | null | undefined): string {
+  if (!slug) return 'system'
+  return SLUG_TO_SECTION[slug] ?? 'system'
+}
+
+const RECIPIENT_BADGE: Record<string, string> = {
+  intern: 'bg-blue-100 text-blue-700',
+  employer: 'bg-orange-100 text-orange-700',
+  agent: 'bg-purple-100 text-purple-700',
+  internal: 'bg-zinc-100 text-zinc-600',
+  partner: 'bg-purple-100 text-purple-700',
+}
+
+// Group label separators for the journey timeline
+const GROUPS = [
+  { label: 'Intern Journey', sectionIds: ['leads','candidates','jobs','convention','payment','visa','predeparture','internship'] },
+  { label: 'Employer', sectionIds: ['employers'] },
+  { label: 'Partners & System', sectionIds: ['partners','system'] },
+]
 
 export default function EmailTemplatesPage() {
   const [templates, setTemplates] = useState<EmailTemplate[]>([])
@@ -161,10 +192,9 @@ export default function EmailTemplatesPage() {
   const [selected, setSelected] = useState<EmailTemplate | null>(null)
   const [editSubject, setEditSubject] = useState('')
   const [editBody, setEditBody] = useState('')
-  const [showPreview, setShowPreview] = useState(true)
+  const [showEditor, setShowEditor] = useState(false)
   const [saving, setSaving] = useState(false)
   const [savedMsg, setSavedMsg] = useState<string | null>(null)
-  // Collapsed state per recipient
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
 
   const fetchTemplates = useCallback(async () => {
@@ -175,28 +205,26 @@ export default function EmailTemplatesPage() {
       const data = await res.json() as EmailTemplate[]
       setTemplates(data)
       if (data.length > 0 && !selected) {
-        setSelected(data[0])
-        setEditSubject(data[0].subject)
-        setEditBody(data[0].body_html)
+        const first = data[0]
+        setSelected(first)
+        setEditSubject(first.subject)
+        setEditBody(first.body_html)
       }
     } catch {
       setTemplates([])
     } finally {
       setLoading(false)
     }
-  }, [selected])
-
-  useEffect(() => {
-    void fetchTemplates()
-  // Only on mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => { void fetchTemplates() }, [])
 
   function selectTemplate(tpl: EmailTemplate) {
     setSelected(tpl)
     setEditSubject(tpl.subject)
     setEditBody(tpl.body_html)
-    setShowPreview(true)
+    setShowEditor(false)
     setSavedMsg(null)
   }
 
@@ -212,10 +240,10 @@ export default function EmailTemplatesPage() {
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const updated = await res.json() as EmailTemplate
-      setTemplates((prev) => prev.map((t) => t.id === updated.id ? updated : t))
+      setTemplates(prev => prev.map(t => t.id === updated.id ? updated : t))
       setSelected(updated)
       setSavedMsg('Saved!')
-      setShowPreview(true)
+      setShowEditor(false)
     } catch (e) {
       setSavedMsg(e instanceof Error ? e.message : 'Error')
     } finally {
@@ -223,106 +251,89 @@ export default function EmailTemplatesPage() {
     }
   }
 
-  function toggleCollapsed(recipientId: string) {
-    setCollapsed(prev => ({ ...prev, [recipientId]: !prev[recipientId] }))
-  }
-
-  // Group templates: recipient → stageId → EmailTemplate[]
-  const grouped = new Map<string, Map<string, EmailTemplate[]>>()
-  for (const group of RECIPIENT_GROUPS) {
-    grouped.set(group.id, new Map(group.stages.map(s => [s.id, []])))
+  // Group templates by section
+  const bySection = new Map<string, EmailTemplate[]>()
+  for (const section of WORKFLOW) {
+    bySection.set(section.id, [])
   }
   for (const tpl of templates) {
-    const norm = getCategoryFromSlug(tpl.slug)
-    const recipient = getRecipient(norm)
-    const recipientMap = grouped.get(recipient)
-    if (recipientMap) {
-      const arr = recipientMap.get(norm) ?? recipientMap.get(recipient)
-      if (arr) arr.push(tpl)
-    }
+    const sid = getSectionId(tpl.slug)
+    const arr = bySection.get(sid) ?? bySection.get('system')!
+    arr.push(tpl)
   }
 
   const previewSubject = substituteVariables(editSubject)
   const previewBody = substituteVariables(editBody)
 
-  // Find recipient + stage info for selected template
-  const selectedNorm = selected ? getCategoryFromSlug(selected.slug) : null
-  const selectedRecipient = selectedNorm ? RECIPIENT_GROUPS.find(g => g.id === getRecipient(selectedNorm)) : null
-  const selectedStage = selectedRecipient?.stages.find(s => s.id === selectedNorm)
+  const selectedSection = selected ? WORKFLOW.find(s => s.id === getSectionId(selected.slug)) : null
 
   return (
     <div className="flex h-full">
-      {/* Left panel — 2-level sidebar */}
+      {/* ── Sidebar ── */}
       <div className="w-64 flex-shrink-0 border-r border-zinc-100 bg-white flex flex-col">
-        <div className="px-4 py-4 border-b border-zinc-100">
+        <div className="px-4 py-3.5 border-b border-zinc-100">
           <h1 className="text-sm font-semibold text-[#1a1918]">Email Templates</h1>
+          <p className="text-[10px] text-zinc-400 mt-0.5">{templates.length} templates · all in English</p>
         </div>
+
         {loading ? (
           <div className="p-4 space-y-2 animate-pulse">
-            {[1, 2, 3].map((i) => <div key={i} className="h-12 bg-zinc-100 rounded-lg" />)}
+            {[1,2,3,4].map(i => <div key={i} className="h-10 bg-zinc-100 rounded-lg" />)}
           </div>
         ) : (
           <nav className="flex-1 overflow-y-auto py-2">
-            {RECIPIENT_GROUPS.map(group => {
-              const isCollapsed = !!collapsed[group.id]
-              const recipientMap = grouped.get(group.id)
-              // Count templates in this group
-              let groupCount = 0
-              recipientMap?.forEach(arr => { groupCount += arr.length })
-
-              return (
-                <div key={group.id}>
-                  {/* Recipient header */}
-                  <button
-                    onClick={() => toggleCollapsed(group.id)}
-                    className="w-full flex items-center justify-between px-3 py-2 hover:bg-zinc-50 transition-colors"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${group.badgeCls}`}>
-                        {group.label.toUpperCase()}
-                      </span>
-                      {groupCount > 0 && (
-                        <span className="text-[10px] text-zinc-400">{groupCount}</span>
-                      )}
-                    </div>
-                    <span className="text-zinc-300 text-xs">{isCollapsed ? '▶' : '▼'}</span>
-                  </button>
-
-                  {!isCollapsed && group.stages.map(stage => {
-                    const stageTpls = recipientMap?.get(stage.id) ?? []
-                    if (stageTpls.length === 0) return null
-                    return (
-                      <div key={stage.id} className="mb-1">
-                        {/* Stage label */}
-                        <p className="px-4 pt-1 pb-0.5 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                          {stage.label}
-                        </p>
-                        {/* Templates */}
-                        {stageTpls.map(tpl => (
-                          <button
-                            key={tpl.id}
-                            onClick={() => selectTemplate(tpl)}
-                            className={[
-                              'w-full text-left px-4 py-2 transition-colors',
-                              selected?.id === tpl.id
-                                ? 'bg-amber-50 border-l-2 border-[#c8a96e]'
-                                : 'hover:bg-zinc-50 border-l-2 border-transparent',
-                            ].join(' ')}
-                          >
-                            <p className="text-xs font-medium text-[#1a1918] truncate">{tpl.name}</p>
-                          </button>
-                        ))}
-                      </div>
-                    )
-                  })}
+            {GROUPS.map(group => (
+              <div key={group.label} className="mb-1">
+                {/* Group separator */}
+                <div className="px-3 pt-3 pb-1">
+                  <p className="text-[9px] font-black uppercase tracking-[2px] text-zinc-300">{group.label}</p>
                 </div>
-              )
-            })}
+
+                {group.sectionIds.map(sid => {
+                  const section = WORKFLOW.find(s => s.id === sid)!
+                  const tpls = bySection.get(sid) ?? []
+                  if (tpls.length === 0) return null
+                  const isCollapsed = !!collapsed[sid]
+
+                  return (
+                    <div key={sid}>
+                      <button
+                        onClick={() => setCollapsed(prev => ({ ...prev, [sid]: !prev[sid] }))}
+                        className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-zinc-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm">{section.emoji}</span>
+                          <span className="text-xs font-semibold text-[#1a1918]">{section.label}</span>
+                          <span className="text-[10px] text-zinc-400">{tpls.length}</span>
+                        </div>
+                        <span className="text-zinc-300 text-[10px]">{isCollapsed ? '▶' : '▼'}</span>
+                      </button>
+
+                      {!isCollapsed && tpls.map(tpl => (
+                        <button
+                          key={tpl.id}
+                          onClick={() => selectTemplate(tpl)}
+                          className={[
+                            'w-full text-left px-4 py-2 transition-colors border-l-2',
+                            selected?.id === tpl.id
+                              ? 'bg-amber-50 border-[#c8a96e]'
+                              : 'hover:bg-zinc-50 border-transparent',
+                          ].join(' ')}
+                        >
+                          <p className="text-xs font-medium text-[#1a1918] truncate">{tpl.name}</p>
+                          <p className="text-[10px] text-zinc-400 truncate mt-0.5">{tpl.subject.replace(/\{[\w]+\}/g, '…').slice(0, 45)}</p>
+                        </button>
+                      ))}
+                    </div>
+                  )
+                })}
+              </div>
+            ))}
           </nav>
         )}
       </div>
 
-      {/* Right panel — editor */}
+      {/* ── Main panel ── */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {!selected ? (
           <div className="flex-1 flex items-center justify-center text-sm text-zinc-400">
@@ -330,29 +341,26 @@ export default function EmailTemplatesPage() {
           </div>
         ) : (
           <>
-            {/* Editor header */}
+            {/* Header */}
             <div className="px-6 py-4 border-b border-zinc-100 bg-white flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-base font-semibold text-[#1a1918]">{selected.name}</h2>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {selectedSection && <span className="text-base">{selectedSection.emoji}</span>}
+                  <h2 className="text-base font-semibold text-[#1a1918] truncate">{selected.name}</h2>
+                </div>
                 <div className="flex items-center flex-wrap gap-1.5 mt-1">
-                  {/* Recipient badge */}
-                  {selectedRecipient && (
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${selectedRecipient.badgeCls}`}>
-                      {selectedRecipient.label.toUpperCase()}
+                  {selectedSection && (
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${selectedSection.badgeCls}`}>
+                      {selectedSection.label.toUpperCase()}
                     </span>
                   )}
-                  {/* Stage */}
-                  {selectedStage && (
-                    <span className="text-[10px] text-zinc-500">{selectedStage.label}</span>
-                  )}
-                  {/* Status badges */}
-                  {selectedStage && selectedStage.statuses.map(st => (
-                    <span key={st} className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STATUS_BADGE_CLS[st] ?? 'bg-zinc-100 text-zinc-500'}`}>
-                      {st.replace(/_/g, ' ')}
+                  {selectedSection && (
+                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${RECIPIENT_BADGE[selectedSection.recipient]}`}>
+                      → {selectedSection.recipient}
                     </span>
-                  ))}
-                  {selected.version != null && (
-                    <span className="text-[10px] text-zinc-400">v{selected.version}</span>
+                  )}
+                  {selected.slug && (
+                    <code className="text-[10px] text-zinc-400 bg-zinc-50 px-1.5 py-0.5 rounded">{selected.slug}</code>
                   )}
                   {selected.updated_at && (
                     <span className="text-[10px] text-zinc-400">
@@ -362,84 +370,75 @@ export default function EmailTemplatesPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {savedMsg && (
-                  <span className="text-xs text-[#0d9e75]">{savedMsg}</span>
-                )}
-                {showPreview ? (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setShowPreview(false)}
-                  >
-                    ✏️ Edit
-                  </Button>
-                ) : (
+                {savedMsg && <span className="text-xs text-[#0d9e75]">{savedMsg}</span>}
+                {showEditor ? (
                   <>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setShowPreview(true)}
-                    >
-                      ← Preview
-                    </Button>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => { void handleSave() }}
-                      disabled={saving}
-                    >
+                    <Button variant="secondary" size="sm" onClick={() => setShowEditor(false)}>← Preview</Button>
+                    <Button variant="primary" size="sm" onClick={() => { void handleSave() }} disabled={saving}>
                       {saving ? 'Saving…' : 'Save'}
                     </Button>
                   </>
+                ) : (
+                  <Button variant="secondary" size="sm" onClick={() => setShowEditor(true)}>✏️ Edit</Button>
                 )}
               </div>
             </div>
 
             <div className="flex-1 flex overflow-hidden">
-              {/* Editor fields */}
-              {!showPreview ? (
+              {/* Content */}
+              {showEditor ? (
                 <div className="flex-1 p-6 space-y-4 overflow-y-auto">
                   <div>
                     <label className="block text-xs font-medium text-zinc-500 mb-1">Subject</label>
                     <input
                       value={editSubject}
-                      onChange={(e) => setEditSubject(e.target.value)}
+                      onChange={e => setEditSubject(e.target.value)}
                       className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e]"
                     />
+                    <p className="text-[10px] text-zinc-400 mt-1">Preview: {substituteVariables(editSubject)}</p>
                   </div>
-                  <div className="flex-1">
+                  <div>
                     <label className="block text-xs font-medium text-zinc-500 mb-1">HTML body</label>
                     <textarea
                       value={editBody}
-                      onChange={(e) => setEditBody(e.target.value)}
-                      rows={20}
+                      onChange={e => setEditBody(e.target.value)}
+                      rows={22}
                       className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c8a96e] font-mono resize-y"
                     />
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 p-6 overflow-y-auto">
-                  <div className="max-w-2xl mx-auto bg-white rounded-xl border border-zinc-100 overflow-hidden">
-                    <div className="px-5 py-3 bg-zinc-50 border-b border-zinc-100">
-                      <p className="text-xs text-zinc-500">Subject:</p>
+                <div className="flex-1 p-6 overflow-y-auto bg-zinc-50">
+                  {/* Subject bar */}
+                  <div className="max-w-2xl mx-auto mb-3 bg-white rounded-xl border border-zinc-200 px-4 py-3 flex items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wide mb-0.5">Subject</p>
                       <p className="text-sm font-medium text-[#1a1918]">{previewSubject}</p>
                     </div>
+                  </div>
+                  {/* Email body preview */}
+                  <div className="max-w-2xl mx-auto bg-white rounded-xl border border-zinc-200 overflow-hidden shadow-sm">
                     <div
                       className="p-5 prose prose-sm max-w-none"
                       dangerouslySetInnerHTML={{ __html: previewBody }}
                     />
                   </div>
+                  {selectedSection && (
+                    <p className="text-center text-[10px] text-zinc-400 mt-3">
+                      {selectedSection.description}
+                    </p>
+                  )}
                 </div>
               )}
 
-              {/* Variables sidebar */}
-              <div className="w-56 flex-shrink-0 border-l border-zinc-100 bg-zinc-50 p-4 overflow-y-auto">
-                <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-3">Variables</p>
-                <div className="space-y-2">
+              {/* Variables panel */}
+              <div className="w-52 flex-shrink-0 border-l border-zinc-100 bg-white p-4 overflow-y-auto">
+                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-3">Variables</p>
+                <div className="space-y-2.5">
                   {Object.entries(EXAMPLE_VARIABLES).map(([key, example]) => (
                     <div key={key}>
-                      <code className="text-xs text-[#c8a96e] font-mono">{`{${key}}`}</code>
-                      <p className="text-xs text-zinc-400 mt-0.5">{example}</p>
+                      <code className="text-[11px] text-[#c8a96e] font-mono">{`{${key}}`}</code>
+                      <p className="text-[10px] text-zinc-400 mt-0.5 truncate">{example}</p>
                     </div>
                   ))}
                 </div>
