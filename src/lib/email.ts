@@ -37,7 +37,7 @@ export function welcomeEmailHtml(firstName: string, lang: 'fr' | 'en' = 'fr') {
   <p style="color:#57534e;font-size:16px;line-height:1.6">
     En attendant, tu peux déjà déposer ton CV pour pré-remplir ta candidature en quelques secondes.
   </p>
-  <a href=`${SITE_URL}/apply` style="display:inline-block;background:#FFCC00;color:#1a1918;font-weight:700;padding:14px 28px;border-radius:100px;text-decoration:none;margin-top:16px">
+  <a href="${SITE_URL}/apply" style="display:inline-block;background:#FFCC00;color:#1a1918;font-weight:700;padding:14px 28px;border-radius:100px;text-decoration:none;margin-top:16px">
     Candidater gratuitement →
   </a>
   <hr style="border:none;border-top:1px solid #ede5d0;margin:32px 0"/>
@@ -50,7 +50,7 @@ export function welcomeEmailHtml(firstName: string, lang: 'fr' | 'en' = 'fr') {
   <p style="color:#57534e;font-size:16px;line-height:1.6">
     You're now on our list — every month you'll receive available internship openings in Bali.
   </p>
-  <a href=`${SITE_URL}/apply` style="display:inline-block;background:#FFCC00;color:#1a1918;font-weight:700;padding:14px 28px;border-radius:100px;text-decoration:none;margin-top:16px">
+  <a href="${SITE_URL}/apply" style="display:inline-block;background:#FFCC00;color:#1a1918;font-weight:700;padding:14px 28px;border-radius:100px;text-decoration:none;margin-top:16px">
     Apply for free →
   </a>
   <hr style="border:none;border-top:1px solid #ede5d0;margin:32px 0"/>
@@ -66,7 +66,7 @@ export function newsletterMonthlyHtml(
     <div style="border:1px solid #ede5d0;border-radius:12px;padding:16px 20px;margin-bottom:12px;background:#fff">
       <p style="margin:0 0 4px;font-weight:700;color:#1a1918;font-size:16px">${j.title}</p>
       <p style="margin:0;color:#78716c;font-size:14px">${j.company} · ${j.location}</p>
-      ${j.slug ? `<a href=`${SITE_URL}/apply` style="display:inline-block;margin-top:10px;color:#b45309;font-size:13px;font-weight:600;text-decoration:none">Postuler →</a>` : ''}
+      ${j.slug ? `<a href="${SITE_URL}/apply" style="display:inline-block;margin-top:10px;color:#b45309;font-size:13px;font-weight:600;text-decoration:none">Postuler →</a>` : ''}
     </div>`).join('')
 
   return lang === 'fr' ? `
@@ -75,7 +75,7 @@ export function newsletterMonthlyHtml(
   <h1 style="font-size:24px;color:#1a1918">🌴 Offres du mois à Bali</h1>
   <p style="color:#57534e">Voici les stages disponibles ce mois-ci dans notre réseau :</p>
   ${jobsHtml}
-  <a href=`${SITE_URL}/apply` style="display:inline-block;background:#FFCC00;color:#1a1918;font-weight:700;padding:14px 28px;border-radius:100px;text-decoration:none;margin-top:16px">
+  <a href="${SITE_URL}/apply" style="display:inline-block;background:#FFCC00;color:#1a1918;font-weight:700;padding:14px 28px;border-radius:100px;text-decoration:none;margin-top:16px">
     Voir toutes les offres →
   </a>
   <hr style="border:none;border-top:1px solid #ede5d0;margin:32px 0"/>
@@ -86,7 +86,7 @@ export function newsletterMonthlyHtml(
   <h1 style="font-size:24px;color:#1a1918">🌴 This month's openings in Bali</h1>
   <p style="color:#57534e">Here are the internships available this month in our network:</p>
   ${jobsHtml}
-  <a href=`${SITE_URL}/apply` style="display:inline-block;background:#FFCC00;color:#1a1918;font-weight:700;padding:14px 28px;border-radius:100px;text-decoration:none;margin-top:16px">
+  <a href="${SITE_URL}/apply" style="display:inline-block;background:#FFCC00;color:#1a1918;font-weight:700;padding:14px 28px;border-radius:100px;text-decoration:none;margin-top:16px">
     See all openings →
   </a>
   <hr style="border:none;border-top:1px solid #ede5d0;margin:32px 0"/>
