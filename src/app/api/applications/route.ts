@@ -2,6 +2,16 @@ import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
+const ALLOWED_ORIGINS = ["https://bali-interns-website.vercel.app","https://bali-interns.com","https://www.bali-interns.com","http://localhost:3001","http://localhost:3000"];
+function corsHeaders(req: Request) {
+  const o = req.headers.get("origin") ?? "";
+  const allowed = ALLOWED_ORIGINS.includes(o) ? o : ALLOWED_ORIGINS[0];
+  return { "Access-Control-Allow-Origin": allowed, "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type" };
+}
+export async function OPTIONS(req: Request) {
+  return new Response(null, { status: 204, headers: corsHeaders(req) });
+}
+
 function getServiceClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

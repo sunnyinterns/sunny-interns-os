@@ -8,11 +8,12 @@ const ALLOWED = ["application/pdf", "application/vnd.openxmlformats-officedocume
 const MAX_SIZE = 10 * 1024 * 1024;
 
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "https://bali-interns-website.vercel.app",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
+const ALLOWED_ORIGINS = ["https://bali-interns-website.vercel.app","https://bali-interns.com","https://www.bali-interns.com","http://localhost:3001","http://localhost:3000"];
+function getCorsHeaders(origin: string | null) {
+  const o = ALLOWED_ORIGINS.includes(origin ?? "") ? origin! : ALLOWED_ORIGINS[0];
+  return { "Access-Control-Allow-Origin": o, "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type" };
+}
+const CORS_HEADERS = getCorsHeaders(null);
 
 export async function OPTIONS() {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
