@@ -145,7 +145,7 @@ export async function POST(request: Request) {
 
       if (existingCase) {
         await supabase.from('cases').update({
-          status: 'lead',
+          status: 'rdv_booked',
           desired_start_date: d.start_date || null,
           desired_duration_months: durationMonths,
           desired_sectors: allJobs,
@@ -162,7 +162,7 @@ export async function POST(request: Request) {
         const { data: nc, error: ncErr } = await supabase.from('cases').insert({
           intern_id: internId,
           destination_id: dest?.id ?? 'fc9ece85-e5d5-41d2-9142-79054244bbce',
-          status: 'lead',
+          status: 'rdv_booked',
           desired_start_date: d.start_date || null,
           desired_duration_months: durationMonths,
           desired_sectors: allJobs,
@@ -190,7 +190,7 @@ export async function POST(request: Request) {
       const { data: nc, error: ncErr } = await supabase.from('cases').insert({
         intern_id: internId,
         destination_id: dest?.id ?? 'fc9ece85-e5d5-41d2-9142-79054244bbce',
-        status: 'lead',
+        status: 'rdv_booked',
         desired_start_date: d.start_date || null,
         desired_duration_months: durationMonths,
         desired_sectors: allJobs,
