@@ -46,6 +46,9 @@ const applicationSchema = z.object({
   commitment_budget_accepted: z.boolean().optional(),
   commitment_terms_accepted: z.boolean().optional(),
   rdv_slot: z.string().nullable().optional().transform(v => v || null),
+  school_not_found: z.boolean().optional(),
+  school_custom_name: z.string().nullable().optional(),
+  extra_docs_urls: z.array(z.string()).optional(),
 })
 
 export async function POST(request: Request) {
@@ -59,15 +62,34 @@ export async function POST(request: Request) {
     const d = parsed.data
     const supabase = getServiceClient()
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null
-    const durationMonths = d.duration ? parseInt(d.duration) : null
-    const allJobs = [...(d.desired_jobs ?? []), ...(d.custom_jobs ?? [])]
 
-    // School pending si introuvable
-    const dExt = d as unknown as Record<string,unknown>
-    if (dExt.school_not_found && dExt.school_custom_name) {
+    // Résoudre les UUIDs des job types en labels lisibles (EN)
+    const desiredJobUUIDs = [...(d.desired_jobs ?? []), ...(d.custom_jobs ?? [])].filter(Boolean)
+    const resolvedJobLabels: string[] = []
+    if (desiredJobUUIDs.length > 0) {
+      const { data: jobTypes } = await supabase.from('job_types')
+        .select('id, name_en, name').in('id', desiredJobUUIDs)
+      const jobMap = new Map((jobTypes ?? []).map((j: Record<string,string>) => [j.id, j.name_en ?? j.name]))
+      for (const uuid of desiredJobUUIDs) {
+        resolvedJobLabels.push(jobMap.get(uuid) ?? uuid) // fallback à l'UUID si pas trouvé
+      }
+    }
+
+    // Fetcher le manager actif (priorité 1) pour assigned_manager_name
+    const { data: activeManager } = await supabase.from('scheduling_managers')
+      .select('name').eq('is_active', true).order('priority', { ascending: true }).limit(1).maybeSingle()
+    const assignedManagerName = String(activeManager?.name ?? 'Charly Gestede')
+    const durationMonths = d.duration ? parseInt(d.duration) : null
+    const allJobs = desiredJobUUIDs // UUIDs gardés pour le matching intern
+    // desired_sectors stocke les labels lisibles (EN) pour affichage dans l'OS
+
+    // School pending si le candidat a tapé une école introuvable
+    if (d.school_not_found && d.school_custom_name?.trim()) {
       await supabase.from('schools_pending').insert({
-        name: String(dExt.school_custom_name ?? ''),
+        name: d.school_custom_name.trim(),
         submitted_by_email: d.email,
+        submitted_at: new Date().toISOString(),
+        status: 'pending',
       }).then(() => null, () => null)
     }
 
@@ -94,15 +116,13 @@ export async function POST(request: Request) {
       touchpoint: d.touchpoints?.join(', ') ?? d.touchpoint ?? null,
       touchpoints: d.touchpoints ?? [],
       referred_by_code: d.referred_by_code ?? null,
-      extra_docs_urls: Array.isArray((d as any).extra_docs_names) && (d as any).extra_docs_names.length > 0
-        ? ((d as any).extra_docs_names as string[]).map((_, i) => (d as any)[`extra_doc_url_${i}`] ?? null).filter(Boolean)
-        : null,
+      extra_docs_urls: d.extra_docs_urls?.filter(Boolean) ?? null,
       commitment_price_accepted: d.commitment_price_accepted ?? true,
       commitment_budget_accepted: d.commitment_budget_accepted ?? true,
       commitment_terms_accepted: d.commitment_terms_accepted ?? true,
       commitment_accepted_at: new Date().toISOString(),
       commitment_ip: ip,
-      preferred_language: 'fr',
+      preferred_language: 'en',
       source: 'apply_form',
       updated_at: new Date().toISOString(),
     }
@@ -145,10 +165,10 @@ export async function POST(request: Request) {
 
       if (existingCase) {
         await supabase.from('cases').update({
-          status: 'rdv_booked',
+          status: 'lead',
           desired_start_date: d.start_date || null,
           desired_duration_months: durationMonths,
-          desired_sectors: allJobs,
+          desired_sectors: resolvedJobLabels,
           school_id: d.school_id ?? null,
           intern_first_meeting_date: d.rdv_slot ?? null,
           updated_at: new Date().toISOString(),
@@ -162,13 +182,13 @@ export async function POST(request: Request) {
         const { data: nc, error: ncErr } = await supabase.from('cases').insert({
           intern_id: internId,
           destination_id: dest?.id ?? 'fc9ece85-e5d5-41d2-9142-79054244bbce',
-          status: 'rdv_booked',
+          status: 'lead',
           desired_start_date: d.start_date || null,
           desired_duration_months: durationMonths,
-          desired_sectors: allJobs,
+          desired_sectors: resolvedJobLabels,
           school_id: d.school_id ?? null,
           portal_token: portalToken,
-          assigned_manager_name: 'Charly Gestede',
+          assigned_manager_name: assignedManagerName,
           intern_first_meeting_date: d.rdv_slot ?? null,
         }).select('id').single()
         if (ncErr) return NextResponse.json({ error: ncErr.message }, { status: 500 })
@@ -190,22 +210,20 @@ export async function POST(request: Request) {
       const { data: nc, error: ncErr } = await supabase.from('cases').insert({
         intern_id: internId,
         destination_id: dest?.id ?? 'fc9ece85-e5d5-41d2-9142-79054244bbce',
-        status: 'rdv_booked',
+        status: 'lead',
         desired_start_date: d.start_date || null,
         desired_duration_months: durationMonths,
-        desired_sectors: allJobs,
+        desired_sectors: resolvedJobLabels,
         school_id: d.school_id ?? null,
         portal_token: portalToken,
-        assigned_manager_name: 'Charly Gestede',
+        assigned_manager_name: assignedManagerName,
         intern_first_meeting_date: d.rdv_slot ?? null,
       }).select('id').single()
       if (ncErr) return NextResponse.json({ error: ncErr.message }, { status: 500 })
       caseId = nc.id
     }
 
-    // NOTE: Le lead N'EST PAS converti ici — il le sera quand le webhook Fillout
-    // confirmera le RDV booké (POST /api/webhooks/fillout-rdv)
-    // Le candidat reste en status 'lead' jusqu'à la confirmation du RDV
+    // Case créé en status 'lead'. Il passera en 'rdv_booked' via /api/scheduling/confirm une fois le RDV pris.
 
     // Log activity_feed
     await supabase.from('activity_feed').insert({
@@ -247,20 +265,15 @@ export async function POST(request: Request) {
       })
     } catch { /* Resend not configured */ }
 
-    // Email confirmation candidat
-    const resendKey = process.env.RESEND_API_KEY
-    if (resendKey) {
-      fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          from: 'Charly de Bali Interns <team@bali-interns.com>',
-          to: [d.email],
-          subject: `Ta candidature Bali Interns est bien reçue, ${d.first_name} ! 🌴`,
-          html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px"><h2>Félicitations ${d.first_name} ! 🎉</h2><p>Ta candidature pour un stage à Bali a bien été reçue.</p><p>Tu recevras très bientôt un email de confirmation pour ton entretien de qualification.</p><p style="color:#888;font-size:13px">Questions ? <a href="mailto:team@bali-interns.com" style="color:#c8a96e">team@bali-interns.com</a></p><p>À très vite,<br/><strong>L'équipe Bali Interns 🌴</strong></p></div>`,
-        })
-      }).catch(() => null)
-    }
+    // Email confirmation candidat via template apply_confirmation_en (EN)
+    try {
+      const { sendApplyConfirmationEN } = await import('@/lib/email/resend')
+      await sendApplyConfirmationEN({
+        internEmail: d.email,
+        firstName: d.first_name,
+        portalToken,
+      })
+    } catch (emailErr) { console.error('[applications] confirmation email error:', emailErr) }
 
     return NextResponse.json({
       success: true,

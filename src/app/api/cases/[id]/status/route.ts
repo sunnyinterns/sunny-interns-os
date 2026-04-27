@@ -5,8 +5,7 @@ import { z } from 'zod'
 import {
   sendPaymentRequest, sendQualificationEmail,
   sendRdvConfirmationIntern, sendVisaReceived, sendAlumniCongrats,
-  sendJobRetenu, sendWelcomeKit, sendAlerteArrivee,
-  sendNewCustomerFazza, sendDossierPretAgent,
+  sendJobRetenu, sendWelcomeKit, sendDossierPretAgent,
 } from '@/lib/email/resend'
 import { logActivity } from '@/lib/activity-logger'
 
@@ -330,25 +329,11 @@ export async function PATCH(
           const days = startDate && endDate
             ? Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000)
             : 90
-          void sendNewCustomerFazza({
-            prenom: String(intern.first_name ?? ''),
-            nom: String(intern.last_name ?? ''),
-            jobTitle: 'Stagiaire',
-            companyName: String(company?.name ?? ''),
-            nbJours: days,
-            startDate: startDate ? new Date(startDate).toLocaleDateString('fr-FR') : '—',
-            endDate: endDate ? new Date(endDate).toLocaleDateString('fr-FR') : '—',
-            visaType: String(visaType?.code ?? ''),
-            packageType: String(pkg?.name ?? ''),
-            noteAgent: (fullCase as Record<string, unknown>).note_for_agent as string ?? '',
-            email: String(intern.email ?? ''),
-            whatsapp: String(intern.whatsapp ?? ''),
-            passportNumber: '',
-            nationality: String(intern.nationality ?? ''),
-            motherFirst: '', motherLast: '',
-            visaCostIdr: Number(pkg?.visa_cost_idr ?? 0),
-            photoUrl: String(intern.avatar_url ?? '') || undefined,
-            passportUrl: undefined, bankUrl: undefined,
+          // Visa agent email via sendDossierPretAgent (template visa_agent_submission)
+          void sendDossierPretAgent({
+            caseId: id,
+            agentEmail: String(agent.email),
+            noteForAgent: String((fullCase as Record<string, unknown>).note_for_agent ?? ''),
           })
         }
       }
@@ -415,13 +400,8 @@ export async function PATCH(
         if (intern?.email && startDate) {
           const daysUntil = Math.ceil((new Date(startDate).getTime() - Date.now()) / 86400000)
           if (daysUntil <= 7) {
-            void sendAlerteArrivee({
-              prenom: intern.first_name ?? '',
-              nom: '',
-              jours: daysUntil <= 0 ? 0 : daysUntil <= 4 ? 4 : 7,
-              startDate: new Date(startDate).toLocaleDateString('fr-FR'),
-              caseUrl: `${appUrl}/portal/${(caseRow as Record<string, unknown>).portal_token as string}`,
-            })
+            // arrival_prep email via template (TODO: implement sendArrivalPrep)
+            console.log('[arrival_prep] J-', daysUntil, 'for', intern.first_name)
           }
         }
       }

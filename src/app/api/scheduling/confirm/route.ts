@@ -13,7 +13,7 @@ const schema = z.object({
   phone: z.string().optional(),
   message: z.string().optional(),
   timezone: z.string().optional().default('Europe/Paris'),
-  lang: z.enum(['fr', 'en']).optional().default('fr'),
+  lang: z.enum(['fr', 'en']).optional().default('en'),
   // From apply form pre-fill
   prefill_case_id: z.string().uuid().optional(),
   source: z.string().optional().default('apply_form'),
@@ -54,17 +54,43 @@ export async function POST(request: Request) {
       : `Selected slot: ${startFr}`,
   ].filter(l => l !== undefined).join('\n')
 
-  // Create Google Calendar event on manager's calendar (+ team@ as attendee)
-  const gcalResult = await createMeetEvent({
+  // ── Idempotency: vérifier si un booking existe déjà pour ce (email + créneau) ──
+  const { data: existingBooking } = await admin.from('bookings')
+    .select('id, meet_link, start_at')
+    .eq('invitee_email', d.email)
+    .eq('start_at', d.start)
+    .eq('status', 'confirmed')
+    .maybeSingle()
+
+  if (existingBooking) {
+    console.log('[confirm] Idempotency: booking already exists for', d.email, d.start)
+    return NextResponse.json({
+      booking_id: existingBooking.id as string,
+      case_id: d.prefill_case_id ?? null,
+      meet_link: existingBooking.meet_link as string,
+      start: existingBooking.start_at as string,
+      end: d.end,
+      manager_name: mgr.name as string,
+    })
+  }
+
+  // ── Google Calendar (try/catch — le booking est créé même si GCal échoue) ──
+  let gcalResult: { meetLink: string; eventId: string | null } = { meetLink: '', eventId: null }
+  try {
+    gcalResult = await createMeetEvent({
     summary,
     description,
     startDateTime: d.start,
     endDateTime: d.end,
     attendeeEmail: d.email,
     attendeeName: inviteeName,
-    calendarId: mgr.calendar_id as string,
-    refreshToken: (mgr.google_refresh_token as string | null) ?? undefined,
-  })
+      calendarId: mgr.calendar_id as string,
+      refreshToken: (mgr.google_refresh_token as string | null) ?? undefined,
+    })
+  } catch (gcalErr) {
+    console.error('[confirm] Google Calendar error (continuing without Meet link):', gcalErr)
+    // Le booking est quand même créé — le meet link sera ajouté manuellement si besoin
+  }
 
   // Save booking to DB
   const { data: booking, error: bookingError } = await admin.from('bookings').insert({
@@ -94,47 +120,41 @@ export async function POST(request: Request) {
   const cancelUrl = `${origin}/api/scheduling/cancel?token=${booking.cancel_token as string}`
   const rescheduleUrl = `${origin}/api/scheduling/reschedule?token=${booking.reschedule_token as string}`
 
-  // Update case with real native links
+  // Update case: lead → rdv_booked + date entretien
   if (d.prefill_case_id) {
     await admin.from('cases').update({
+      status: 'rdv_booked',
       intern_first_meeting_date: d.start,
-      intern_first_meeting_link: gcalResult.meetLink,
+      intern_first_meeting_link: gcalResult.meetLink || null,
       intern_first_meeting_reschedule_link: rescheduleUrl,
       google_meet_cancel_link: cancelUrl,
-    }).eq('id', d.prefill_case_id)
+      updated_at: new Date().toISOString(),
+    }).eq('id', d.prefill_case_id).in('status', ['lead', 'rdv_booked'])
+    // .in('status', ...) : ne pas écraser si déjà plus avancé
   }
 
-  // Send confirmation email to invitee
+  // Email de confirmation via template booking_confirmation (EN)
   try {
-    const { Resend } = await import('resend')
-    const resend = new Resend(process.env.RESEND_API_KEY)
-    const timeDisplay = new Date(d.start).toLocaleString(d.lang === 'fr' ? 'fr-FR' : 'en-US', {
+    const { sendRdvConfirmation } = await import('@/lib/email/resend')
+    const rdvDate = new Date(d.start).toLocaleString('en-GB', {
       weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: d.timezone
     })
-    await resend.emails.send({
-      from: 'Bali Interns <team@bali-interns.com>',
-      to: d.email,
-      subject: d.lang === 'fr'
-        ? `✅ Votre entretien Bali Interns est confirmé`
-        : `✅ Your Bali Interns call is confirmed`,
-      html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;">
-        <h2 style="color:#1a1918;">Bonjour ${d.first_name} ! 👋</h2>
-        <p style="color:#374151;">${d.lang === 'fr' ? 'Votre entretien est confirmé.' : 'Your call is confirmed.'}</p>
-        <div style="background:#fdf8f0;border:1px solid #c8a96e40;border-radius:12px;padding:20px;margin:20px 0;">
-          <p style="margin:0 0 8px;font-weight:bold;color:#1a1918;">📅 ${timeDisplay}</p>
-          <p style="margin:0;color:#6b7280;font-size:14px;">${et.duration_minutes as number} min · Google Meet</p>
-        </div>
-        ${gcalResult.meetLink ? `<a href="${gcalResult.meetLink}" style="display:inline-block;background:#1a73e8;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">📹 ${d.lang === 'fr' ? 'Rejoindre Google Meet' : 'Join Google Meet'}</a>` : ''}
-        <p style="margin-top:20px;font-size:12px;color:#9ca3af;">
-          <a href="${rescheduleUrl}" style="color:#c8a96e;">${d.lang === 'fr' ? 'Reprogrammer' : 'Reschedule'}</a>
-          &nbsp;·&nbsp;
-          <a href="${cancelUrl}" style="color:#9ca3af;">${d.lang === 'fr' ? 'Annuler' : 'Cancel'}</a>
-        </p>
-        <p style="color:#9ca3af;font-size:12px;margin-top:24px;">Bali Interns · team@bali-interns.com</p>
-      </div>`,
+    // Récupérer le portal_token depuis le case si disponible
+    let portalToken: string | null = null
+    if (d.prefill_case_id) {
+      const { data: caseRow } = await admin.from('cases').select('portal_token').eq('id', d.prefill_case_id).maybeSingle()
+      portalToken = caseRow?.portal_token as string | null ?? null
+    }
+    await sendRdvConfirmation({
+      internEmail: d.email,
+      prenom: d.first_name,
+      nom: d.last_name,
+      rdvDate,
+      meetLink: gcalResult.meetLink || undefined,
+      portalToken: portalToken ?? undefined,
     })
   } catch (emailErr) {
-    console.error('[booking] email error:', emailErr)
+    console.error('[booking] confirmation email error:', emailErr)
   }
 
   // ── Post-booking actions ──────────────────────────────────────────

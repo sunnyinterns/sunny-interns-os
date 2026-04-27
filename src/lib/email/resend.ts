@@ -296,6 +296,19 @@ export async function sendAlumniCongrats(p: {
   })
 }
 
+export async function sendApplyConfirmationEN(p: {
+  internEmail: string; firstName: string; portalToken?: string
+}): Promise<void> {
+  await sendFromTemplate({
+    slug: 'apply_confirmation_en',
+    to: p.internEmail,
+    vars: {
+      first_name: p.firstName,
+      portal_url: p.portalToken ? `${APP_URL}/portal/${p.portalToken}` : APP_URL,
+    },
+  })
+}
+
 export async function sendDossierPretAgent(opts: {
   caseId: string
   agentEmail?: string  // override — if absent, fetch default agent from DB
@@ -455,13 +468,7 @@ export async function sendInternCommentNotification(p: {
 }
 
 
-// Legacy stubs — fonctions supprimées mais importées ailleurs
-export async function sendAlerteArrivee(_p: Record<string, unknown> & { prenom?: string; nom?: string; jours?: number; startDate?: string; caseUrl?: string; billetUrl?: string }) {
-  console.log('[email] sendAlerteArrivee: migré vers template arrival_prep')
-}
-export async function sendNewCustomerFazza(_p: Record<string, unknown>) {
-  console.log('[email] sendNewCustomerFazza: migré vers portal visa agent')
-}
+// Legacy stubs (non Fillout)
 export async function sendRdvConfirmation(p: {
   internEmail: string; prenom?: string; nom?: string; rdvDate?: string
   meetLink?: string; portalToken?: string; internFirstName?: string; internLastName?: string
