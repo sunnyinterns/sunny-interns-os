@@ -296,17 +296,137 @@ export async function sendAlumniCongrats(p: {
   })
 }
 
-export async function sendDossierPretAgent(p: {
-  prenom: string; nom: string; caseUrl: string
-} & Record<string, unknown>) {
-  await sendFromTemplate({
-    slug: 'visa_agent_submission',
-    to: CHARLY,
-    vars: {
-      intern_name: `${p.prenom} ${p.nom}`,
-      case_url: p.caseUrl,
-    },
-  })
+export async function sendDossierPretAgent(opts: {
+  caseId: string
+  agentEmail?: string  // override — if absent, fetch default agent from DB
+  managerName?: string
+  managerWhatsapp?: string
+  noteForAgent?: string
+}): Promise<void> {
+  const { caseId, noteForAgent } = opts
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const sb = svcClient(supabaseUrl, serviceKey)
+
+    // 1. Fetch case + intern
+    const { data: cas } = await sb.from('cases')
+      .select(`
+        id, status, desired_start_date, actual_start_date, actual_end_date,
+        desired_duration_months, portal_token, assigned_manager_name,
+        visa_type_id,
+        interns ( id, first_name, last_name, email, whatsapp, nationality,
+                  birth_date, passport_number, passport_expiry,
+                  cv_url, local_cv_url, extra_docs_urls ),
+        jobs ( title, companies ( name ) )
+      `)
+      .eq('id', caseId)
+      .maybeSingle()
+
+    if (!cas) { console.error('[sendDossierPretAgent] Case not found:', caseId); return }
+
+    const intern = cas.interns as Record<string, unknown> | null
+    const job    = cas.jobs    as Record<string, unknown> | null
+    const comp   = job ? (job.companies as Record<string, unknown> | null) : null
+
+    // 2. Fetch visa type label
+    let visaTypeLabel = '—'
+    if (cas.visa_type_id) {
+      const { data: vt } = await sb.from('visa_types').select('name').eq('id', cas.visa_type_id).maybeSingle()
+      if (vt) visaTypeLabel = String(vt.name ?? '—')
+    }
+
+    // 3. Resolve visa agent email (opts override OR default agent in DB)
+    let agentEmail = opts.agentEmail ?? CHARLY
+    if (!opts.agentEmail) {
+      const { data: agent } = await sb.from('visa_agents')
+        .select('email').eq('is_default', true).eq('is_active', true).maybeSingle()
+      if (agent?.email) agentEmail = String(agent.email)
+    }
+
+    // 4. Build portal URLs
+    const portalToken = String(cas.portal_token ?? '')
+    const portalUrl   = portalToken ? `${APP_URL}/portal/${portalToken}` : APP_URL
+    const agentToken  = caseId // simplify: use case_id as lookup for agent portal
+    const agentPortalUrl = `${APP_URL}/portal/agent?case=${caseId}`
+    const caseUrl = `${APP_URL}/fr/cases/${caseId}`
+
+    // 5. Format dates
+    const fmtDate = (d: unknown) => d ? new Date(String(d)).toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' }) : '—'
+    const startDate = fmtDate(cas.actual_start_date ?? cas.desired_start_date)
+    const endDate   = fmtDate(cas.actual_end_date)
+    const durationMonths = cas.desired_duration_months ? `${cas.desired_duration_months}` : '—'
+
+    // 6. Build attachments array for Resend (remote URLs via path)
+    type ResendAttachment = { filename: string; path: string }
+    const attachments: ResendAttachment[] = []
+    const cvUrl = String(intern?.cv_url ?? intern?.local_cv_url ?? '')
+    if (cvUrl) attachments.push({ filename: `CV_${String(intern?.last_name ?? 'intern')}.pdf`, path: cvUrl })
+
+    const extraDocs = Array.isArray(intern?.extra_docs_urls) ? intern.extra_docs_urls as string[] : []
+    extraDocs.forEach((url, i) => {
+      if (url) attachments.push({ filename: `document_${i + 1}.pdf`, path: url })
+    })
+
+    // 7. Send
+    if (!resend) { console.warn('[sendDossierPretAgent] RESEND_API_KEY not set'); return }
+
+    const internName = `${String(intern?.first_name ?? '')} ${String(intern?.last_name ?? '')}`.trim()
+    const managerName = opts.managerName ?? 'Charly Gestede'
+    const managerWhatsapp = opts.managerWhatsapp ?? '+62 xxx xxx xxxx'
+
+    // Use sendFromTemplate with all vars (template uses {{variable}} syntax)
+    await sendFromTemplate({
+      slug: 'visa_agent_submission',
+      to: agentEmail,
+      cc: CHARLY,
+      vars: {
+        intern_name:        internName,
+        first_name:         String(intern?.first_name ?? ''),
+        last_name:          String(intern?.last_name ?? ''),
+        birth_date:         fmtDate(intern?.birth_date),
+        nationality:        String(intern?.nationality ?? '—'),
+        passport_number:    String(intern?.passport_number ?? '—'),
+        passport_expiry:    fmtDate(intern?.passport_expiry),
+        intern_email:       String(intern?.email ?? '—'),
+        intern_whatsapp:    String(intern?.whatsapp ?? '—'),
+        company_name:       String(comp?.name ?? '—'),
+        job_title:          String(job?.title ?? '—'),
+        visa_type:          visaTypeLabel,
+        start_date:         startDate,
+        end_date:           endDate,
+        duration_months:    durationMonths,
+        cv_url:             cvUrl || '',
+        convention_url:     '',  // populated later when convention is signed
+        photo_url:          '',  // if photo field added to interns table
+        note_for_agent:     noteForAgent ?? '',
+        portal_url:         portalUrl,
+        agent_portal_url:   agentPortalUrl,
+        case_url:           caseUrl,
+        sent_date:          new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' }),
+        manager_name:       managerName,
+        manager_whatsapp:   managerWhatsapp,
+      },
+    })
+
+    // 8. If attachments, send a second email with just the PJ (Resend doesn't support attachments in template flow)
+    if (attachments.length > 0) {
+      const { data, error } = await resend.emails.send({
+        from: FROM,
+        to: [agentEmail],
+        cc: [CHARLY],
+        subject: `[ATTACHMENTS] Visa dossier — ${internName}`,
+        html: `<p>Please find attached documents for <strong>${internName}</strong>'s visa dossier.<br/>Full dossier sent separately.</p><ul>${attachments.map(a => `<li>${a.filename}</li>`).join('')}</ul>`,
+        attachments: attachments.map(a => ({ filename: a.filename, path: a.path })),
+      })
+      if (error) console.error('[sendDossierPretAgent] attachments email error:', error)
+      else console.log('[sendDossierPretAgent] attachments sent, id:', data?.id)
+    }
+
+    console.log('[sendDossierPretAgent] Dossier sent to agent:', agentEmail)
+  } catch (e) {
+    console.error('[sendDossierPretAgent] Error:', e)
+  }
 }
 
 export async function sendAppAllIndonesia(p: {
