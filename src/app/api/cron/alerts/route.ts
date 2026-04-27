@@ -21,8 +21,10 @@ function isSameDay(a: Date, b: Date): boolean {
 
 export async function GET(request: Request) {
   // Verify cron secret
-  const secret = request.headers.get('x-cron-secret') ?? new URL(request.url).searchParams.get('secret')
-  if (secret !== process.env.CRON_SECRET) {
+  // Vercel cron sends Authorization: Bearer <CRON_SECRET>
+  const auth = request.headers.get('authorization') ?? ''
+  const expected = `Bearer ${process.env.CRON_SECRET ?? 'cron'}`
+  if (auth !== expected) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -59,11 +61,18 @@ export async function GET(request: Request) {
     let updated = false
 
     for (const config of alertConfigs) {
-      const alertKey = config.key
+      const alertKey = (config as any).alert_key
       if (sentFlags[alertKey]) continue // Already sent
 
       // Get reference date
-      const refDate = c[config.reference_field as keyof typeof c] as string | null
+      // Map reference to actual case column
+      const refFieldMap: Record<string, string> = {
+        desired_start: 'desired_start_date',
+        actual_start: 'actual_start_date',
+        actual_end: 'actual_end_date',
+      }
+      const refField = refFieldMap[(config as any).reference] ?? 'actual_start_date'
+      const refDate = (c as any)[refField] as string | null
       if (!refDate) continue
 
       // Calculate target date: referenceDate + days_offset
@@ -74,7 +83,7 @@ export async function GET(request: Request) {
       if (!isSameDay(today, targetDate)) continue
 
       // Alert is due today
-      const recipients: string[] = Array.isArray(config.email_recipients) ? config.email_recipients : ['charly@bali-interns.com']
+      const recipients: string[] = Array.isArray((config as any).recipient_emails) ? (config as any).recipient_emails : ['charly@bali-interns.com']
       const intern = c.interns as { first_name?: string; last_name?: string } | null
       const internName = `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim()
 
@@ -111,10 +120,18 @@ export async function GET(request: Request) {
     }
 
     if (updated) {
-      await supabase
-        .from('cases')
-        .update({ alert_sent_flags: { ...sentFlags, ...newFlags } })
-        .eq('id', c.id)
+      // Update individual alert flags (alert_sent_flags col created via migration)
+      const flagUpdate: Record<string, boolean> = {}
+      for (const [k, v] of Object.entries(newFlags)) {
+        flagUpdate[`alert_${k}_sent`] = v
+      }
+      // Only update known columns to avoid DB errors
+      const safeUpdate: Record<string, boolean> = {}
+      if (flagUpdate['alert_j7_sent']) safeUpdate['alert_j7_sent'] = true
+      if (flagUpdate['alert_j4_sent']) safeUpdate['alert_j4_sent'] = true
+      if (Object.keys(safeUpdate).length > 0) {
+        await supabase.from('cases').update(safeUpdate).eq('id', c.id)
+      }
     }
   }
 
