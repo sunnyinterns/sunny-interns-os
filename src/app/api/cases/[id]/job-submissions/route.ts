@@ -16,8 +16,8 @@ export async function GET(
       .select(`
         *,
         jobs(id, title, public_title, wished_duration_months, wished_start_date, department, description, missions,
-          companies(id, name, contact_name, contact_email, contact_whatsapp, whatsapp_number, contact_first_name, contact_last_name),
-          contacts(id, first_name, last_name, email, whatsapp)
+          companies(id, name),
+          contacts!jobs_contact_id_fkey(id, first_name, last_name, email, whatsapp)
         )
       `)
       .eq('case_id', id)

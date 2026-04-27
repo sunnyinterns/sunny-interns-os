@@ -31,7 +31,7 @@ export async function GET(req: Request) {
     .is('rdv_reminder_sent_at', null) // idempotency — ne pas envoyer deux fois
 
   const sent: string[] = []
-  const { sendFromTemplate } = await import('@/lib/email/resend') as any
+  const { sendRdvReminder } = await import('@/lib/email/resend')
 
   for (const c of (cases ?? [])) {
     const intern = c.interns as { first_name?: string; last_name?: string; email?: string } | null
@@ -45,17 +45,12 @@ export async function GET(req: Request) {
       : '—'
 
     try {
-      await sendFromTemplate({
-        slug: 'rdv_reminder',
-        to: intern.email,
-        vars: {
-          first_name: intern.first_name ?? 'Candidate',
-          rdv_time: rdvDate,
-          meet_link: c.intern_first_meeting_link ?? '',
-          portal_url: c.portal_token
-            ? `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'}/portal/${c.portal_token}`
-            : '',
-        },
+      await sendRdvReminder({
+        internEmail: intern.email,
+        firstName: intern.first_name ?? 'Candidate',
+        rdvDate,
+        meetLink: c.intern_first_meeting_link ?? undefined,
+        portalToken: c.portal_token ?? undefined,
       })
 
       // Marquer comme envoyé

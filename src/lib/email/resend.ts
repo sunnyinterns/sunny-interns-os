@@ -32,7 +32,7 @@ async function send(opts: {
  * Fetch a template from DB by slug, substitute {{variables}}, and send.
  * Falls back to `fallbackHtml` if template not found (safety net).
  */
-async function sendFromTemplate(opts: {
+export async function sendFromTemplate(opts: {
   slug: string
   to: string | string[]
   cc?: string | string[]
@@ -291,6 +291,21 @@ export async function sendAlumniCongrats(p: {
     to: p.internEmail,
     vars: {
       first_name: p.prenom,
+      portal_url: p.portalToken ? `${APP_URL}/portal/${p.portalToken}` : APP_URL,
+    },
+  })
+}
+
+export async function sendRdvReminder(p: {
+  internEmail: string; firstName: string; rdvDate: string; meetLink?: string; portalToken?: string
+}): Promise<void> {
+  await sendFromTemplate({
+    slug: 'rdv_reminder',
+    to: p.internEmail,
+    vars: {
+      first_name: p.firstName,
+      rdv_time: p.rdvDate,
+      meet_link: p.meetLink ?? '',
       portal_url: p.portalToken ? `${APP_URL}/portal/${p.portalToken}` : APP_URL,
     },
   })

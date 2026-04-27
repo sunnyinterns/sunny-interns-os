@@ -12,7 +12,6 @@ interface Setting {
 const SETTING_LABELS: Record<string, string> = {
   whatsapp_bali_interns: 'WhatsApp number (Bali Interns)',
   email_confirmation_from: 'Sender email (automated)',
-  fillout_form_id: 'Fillout Form ID (RDV)',
 }
 
 export default function GeneralSettingsPage() {
@@ -62,7 +61,7 @@ export default function GeneralSettingsPage() {
 
       <div>
         <h1 className="text-xl font-bold text-[#1a1918]">General Settings</h1>
-        <p className="text-sm text-zinc-500 mt-1">WhatsApp, email sender and Fillout configuration</p>
+        <p className="text-sm text-zinc-500 mt-1">WhatsApp, email sender and scheduling configuration</p>
       </div>
 
       <div className="bg-white border border-zinc-100 rounded-2xl p-5 space-y-4">

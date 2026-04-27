@@ -826,7 +826,7 @@ function ApplyPageInner() {
           body: JSON.stringify({ lead_id: leadId }),
         }).catch(() => {})
       }
-      // candidature soumise — on avance vers step 4 (Fillout RDV)
+      // candidature soumise — avance vers scheduling natif (Fillout supprimé)
     } catch (e) {
       setError(e instanceof Error ? e.message : T('Erreur inconnue', 'Unknown error', lang))
     } finally {
