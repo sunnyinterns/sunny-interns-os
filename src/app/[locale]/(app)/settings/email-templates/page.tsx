@@ -15,16 +15,16 @@ interface EmailTemplate {
 }
 
 const EXAMPLE_VARIABLES: Record<string, string> = {
-  first_name: 'Marie',
-  last_name: 'Dupont',
-  email: 'marie.dupont@gmail.com',
-  arrival_date: '15 juillet 2026',
+  first_name: 'Emma',
+  last_name: 'Johnson',
+  email: 'emma.johnson@gmail.com',
+  arrival_date: 'July 15, 2026',
   flight_number: 'QR957',
-  job_title: 'Assistante Marketing',
+  job_title: 'Marketing Assistant',
   company_name: 'Digital Agency Bali',
   duration_weeks: '12',
   dropoff_address: 'Villa Sunset, Seminyak',
-  payment_amount: '2 890 €',
+  payment_amount: '€990',
   payment_link: 'https://pay.sunnyinterns.com/xxx',
 }
 
@@ -161,7 +161,7 @@ export default function EmailTemplatesPage() {
   const [selected, setSelected] = useState<EmailTemplate | null>(null)
   const [editSubject, setEditSubject] = useState('')
   const [editBody, setEditBody] = useState('')
-  const [showPreview, setShowPreview] = useState(false)
+  const [showPreview, setShowPreview] = useState(true)
   const [saving, setSaving] = useState(false)
   const [savedMsg, setSavedMsg] = useState<string | null>(null)
   // Collapsed state per recipient
@@ -196,7 +196,7 @@ export default function EmailTemplatesPage() {
     setSelected(tpl)
     setEditSubject(tpl.subject)
     setEditBody(tpl.body_html)
-    setShowPreview(false)
+    setShowPreview(true)
     setSavedMsg(null)
   }
 
@@ -215,6 +215,7 @@ export default function EmailTemplatesPage() {
       setTemplates((prev) => prev.map((t) => t.id === updated.id ? updated : t))
       setSelected(updated)
       setSavedMsg('Saved!')
+      setShowPreview(true)
     } catch (e) {
       setSavedMsg(e instanceof Error ? e.message : 'Error')
     } finally {
@@ -364,21 +365,33 @@ export default function EmailTemplatesPage() {
                 {savedMsg && (
                   <span className="text-xs text-[#0d9e75]">{savedMsg}</span>
                 )}
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setShowPreview((v) => !v)}
-                >
-                  {showPreview ? 'Editor' : 'Preview'}
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => { void handleSave() }}
-                  disabled={saving}
-                >
-                  {saving ? 'Saving…' : 'Save'}
-                </Button>
+                {showPreview ? (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setShowPreview(false)}
+                  >
+                    ✏️ Edit
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setShowPreview(true)}
+                    >
+                      ← Preview
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => { void handleSave() }}
+                      disabled={saving}
+                    >
+                      {saving ? 'Saving…' : 'Save'}
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
 
