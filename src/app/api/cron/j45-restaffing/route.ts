@@ -1,13 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
-import { Resend } from 'resend'
 import { NextResponse } from 'next/server'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { sendInternCommentNotification } from '@/lib/email/resend'
 
 export async function GET(req: Request) {
   const auth = req.headers.get('authorization')
-  const expected = `Bearer ${process.env.CRON_SECRET ?? 'cron'}`
-  if (auth !== expected) {
+  if (auth !== `Bearer ${process.env.CRON_SECRET ?? 'cron'}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -16,7 +13,6 @@ export async function GET(req: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Stages qui finissent dans ~45 jours
   const in45 = new Date(); in45.setDate(in45.getDate() + 45)
   const in40 = new Date(); in40.setDate(in40.getDate() + 40)
 
@@ -27,29 +23,23 @@ export async function GET(req: Request) {
     .gte('actual_end_date', in40.toISOString().split('T')[0])
     .lte('actual_end_date', in45.toISOString().split('T')[0])
 
-  if ((cases?.length ?? 0) === 0) {
-    return NextResponse.json({ checked: 0 })
-  }
+  if ((cases?.length ?? 0) === 0) return NextResponse.json({ checked: 0 })
+
+  const list = (cases ?? []).map(c => {
+    const i = c.interns as { first_name?: string; last_name?: string } | null
+    return `${i?.first_name ?? ''} ${i?.last_name ?? ''} — end: ${c.actual_end_date}`
+  }).join('\n')
 
   try {
-    await resend.emails.send({
-      from: 'Bali Interns <team@bali-interns.com>',
-      to: 'charly@bali-interns.com',
-      subject: `🔄 ${cases!.length} stage(s) se terminent dans ~45 jours — Re-staffer ?`,
-      html: `<div style="font-family:sans-serif;max-width:600px;padding:24px">
-        <h2 style="color:#c8a96e">Rappel re-staffing — ${cases!.length} stage(s)</h2>
-        <p>${cases!.length} stagiaire(s) finissent leur stage dans 40 à 45 jours. Voulez-vous les contacter pour un re-staffing ?</p>
-        <ul style="line-height:1.8">
-          ${cases!.map(c => {
-            const i = c.interns as { first_name?: string; last_name?: string } | null
-            return `<li><strong>${i?.first_name ?? ''} ${i?.last_name ?? ''}</strong> — fin : ${c.actual_end_date}</li>`
-          }).join('')}
-        </ul>
-        <p style="color:#888;font-size:12px;margin-top:24px">Bali Interns OS — Alerte automatique hebdomadaire</p>
-      </div>`,
+    // Internal notification — no template needed (sent to Charly only)
+    await sendInternCommentNotification({
+      prenom: 'Bali Interns OS',
+      nom: '',
+      comment: `⚠️ ${cases!.length} intern(s) ending in ~45 days:\n${list}\n\nConsider re-staffing outreach.`,
+      caseId: undefined,
     })
   } catch (e) {
-    console.error('[CRON J-45] Email error:', e)
+    console.error('[CRON J-45] notification error:', e)
   }
 
   return NextResponse.json({ checked: cases?.length ?? 0 })

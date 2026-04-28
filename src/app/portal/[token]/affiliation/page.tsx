@@ -192,7 +192,7 @@ export default function PortalAffiliationPage() {
                   <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: '10px', marginBottom: '10px', borderBottom: '1px solid #f3f4f6' }}>
                     <div style={{ flex: 1 }}>
                       <p style={{ fontSize: '14px', color: '#1A1A1A', margin: 0 }}>{r.first_name} {r.last_name?.charAt(0)}.</p>
-                      <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0 }}>{r.created_at ? new Date(r.created_at).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : ''}</p>
+                      <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0 }}>{r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : ''}</p>
                     </div>
                     <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: r.status === 'paid' ? '#d1fae5' : r.status === 'client' ? '#dbeafe' : '#f3f4f6', color: r.status === 'paid' ? '#065f46' : r.status === 'client' ? '#1d4ed8' : '#6b7280' }}>
                       {r.status === 'paid' ? '✓ 100€ versés' : r.status === 'client' ? 'Client — en cours' : 'En process'}

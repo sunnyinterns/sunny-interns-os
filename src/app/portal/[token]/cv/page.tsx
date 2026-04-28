@@ -166,7 +166,7 @@ export default function PortalCvPage() {
                 <div>
                   <p style={{ fontSize: '13px', fontWeight: 500, color: '#1A1A1A' }}>{v.filename}</p>
                   <p style={{ fontSize: '11px', color: '#9ca3af' }}>
-                    {new Date(v.uploaded_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    {new Date(v.uploaded_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     {i === 0 && <span style={{ marginLeft: '6px', color: '#FFCC00', fontWeight: 600 }}>· Version actuelle</span>}
                   </p>
                 </div>

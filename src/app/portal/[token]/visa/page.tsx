@@ -37,7 +37,7 @@ interface PortalData {
 const DOC_SECTIONS: DocSection[] = [
   { key: 'passport_page4_url', label: 'Passport page 4 (high resolution)', instruction: 'The page with your photo and details. Sharp photo, all text legible.', apiField: 'passport_page4_url' },
   { key: 'photo_id_url', label: 'White background photo', instruction: 'Recent photo, white background, passport format. Head straight, neutral expression.', apiField: 'photo_id_url' },
-  { key: 'bank_statement_url', label: 'Relevé bancaire (2000€ min)', instruction: 'Relevé montrant un solde d\'au moins 2000€. Votre nom doit être visible.', apiField: 'bank_statement_url' },
+  { key: 'bank_statement_url', label: 'Bank statement (min €2,000)', instruction: 'Statement showing a balance of at least €2,000. Your name must be clearly visible.', apiField: 'bank_statement_url' },
   { key: 'return_plane_ticket_url', label: 'Billet avion aller-retour', instruction: 'Billet confirmé avec dates de vol.', apiField: 'return_plane_ticket_url' },
 ]
 
@@ -164,7 +164,7 @@ export default function PortalVisaPage() {
               {err && <p style={{ fontSize: 12, color: '#dc2626', marginBottom: 8 }}>{err}</p>}
               <input ref={el => { inputRefs.current[section.key] = el }} type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={e => { const file = e.target.files?.[0]; if (file) void handleUpload(file, section) }} />
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <button onClick={() => inputRefs.current[section.key]?.click()} disabled={isUploading} style={{ padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: isUploading ? 'not-allowed' : 'pointer', border: 'none', background: uploaded ? '#dcfce7' : '#FFCC00', color: uploaded ? '#0d9e75' : 'white', opacity: isUploading ? 0.7 : 1 }}>
+                <button onClick={() => inputRefs.current[section.key]?.click()} disabled={isUploading} style={{ padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: isUploading ? 'not-allowed' : 'pointer', border: 'none', background: uploaded ? '#dcfce7' : '#1A1A1A', color: uploaded ? '#0d9e75' : '#FFCC00', opacity: isUploading ? 0.7 : 1 }}>
                   {isUploading ? 'Upload…' : uploaded ? '✓ Remplacer' : 'Uploader'}
                 </button>
                 {uploaded && <a href={data.interns?.[section.key] ?? '#'} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#6b7280', textDecoration: 'underline' }}>View</a>}
@@ -221,13 +221,13 @@ export default function PortalVisaPage() {
             <div>
               <p style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>Début</p>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#1A1A1A' }}>
-                {data.actual_start_date ? new Date(data.actual_start_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
+                {data.actual_start_date ? new Date(data.actual_start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
               </p>
             </div>
             <div>
               <p style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>Fin</p>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#1A1A1A' }}>
-                {data.actual_end_date ? new Date(data.actual_end_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
+                {data.actual_end_date ? new Date(data.actual_end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
               </p>
             </div>
           </div>
@@ -259,7 +259,7 @@ export default function PortalVisaPage() {
             <span style={{ fontSize: 20 }}>⏳</span>
             <div>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#1d4ed8', margin: 0 }}>Dossier en cours de traitement</p>
-              <p style={{ fontSize: 12, color: '#3730a3', margin: 0 }}>Soumis le {new Date(data.visa_submitted_to_agent_at).toLocaleDateString('fr-FR')} — délai ~1 mois</p>
+              <p style={{ fontSize: 12, color: '#3730a3', margin: 0 }}>Submitted on {new Date(data.visa_submitted_to_agent_at).toLocaleDateString('en-GB')} — processing time ~1 month</p>
             </div>
           </div>
         ) : (

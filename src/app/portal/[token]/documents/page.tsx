@@ -169,7 +169,7 @@ export default function PortalDocumentsPage() {
                     )}
                   </div>
                   <p style={{ color: '#9ca3af', fontSize: '11px', marginTop: '2px' }}>
-                    {new Date(v.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    {new Date(v.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     {' · '}{v.uploaded_by === 'intern' ? 'Par toi' : 'Par Bali Interns'}
                   </p>
                 </div>

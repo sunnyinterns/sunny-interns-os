@@ -118,7 +118,7 @@ export default function PortalJobsPage() {
         <div style={{ textAlign: 'center', padding: '48px 24px', background: 'white', borderRadius: '16px', border: '1px dashed #e5e7eb' }}>
           <p style={{ fontSize: '32px', marginBottom: '12px' }}>🔍</p>
           <p style={{ color: '#6b7280', fontSize: '14px' }}>No offers have been proposed to your profile yet.</p>
-          <p style={{ color: '#9ca3af', fontSize: '12px', marginTop: '6px' }}>Ton conseiller Bali Interns te contactera dès qu&apos;une opportunité correspond à ton profil.</p>
+          <p style={{ color: '#9ca3af', fontSize: '12px', marginTop: '6px' }}>Your Bali Interns advisor will reach out as soon as a match is found.</p>
         </div>
       ) : (
         <div className="space-y-5">

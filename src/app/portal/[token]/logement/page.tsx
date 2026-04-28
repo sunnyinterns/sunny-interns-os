@@ -54,7 +54,7 @@ export default function LogementPage() {
       <div style={{ textAlign: 'center', marginTop: '48px' }}>
         <div style={{ fontSize: '48px', marginBottom: '16px' }}>🏠</div>
         <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1A1A1A', marginBottom: '8px' }}>Préférences enregistrées !</h2>
-        <p style={{ color: '#6b7280', marginBottom: '24px' }}>Nous allons confirmer ton logement et scooter rapidement.</p>
+        <p style={{ color: '#6b7280', marginBottom: '24px' }}>We will confirm your accommodation and scooter shortly.</p>
         <Link href={`/portal/${token}`} style={{ color: '#FFCC00', fontWeight: 600, textDecoration: 'none' }}>← Back to dashboard</Link>
       </div>
     )
@@ -64,7 +64,7 @@ export default function LogementPage() {
     <div>
       <Link href={`/portal/${token}`} style={{ color: '#FFCC00', fontSize: '13px', textDecoration: 'none' }}>← Back</Link>
       <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1A1A1A', margin: '16px 0 4px' }}>Logement &amp; Scooter</h1>
-      <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>Choisis ton logement et indique si tu veux un scooter.</p>
+      <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>Choose your accommodation and let us know if you want a scooter.</p>
 
       <form onSubmit={(e) => { void handleSubmit(e) }}>
         {guesthouses.length > 0 && (

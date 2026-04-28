@@ -87,7 +87,7 @@ export default function PortalFacturePage() {
           <p style={{ fontSize: '48px', marginBottom: '12px' }}>🧾</p>
           <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#1A1A1A', marginBottom: '8px' }}>Facture disponible</h2>
           <p style={{ color: '#6b7280', fontSize: '13px', marginBottom: '24px' }}>
-            Paiement confirmé le {new Date(data.payment_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+            Payment confirmed on {new Date(data.payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
           <button
             onClick={openInvoice}
@@ -119,7 +119,7 @@ export default function PortalFacturePage() {
             </div>
           )}
 
-          {/* Bouton J'ai payé */}
+          {/* Payment notification button */}
           <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', padding: '24px' }}>
             {notified ? (
               <div style={{ textAlign: 'center', padding: '16px 0' }}>
@@ -130,7 +130,7 @@ export default function PortalFacturePage() {
             ) : (
               <div>
                 <p style={{ fontSize: '14px', color: '#374151', marginBottom: '16px' }}>
-                  Tu as effectué ton virement ? Notifie-nous pour accélérer la validation.
+                  Have you made your transfer? Notify us to speed up validation.
                 </p>
                 {!showNoteInput ? (
                   <button

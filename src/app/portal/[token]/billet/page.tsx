@@ -54,7 +54,7 @@ export default function BilletPage() {
     <div>
       <Link href={`/portal/${token}`} style={{ color: '#FFCC00', fontSize: 13, textDecoration: 'none' }}>← Back</Link>
       <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1A1A1A', margin: '16px 0 4px' }}>Billet d&apos;avion</h1>
-      <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 24 }}>Renseigne les informations de ton vol vers Bali.</p>
+      <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 24 }}>Enter your flight information to Bali.</p>
 
       <form onSubmit={(e) => { void handleSubmit(e) }}>
         <div style={{ marginBottom: 16 }}>

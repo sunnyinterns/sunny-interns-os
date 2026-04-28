@@ -128,7 +128,7 @@ export default function InternCartePage() {
                   <div>
                     <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Arrival</p>
                     <p style={{ color: 'white', fontSize: '13px', fontWeight: 500, marginTop: '2px' }}>
-                      {new Date(startDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {new Date(startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
                 )}
@@ -136,7 +136,7 @@ export default function InternCartePage() {
                   <div>
                     <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Departure</p>
                     <p style={{ color: 'white', fontSize: '13px', fontWeight: 500, marginTop: '2px' }}>
-                      {new Date(endDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {new Date(endDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
                 )}

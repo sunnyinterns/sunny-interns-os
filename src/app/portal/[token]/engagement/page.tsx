@@ -60,9 +60,9 @@ export default function EngagementPage() {
   }
 
   const formatDate = (d: Date) =>
-    d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) +
+    d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) +
     ' à ' +
-    d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 
   if (signed && signedAt) {
     return (
@@ -111,7 +111,7 @@ export default function EngagementPage() {
     <div>
       <Link href={`/portal/${token}`} style={{ color: '#FFCC00', fontSize: '13px', textDecoration: 'none' }}>← Back</Link>
       <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1A1A1A', margin: '16px 0 4px' }}>Commitment Letter</h1>
-      <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>Lis attentivement et signe ta lettre d&apos;engagement.</p>
+      <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>Read carefully and sign your commitment letter.</p>
 
       <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', marginBottom: '24px', fontSize: '14px', lineHeight: 1.7, color: '#374151' }}>
         <p><strong>Bali Interns Commitment Letter</strong></p>
