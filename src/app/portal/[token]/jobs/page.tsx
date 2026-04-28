@@ -15,6 +15,8 @@ interface PublicJob {
   intern_priority?: number | null
   employer_first_name?: string | null
   submission_status: string  // sent / pending / retained / cancelled
+  employer_decision?: string | null   // pending / interested / not_interested
+  candidate_decision?: string | null  // pending / interested / not_interested
 }
 
 export default function PortalJobsPage() {
@@ -32,6 +34,19 @@ export default function PortalJobsPage() {
       .then((d) => { setJobs(d); setLoading(false) })
       .catch(() => setLoading(false))
   }, [token])
+  async function handleCandidateDecision(subId: string, decision: 'interested' | 'not_interested') {
+    const res = await fetch(`/api/portal/${token}/jobs/${subId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ candidate_decision: decision }),
+    })
+    if (res.ok) {
+      setJobs(prev => prev.map(j =>
+        j.submission_id === subId ? { ...j, candidate_decision: decision } : j
+      ))
+    }
+  }
+
 
   async function respond(submissionId: string, interested: boolean) {
     setResponding(submissionId)
@@ -223,9 +238,41 @@ function JobCard({ job, responding, moving, onRespond, showPriority, priority, t
               ✉ Application sent
             </span>
           )}
+          {job.submission_status === 'interview' && (
+            <span style={{ fontSize: '10px', fontWeight: 600, padding: '2px 7px', background: '#ede9fe', color: '#6d28d9', borderRadius: '99px', marginBottom: '2px' }}>
+              🗓️ Interview in progress
+            </span>
+          )}
           {job.submission_status === 'pending' && (
             <span style={{ fontSize: '10px', fontWeight: 600, padding: '2px 7px', background: '#f3f4f6', color: '#6b7280', borderRadius: '99px', marginBottom: '2px' }}>
               ⏳ Not sent yet
+            </span>
+          )}
+          {/* After interview: candidate can confirm their decision */}
+          {job.submission_status === 'interview' && !job.candidate_decision && (
+            <div style={{ display: 'flex', gap: '6px', marginTop: '8px', width: '100%' }}>
+              <button
+                onClick={() => void handleCandidateDecision(job.submission_id, 'interested')}
+                style={{ flex: 1, padding: '8px 0', background: '#FFCC00', color: '#1A1A1A', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                🙋 I want to join
+              </button>
+              <button
+                onClick={() => void handleCandidateDecision(job.submission_id, 'not_interested')}
+                style={{ flex: 1, padding: '8px 0', background: '#f3f4f6', color: '#6b7280', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Not for me
+              </button>
+            </div>
+          )}
+          {job.candidate_decision === 'interested' && (
+            <span style={{ fontSize: '10px', fontWeight: 600, padding: '2px 7px', background: '#d1fae5', color: '#065f46', borderRadius: '99px', marginBottom: '2px' }}>
+              ✅ You confirmed your interest
+            </span>
+          )}
+          {job.candidate_decision === 'not_interested' && (
+            <span style={{ fontSize: '10px', fontWeight: 600, padding: '2px 7px', background: '#f3f4f6', color: '#6b7280', borderRadius: '99px', marginBottom: '2px' }}>
+              You declined this offer
             </span>
           )}
           {job.intern_interested === true && (

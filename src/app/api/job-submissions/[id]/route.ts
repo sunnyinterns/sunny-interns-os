@@ -1,115 +1,90 @@
-import { createClient } from '@/lib/supabase/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { createClient as srv } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-import { logActivity } from '@/lib/activity-logger'
+
+function getAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
+
+async function sendFromTemplate(opts: { slug: string; to: string; vars: Record<string, string> }) {
+  const admin = getAdmin()
+  const { data: tmpl } = await admin.from('email_templates').select('subject, body_html')
+    .eq('slug', opts.slug).eq('is_active', true).single()
+  if (!tmpl) return
+  let subject = tmpl.subject as string
+  let html = tmpl.body_html as string
+  for (const [k, v] of Object.entries(opts.vars)) {
+    const re = new RegExp(`{{${k}}}`, 'g')
+    subject = subject.replace(re, v ?? '')
+    html = html.replace(re, v ?? '')
+  }
+  const { Resend } = await import('resend')
+  await new Resend(process.env.RESEND_API_KEY).emails.send({
+    from: 'Bali Interns <team@bali-interns.com>',
+    to: opts.to,
+    subject,
+    html,
+  })
+}
 
 export async function PATCH(
-  request: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const supabase = await srv()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const { id } = await params
+  const admin = getAdmin()
+  const body = await req.json() as Record<string, unknown>
 
-  // Portal (intern) access: allow via x-portal-token header (no auth required)
-  const portalToken = request.headers.get('x-portal-token')
-  let supabase
-  let isPortal = false
+  // Load current submission to detect status change
+  const { data: current } = await admin.from('job_submissions')
+    .select('*, cases!job_submissions_case_id_fkey(portal_token, interns(first_name, email))')
+    .eq('id', id).single()
 
-  if (portalToken) {
-    supabase = createServiceClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-    isPortal = true
-  } else {
-    supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!current) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  const oldStatus = current.status as string
+  const newStatus = body.status as string | undefined
+
+  await admin.from('job_submissions').update({
+    ...body,
+    updated_at: new Date().toISOString(),
+  }).eq('id', id)
+
+  // Trigger: status changed to 'interview' → email candidat
+  if (newStatus === 'interview' && oldStatus !== 'interview') {
+    try {
+      const caseData = current.cases as Record<string, unknown> | null
+      const intern = (caseData?.interns ?? {}) as Record<string, unknown>
+      const portalToken = caseData?.portal_token as string | null
+      const internEmail = intern.email as string | null
+      const internFirstName = (intern.first_name ?? 'there') as string
+      const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+
+      if (internEmail) {
+        await sendFromTemplate({
+          slug: 'interview_prep_candidate',
+          to: internEmail,
+          vars: {
+            first_name: internFirstName,
+            portal_url: portalToken ? `${APP_URL}/portal/${portalToken}/jobs` : APP_URL,
+          },
+        })
+        // Mark email sent
+        await admin.from('job_submissions').update({
+          candidate_interview_notified_at: new Date().toISOString(),
+        }).eq('id', id)
+      }
+    } catch (e) {
+      console.error('[job-submissions PATCH] interview email error:', e)
+    }
   }
 
-  try {
-    const body = await request.json() as {
-      status?: string
-      intern_interested?: boolean
-      intern_priority?: number
-      cv_revision_requested?: boolean
-      cv_revision_done?: boolean
-      employer_response?: string
-      notes_charly?: string
-    }
-
-    const { data: sub, error: fetchError } = await supabase
-      .from('job_submissions')
-      .select('case_id, job_id')
-      .eq('id', id)
-      .single()
-    if (fetchError) throw fetchError
-
-    // Build update payload
-    const updatePayload: Record<string, unknown> = { updated_at: new Date().toISOString() }
-
-    if (body.intern_interested !== undefined) {
-      updatePayload.intern_interested = body.intern_interested
-      updatePayload.intern_responded_at = new Date().toISOString()
-    }
-
-    if (body.status && !isPortal) {
-      updatePayload.status = body.status
-    }
-
-    if (!isPortal) {
-      if (body.intern_priority !== undefined) updatePayload.intern_priority = body.intern_priority
-      if (body.cv_revision_requested !== undefined) updatePayload.cv_revision_requested = body.cv_revision_requested
-      if (body.cv_revision_done !== undefined) updatePayload.cv_revision_done = body.cv_revision_done
-      if (body.employer_response !== undefined) updatePayload.employer_response = body.employer_response
-      if (body.notes_charly !== undefined) updatePayload.notes_charly = body.notes_charly
-    }
-
-    const { error } = await supabase
-      .from('job_submissions')
-      .update(updatePayload)
-      .eq('id', id)
-    if (error) throw error
-
-    if (body.status === 'retained' && !isPortal) {
-      // Cancel all other submissions for this case
-      await supabase
-        .from('job_submissions')
-        .update({ status: 'rejected' })
-        .eq('case_id', sub.case_id)
-        .neq('id', id)
-
-      // Advance case status
-      await supabase
-        .from('cases')
-        .update({ status: 'job_retained', updated_at: new Date().toISOString() })
-        .eq('id', sub.case_id)
-
-      // Fetch job details for activity log
-      const { data: jobDetails } = await supabase
-        .from('jobs')
-        .select('title, companies(name)')
-        .eq('id', sub.job_id)
-        .single()
-      const jTitle = (jobDetails as Record<string, unknown>)?.title as string ?? 'Offre'
-      const cName = ((jobDetails as Record<string, unknown>)?.companies as Record<string, unknown>)?.name as string ?? ''
-
-      await logActivity({
-        caseId: sub.case_id,
-        type: 'job_retained',
-        title: `Job retenu : ${jTitle}`,
-        description: `Le poste "${jTitle}" chez ${cName} a été retenu`,
-        priority: 'high',
-        metadata: { job_id: sub.job_id, job_title: jTitle, company_name: cName },
-      })
-
-    }
-
-    // If intern expressed interest, notify admin
-    if (body.intern_interested === true) {
-    }
-
-    return NextResponse.json({ success: true })
-  } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
-  }
+  return NextResponse.json({ ok: true })
 }
