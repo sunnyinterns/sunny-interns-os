@@ -72,7 +72,7 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
     fetch(`/api/portal/agent/${token}`)
       .then(async r => {
         if (!r.ok) {
-          setError('Lien invalide ou expiré')
+          setError('Invalid or expired link')
           return null
         }
         return r.json()
@@ -107,13 +107,13 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
     setSavingComment(false)
   }
 
-  if (loading) return <div className="min-h-screen bg-[#fafaf7] flex items-center justify-center text-zinc-400">Chargement…</div>
+  if (loading) return <div className="min-h-screen bg-[#fafaf7] flex items-center justify-center text-zinc-400">Loading…</div>
   if (error || !data) return (
     <div className="min-h-screen bg-[#fafaf7] flex items-center justify-center p-6">
       <div className="max-w-md bg-white border border-zinc-100 rounded-2xl p-8 text-center">
         <p className="text-4xl mb-3">🔒</p>
-        <h1 className="text-lg font-semibold text-[#1a1918] mb-2">Lien invalide ou expiré</h1>
-        <p className="text-sm text-zinc-500">Contactez Bali Interns pour obtenir un nouvel accès.</p>
+        <h1 className="text-lg font-semibold text-[#1a1918] mb-2">Invalid or expired link</h1>
+        <p className="text-sm text-zinc-500">Contact Sunny Interns for a new access link.</p>
       </div>
     </div>
   )
@@ -123,23 +123,23 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
       <div className="min-h-screen bg-[#fafaf7] p-6 md:p-10">
         <div className="max-w-4xl mx-auto">
           <header className="bg-white border border-zinc-100 rounded-2xl p-6 mb-6">
-            <p className="text-xs uppercase tracking-wider text-[#c8a96e] font-bold mb-1">Bali Interns — Portail Agent Visa</p>
+            <p className="text-xs uppercase tracking-wider text-[#c8a96e] font-bold mb-1">Sunny Interns — Visa Agent Portal</p>
             <h1 className="text-xl font-semibold text-[#1a1918]">{data.agent.company_name ?? data.agent.name}</h1>
           </header>
           <div className="bg-white border border-zinc-100 rounded-2xl p-6">
-            <h2 className="text-sm font-bold text-[#1a1918] uppercase tracking-wider mb-4">Dossiers récents</h2>
+            <h2 className="text-sm font-bold text-[#1a1918] uppercase tracking-wider mb-4">Recent dossiers</h2>
             {data.dossiers.length === 0 ? (
-              <p className="text-sm text-zinc-400">Aucun dossier envoyé pour le moment.</p>
+              <p className="text-sm text-zinc-400">No dossiers sent yet.</p>
             ) : (
               <div className="space-y-2">
                 {data.dossiers.map(d => (
                   <a key={d.id} href={`/portal/agent/${d.token}`} className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl hover:bg-zinc-100">
                     <div>
                       <p className="text-sm font-medium text-[#1a1918]">{d.cases?.interns?.first_name} {d.cases?.interns?.last_name}</p>
-                      <p className="text-xs text-zinc-500">Envoyé le {new Date(d.sent_at).toLocaleDateString('fr-FR')}</p>
+                      <p className="text-xs text-zinc-500">Sent on {new Date(d.sent_at).toLocaleDateString('en-GB')}</p>
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${d.viewed_at ? 'bg-green-100 text-[#0d9e75]' : 'bg-amber-100 text-amber-700'}`}>
-                      {d.viewed_at ? 'Consulté' : 'Non consulté'}
+                      {d.viewed_at ? 'Viewed' : 'Not viewed'}
                     </span>
                   </a>
                 ))}

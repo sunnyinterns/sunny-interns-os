@@ -98,7 +98,7 @@ export default function PortalLoginPage() {
 
         <p className="text-center text-white/30 text-sm mt-6">
           New applicant?{' '}
-          <Link href="https://bali-interns.com/fr/apply" className="text-[#c8a96e] hover:underline">
+          <Link href={`${process.env.NEXT_PUBLIC_VITRINE_URL ?? "https://bali-interns.com"}/fr/apply`} className="text-[#c8a96e] hover:underline">
             Apply here
           </Link>
         </p>

@@ -579,7 +579,7 @@ export default function EmployerPortal() {
       </main>
 
       <footer className="text-center text-xs text-zinc-400 py-8 mt-4 border-t border-zinc-100">
-        <p>Bali Interns · <a href="mailto:team@bali-interns.com" className="text-[#c8a96e]">team@bali-interns.com</a></p>
+        <p>Sunny Interns · <a href="mailto:team@bali-interns.com" className="text-[#c8a96e]">team@bali-interns.com</a></p>
         <p className="mt-1">Canggu, Bali, Indonesia</p>
       </footer>
     </div>
