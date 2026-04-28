@@ -13,6 +13,14 @@ type Body = {
   school_country?: string
   spoken_languages?: string[]
   touchpoint?: string
+  // Simulator-specific fields
+  months_selected?: string[]
+  domains_selected?: string[]
+  deadline_to_apply?: string   // ISO date: departure_date - 60 days
+  score?: number               // computed score 0-100
+  temperature?: string         // 'hot' | 'warm' | 'cold'
+  reminders_active?: boolean
+  next_followup_at?: string
 }
 
 export async function POST(req: Request) {
@@ -53,6 +61,14 @@ export async function POST(req: Request) {
     if (rest.spoken_languages?.length) updateFields.spoken_languages = rest.spoken_languages
     if (rest.touchpoint) updateFields.touchpoint = rest.touchpoint
     if (rest.sub_source) updateFields.sub_source = rest.sub_source
+    // Simulator fields
+    if (rest.months_selected?.length) updateFields.months_selected = rest.months_selected
+    if (rest.domains_selected?.length) updateFields.domains_selected = rest.domains_selected
+    if (rest.deadline_to_apply) updateFields.deadline_to_apply = rest.deadline_to_apply
+    if (rest.score !== undefined) updateFields.score = rest.score
+    if (rest.temperature) updateFields.temperature = rest.temperature
+    if (rest.reminders_active !== undefined) updateFields.reminders_active = rest.reminders_active
+    if (rest.next_followup_at) updateFields.next_followup_at = rest.next_followup_at
 
     // UPSERT atomique — évite les race conditions du mobile qui envoie plusieurs requêtes simultanées
     const { data: lead, error } = await supabase
