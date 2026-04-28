@@ -134,6 +134,8 @@ export function TabProcess({
   caseData,
   onRefresh,
   onTabChange,
+  internEmail,
+  internFirstName,
 }: TabProcessProps) {
   const [status, setStatus] = useState<CaseStatus>(initialStatus)
   const [checklist, setChecklist] = useState<ChecklistData>(initialChecklist ?? {})
