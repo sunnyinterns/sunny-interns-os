@@ -31,6 +31,18 @@
     {
       "path": "/api/cron/employer-no-response",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/touchpoint-j30",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/touchpoint-j60",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/touchpoint-end",
+      "schedule": "0 8 * * *"
     }
   ]
 }

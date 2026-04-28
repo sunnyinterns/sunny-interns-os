@@ -408,6 +408,38 @@ export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPorta
   }
 
   // ── VISA RECEIVED ──
+  // ── ARRIVAL PREP ──
+  if (status === 'arrival_prep') {
+    const flightNum = (caseData as Record<string, unknown>).flight_number as string | null
+    const startDate = (caseData as Record<string, unknown>).actual_start_date as string | null
+    const dropoffAddr = (caseData as Record<string, unknown>).dropoff_address as string | null
+    const flightTime = (caseData as Record<string, unknown>).flight_arrival_time_local as string | null
+    const startLabel = startDate
+      ? new Date(startDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+      : '—'
+    return bandeau('#eff6ff', '#bfdbfe60',
+      <>
+        <div className="flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600 mb-0.5">
+            ✈️ Arrival prep — departure imminent
+          </p>
+          <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-0.5">
+            <p className="text-sm font-medium text-[#1A1A1A]">
+              📅 Start: <strong>{startLabel}</strong>
+            </p>
+            {flightNum && <p className="text-sm text-zinc-600">✈ {flightNum}</p>}
+            {flightTime && <p className="text-sm text-zinc-600">🕐 {flightTime} WITA</p>}
+            {dropoffAddr && <p className="text-sm text-zinc-600">📍 {dropoffAddr}</p>}
+          </div>
+          {!flightNum && (
+            <p className="text-xs text-amber-600 mt-0.5">⚠️ No flight info yet — check intern portal (/billet)</p>
+          )}
+        </div>
+      </>,
+      <><span>🤖</span><span><strong>Auto-activation:</strong> Stage will move to "Active" automatically on start date · J-3 arrival email scheduled</span></>
+    )
+  }
+
   if (status === 'visa_received') {
     const visaUrl = (caseData as Record<string, unknown>).visa_url as string | null
     const internWA = (intern as Record<string, unknown> | null)?.whatsapp as string | null
@@ -503,7 +535,7 @@ export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPorta
         </div>
       </>,
       isPast
-        ? <><span>🔔</span><span><strong>Alerte :</strong> Le mois de relance est arrivé — contacter {intern?.first_name ?? 'le candidat'} maintenant</span></>
+        ? <><span>🔔</span><span><strong>Alert:</strong> Recontact month has arrived — reach out to {intern?.first_name ?? 'the candidate'} now</span></>
         : <><span>📅</span><span>To-Do alert created · Recontact scheduled for {monthLabel}</span></>
     )
   }

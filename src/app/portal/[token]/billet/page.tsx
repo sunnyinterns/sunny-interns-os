@@ -10,7 +10,7 @@ export default function BilletPage() {
   const [billetUrl, setBilletUrl] = useState('')
   const [dateArrivee, setDateArrivee] = useState('')
   const [flightNumber, setFlightNumber] = useState('')
-  const [escale, setEscale] = useState('')
+  const [escale, setLayover / connection] = useState('')
   const [heureArrivee, setHeureArrivee] = useState('')
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
@@ -71,7 +71,7 @@ export default function BilletPage() {
         </div>
         <div style={{ marginBottom: 16 }}>
           <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-            Numéro de vol arrivant à Bali *
+            Flight number arrivant à Bali *
           </label>
           <input type="text" value={flightNumber} onChange={(e) => setFlightNumber(e.target.value)} required placeholder="ex: SQ321" style={inputStyle} />
         </div>
@@ -79,7 +79,7 @@ export default function BilletPage() {
           <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
             Ville de départ du dernier vol
           </label>
-          <input type="text" value={escale} onChange={(e) => setEscale(e.target.value)} placeholder="ex: Singapore" style={inputStyle} />
+          <input type="text" value={escale} onChange={(e) => setLayover / connection(e.target.value)} placeholder="ex: Singapore" style={inputStyle} />
         </div>
         <div style={{ marginBottom: 24 }}>
           <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
@@ -89,7 +89,7 @@ export default function BilletPage() {
         </div>
         {error && <p style={{ color: '#dc2626', fontSize: 13, marginBottom: 16 }}>{error}</p>}
         <button type="submit" disabled={loading} style={{ width: '100%', padding: 12, background: '#FFCC00', color: 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
-          {loading ? 'Saving…' : 'Confirm my flight'}
+          {loading ? 'Saving…' : 'Confirm my flight details'}
         </button>
       </form>
     </div>

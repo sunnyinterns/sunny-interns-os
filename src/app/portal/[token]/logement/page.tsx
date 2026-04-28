@@ -31,14 +31,14 @@ export default function LogementPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!wantsScooter) { setError('Indique si tu veux un scooter'); return }
+    if (!wantsScooter) { setError('Please indicate if you want a scooter'); return }
     setLoading(true)
     setError(null)
     try {
       const res = await fetch(`/api/portal/${token}/logement`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ housingId: selectedHousing, wantsScooter: wantsScooter === 'oui' }),
+        body: JSON.stringify({ housingId: selectedHousing, wantsScooter: wantsScooter === 'yes' }),
       })
       if (!res.ok) throw new Error('Save failed')
       setDone(true)

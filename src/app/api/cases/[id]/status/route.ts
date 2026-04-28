@@ -520,7 +520,7 @@ export async function PATCH(
         const alToken = (alRow as Record<string,unknown>).portal_token as string | null
         if (alIntern?.email && alToken) {
           const { data: jsData } = await adminAl.from('job_submissions').select('jobs(companies(name))').eq('case_id', id).eq('status', 'retained').limit(1).maybeSingle()
-          const coName = (((jsData?.jobs as unknown) as Record<string,unknown> | null)?.companies as Record<string,unknown> | null)?.name as string ?? 'votre entreprise'
+          const coName = (((jsData?.jobs as unknown) as Record<string,unknown> | null)?.companies as Record<string,unknown> | null)?.name as string ?? 'your host company'
           void sendAlumniCongrats({ internEmail: alIntern.email, prenom: alIntern.first_name ?? 'Candidat', companyName: coName, portalToken: alToken })
         }
       }

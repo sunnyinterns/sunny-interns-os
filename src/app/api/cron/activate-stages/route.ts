@@ -32,8 +32,8 @@ export async function GET(req: Request) {
     await Promise.allSettled([
       supabase.from('admin_notifications').insert({
         type: 'stage_started',
-        title: `🌴 Stage démarré — ${name}`,
-        message: 'Stage automatiquement activé (date de début atteinte)',
+        title: `🌴 Internship started — ${name}`,
+        message: 'Internship automatically activated (start date reached)',
         action_url: `/fr/cases/${c.id}`,
         case_id: c.id,
         is_read: false,
@@ -41,8 +41,8 @@ export async function GET(req: Request) {
       supabase.from('activity_feed').insert({
         case_id: c.id,
         type: 'status_changed',
-        title: 'Stage démarré automatiquement',
-        description: `${name} a commencé son stage — statut passé à "active"`,
+        title: 'Internship started automatically',
+        description: `${name} has started their internship — status set to "active"`,
         priority: 'normal',
         status: 'done',
         source: 'automation',
@@ -55,9 +55,25 @@ export async function GET(req: Request) {
         field_name: 'status',
         old_value: 'arrival_prep',
         new_value: 'active',
-        description: `Stage démarré automatiquement le ${new Date().toLocaleDateString('fr-FR')}`,
+        description: `Internship started automatically on ${new Date().toLocaleDateString('en-GB')}`,
       }),
     ])
+  }
+
+  // Send welcome_kit email for auto-activated cases
+  const { sendWelcomeKit } = await import('@/lib/email/resend')
+  for (const cas of activated) {
+    const intern = cas.interns as { first_name?: string; email?: string } | null
+    if (!intern?.email) continue
+    const { data: tokenRow } = await supabase.from('cases').select('portal_token').eq('id', cas.id).single()
+    const token = (tokenRow as Record<string,unknown>)?.portal_token as string | null
+    if (token) {
+      void sendWelcomeKit({
+        internEmail: intern.email,
+        prenom: intern.first_name ?? 'Intern',
+        portalToken: token,
+      }).catch(() => null)
+    }
   }
 
   return NextResponse.json({ activated: activated.length, cases: activated.map(c => c.id) })
