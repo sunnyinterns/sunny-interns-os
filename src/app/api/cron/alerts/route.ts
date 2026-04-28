@@ -127,7 +127,7 @@ export async function GET(request: Request) {
     .limit(50)
 
   for (const sub of noResponseSubs ?? []) {
-    const job = sub.jobs as Record<string, unknown> | null
+    const job = (Array.isArray(sub.jobs) ? sub.jobs[0] : sub.jobs) as Record<string, unknown> | null
     await admin.from('admin_notifications').insert({
       type: 'no_employer_response',
       title: `⏰ No response — ${(job?.companies as Record<string,unknown> | null)?.name ?? 'Employer'} (7 days)`,
