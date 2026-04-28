@@ -10,7 +10,7 @@ export default function BilletPage() {
   const [billetUrl, setBilletUrl] = useState('')
   const [dateArrivee, setDateArrivee] = useState('')
   const [flightNumber, setFlightNumber] = useState('')
-  const [escale, setLayover / connection] = useState('')
+  const [escale, setEscale] = useState('')
   const [heureArrivee, setHeureArrivee] = useState('')
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
