@@ -22,12 +22,12 @@ export type CaseStatus =
   | 'archived'
   | 'completed'
   | 'no_job_found'
-  | 'lost'
   | 'no_show'
-  | 'to_recontact'
   | 'hors_qualification'
   | 'no_budget'
   | 'refus_general'
+  | 'lost'
+  | 'to_recontact'
 
 export interface ActivityItem {
   id: string

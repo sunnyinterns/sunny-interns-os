@@ -309,11 +309,11 @@ export function TabProcess({
   const timelineIdx = STATUTS_ORDRE.findIndex(s => s.key === mappedKey)
 
   const DISQUALIFICATION_STATUTS: { value: CaseStatus; label: string; color: string; desc: string }[] = [
-    { value: 'no_show', label: 'No Show', color: '#f59e0b', desc: 'Le candidat ne s\'est pas présenté' },
+    { value: 'no_show', label: 'No Show', color: '#f59e0b', desc: 'Candidate did not show up' },
     { value: 'to_recontact', label: 'À recontacter', color: '#6b7280', desc: 'Retombe en lead - sera recontacté' },
-    { value: 'hors_qualification', label: 'Hors qualification', color: '#dc2626', desc: 'Cursus ou profil inadapté' },
-    { value: 'no_budget', label: 'Pas de budget', color: '#dc2626', desc: 'Ne peut pas financer le stage' },
-    { value: 'refus_general', label: 'Refus général', color: '#dc2626', desc: 'Manque de professionnalisme ou autre' },
+    { value: 'hors_qualification', label: 'Not Qualified', color: '#dc2626', desc: 'Curriculum or profile not suitable' },
+    { value: 'no_budget', label: 'No Budget', color: '#dc2626', desc: 'Cannot finance the internship' },
+    { value: 'refus_general', label: 'General Refusal', color: '#dc2626', desc: 'Lack of professionalism or other' },
   ]
 
   async function saveField(field: string, value: string) {
