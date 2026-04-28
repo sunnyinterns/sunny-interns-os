@@ -52,10 +52,10 @@ export async function GET(
 
   // Filter + shape response — never expose company_name to employer (they know it's themselves)
   const shaped = (submissions ?? []).map(s => {
-    const job = s.jobs as Record<string, unknown> | null
-    const caseData = s.cases as Record<string, unknown> | null
+    const job = s.jobs as unknown as Record<string, unknown> | null
+    const caseData = s.cases as unknown as Record<string, unknown> | null
     const internsRaw2 = caseData?.interns
-    const intern = ((Array.isArray(internsRaw2) ? internsRaw2[0] : internsRaw2) as Record<string, unknown>) ?? {}
+    const intern = ((Array.isArray(internsRaw2) ? internsRaw2[0] : internsRaw2) as unknown as Record<string, unknown>) ?? {}
     const dob = intern.date_of_birth as string | null
     const age = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 3600 * 1000)) : null
 
