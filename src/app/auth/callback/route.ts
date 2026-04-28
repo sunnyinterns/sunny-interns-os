@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get('code')
   const origin = request.nextUrl.origin
 
+  const returnPath = request.nextUrl.searchParams.get('return') ?? '/fr/feed'
   if (!code) return NextResponse.redirect(`${origin}/fr/login?error=no_code`)
 
   const supabase = await createClient()
@@ -52,5 +53,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/fr/feed`)
+  return NextResponse.redirect(`${origin}${returnPath}`)
 }

@@ -10,7 +10,7 @@ interface EventType {
 }
 interface Manager {
   id: string; name: string; email: string; calendar_id: string
-  is_active: boolean; priority: number; work_days: number[]
+  is_active: boolean; priority: number; work_days: number[]; has_token?: boolean
   work_start_hour: number; work_end_hour: number; timezone: string
 }
 
@@ -31,6 +31,7 @@ export default function SchedulingSettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [connectingMgr, setConnectingMgr] = useState<string | null>(null)
   const [bookingUrl, setBookingUrl] = useState('')
 
   useEffect(() => {
@@ -73,6 +74,24 @@ export default function SchedulingSettingsPage() {
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
     } finally { setSaving(false) }
+  }
+
+  async function connectCalendar(mgrEmail: string) {
+    setConnectingMgr(mgrEmail)
+    const { createClient } = await import('@/lib/supabase/client')
+    const supabase = createClient()
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?return=/fr/settings/scheduling`,
+        scopes: ['openid','email','profile',
+          'https://www.googleapis.com/auth/calendar',
+          'https://www.googleapis.com/auth/calendar.events'].join(' '),
+        queryParams: { access_type: 'offline', prompt: 'consent' },
+        skipBrowserRedirect: false,
+      },
+    })
+    if (error) { alert(error.message); setConnectingMgr(null) }
   }
 
   if (loading) return <div className="p-8 text-sm text-zinc-400">Chargement…</div>
@@ -179,10 +198,10 @@ export default function SchedulingSettingsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={'text-xs px-2 py-0.5 rounded-full font-medium ' + (mgr.is_active ? 'bg-green-50 text-green-600' : 'bg-zinc-100 text-zinc-400')}>
-                    {mgr.is_active ? '● Actif' : '○ Inactif'}
+                    {mgr.is_active ? '● Active' : '○ Inactive'}
                   </span>
                   <button onClick={() => setManagers(prev => prev.map(m => m.id === mgr.id ? { ...m, is_active: !m.is_active } : m))}
-                    className={'relative inline-flex h-5 w-9 items-center rounded-full transition-colors ' + (mgr.is_active ? 'bg-[#c8a96e]' : 'bg-zinc-200')}>
+                    className={'relative inline-flex h-5 w-9 items-center rounded-full transition-colors ' + (mgr.is_active ? 'bg-[#FFCC00]' : 'bg-zinc-200')}>
                     <span className={'inline-block h-3 w-3 transform rounded-full bg-white transition-transform shadow-sm ' + (mgr.is_active ? 'translate-x-5' : 'translate-x-1')} />
                   </button>
                 </div>

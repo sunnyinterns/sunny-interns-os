@@ -17,21 +17,10 @@ export default function LoginPage() {
     setError(null)
     const supabase = createClient()
 
-    // Check if user already has a refresh token saved — if yes, no need to re-consent
-    // Only force consent if no refresh token exists in scheduling_managers
-    let needConsent = true
-    try {
-      const { data: user } = await supabase.auth.getUser()
-      if (user?.user?.email) {
-        const { data: mgr } = await supabase
-          .from('scheduling_managers')
-          .select('google_refresh_token')
-          .eq('email', user.user.email)
-          .single()
-        needConsent = !mgr?.google_refresh_token
-      }
-    } catch { /* first login — need consent */ }
-
+    // NOTE: We do NOT force prompt:'consent' on every login.
+    // The refresh token is captured ONCE at first login and stored in scheduling_managers.
+    // Subsequent logins use 'select_account' (just the account picker, no re-consent).
+    // To reconnect Google Calendar explicitly, use Settings → Scheduling → Connect Calendar.
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -45,8 +34,7 @@ export default function LoginPage() {
         ].join(' '),
         queryParams: {
           access_type: 'offline',
-          // Only prompt consent if we don't have a refresh token yet
-          prompt: needConsent ? 'consent' : 'select_account',
+          prompt: 'select_account', // Account picker only — no re-consent every login
         },
       },
     })
@@ -64,23 +52,26 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#fafaf7] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#FFFBF0] px-4">
       <div className="w-full max-w-sm">
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#c8a96e] mb-4">
-            <span className="text-white font-bold text-xl">S</span>
-          </div>
-          <h1 className="text-2xl font-semibold text-[#1a1918]">Bali Interns OS</h1>
-          <p className="text-sm text-zinc-500 mt-1">Connexion à l&apos;espace équipe</p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://djoqjgiyseobotsjqcgz.supabase.co/storage/v1/object/public/brand-assets/logos/logo_landscape_black.png"
+            alt="Bali Interns"
+            style={{ height: '32px', width: 'auto', margin: '0 auto 16px' }}
+          />
+          <h1 className="text-xl font-semibold text-[#1A1A1A]">Team workspace</h1>
+          <p className="text-sm text-zinc-500 mt-1">Sign in to Bali Interns OS</p>
         </div>
 
         {/* Google OAuth */}
         <button
           onClick={() => { void handleGoogleLogin() }}
           disabled={googleLoading}
-          className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-zinc-200 rounded-xl bg-white text-[#1a1918] text-sm font-medium hover:bg-zinc-50 disabled:opacity-60 transition-colors shadow-sm"
+          className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-zinc-200 rounded-xl bg-white text-[#1A1A1A] text-sm font-medium hover:bg-zinc-50 disabled:opacity-60 transition-colors shadow-sm"
         >
           {googleLoading ? (
             <div className="w-4 h-4 border-2 border-zinc-300 border-t-zinc-600 rounded-full animate-spin" />
@@ -92,17 +83,17 @@ export default function LoginPage() {
               <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
             </svg>
           )}
-          {googleLoading ? 'Connexion…' : 'Continuer avec Google'}
+          {googleLoading ? 'Signing in…' : 'Continue with Google'}
         </button>
 
         <p className="text-center text-xs text-zinc-400 mt-2">
-          Accès agenda Google Calendar inclus ✓
+          Google Calendar access included ✓
         </p>
 
         {/* Divider */}
         <div className="flex items-center gap-3 my-5">
           <div className="flex-1 h-px bg-zinc-200" />
-          <span className="text-xs text-zinc-400">ou email</span>
+          <span className="text-xs text-zinc-400">or email</span>
           <div className="flex-1 h-px bg-zinc-200" />
         </div>
 
@@ -111,14 +102,14 @@ export default function LoginPage() {
           <div>
             <label htmlFor="email" className="block text-xs font-medium text-zinc-500 mb-1.5">Email</label>
             <input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required
-              placeholder="vous@bali-interns.com"
-              className="w-full px-3 py-2.5 border border-zinc-200 rounded-xl bg-white text-sm placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c8a96e] transition-all" />
+              placeholder="you@bali-interns.com"
+              className="w-full px-3 py-2.5 border border-zinc-200 rounded-xl bg-white text-sm placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#FFCC00] transition-all" />
           </div>
           <div>
-            <label htmlFor="password" className="block text-xs font-medium text-zinc-500 mb-1.5">Mot de passe</label>
+            <label htmlFor="password" className="block text-xs font-medium text-zinc-500 mb-1.5">Password</label>
             <input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required
               placeholder="••••••••"
-              className="w-full px-3 py-2.5 border border-zinc-200 rounded-xl bg-white text-sm placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c8a96e] transition-all" />
+              className="w-full px-3 py-2.5 border border-zinc-200 rounded-xl bg-white text-sm placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#FFCC00] transition-all" />
           </div>
 
           {error && (
@@ -128,8 +119,8 @@ export default function LoginPage() {
           )}
 
           <button type="submit" disabled={loading}
-            className="w-full py-2.5 bg-[#1a1918] hover:bg-zinc-800 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors">
-            {loading ? 'Connexion…' : 'Se connecter'}
+            className="w-full py-2.5 bg-[#1A1A1A] hover:bg-zinc-800 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors">
+            {loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
 

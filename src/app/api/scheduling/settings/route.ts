@@ -6,11 +6,16 @@ export async function GET() {
   const admin = createAdminClient()
   const [{ data: eventTypes }, { data: managers }] = await Promise.all([
     admin.from('scheduling_event_types').select('*').eq('is_active', true).order('created_at'),
-    admin.from('scheduling_managers').select('id, name, email, calendar_id, is_active, priority, work_days, work_start_hour, work_end_hour, timezone').order('priority'),
+    admin.from('scheduling_managers').select('id, name, email, calendar_id, is_active, priority, work_days, work_start_hour, work_end_hour, timezone, google_refresh_token').order('priority'),
   ])
   // Keep backward compat: event_type = first one (entretien), event_types = all
   const et = eventTypes?.find(e => e.slug === 'entretien') ?? eventTypes?.[0] ?? null
-  return NextResponse.json({ event_type: et, event_types: eventTypes ?? [], managers: managers ?? [] })
+  const managersClean = (managers ?? []).map((m: Record<string, unknown>) => ({
+    ...m,
+    has_token: !!m.google_refresh_token,
+    google_refresh_token: undefined, // Never expose the token to the frontend
+  }))
+  return NextResponse.json({ event_type: et, event_types: eventTypes ?? [], managers: managersClean })
 }
 
 export async function PUT(request: Request) {
