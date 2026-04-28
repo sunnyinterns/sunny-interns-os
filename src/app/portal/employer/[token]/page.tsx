@@ -431,7 +431,7 @@ export default function EmployerPortal() {
                     </>
                   )}
                   <button type="submit" disabled={savingContact}
-                    className="w-full py-2.5 bg-[#FFCC00] text-white text-sm font-semibold rounded-xl disabled:opacity-50">
+                    className="w-full py-2.5 bg-[#FFCC00] text-[#1A1A1A] text-sm font-semibold rounded-xl disabled:opacity-50">
                     {savingContact ? 'Saving…' : 'Save signatory'}
                   </button>
                 </form>
@@ -439,7 +439,7 @@ export default function EmployerPortal() {
             </div>
 
             <button type="submit" disabled={saving}
-              className="w-full py-4 bg-[#FFCC00] text-white font-bold rounded-2xl hover:bg-[#E6B800] disabled:opacity-50 transition-colors">
+              className="w-full py-4 bg-[#FFCC00] text-[#1A1A1A] font-bold rounded-2xl hover:bg-[#E6B800] disabled:opacity-50 transition-colors">
               {saving ? 'Saving…' : saved ? '✅ Saved — Agreement tab unlocked' : 'Save & unlock Agreement →'}
             </button>
           </form>
@@ -475,7 +475,7 @@ export default function EmployerPortal() {
                   </div>
                 )}
                 <button onClick={() => setTab('intern')}
-                  className="mt-4 px-6 py-2.5 bg-[#FFCC00] text-white text-sm font-bold rounded-xl hover:bg-[#E6B800]">
+                  className="mt-4 px-6 py-2.5 bg-[#FFCC00] text-[#1A1A1A] text-sm font-bold rounded-xl hover:bg-[#E6B800]">
                   View intern details →
                 </button>
               </div>
@@ -517,7 +517,7 @@ export default function EmployerPortal() {
                       Clear
                     </button>
                     <button type="button" onClick={handleSign} disabled={!sigData || signing}
-                      className="flex-1 py-2.5 bg-[#FFCC00] text-white text-sm font-bold rounded-xl hover:bg-[#E6B800] disabled:opacity-40">
+                      className="flex-1 py-2.5 bg-[#FFCC00] text-[#1A1A1A] text-sm font-bold rounded-xl hover:bg-[#E6B800] disabled:opacity-40">
                       {signing ? 'Signing…' : 'Sign Agreement →'}
                     </button>
                   </div>
@@ -547,7 +547,7 @@ export default function EmployerPortal() {
               <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-4">What happens next</p>
               <div className="space-y-3">
                 {[
-                  { icon: '🛂', step: 'Visa processing', desc: 'PT Bintang Beruntung Indonesia is now processing the intern visa application. You will be notified when the visa is approved.' },
+                  { icon: '🛂', step: 'Visa processing', desc: 'Our local team in Bali is now processing the intern visa application. You will be notified when the visa is approved.' },
                   { icon: '✈️', step: 'Arrival', desc: 'Once the visa is received, the intern will book their flight. We will share arrival details with you 2 weeks before.' },
                   { icon: '👋', step: 'Welcome', desc: 'Our team will brief the intern on the first day. We stay available throughout the internship for both parties.' },
                   { icon: '📩', step: 'Questions?', desc: 'Reply to the email you received or reach out to your Bali Interns contact directly.' },

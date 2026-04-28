@@ -97,7 +97,7 @@ export async function POST(
     .replace(/{{job_title}}/g, jobTitle)
     .replace(/{{duration}}/g, String(duration))
     .replace(/{{start_date}}/g, 'TBD')
-    .replace(/{{sponsor_name}}/g, 'PT Bintang Beruntung Indonesia')
+    .replace(/{{sponsor_name}}/g, (process.env.SPONSOR_COMPANY_NAME ?? 'PT Bintang Beruntung Indonesia'))
     .replace(/{{employer_portal_url}}/g, portalUrl)
     .replace(/{{manager_name}}/g, 'Sidney, Bali Interns')
 
