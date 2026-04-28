@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { ProcessTimeline } from '@/components/cases/ProcessTimeline'
+import { EmailDraftPanel } from '@/components/cases/EmailDraftPanel'
 import { StatusActionPanel } from '@/components/cases/StatusActionPanel'
 import type { CaseStatus } from '@/lib/types'
 
@@ -44,12 +45,13 @@ interface TabProcessProps {
   activityFeed: ActivityEntry[]
   isVisaOnly?: boolean
   checklist?: ChecklistData
-  internEmail?: string | null
   paymentAmount?: number | null
   filloutBillFormUrl?: string | null
   caseData?: Record<string, unknown>
   onRefresh?: () => void
   onTabChange?: (tab: string) => void
+  internEmail?: string | null
+  internFirstName?: string | null
 }
 
 const ACTIVITY_ICONS: Record<string, string> = {
@@ -144,6 +146,21 @@ export function TabProcess({
   const [savingNote, setSavingNote] = useState(false)
   const [notesForIntern, setNotesForIntern] = useState<string>((caseData?.qualification_notes_for_intern as string) ?? '')
   const [sendingEmail, setSendingEmail] = useState(false)
+  const [thankYouSent, setThankYouSent] = useState(false)
+
+  const DISQUALIFICATION_STATUSES = ['not_interested','not_qualified','no_show','hors_qualification','no_budget','refus_general']
+  const DISQUALIFICATION_REASONS: Record<string, string> = {
+    not_interested: 'but we completely understand — timing and priorities change.',
+    not_qualified: "but our current openings aren't the right fit for your profile at this stage.",
+    no_show: "but we weren't able to connect at our scheduled time.",
+    hors_qualification: "but our current openings aren't the right fit for your profile at this stage.",
+    no_budget: "but the timing doesn't work out financially right now.",
+    refus_general: "but we're not the right match at this point.",
+  }
+  const pendingThankYou = !thankYouSent && DISQUALIFICATION_STATUSES.includes(status) &&
+    !!(caseData?.alert_sent_flags as Record<string, unknown> | null)?.pending_thank_you_email
+  const thankYouReason = (caseData?.alert_sent_flags as Record<string, unknown> | null)?.thank_you_disqualification_reason as string | null
+  const thankYouReasonNote = DISQUALIFICATION_REASONS[thankYouReason ?? ''] ?? "but the timing isn't right at this stage."
 
   const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
     lead: { label: 'Demande entrante', bg: '#f4f4f5', text: '#52525b' },
@@ -611,6 +628,24 @@ export function TabProcess({
         <h3 className="text-sm font-semibold text-zinc-700 mb-3">Chronologie</h3>
         <ProcessTimeline caseId={caseId} currentStatus={status} onStatusChange={setStatus} isVisaOnly={isVisaOnly} />
       </div>
+
+      {/* Email drafts à valider */}
+      {pendingThankYou && internEmail && (
+        <div>
+          <h3 className="text-sm font-semibold text-zinc-700 mb-3">Email à envoyer</h3>
+          <EmailDraftPanel
+            caseId={caseId}
+            to={internEmail}
+            templateSlug="disqualification_thank_you"
+            templateVars={{
+              first_name: internFirstName ?? 'there',
+              reason_note: thankYouReasonNote,
+            }}
+            label="Thank you email"
+            onSent={() => setThankYouSent(true)}
+          />
+        </div>
+      )}
 
       {/* 6. Activité historique (from case_logs) */}
       <div>

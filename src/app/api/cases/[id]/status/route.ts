@@ -529,41 +529,27 @@ export async function PATCH(
   }
 
 
-  // ── Disqualification → thank you email ────────────────────────────────────
+  // ── Disqualification → flag pending email draft (Charly reviews before sending) ──
   const DISQUALIFICATION_STATUSES = [
     'not_interested', 'not_qualified', 'no_show',
     'hors_qualification', 'no_budget', 'refus_general',
   ]
-  const DISQUALIFICATION_NOTES: Record<string, string> = {
-    not_interested: "but we completely understand — timing and priorities change.",
-    not_qualified:  "but our current openings aren't the right fit for your profile at this stage.",
-    no_show:        "but we weren't able to connect at our scheduled time.",
-    hors_qualification: "but our current openings aren't the right fit for your profile at this stage.",
-    no_budget:      "but the timing doesn't work out financially right now.",
-    refus_general:  "but we're not the right match at this point.",
-  }
-
   if (DISQUALIFICATION_STATUSES.includes(newStatus) && !DISQUALIFICATION_STATUSES.includes(oldStatus)) {
     try {
       const adminDq = getAdmin()
-      const { data: dqRow } = await adminDq
+      // Fetch current flags to merge
+      const { data: flagRow } = await adminDq
         .from('cases')
-        .select('interns(first_name, email)')
+        .select('alert_sent_flags')
         .eq('id', id).single()
-      if (dqRow) {
-        const dqIntern = (dqRow as Record<string,unknown>).interns as { first_name?: string; email?: string } | null
-        if (dqIntern?.email) {
-          const { sendFromTemplate } = await import('@/lib/email/resend')
-          void sendFromTemplate({
-            slug: 'disqualification_thank_you',
-            to: dqIntern.email,
-            vars: {
-              first_name: dqIntern.first_name ?? 'there',
-              reason_note: DISQUALIFICATION_NOTES[newStatus] ?? "but the timing isn't right at this stage.",
-            },
-          })
-        }
-      }
+      const existingFlags = (flagRow?.alert_sent_flags ?? {}) as Record<string, unknown>
+      await adminDq.from('cases').update({
+        alert_sent_flags: {
+          ...existingFlags,
+          pending_thank_you_email: true,   // draft shown in case detail
+          thank_you_disqualification_reason: newStatus,
+        },
+      }).eq('id', id)
     } catch { /* non-blocking */ }
   }
 

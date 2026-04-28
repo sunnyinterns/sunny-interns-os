@@ -11,6 +11,7 @@ import { TabHistorique } from '@/components/cases/tabs/TabHistorique'
 import { InternCardDigital } from '@/components/cases/InternCardDigital'
 import { ChauffeurCard } from '@/components/cases/ChauffeurCard'
 import { CaseStatusBandeau } from '@/components/cases/CaseStatusBandeau'
+import { EmailDraftPanel } from '@/components/cases/EmailDraftPanel'
 
 const CANDIDATE_STATUSES = ['lead', 'rdv_booked', 'qualification_done', 'job_submitted', 'job_retained', 'convention_signed', 'to_recontact']
 
@@ -662,6 +663,37 @@ export default function CaseDetailPage() {
         />
       )}
 
+
+      {/* ── Email draft panels ── */}
+      {(() => {
+        const DISQ = ['not_interested','not_qualified','no_show','hors_qualification','no_budget','refus_general']
+        const flags = (caseData.alert_sent_flags ?? {}) as Record<string, unknown>
+        const pending = flags.pending_thank_you_email === true && DISQ.includes(caseData.status)
+        const internEmail = (caseData.interns?.email as string | null) ?? null
+        const firstName = (caseData.interns?.first_name as string | null) ?? 'there'
+        const reasonMap: Record<string, string> = {
+          not_interested: "but we completely understand — timing and priorities change.",
+          not_qualified: "but our current openings aren't the right fit for your profile at this stage.",
+          no_show: "but we weren't able to connect at our scheduled time.",
+          hors_qualification: "but our current openings aren't the right fit for your profile at this stage.",
+          no_budget: "but the timing doesn't work out financially right now.",
+          refus_general: "but we're not the right match at this point.",
+        }
+        const reasonNote = reasonMap[flags.thank_you_disqualification_reason as string ?? ''] ?? "but the timing isn't right at this stage."
+        if (!pending || !internEmail) return null
+        return (
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-6">
+            <h3 className="text-sm font-semibold text-zinc-700 mb-3">Email à envoyer</h3>
+            <EmailDraftPanel
+              caseId={caseData.id}
+              to={internEmail}
+              templateSlug="disqualification_thank_you"
+              templateVars={{ first_name: firstName, reason_note: reasonNote }}
+              label="Thank you email"
+            />
+          </div>
+        )
+      })()}
       {showStatusModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setShowStatusModal(false)}>
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
