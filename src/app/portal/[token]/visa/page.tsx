@@ -91,10 +91,10 @@ export default function PortalVisaPage() {
       formData.append('field', section.apiField)
       formData.append('type', 'visa-doc')
       const res = await fetch(`/api/portal/${token}/visa`, { method: 'POST', body: formData })
-      if (!res.ok) throw new Error('Erreur upload')
+      if (!res.ok) throw new Error('Upload failed')
       await loadData()
     } catch (e) {
-      setErrors(p => ({ ...p, [section.key]: e instanceof Error ? e.message : 'Erreur' }))
+      setErrors(p => ({ ...p, [section.key]: e instanceof Error ? e.message : 'Error' }))
     } finally {
       setUploadingKey(null)
     }

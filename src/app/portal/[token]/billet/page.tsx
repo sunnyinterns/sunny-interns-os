@@ -28,10 +28,10 @@ export default function BilletPage() {
           billetUrl, dateArrivee, escale, flightNumber, heureArrivee,
         }),
       })
-      if (!res.ok) throw new Error('Erreur lors de l\'enregistrement')
+      if (!res.ok) throw new Error('Save failed')
       setDone(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur')
+      setError(err instanceof Error ? err.message : 'Error')
     } finally {
       setLoading(false)
     }

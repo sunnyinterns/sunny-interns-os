@@ -61,7 +61,7 @@ export default function PortalDashboardPage() {
 
   if (error || !data) return (
     <div className="min-h-screen bg-[#fafaf7] flex items-center justify-center flex-col gap-4">
-      <p className="text-[#dc2626]">{error ?? 'Erreur inconnue'}</p>
+      <p className="text-[#dc2626]">{error ?? 'Unknown error'}</p>
       <a href="/portal" className="text-sm text-[#c8a96e] underline">Retour à la connexion</a>
     </div>
   )

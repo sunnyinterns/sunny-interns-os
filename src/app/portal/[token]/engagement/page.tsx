@@ -48,12 +48,12 @@ export default function EngagementPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ agreed: true, signature_data: data }),
       })
-      if (!res.ok) throw new Error('Erreur lors de la signature')
+      if (!res.ok) throw new Error('Signature failed')
       const now = new Date()
       setSigned(true)
       setSignedAt(now)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur')
+      setError(err instanceof Error ? err.message : 'Error')
     } finally {
       setSubmitting(false)
     }

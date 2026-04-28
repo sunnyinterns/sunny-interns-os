@@ -40,10 +40,10 @@ export default function LogementPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ housingId: selectedHousing, wantsScooter: wantsScooter === 'oui' }),
       })
-      if (!res.ok) throw new Error('Erreur lors de l\'enregistrement')
+      if (!res.ok) throw new Error('Save failed')
       setDone(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur')
+      setError(err instanceof Error ? err.message : 'Error')
     } finally {
       setLoading(false)
     }

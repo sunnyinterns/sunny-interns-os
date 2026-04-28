@@ -72,7 +72,7 @@ export default function PortalDocumentsPage() {
       setSuccess('CV mis à jour avec succès !')
       setTimeout(() => setSuccess(null), 4000)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erreur upload')
+      setError(e instanceof Error ? e.message : 'Upload failed')
     } finally {
       setUploading(false)
     }

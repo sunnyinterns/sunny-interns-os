@@ -68,7 +68,7 @@ export default function PortalCvPage() {
         body: formData,
       })
 
-      if (!res.ok) throw new Error('Erreur lors de l\'upload')
+      if (!res.ok) throw new Error('Upload failed')
       setSuccess(true)
       setUploadProgress(null)
       // Refresh data
@@ -79,7 +79,7 @@ export default function PortalCvPage() {
       setData(d)
       setVersions(Array.isArray(v) ? v : [])
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erreur lors de l\'upload')
+      setError(e instanceof Error ? e.message : 'Upload failed')
       setUploadProgress(null)
     } finally {
       setUploading(false)
