@@ -46,7 +46,7 @@ export async function POST(
   const company = contact?.companies as unknown as unknown as Record<string, unknown> | null
   const intern = caseRow.interns as unknown as unknown as Record<string, unknown> | null
 
-  // Update candidate decision
+  // Update candidate decision (variables defined below before being used in notification)
   await admin.from('job_submissions').update({
     candidate_decision: body.decision,
     candidate_decision_at: new Date().toISOString(),
@@ -57,6 +57,21 @@ export async function POST(
   const jobTitle = ((job?.title || job?.public_title) as string) ?? ''
   const companyName = (company?.name as string) ?? 'employer'
   const decisionLabel = body.decision === 'interested' ? 'wants to join ✅' : 'not interested ❌'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+
+  // Notify Charly
+  void sendFromTemplate({
+    slug: 'candidate_decision_charly',
+    to: 'team@bali-interns.com',
+    vars: {
+      manager_name: 'Charly',
+      intern_name: internName,
+      job_title: jobTitle,
+      decision_label: decisionLabel,
+      case_url: `${appUrl}/fr/cases/${String(caseRow.id)}`,
+    },
+  }).catch(() => null)
+
 
   // ── Check for mutual match → auto-retain ──────────────────────────────
   const isMutualMatch = body.decision === 'interested' && sub.employer_decision === 'interested'
