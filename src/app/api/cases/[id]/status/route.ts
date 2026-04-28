@@ -535,12 +535,12 @@ export async function PATCH(
     'hors_qualification', 'no_budget', 'refus_general',
   ]
   const DISQUALIFICATION_NOTES: Record<string, string> = {
-    not_interested: 'but we completely understand — timing and priorities change.',
-    not_qualified:  'but our current openings aren't the right fit for your profile at this stage.',
-    no_show:        'but we weren't able to connect at our scheduled time.',
-    hors_qualification: 'but our current openings aren't the right fit for your profile at this stage.',
-    no_budget:      'but the timing doesn't work out financially right now.',
-    refus_general:  'but we're not the right match at this point.',
+    not_interested: "but we completely understand — timing and priorities change.",
+    not_qualified:  "but our current openings aren't the right fit for your profile at this stage.",
+    no_show:        "but we weren't able to connect at our scheduled time.",
+    hors_qualification: "but our current openings aren't the right fit for your profile at this stage.",
+    no_budget:      "but the timing doesn't work out financially right now.",
+    refus_general:  "but we're not the right match at this point.",
   }
 
   if (DISQUALIFICATION_STATUSES.includes(newStatus) && !DISQUALIFICATION_STATUSES.includes(oldStatus)) {
