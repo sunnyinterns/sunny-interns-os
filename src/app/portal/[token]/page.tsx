@@ -193,7 +193,7 @@ function CVUploadSection({ token }: { token: string }) {
               color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700,
               cursor: file && !uploading ? 'pointer' : 'not-allowed',
             }}>
-            {uploading ? 'Envoi en cours…' : 'Envoyer mon CV'}
+            {uploading ? 'Sending…' : 'Upload my CV'}
           </button>
         </div>
       )}
@@ -279,7 +279,7 @@ function JobCommentCard({ sub, token }: { sub: PortalJobItem; token: string }) {
       {sub.seo_slug && (
         <a href={`/jobs/${sub.seo_slug}`} target="_blank" rel="noopener noreferrer"
           style={{ display: 'inline-block', fontSize: 11, color: '#c8a96e', textDecoration: 'none', margin: '4px 0 8px' }}>
-          🔗 Voir la fiche complète ↗
+          🔗 View la fiche complète ↗
         </a>
       )}
 
@@ -294,7 +294,7 @@ function JobCommentCard({ sub, token }: { sub: PortalJobItem; token: string }) {
             cursor: 'pointer',
           }}
         >
-          {interested === true ? '✅ Intéressé' : 'Ce job m\'intéresse'}
+          {interested === true ? '✅ Interested' : 'Ce job m\'intéresse'}
         </button>
         <button
           onClick={() => void sendInterest(false)}
@@ -337,7 +337,7 @@ function JobCommentCard({ sub, token }: { sub: PortalJobItem; token: string }) {
                 border: 'none', borderRadius: 8, cursor: comment.trim() && !saving ? 'pointer' : 'not-allowed',
               }}
             >
-              {saving ? 'Envoi...' : 'Envoyer'}
+              {saving ? 'Envoi...' : 'Send'}
             </button>
           </div>
         )}
@@ -371,7 +371,7 @@ function PartnerCard({ partner }: { partner: PortalPartner }) {
       {partner.website && (
         <a href={partner.website} target="_blank" rel="noopener noreferrer"
           style={{ fontSize: 11, padding: '6px 12px', background: '#c8a96e', color: 'white', borderRadius: 8, fontWeight: 600, textDecoration: 'none', flexShrink: 0 }}>
-          Voir →
+          View →
         </a>
       )}
     </div>
@@ -422,7 +422,7 @@ export default function PortalPage() {
     return acts
   }, [data, token])
 
-  if (loading) return <p style={{ color: '#6b7280', textAlign: 'center', marginTop: 48 }}>Chargement…</p>
+  if (loading) return <p style={{ color: '#6b7280', textAlign: 'center', marginTop: 48 }}>Loading…</p>
   if (!data) return <p style={{ color: '#dc2626', textAlign: 'center', marginTop: 48 }}>Lien invalide ou expiré.</p>
 
   const prenom = data.interns?.first_name ?? 'Stagiaire'
@@ -785,7 +785,7 @@ export default function PortalPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 13, color: '#6b7280' }}>CV</span>
                 <a href={data.interns.cv_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#c8a96e', fontWeight: 600 }}>
-                  Voir mon CV
+                  View mon CV
                 </a>
               </div>
             )}
@@ -806,7 +806,7 @@ export default function PortalPage() {
           <p style={{ color: '#c8a96e', fontWeight: 700, marginBottom: 6, fontSize: 15 }}>Ta carte Bali Interns</p>
           <p style={{ color: '#9ca3af', fontSize: 13, marginBottom: 12 }}>Affiche ta carte digitale pour te présenter en stage.</p>
           <Link href={`/portal/${token}/carte`} style={{ display: 'inline-block', padding: '8px 16px', background: '#c8a96e', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
-            Voir ma carte →
+            View ma carte →
           </Link>
         </div>
       )}
@@ -816,7 +816,7 @@ export default function PortalPage() {
         <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 6 }}>Programme parrainage</h2>
         <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>Gagne 100€ pour chaque ami placé à Bali !</p>
         <Link href={`/portal/${token}/affiliation`} style={{ display: 'inline-block', padding: '8px 16px', background: '#c8a96e', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
-          Voir mon code →
+          View mon code →
         </Link>
       </div>
 

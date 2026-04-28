@@ -64,7 +64,7 @@ export default function PortalFacturePage() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '14px', textDecoration: 'none' }}>← Retour</Link>
+        <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '14px', textDecoration: 'none' }}>← Back</Link>
         <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', margin: 0 }}>Ma facture</h1>
       </div>
 
@@ -93,7 +93,7 @@ export default function PortalFacturePage() {
             onClick={openInvoice}
             style={{ padding: '12px 28px', background: '#1a1918', color: 'white', border: 'none', borderRadius: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
           >
-            Télécharger ma facture (PDF)
+            Download ma facture (PDF)
           </button>
           <p style={{ color: '#9ca3af', fontSize: '11px', marginTop: '12px' }}>
             La page s&apos;ouvre dans votre navigateur — utilisez Ctrl+P / Cmd+P pour l&apos;enregistrer en PDF.
@@ -125,7 +125,7 @@ export default function PortalFacturePage() {
               <div style={{ textAlign: 'center', padding: '16px 0' }}>
                 <p style={{ fontSize: '24px', marginBottom: '8px' }}>📨</p>
                 <p style={{ fontWeight: 600, color: '#059669', marginBottom: '4px' }}>Nous avons été notifiés !</p>
-                <p style={{ fontSize: '13px', color: '#6b7280' }}>Votre paiement sera validé sous 24-48h.</p>
+                <p style={{ fontSize: '13px', color: '#6b7280' }}>Your payment will be verified within 24-48 hours.</p>
               </div>
             ) : (
               <div>
@@ -157,14 +157,14 @@ export default function PortalFacturePage() {
                         onClick={() => setShowNoteInput(false)}
                         style={{ padding: '10px 16px', border: '1px solid #e5e7eb', borderRadius: '8px', background: 'white', color: '#6b7280', fontSize: '13px', cursor: 'pointer' }}
                       >
-                        Annuler
+                        Cancel
                       </button>
                       <button
                         onClick={() => { void handleNotifyPayment() }}
                         disabled={notifying}
                         style={{ flex: 1, padding: '10px', background: '#c8a96e', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: notifying ? 'not-allowed' : 'pointer', opacity: notifying ? 0.7 : 1 }}
                       >
-                        {notifying ? 'Envoi…' : 'Confirmer'}
+                        {notifying ? 'Sending…' : 'Confirm'}
                       </button>
                     </div>
                   </div>

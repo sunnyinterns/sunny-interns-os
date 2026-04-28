@@ -94,7 +94,7 @@ export default function PortalJobsPage() {
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
-        <Link href={`/portal/${token}`} className="text-[#c8a96e] text-sm">← Retour</Link>
+        <Link href={`/portal/${token}`} className="text-[#c8a96e] text-sm">← Back</Link>
         <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', margin: 0 }}>
           Offres de stage
         </h1>
@@ -103,7 +103,7 @@ export default function PortalJobsPage() {
       {jobs.length > 0 && (
         <div style={{ background: '#fffbf0', border: '1px solid #c8a96e', borderRadius: '12px', padding: '12px 16px', marginBottom: '20px' }}>
           <p style={{ fontSize: '13px', color: '#92400e', margin: 0 }}>
-            💡 Classe tes offres par ordre de préférence — ça aide ton conseiller à prioriser les démarches !
+            💡 Rank your offers by preference — it helps your advisor prioritise outreach!
           </p>
         </div>
       )}
@@ -117,15 +117,15 @@ export default function PortalJobsPage() {
       ) : jobs.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '48px 24px', background: 'white', borderRadius: '16px', border: '1px dashed #e5e7eb' }}>
           <p style={{ fontSize: '32px', marginBottom: '12px' }}>🔍</p>
-          <p style={{ color: '#6b7280', fontSize: '14px' }}>Aucune offre n&apos;a encore été proposée à ton profil.</p>
+          <p style={{ color: '#6b7280', fontSize: '14px' }}>No offers have been proposed to your profile yet.</p>
           <p style={{ color: '#9ca3af', fontSize: '12px', marginTop: '6px' }}>Ton conseiller Bali Interns te contactera dès qu&apos;une opportunité correspond à ton profil.</p>
         </div>
       ) : (
         <div className="space-y-5">
-          {/* Intéressé */}
+          {/* Interested */}
           {interestedJobs.length > 0 && (
             <div>
-              <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#059669', marginBottom: '10px' }}>✓ Mes offres ({interestedJobs.length})</p>
+              <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#059669', marginBottom: '10px' }}>✓ My shortlist ({interestedJobs.length})</p>
               <div className="space-y-3">
                 {interestedJobs.map((job, idx) => (
                   <JobCard
@@ -219,7 +219,7 @@ function JobCard({ job, responding, moving, onRespond, showPriority, priority, t
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
           {job.intern_interested === true && (
             <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', background: '#d1fae5', color: '#065f46', borderRadius: '20px' }}>
-              ✓ Intéressé
+              ✓ Interested
             </span>
           )}
           {job.intern_interested === false && (
@@ -289,7 +289,7 @@ function JobCard({ job, responding, moving, onRespond, showPriority, priority, t
           disabled={responding === job.submission_id}
           style={{ fontSize: '12px', color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0' }}
         >
-          Annuler mon intérêt
+          Remove interest
         </button>
       )}
     </div>

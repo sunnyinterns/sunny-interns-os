@@ -83,7 +83,7 @@ export default function PortalDocumentsPage() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '14px', textDecoration: 'none' }}>← Retour</Link>
+        <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '14px', textDecoration: 'none' }}>← Back</Link>
         <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', margin: 0 }}>Mes documents</h1>
       </div>
 
@@ -179,7 +179,7 @@ export default function PortalDocumentsPage() {
                   rel="noopener noreferrer"
                   style={{ fontSize: '13px', color: '#c8a96e', textDecoration: 'none', fontWeight: 500 }}
                 >
-                  Voir →
+                  View →
                 </a>
               </div>
             ))}

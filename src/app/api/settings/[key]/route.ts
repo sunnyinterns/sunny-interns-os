@@ -17,7 +17,7 @@ const DEFAULTS: Record<string, unknown> = {
   },
   app_name: 'Bali Interns OS',
   timezone: 'Asia/Makassar',
-  default_locale: 'fr',
+  default_locale: 'en',
 }
 
 export async function GET(

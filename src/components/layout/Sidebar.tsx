@@ -157,7 +157,7 @@ export function Sidebar() {
 
         <NavLink href="/fr/feed" label="Dashboard" d={ICONS.dashboard} badge={todoCount} urgent={todoCount > 0} />
         <NavLink href="/fr/notifications" label="Notifications" d={ICONS.notifs} badge={notifCount} urgent={notifCount > 0} />
-        <NavLink href="/fr/en-attente" label="En Attente" d={ICONS.clock} />
+        <NavLink href="/fr/en-attente" label="Pending" d={ICONS.clock} />
         <NavLink href="/fr/todo" label="To Do" d={ICONS.todo} badge={todoCount} urgent={todoCount > 0} />
         <NavLink href="/fr/calendar" label="Calendrier" d={ICONS.calendar} />
         <NavLink href="/fr/pipeline" label="Pipeline" d={ICONS.kanban} />

@@ -55,14 +55,14 @@ export default function LogementPage() {
         <div style={{ fontSize: '48px', marginBottom: '16px' }}>🏠</div>
         <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', marginBottom: '8px' }}>Préférences enregistrées !</h2>
         <p style={{ color: '#6b7280', marginBottom: '24px' }}>Nous allons confirmer ton logement et scooter rapidement.</p>
-        <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontWeight: 600, textDecoration: 'none' }}>← Retour au tableau de bord</Link>
+        <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontWeight: 600, textDecoration: 'none' }}>← Back to dashboard</Link>
       </div>
     )
   }
 
   return (
     <div>
-      <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '13px', textDecoration: 'none' }}>← Retour</Link>
+      <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '13px', textDecoration: 'none' }}>← Back</Link>
       <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', margin: '16px 0 4px' }}>Logement &amp; Scooter</h1>
       <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>Choisis ton logement et indique si tu veux un scooter.</p>
 
@@ -117,7 +117,7 @@ export default function LogementPage() {
 
         {error && <p style={{ color: '#dc2626', fontSize: '13px', marginBottom: '16px' }}>{error}</p>}
         <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', background: '#c8a96e', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
-          {loading ? 'Enregistrement…' : 'Confirmer mes préférences'}
+          {loading ? 'Saving…' : 'Confirm my preferences'}
         </button>
       </form>
     </div>

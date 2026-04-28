@@ -41,7 +41,7 @@ const WAITING_TYPE_LABELS: Record<string, string> = {
   sponsor_contract:   'Signature contrat sponsor',
   job_match:          'Job à matcher',
   rdv_to_confirm:     'RDV à confirmer',
-  qualification:      'Qualification en attente',
+  qualification:      'Qualification pending',
   recontact:          'À recontacter',
 }
 
@@ -116,7 +116,7 @@ export default function EnAttentePage() {
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6">
       <div className="flex items-center gap-3">
-        <h1 className="text-xl font-bold text-[#1a1918]">En Attente</h1>
+        <h1 className="text-xl font-bold text-[#1a1918]">Pending</h1>
         {items.length > 0 && (
           <span className="bg-zinc-200 text-zinc-600 text-xs font-bold px-2 py-0.5 rounded-full">
             {items.length}

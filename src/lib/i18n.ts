@@ -12,8 +12,8 @@ export type AgentLang = 'en' | 'id'
 
 // ─── Storage helpers ─────────────────────────────────────────────
 export function getPortalLang(): PortalLang {
-  if (typeof window === 'undefined') return 'fr'
-  return (localStorage.getItem('portal_lang') as PortalLang | null) ?? 'fr'
+  if (typeof window === 'undefined') return 'en'
+  return (localStorage.getItem('portal_lang') as PortalLang | null) ?? 'en'
 }
 export function setPortalLang(lang: PortalLang): void {
   if (typeof window !== 'undefined') localStorage.setItem('portal_lang', lang)
@@ -28,7 +28,7 @@ export function setAgentLang(lang: AgentLang): void {
 }
 
 export function getAdminLang(): PortalLang {
-  if (typeof window === 'undefined') return 'fr'
+  if (typeof window === 'undefined') return 'en'
   return (localStorage.getItem('admin_lang') as PortalLang | null) ?? 'fr'
 }
 export function setAdminLang(lang: PortalLang): void {

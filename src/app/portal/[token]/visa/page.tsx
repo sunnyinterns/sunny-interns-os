@@ -35,8 +35,8 @@ interface PortalData {
 }
 
 const DOC_SECTIONS: DocSection[] = [
-  { key: 'passport_page4_url', label: 'Passeport page 4 (haute résolution)', instruction: 'La page avec votre photo et informations. Photo nette, tous les textes lisibles.', apiField: 'passport_page4_url' },
-  { key: 'photo_id_url', label: 'Photo fond blanc', instruction: 'Photo récente, fond blanc, format passeport. Tête droite, expression neutre.', apiField: 'photo_id_url' },
+  { key: 'passport_page4_url', label: 'Passport page 4 (high resolution)', instruction: 'The page with your photo and details. Sharp photo, all text legible.', apiField: 'passport_page4_url' },
+  { key: 'photo_id_url', label: 'White background photo', instruction: 'Recent photo, white background, passport format. Head straight, neutral expression.', apiField: 'photo_id_url' },
   { key: 'bank_statement_url', label: 'Relevé bancaire (2000€ min)', instruction: 'Relevé montrant un solde d\'au moins 2000€. Votre nom doit être visible.', apiField: 'bank_statement_url' },
   { key: 'return_plane_ticket_url', label: 'Billet avion aller-retour', instruction: 'Billet confirmé avec dates de vol.', apiField: 'return_plane_ticket_url' },
 ]
@@ -112,7 +112,7 @@ export default function PortalVisaPage() {
     setTimeout(() => setExtrasSaved(false), 3000)
   }
 
-  if (loading) return <p style={{ color: '#6b7280', textAlign: 'center', marginTop: 48 }}>Chargement…</p>
+  if (loading) return <p style={{ color: '#6b7280', textAlign: 'center', marginTop: 48 }}>Loading…</p>
   if (!data) return <p style={{ color: '#dc2626', textAlign: 'center', marginTop: 48 }}>Lien invalide.</p>
 
   const allDocsComplete = DOC_SECTIONS.every(s => !!data.interns?.[s.key])
@@ -124,7 +124,7 @@ export default function PortalVisaPage() {
   return (
     <div>
       <Link href={`/portal/${token}`} style={{ fontSize: 14, color: '#6b7280', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 20 }}>
-        ← Retour
+        ← Back
       </Link>
 
       <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1918', marginBottom: 6 }}>Documents visa</h1>
@@ -144,7 +144,7 @@ export default function PortalVisaPage() {
       {allDocsComplete && (
         <div style={{ background: '#f0fdf4', border: '1.5px solid #0d9e75', borderRadius: 10, padding: '14px 16px', marginBottom: 20 }}>
           <p style={{ fontWeight: 700, color: '#0d9e75', fontSize: 14, marginBottom: 2 }}>✓ Tous vos documents sont complets !</p>
-          <p style={{ color: '#166534', fontSize: 13 }}>Notre équipe va les vérifier et soumettre votre dossier visa.</p>
+          <p style={{ color: '#166534', fontSize: 13 }}>Our team will review and submit your visa application.</p>
         </div>
       )}
 
@@ -167,7 +167,7 @@ export default function PortalVisaPage() {
                 <button onClick={() => inputRefs.current[section.key]?.click()} disabled={isUploading} style={{ padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: isUploading ? 'not-allowed' : 'pointer', border: 'none', background: uploaded ? '#dcfce7' : '#c8a96e', color: uploaded ? '#0d9e75' : 'white', opacity: isUploading ? 0.7 : 1 }}>
                   {isUploading ? 'Upload…' : uploaded ? '✓ Remplacer' : 'Uploader'}
                 </button>
-                {uploaded && <a href={data.interns?.[section.key] ?? '#'} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#6b7280', textDecoration: 'underline' }}>Voir</a>}
+                {uploaded && <a href={data.interns?.[section.key] ?? '#'} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#6b7280', textDecoration: 'underline' }}>View</a>}
               </div>
             </div>
           )
@@ -210,7 +210,7 @@ export default function PortalVisaPage() {
         disabled={savingExtras}
         style={{ width: '100%', padding: 14, background: extrasSaved ? '#0d9e75' : '#c8a96e', color: 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s', marginBottom: 24 }}
       >
-        {savingExtras ? 'Enregistrement…' : extrasSaved ? '✓ Enregistré !' : 'Enregistrer les informations'}
+        {savingExtras ? 'Saving…' : extrasSaved ? '✓ Enregistré !' : 'Enregistrer les informations'}
       </button>
 
       {/* ── DATES DE STAGE ── */}
@@ -251,7 +251,7 @@ export default function PortalVisaPage() {
             <span style={{ fontSize: 20 }}>🛂</span>
             <div>
               <p style={{ fontSize: 14, fontWeight: 700, color: '#0d9e75', margin: 0 }}>Visa reçu !</p>
-              <p style={{ fontSize: 12, color: '#166534', margin: 0 }}>Votre visa est prêt. Bon voyage !</p>
+              <p style={{ fontSize: 12, color: '#166534', margin: 0 }}>Your visa is ready. Safe travels!</p>
             </div>
           </div>
         ) : data.visa_submitted_to_agent_at ? (
@@ -279,8 +279,8 @@ export default function PortalVisaPage() {
         <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
           <li style={{ fontSize: 13, color: '#78350f' }}>Le visa est valide <strong>maximum 175 jours</strong> après la date d&apos;arrivée en Indonésie</li>
           <li style={{ fontSize: 13, color: '#78350f' }}>Le traitement prend <strong>environ 1 mois</strong> après réception de votre billet d&apos;avion</li>
-          <li style={{ fontSize: 13, color: '#78350f' }}>N&apos;achetez pas votre billet trop à l&apos;avance — attendez la validation de votre dossier</li>
-          <li style={{ fontSize: 13, color: '#78350f' }}>Votre passeport doit être valide <strong>au moins 6 mois</strong> après votre arrivée</li>
+          <li style={{ fontSize: 13, color: '#78350f' }}>Don't buy your flight too early — wait for your visa confirmation</li>
+          <li style={{ fontSize: 13, color: '#78350f' }}>Your passport must be valid for <strong>at least 6 months</strong> after your arrival</li>
         </ul>
       </div>
 

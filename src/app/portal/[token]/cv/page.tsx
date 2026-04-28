@@ -91,16 +91,16 @@ export default function PortalCvPage() {
     if (file) void handleUpload(file)
   }
 
-  if (loading) return <p style={{ color: '#6b7280', textAlign: 'center', marginTop: '48px' }}>Chargement…</p>
+  if (loading) return <p style={{ color: '#6b7280', textAlign: 'center', marginTop: '48px' }}>Loading…</p>
   if (!data) return <p style={{ color: '#dc2626', textAlign: 'center', marginTop: '48px' }}>Lien invalide.</p>
 
   return (
     <div>
       <Link href={`/portal/${token}`} style={{ fontSize: '14px', color: '#6b7280', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '20px' }}>
-        ← Retour
+        ← Back
       </Link>
 
-      <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#1a1918', marginBottom: '6px' }}>Votre CV</h1>
+      <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#1a1918', marginBottom: '6px' }}>Your CV</h1>
 
       {/* Banner révision */}
       {data.cv_revision_requested && !success && (
@@ -174,7 +174,7 @@ export default function PortalCvPage() {
                   fontSize: '12px', color: '#c8a96e', fontWeight: 600, textDecoration: 'none',
                   padding: '4px 10px', borderRadius: '6px', background: '#faf6ef',
                 }}>
-                  Télécharger
+                  Download
                 </a>
               </div>
             ))}

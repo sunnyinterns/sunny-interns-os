@@ -358,7 +358,7 @@ export default function LeadsPage() {
               <button
                 onClick={() => setSelectedLead(null)}
                 className="text-zinc-400 hover:text-zinc-600 text-xl leading-none"
-                aria-label="Fermer"
+                aria-label="Close"
               >
                 ×
               </button>

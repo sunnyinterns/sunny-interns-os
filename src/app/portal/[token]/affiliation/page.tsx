@@ -81,7 +81,7 @@ export default function PortalAffiliationPage() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '14px', textDecoration: 'none' }}>← Retour</Link>
+        <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '14px', textDecoration: 'none' }}>← Back</Link>
         <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', margin: 0 }}>Programme parrainage</h1>
       </div>
 
@@ -125,7 +125,7 @@ export default function PortalAffiliationPage() {
               rel="noopener noreferrer"
               style={{ display: 'block', width: '100%', padding: '12px', textAlign: 'center', background: '#25D366', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, textDecoration: 'none', boxSizing: 'border-box' }}
             >
-              Partager sur WhatsApp
+              Share on WhatsApp
             </a>
           </div>
 
@@ -138,7 +138,7 @@ export default function PortalAffiliationPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span style={{ fontSize: '13px', color: '#1a1918', fontFamily: 'monospace' }}>{maskedIban}</span>
                 <span style={{ fontSize: '11px', background: '#d1fae5', color: '#065f46', padding: '2px 8px', borderRadius: '20px' }}>✓ Enregistré</span>
-                <button onClick={() => setEditIban(true)} style={{ fontSize: '12px', color: '#c8a96e', background: 'none', border: 'none', cursor: 'pointer', marginLeft: 'auto' }}>Modifier</button>
+                <button onClick={() => setEditIban(true)} style={{ fontSize: '12px', color: '#c8a96e', background: 'none', border: 'none', cursor: 'pointer', marginLeft: 'auto' }}>Edit</button>
               </div>
             ) : (
               <div className="space-y-3">
@@ -160,7 +160,7 @@ export default function PortalAffiliationPage() {
                   disabled={!ibanInput.trim() || savingIban}
                   style={{ width: '100%', padding: '12px', background: !ibanInput.trim() || savingIban ? '#e5e7eb' : '#c8a96e', color: !ibanInput.trim() || savingIban ? '#9ca3af' : 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: !ibanInput.trim() || savingIban ? 'not-allowed' : 'pointer' }}
                 >
-                  {savingIban ? 'Enregistrement…' : 'Enregistrer mes coordonnées bancaires'}
+                  {savingIban ? 'Saving…' : 'Enregistrer mes coordonnées bancaires'}
                 </button>
               </div>
             )}

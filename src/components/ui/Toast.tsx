@@ -43,7 +43,7 @@ export function Toast({ message, type = 'info', onClose }: ToastProps) {
       <button
         onClick={onClose}
         className="text-current opacity-50 hover:opacity-100 transition-opacity text-lg leading-none"
-        aria-label="Fermer"
+        aria-label="Close"
       >
         ×
       </button>
