@@ -5,7 +5,7 @@ import { getPortalLang, setPortalLang, getAgentLang, setAgentLang } from '@/lib/
 
 // ─── Portail candidat FR/EN ──────────────────────────────────────
 export default function LangToggle({ onLangChange }: { onLangChange?: (l: PortalLang) => void } = {}) {
-  const [lang, setLang] = useState<PortalLang>('fr')
+  const [lang, setLang] = useState<PortalLang>('en')
 
   useEffect(() => {
     setLang(getPortalLang())

@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import LangToggle from '@/components/portal/LangToggle'
 import { tp, getPortalLang, type PortalLang } from '@/lib/i18n'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
@@ -138,7 +137,7 @@ const PAYMENT_INFO_FALLBACK = {
 }
 
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+  return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 function monthsDiff(start: string, end: string) {
@@ -235,12 +234,12 @@ function JobCommentCard({ sub, token }: { sub: PortalJobItem; token: string }) {
   const statusMap: Record<string, { label: string; color: string }> = {
     proposed: { label: 'En cours de traitement', color: '#d97706' },
     cv_pending: { label: 'CV en attente', color: '#d97706' },
-    cv_validated: { label: 'Profil validé', color: '#2563eb' },
-    sent: { label: 'Candidature envoyée', color: '#1d4ed8' },
+    cv_validated: { label: 'Profile validated', color: '#2563eb' },
+    sent: { label: 'Application sent', color: '#1d4ed8' },
     interview: { label: 'Entretien employeur', color: '#7c3aed' },
     retained: { label: 'Stage retenu !', color: '#059669' },
     rejected: { label: 'Non retenu', color: '#dc2626' },
-    cancelled: { label: 'Annulé', color: '#9ca3af' },
+    cancelled: { label: 'Cancelled', color: '#9ca3af' },
   }
   const st = statusMap[sub.status] ?? statusMap.proposed
 
@@ -279,7 +278,7 @@ function JobCommentCard({ sub, token }: { sub: PortalJobItem; token: string }) {
       {sub.seo_slug && (
         <a href={`/jobs/${sub.seo_slug}`} target="_blank" rel="noopener noreferrer"
           style={{ display: 'inline-block', fontSize: 11, color: '#c8a96e', textDecoration: 'none', margin: '4px 0 8px' }}>
-          🔗 View la fiche complète ↗
+          🔗 View full listing ↗
         </a>
       )}
 
@@ -294,7 +293,7 @@ function JobCommentCard({ sub, token }: { sub: PortalJobItem; token: string }) {
             cursor: 'pointer',
           }}
         >
-          {interested === true ? '✅ Interested' : 'Ce job m\'intéresse'}
+          {interested === true ? '✅ Interested' : 'I\'m interested'}
         </button>
         <button
           onClick={() => void sendInterest(false)}
@@ -305,13 +304,13 @@ function JobCommentCard({ sub, token }: { sub: PortalJobItem; token: string }) {
             cursor: 'pointer',
           }}
         >
-          {interested === false ? '❌ Pas intéressé' : 'Pas intéressé'}
+          {interested === false ? '❌ Not interested' : 'Not interested'}
         </button>
       </div>
 
       {/* Comment zone */}
       <div>
-        <p style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Que penses-tu de cette offre ?</p>
+        <p style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>What do you think of this offer?</p>
         {saved ? (
           <div style={{ padding: '10px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
             <span style={{ fontSize: 13, color: '#065f46', fontWeight: 500 }}>Commentaire envoyé !</span>
@@ -383,7 +382,7 @@ export default function PortalPage() {
   const token = typeof params?.token === 'string' ? params.token : ''
   const [data, setData] = useState<PortalData | null>(null)
   const [portalJobs, setPortalJobs] = useState<PortalJobItem[]>([])
-  const [lang, setLang] = useState<PortalLang>('fr')
+  const [lang, setLang] = useState<PortalLang>('en')
   const [partners, setPartners] = useState<PortalPartner[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -450,7 +449,7 @@ export default function PortalPage() {
     actions.push({ label: 'Logement & scooter', href: `/portal/${token}/logement`, done: !!data.housing_reserved })
   }
   if (data.cv_revision_requested) {
-    actions.push({ label: 'Nouvelle version de CV demandée', href: `/portal/${token}/cv`, done: false, urgent: true })
+    actions.push({ label: 'Updated CV requested', href: `/portal/${token}/cv`, done: false, urgent: true })
   }
 
   const pendingActions = actions.filter(a => !a.done)
@@ -483,7 +482,6 @@ export default function PortalPage() {
             Manager : {data.assigned_manager_name}
           </span>
         )}
-        <LangToggle onLangChange={setLang} />
       </div>
 
       {/* Progress steps 1-8 */}
@@ -567,9 +565,9 @@ export default function PortalPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 13, color: '#6b7280' }}>{tp(lang, 'rdvDateLabel')}</span>
               <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1918' }}>
-                {new Date(data.intern_first_meeting_date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                {new Date(data.intern_first_meeting_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                 {' '}
-                {new Date(data.intern_first_meeting_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })} WITA
+                {new Date(data.intern_first_meeting_date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })} WITA
               </span>
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
@@ -600,7 +598,7 @@ export default function PortalPage() {
         <section style={{ marginBottom: 24 }}>
           <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1918', marginBottom: 4 }}>Offres de stage proposées</h2>
           <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16 }}>
-            Indique ton intérêt et laisse un commentaire pour chaque offre.
+            Rate your interest and leave a comment for each offer.
           </p>
           {portalJobs.map(sub => (
             <JobCommentCard key={sub.submission_id} sub={sub} token={token} />
@@ -657,7 +655,7 @@ export default function PortalPage() {
         <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
           <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>Ton stage</h2>
           <p style={{ fontSize: 16, fontWeight: 700, color: '#c8a96e', marginBottom: 6 }}>
-            {retainedSub.jobs?.public_title ?? retainedSub.jobs?.title ?? 'Stage trouvé !'}
+            {retainedSub.jobs?.public_title ?? retainedSub.jobs?.title ?? 'Internship found!'}
           </p>
           {retainedCompany?.name && (
             <p style={{ fontSize: 13, color: '#1a1918', fontWeight: 600 }}>{retainedCompany.name}</p>
@@ -785,7 +783,7 @@ export default function PortalPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 13, color: '#6b7280' }}>CV</span>
                 <a href={data.interns.cv_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#c8a96e', fontWeight: 600 }}>
-                  View mon CV
+                  View my CV
                 </a>
               </div>
             )}
@@ -795,7 +793,7 @@ export default function PortalPage() {
             background: '#f3f4f6', color: '#374151', borderRadius: 8,
             fontSize: 13, fontWeight: 600, textDecoration: 'none',
           }}>
-            Mettre à jour mon CV
+            Update my CV
           </Link>
         </div>
       )}
@@ -816,7 +814,7 @@ export default function PortalPage() {
         <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 6 }}>Programme parrainage</h2>
         <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>Gagne 100€ pour chaque ami placé à Bali !</p>
         <Link href={`/portal/${token}/affiliation`} style={{ display: 'inline-block', padding: '8px 16px', background: '#c8a96e', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
-          View mon code →
+          View my code →
         </Link>
       </div>
 
