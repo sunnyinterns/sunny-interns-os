@@ -55,7 +55,7 @@ export async function POST(
     updated_at: new Date().toISOString(),
   }).eq('id', subId)
 
-  const intern = (caseRow.interns ?? {}) as Record<string, unknown>
+  const intern = (Array.isArray(caseRow.interns) ? (caseRow.interns as Record<string,unknown>[])[0] : caseRow.interns ?? {}) as Record<string, unknown>
   const job = (sub.jobs ?? {}) as Record<string, unknown>
   const company = (job.companies ?? {}) as Record<string, unknown>
   const internName = `${intern.first_name ?? ''} ${intern.last_name ?? ''}`.trim()
