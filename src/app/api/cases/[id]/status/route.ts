@@ -241,9 +241,31 @@ export async function PATCH(
     } catch { /* non-blocking */ }
   }
 
-  // ── Auto-trigger convention letter when convention_signed ────────────────
+  // ── convention_signed → convention_request to intern + sponsor_contract to employer ─
   if (newStatus === 'convention_signed') {
     try {
+      // Convention email to intern
+      const adminConv = getAdmin()
+      const { data: convRow } = await adminConv
+        .from('cases')
+        .select('portal_token, interns(first_name, email)')
+        .eq('id', id).single()
+      if (convRow) {
+        const convIntern = (convRow as Record<string,unknown>).interns as { first_name?: string; email?: string } | null
+        const convToken = (convRow as Record<string,unknown>).portal_token as string | null
+        if (convIntern?.email) {
+          const { sendFromTemplate } = await import('@/lib/email/resend')
+          void sendFromTemplate({
+            slug: 'convention_request',
+            to: convIntern.email,
+            vars: {
+              first_name: convIntern.first_name ?? '',
+              portal_url: convToken ? `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/portal/${convToken}` : '',
+            },
+          })
+        }
+      }
+      // Sponsor contract to employer
       void fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/cases/${id}/send-sponsor-contract`, { method: 'POST' })
     } catch { /* non-blocking */ }
   }
@@ -366,6 +388,32 @@ export async function PATCH(
 
   // ── arrival_prep → send arrival guide to intern ───────────────────────────
 
+  // ── arrival_prep → driver notification (manager) ──────────────────────────
+  if (newStatus === 'arrival_prep' && oldStatus !== 'arrival_prep') {
+    try {
+      const adminDrv = getAdmin()
+      const { data: drvRow } = await adminDrv
+        .from('cases')
+        .select('interns(first_name, last_name, whatsapp), flight_number, flight_arrival_time_local, dropoff_address')
+        .eq('id', id).single()
+      if (drvRow) {
+        const drvIntern = (drvRow as Record<string,unknown>).interns as { first_name?: string; last_name?: string; whatsapp?: string } | null
+        const { sendFromTemplate } = await import('@/lib/email/resend')
+        void sendFromTemplate({
+          slug: 'driver_notification',
+          to: 'charly@bali-interns.com',
+          vars: {
+            intern_name: `${drvIntern?.first_name ?? ''} ${drvIntern?.last_name ?? ''}`.trim(),
+            intern_whatsapp: drvIntern?.whatsapp ?? '—',
+            flight_number: String((drvRow as Record<string,unknown>).flight_number ?? '—'),
+            arrival_time: String((drvRow as Record<string,unknown>).flight_arrival_time_local ?? '—'),
+            dropoff_address: String((drvRow as Record<string,unknown>).dropoff_address ?? '—'),
+          },
+        })
+      }
+    } catch { /* non-blocking */ }
+  }
+
   // ── Email visa reçu ───────────────────────────────────────────────────
   if (newStatus === 'visa_received' && oldStatus !== 'visa_received') {
     try {
@@ -396,12 +444,15 @@ export async function PATCH(
       if (caseRow) {
         const intern = (caseRow as Record<string, unknown>).interns as { first_name?: string; email?: string } | null
         const startDate = (caseRow as Record<string, unknown>).actual_start_date as string | null
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
-        if (intern?.email && startDate) {
-          const daysUntil = Math.ceil((new Date(startDate).getTime() - Date.now()) / 86400000)
-          if (daysUntil <= 7) {
-            // arrival_prep email via template (TODO: implement sendArrivalPrep)
-          }
+        const token = (caseRow as Record<string, unknown>).portal_token as string | null
+        if (intern?.email) {
+          const { sendArrivalPrep } = await import('@/lib/email/resend')
+          void sendArrivalPrep({
+            internEmail: intern.email,
+            prenom: intern.first_name ?? 'Intern',
+            portalToken: token ?? '',
+            startDate: startDate ?? undefined,
+          })
         }
       }
     } catch { /* non-blocking */ }
