@@ -41,7 +41,7 @@ export async function POST(
   if (!sub) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   // Verify company matches
-  const jobCompanyId = ((sub.jobs as Record<string, unknown>)?.companies as Record<string, unknown>)?.id
+  const jobCompanyId = ((sub.jobs as unknown as Record<string, unknown>)?.companies as unknown as Record<string, unknown>)?.id
   if (jobCompanyId !== access.company_id) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }

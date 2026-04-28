@@ -31,22 +31,22 @@ export async function POST(
     return NextResponse.json({ error: 'Token invalide' }, { status: 401 })
   }
 
-  const intern = (caseRow as Record<string, unknown>).interns as { email: string } | null
+  const intern = (caseRow as unknown as Record<string, unknown>).interns as { email: string } | null
   if (!intern || intern.email.toLowerCase() !== body.email.toLowerCase()) {
     return NextResponse.json({ error: 'Email incorrect' }, { status: 401 })
   }
 
-  if ((caseRow as Record<string, unknown>).portal_temp_password !== body.password) {
+  if ((caseRow as unknown as Record<string, unknown>).portal_temp_password !== body.password) {
     return NextResponse.json({ error: 'Mot de passe incorrect' }, { status: 401 })
   }
 
   // Mark as activated on first login
-  if (!(caseRow as Record<string, unknown>).portal_activated_at) {
+  if (!(caseRow as unknown as Record<string, unknown>).portal_activated_at) {
     await admin
       .from('cases')
       .update({ portal_activated_at: new Date().toISOString() })
-      .eq('id', (caseRow as Record<string, unknown>).id as string)
+      .eq('id', (caseRow as unknown as Record<string, unknown>).id as string)
   }
 
-  return NextResponse.json({ success: true, caseId: (caseRow as Record<string, unknown>).id })
+  return NextResponse.json({ success: true, caseId: (caseRow as unknown as Record<string, unknown>).id })
 }

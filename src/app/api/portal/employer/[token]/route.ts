@@ -44,7 +44,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
 
   // Fetch company séparément
   const { data: companyData } = await sb.from('companies').select('*').eq('id', access.company_id as string).single()
-  const company = companyData as Record<string, unknown> ?? {} as Record<string, unknown>
+  const company = companyData as unknown as Record<string, unknown> ?? {} as unknown as Record<string, unknown>
 
   // Get all contacts of the company
   const { data: companyContacts } = await sb
@@ -60,7 +60,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
     : (companyContacts?.[0] ?? null)
 
   // Auto-detect variant
-  const variant = detectVariant(company, signingContact as Record<string, unknown> | null)
+  const variant = detectVariant(company, signingContact as unknown as Record<string, unknown> | null)
   const TEMPLATE_IDS: Record<string, string> = {
     A: '25ac4ac0-4f9a-487e-9c08-0546de0c389c',
     B: 'f13936c2-8c4a-4a7e-9504-b434a62ba63b',
@@ -95,7 +95,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
 
     // Get case info with intern
     const internRaw = caseData?.interns
-    const internData = (Array.isArray(internRaw) ? internRaw[0] : internRaw) as Record<string, unknown> | null
+    const internData = (Array.isArray(internRaw) ? internRaw[0] : internRaw) as unknown as Record<string, unknown> | null
 
     return NextResponse.json({
       access: { ...access, signing_contact_id: signingContactId },
@@ -124,7 +124,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
 export async function PATCH(request: Request, { params }: { params: Promise<{ token: string }> }) {
   const sb = svc()
   const { token } = await params
-  const body = await request.json() as Record<string, unknown>
+  const body = await request.json() as unknown as Record<string, unknown>
 
   const { data: access } = await sb
     .from('employer_portal_access')
@@ -157,7 +157,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ to
     try {
       const { Resend } = await import('resend')
       const resend = new Resend(process.env.RESEND_API_KEY)
-      const caseId = (access as Record<string, unknown>).case_id as string | null
+      const caseId = (access as unknown as Record<string, unknown>).case_id as string | null
       await resend.emails.send({
         from: 'Bali Interns <team@bali-interns.com>',
         to: ['sidney@bali-interns.com'],
@@ -170,7 +170,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ to
   }
 
   // ── UPDATE COMPANY INFO
-  const companyId = (access as Record<string, unknown>).company_id as string
+  const companyId = (access as unknown as Record<string, unknown>).company_id as string
   const allowed = ['name', 'description', 'website', 'address_street', 'address_postal_code', 'address_city',
     'nib', 'npwp', 'siret', 'vat_number', 'tax_id', 'registration_number',
     'legal_type', 'registration_country', 'registration_country_code']

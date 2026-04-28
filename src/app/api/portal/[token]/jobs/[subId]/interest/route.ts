@@ -41,10 +41,10 @@ export async function POST(
     return NextResponse.json({ success: true, unchanged: true })
   }
 
-  const job = sub.jobs as unknown as Record<string, unknown>
-  const contact = job?.contacts as unknown as Record<string, unknown> | null
-  const company = contact?.companies as unknown as Record<string, unknown> | null
-  const intern = caseRow.interns as unknown as Record<string, unknown> | null
+  const job = sub.jobs as unknown as unknown as Record<string, unknown>
+  const contact = job?.contacts as unknown as unknown as Record<string, unknown> | null
+  const company = contact?.companies as unknown as unknown as Record<string, unknown> | null
+  const intern = caseRow.interns as unknown as unknown as Record<string, unknown> | null
 
   // Update candidate decision
   await admin.from('job_submissions').update({
@@ -86,11 +86,11 @@ export async function POST(
 
     // Store cancellation list in alert_sent_flags for To-Do
     const { data: existingCase } = await admin.from('cases').select('alert_sent_flags').eq('id', caseRow.id).single()
-    const flags = (existingCase?.alert_sent_flags ?? {}) as unknown as Record<string, unknown>
+    const flags = (existingCase?.alert_sent_flags ?? {}) as unknown as unknown as Record<string, unknown>
     const cancelList = (otherSubs ?? []).map(os => {
-      const j = os.jobs as unknown as Record<string, unknown>
-      const c = j?.contacts as unknown as Record<string, unknown> | null
-      const co = c?.companies as unknown as Record<string, unknown> | null
+      const j = os.jobs as unknown as unknown as Record<string, unknown>
+      const c = j?.contacts as unknown as unknown as Record<string, unknown> | null
+      const co = c?.companies as unknown as unknown as Record<string, unknown> | null
       return {
         sub_id: os.id,
         job_title: (j?.title || j?.public_title) as string ?? '',

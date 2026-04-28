@@ -47,11 +47,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
     return NextResponse.json({ success: true, unchanged: true })
   }
 
-  const job = sub.jobs as unknown as Record<string, unknown>
-  const contact = (job?.contacts as unknown as Record<string, unknown> | null)
-  const company = contact?.companies as unknown as Record<string, unknown> | null
-  const caseData = sub.cases as unknown as Record<string, unknown> | null
-  const intern = caseData?.interns as unknown as Record<string, unknown> | null
+  const job = sub.jobs as unknown as unknown as Record<string, unknown>
+  const contact = (job?.contacts as unknown as unknown as Record<string, unknown> | null)
+  const company = contact?.companies as unknown as unknown as Record<string, unknown> | null
+  const caseData = sub.cases as unknown as unknown as Record<string, unknown> | null
+  const intern = caseData?.interns as unknown as unknown as Record<string, unknown> | null
 
   // Update submission
   await admin.from('job_submissions').update({

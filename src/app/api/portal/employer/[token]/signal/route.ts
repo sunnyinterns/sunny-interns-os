@@ -35,7 +35,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
   }).eq("id", body.sub_id)
 
   // Notify Charly via admin_notification
-  const job = sub.jobs as Record<string, unknown>
+  const job = sub.jobs as unknown as Record<string, unknown>
   const jobTitle = (job?.public_title ?? job?.title ?? "this position") as string
   await admin.from("admin_notifications").insert({
     type: "urgent",

@@ -33,8 +33,8 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
   }
 
-  const caseId = (caseRow as Record<string, unknown>).id as string
-  const intern = (caseRow as Record<string, unknown>).interns as { first_name?: string; last_name?: string; email?: string } | null
+  const caseId = (caseRow as unknown as Record<string, unknown>).id as string
+  const intern = (caseRow as unknown as Record<string, unknown>).interns as { first_name?: string; last_name?: string; email?: string } | null
 
   // Update job_submission
   await admin
@@ -53,7 +53,7 @@ export async function POST(
     .eq('id', subId)
     .single()
 
-  const job = (subData as Record<string, unknown>)?.jobs as { title?: string; public_title?: string } | null
+  const job = (subData as unknown as Record<string, unknown>)?.jobs as { title?: string; public_title?: string } | null
   const jobTitle = job?.public_title ?? job?.title ?? 'offre'
 
   // Log activity

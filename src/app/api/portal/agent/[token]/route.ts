@@ -40,14 +40,14 @@ export async function GET(
         .eq('status', 'retained')
         .limit(1)
         .maybeSingle()
-      hostCompany = (((js?.jobs as unknown) as Record<string, unknown> | null)?.companies as Record<string, unknown> | null) ?? null
+      hostCompany = (((js?.jobs as unknown) as unknown as Record<string, unknown> | null)?.companies as unknown as Record<string, unknown> | null) ?? null
     }
 
     await supabase
       .from('visa_agent_portal_access')
       .update({ viewed_at: new Date().toISOString() })
       .eq('token', token)
-    return NextResponse.json({ type: 'dossier', access: { ...access, case: { ...caseData, company_name: (hostCompany as Record<string, unknown> | null)?.name, internship_city: (hostCompany as Record<string, unknown> | null)?.internship_city ?? (hostCompany as Record<string, unknown> | null)?.city } } })
+    return NextResponse.json({ type: 'dossier', access: { ...access, case: { ...caseData, company_name: (hostCompany as unknown as Record<string, unknown> | null)?.name, internship_city: (hostCompany as unknown as Record<string, unknown> | null)?.internship_city ?? (hostCompany as unknown as Record<string, unknown> | null)?.city } } })
   }
 
   // Fallback: agent-level portal (token = visa_agents.portal_token)

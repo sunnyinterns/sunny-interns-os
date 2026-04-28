@@ -11,7 +11,7 @@ export async function POST(
 ) {
   const sb = svc()
   const { token } = await params
-  const body = await request.json() as Record<string, unknown>
+  const body = await request.json() as unknown as Record<string, unknown>
 
   // Verify token
   const { data: access } = await sb
@@ -22,7 +22,7 @@ export async function POST(
 
   if (!access) return NextResponse.json({ error: 'Invalid link' }, { status: 404 })
 
-  const companyId = (access as Record<string, unknown>).company_id as string
+  const companyId = (access as unknown as Record<string, unknown>).company_id as string
 
   const { data: contact, error } = await sb
     .from('contacts')

@@ -63,9 +63,9 @@ export async function GET(
       last_name: intern?.last_name ?? '',
       photo_url: intern?.photo_url ?? intern?.photo_id_url ?? null,
     },
-    actual_start_date: (caseData as Record<string, unknown>).actual_start_date as string | null ?? null,
-    actual_end_date: (caseData as Record<string, unknown>).actual_end_date as string | null ?? null,
-    arrival_date: (caseData.actual_start_date || (caseData as Record<string, unknown>).desired_start_date) ?? null,
+    actual_start_date: (caseData as unknown as Record<string, unknown>).actual_start_date as string | null ?? null,
+    actual_end_date: (caseData as unknown as Record<string, unknown>).actual_end_date as string | null ?? null,
+    arrival_date: (caseData.actual_start_date || (caseData as unknown as Record<string, unknown>).desired_start_date) ?? null,
     partners: partners ?? [],
   })
 }

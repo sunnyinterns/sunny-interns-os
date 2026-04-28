@@ -30,7 +30,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
       .select('jobs(title, public_title)')
       .eq('id', body.submission_id)
       .maybeSingle()
-    const job = (sub as Record<string, unknown>)?.jobs as { title?: string; public_title?: string } | null
+    const job = (sub as unknown as Record<string, unknown>)?.jobs as { title?: string; public_title?: string } | null
     jobTitle = job?.public_title ?? job?.title ?? ''
   }
 

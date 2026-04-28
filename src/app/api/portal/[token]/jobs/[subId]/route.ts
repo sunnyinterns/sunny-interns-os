@@ -42,9 +42,9 @@ export async function PATCH(
       .eq('id', subId).single()
 
     if (sub) {
-      const job = sub.jobs as Record<string, unknown> | null
+      const job = sub.jobs as unknown as Record<string, unknown> | null
       const title = (job?.public_title ?? job?.title ?? 'internship') as string
-      const intern = (caseRow.interns as unknown as Record<string, unknown>) ?? {}
+      const intern = (caseRow.interns as unknown as unknown as Record<string, unknown>) ?? {}
       const internName = `${intern.first_name ?? ''} ${intern.last_name ?? ''}`.trim()
       const decisionLabel = body.candidate_decision === 'interested' ? '🙋 Wants to join' : '❌ Not interested'
 
