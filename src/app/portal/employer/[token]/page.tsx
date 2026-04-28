@@ -71,6 +71,28 @@ const LEGAL_TYPES_BY_COUNTRY: Record<string, string[]> = {
   DEFAULT: ['LLC', 'Ltd', 'GmbH', 'SRL', 'SA', 'Other'],
 }
 
+
+interface Submission {
+  sub_id: string
+  status: string
+  employer_decision: string | null
+  employer_decision_at: string | null
+  employer_comment: string | null
+  candidate_decision: string | null
+  submitted_at: string | null
+  job_title: string
+  job_description: string
+  intern_first_name: string
+  intern_email: string
+  intern_whatsapp: string
+  intern_nationality: string
+  intern_age: number | null
+  intern_languages: string[]
+  intern_desired_start: string | null
+  intern_desired_duration: string | null
+  cv_url: string | null
+}
+
 export default function EmployerPortal() {
   const { token } = useParams() as { token: string }
   const [data, setData] = useState<PortalData | null>(null)
@@ -201,6 +223,24 @@ export default function EmployerPortal() {
     const ctx = canvasRef.current?.getContext('2d')
     if (ctx && canvasRef.current) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
     setSigData(null)
+  }
+
+
+  async function handleEmployerRespond(subId: string, decision: 'interested' | 'not_interested') {
+    setResponding(subId)
+    try {
+      const res = await fetch(`/api/portal/employer/${token}/respond`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sub_id: subId, decision, comment: comments[subId] || undefined }),
+      })
+      if (res.ok) {
+        setSubmissions(prev => prev.map(s => s.sub_id === subId
+          ? { ...s, employer_decision: decision, employer_decision_at: new Date().toISOString() }
+          : s
+        ))
+      }
+    } finally { setResponding(null) }
   }
 
   if (loading) return (

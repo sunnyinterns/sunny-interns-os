@@ -37,6 +37,8 @@ interface BandeauProps {
   locale: string
 }
 
+// Note: pending_cancellation_emails handled in TabStaffing cancellation section
+
 export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPortal, onPatchStatus, locale }: BandeauProps) {
   const status = caseData.status as string
   const [patchingConvention, setPatchingConvention] = useState(false)

@@ -14,7 +14,8 @@ interface PublicJob {
   intern_interested: boolean | null
   intern_priority?: number | null
   employer_first_name?: string | null
-  submission_status: string  // sent / pending / retained / cancelled
+  submission_status: string
+  candidate_decision?: string | null  // sent / pending / retained / cancelled
   employer_decision?: string | null
   candidate_decision?: string | null
   employer_decision?: string | null   // pending / interested / not_interested
@@ -27,6 +28,7 @@ export default function PortalJobsPage() {
   const [jobs, setJobs] = useState<PublicJob[]>([])
   const [loading, setLoading] = useState(true)
   const [responding, setResponding] = useState<string | null>(null)
+  const [candidateResponding, setCandidateResponding] = useState<string | null>(null)
   const [moving, setMoving] = useState<string | null>(null)
 
   useEffect(() => {
@@ -304,6 +306,33 @@ function JobCard({ job, responding, moving, onRespond, showPriority, priority, t
             <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', background: '#d1fae5', color: '#065f46', borderRadius: '20px' }}>
               ✓ Interested
             </span>
+          )}
+
+          {/* Candidate decision buttons — show when employer is interested */}
+          {job.submission_status === 'interview' && !job.candidate_decision && (
+            <div style={{ width: '100%', marginTop: '10px', padding: '10px', background: '#fffbf0', borderRadius: '8px', border: '1px solid #FFCC00' }}>
+              <p style={{ fontSize: '11px', color: '#92400e', marginBottom: '8px', fontWeight: 500 }}>The employer wants to meet you — what would you like to do?</p>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  onClick={() => void handleCandidateDecision(job.submission_id, 'interested')}
+                  disabled={candidateResponding === job.submission_id}
+                  style={{ flex: 1, padding: '8px', background: '#FFCC00', color: '#1A1A1A', border: 'none', borderRadius: '7px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+                  {candidateResponding === job.submission_id ? '…' : '🙋 I want to join'}
+                </button>
+                <button
+                  onClick={() => void handleCandidateDecision(job.submission_id, 'not_interested')}
+                  disabled={candidateResponding === job.submission_id}
+                  style={{ flex: 1, padding: '8px', background: '#f3f4f6', color: '#374151', border: '1px solid #e5e7eb', borderRadius: '7px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
+                  {candidateResponding === job.submission_id ? '…' : '❌ Not the right fit'}
+                </button>
+              </div>
+            </div>
+          )}
+          {job.candidate_decision === 'interested' && (
+            <span style={{ fontSize: '11px', padding: '2px 8px', background: '#d1fae5', color: '#059669', borderRadius: '99px' }}>✅ You want to join</span>
+          )}
+          {job.candidate_decision === 'not_interested' && (
+            <span style={{ fontSize: '11px', padding: '2px 8px', background: '#f3f4f6', color: '#9ca3af', borderRadius: '99px' }}>Declined</span>
           )}
           {job.intern_interested === false && (
             <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', background: '#f3f4f6', color: '#9ca3af', borderRadius: '20px' }}>

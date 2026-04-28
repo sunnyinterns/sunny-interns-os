@@ -1,177 +1,163 @@
-import { createClient as srv } from '@/lib/supabase/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
+import { createClient as svc } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-import { logActivity } from '@/lib/activity-logger'
-import { sendJobSubmittedEmployer } from '@/lib/email/resend'
+import { sendJobSubmittedEmployer, sendFromTemplate } from '@/lib/email/resend'
 
 function getAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
-
-async function getSignedCvUrl(admin: ReturnType<typeof getAdmin>, rawUrl: string | null): Promise<string | null> {
-  if (!rawUrl) return null
-  // If already a public URL (no token), return as-is
-  if (!rawUrl.includes('sign') && !rawUrl.includes('token=')) return rawUrl
-  // Try to extract bucket + path and create a signed URL (7 days)
-  try {
-    const urlObj = new URL(rawUrl)
-    const parts = urlObj.pathname.split('/object/')
-    if (parts.length < 2) return rawUrl
-    const [bucket, ...pathParts] = parts[1].split('/')
-    const filePath = pathParts.join('/')
-    const { data } = await admin.storage
-      .from(bucket)
-      .createSignedUrl(filePath, 7 * 24 * 3600) // 7 days
-    return data?.signedUrl ?? rawUrl
-  } catch {
-    return rawUrl
-  }
+  return svc(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string; subId: string }> }
 ) {
-  const supabase = await srv()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const { id, subId } = await params
   const admin = getAdmin()
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
 
-  // Fetch submission + job + company
+  // Fetch submission + job + case + intern
   const { data: sub } = await admin
     .from('job_submissions')
-    .select(`*,
-      jobs(id, title, public_title, public_description, wished_duration_months, wished_start_date,
-        companies(id, name, email),
-        contacts!jobs_contact_id_fkey(id, first_name, last_name, email, whatsapp)
-      )`)
+    .select(`
+      id, status, job_id, employer_decision,
+      jobs!job_submissions_job_id_fkey(
+        id, title, public_title, public_description, job_monthly_pay,
+        wished_starting_date, wished_internship_duration,
+        contacts!jobs_contact_id_fkey(
+          id, first_name, last_name, email, whatsapp,
+          companies!contacts_company_id_fkey(id, name, internship_city)
+        )
+      )
+    `)
     .eq('id', subId)
     .single()
 
-  if (!sub) return NextResponse.json({ error: 'Submission not found' }, { status: 404 })
-
-  // Gate: CV must be validated
   const { data: caseRow } = await admin
     .from('cases')
-    .select('*, interns(first_name, last_name, email, cv_url, local_cv_url, linkedin_url, nationality, date_of_birth, spoken_languages, desired_duration_months, desired_start_date)')
+    .select(`
+      id, status, cv_status, portal_token, desired_start_date, desired_duration,
+      interns(id, first_name, last_name, email, whatsapp, cv_url, local_cv_url,
+              nationality_id, birth_date, spoken_languages)
+    `)
     .eq('id', id)
     .single()
 
-  if (!caseRow) return NextResponse.json({ error: 'Case not found' }, { status: 404 })
+  if (!sub || !caseRow) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const cvStatus = (caseRow as Record<string, unknown>).cv_status as string | null
-  if (cvStatus && cvStatus !== 'validated') {
+  // Gate: CV must be validated
+  if (caseRow.cv_status && caseRow.cv_status !== 'validated') {
     return NextResponse.json({
       error: 'CV must be validated before sending to employer',
-      cv_status: cvStatus,
+      cv_status: caseRow.cv_status,
     }, { status: 422 })
   }
 
-  const intern = (caseRow.interns ?? {}) as Record<string, unknown>
-  const job = (sub.jobs ?? {}) as Record<string, unknown>
-  const company = ((job.companies ?? {}) as Record<string, unknown>)
-  const contact = ((job.contacts ?? {}) as Record<string, unknown>)
-  const companyId = company.id as string | null
-  const contactEmail = (contact.email ?? company.email) as string | null
-  const rawCvUrl = (intern.local_cv_url ?? intern.cv_url) as string | null
+  const job = sub.jobs as unknown as Record<string, unknown>
+  const contact = (job?.contacts as unknown) as Record<string, unknown> | null
+  const company = (contact?.companies as unknown) as Record<string, unknown> | null
+  const intern = caseRow.interns as unknown as Record<string, unknown> | null
 
-  // Get CV URL with long-lived access
-  const cvUrl = await getSignedCvUrl(admin, rawCvUrl)
+  const employerEmail = contact?.email as string | null
+  if (!employerEmail) {
+    return NextResponse.json({ error: 'No employer email on file', emailSent: false }, { status: 422 })
+  }
 
-  // ── Upsert employer_portal_access per company ────────────────
+  // CV URL: use public URL if available, fallback to local_cv_url
+  const cvUrl = (intern?.local_cv_url || intern?.cv_url) as string | null
+
+  // ── Upsert employer portal access (1 per company) ──────────────────────
+  const companyId = company?.id as string | null
   let portalToken: string | null = null
+
   if (companyId) {
-    const { data: existingAccess } = await admin
+    const { data: existing } = await admin
       .from('employer_portal_access')
-      .select('token')
+      .select('id, token')
       .eq('company_id', companyId)
-      .maybeSingle()
+      .single()
 
-    if (existingAccess?.token) {
-      portalToken = existingAccess.token
+    if (existing) {
+      portalToken = existing.token as string
     } else {
-      // Create new portal access for this company
-      const { data: newAccess } = await admin
-        .from('employer_portal_access')
-        .insert({
-          company_id: companyId,
-          contact_id: contact.id as string | null,
-          token: crypto.randomUUID(),
-          sent_at: new Date().toISOString(),
-        })
-        .select('token')
-        .single()
-      portalToken = newAccess?.token ?? null
-    }
-    // Update last_active_at
-    if (portalToken) {
-      await admin
-        .from('employer_portal_access')
-        .update({ last_active_at: new Date().toISOString() })
-        .eq('token', portalToken)
-    }
-  }
-
-  const portalUrl = portalToken
-    ? `${appUrl}/portal/employer/${portalToken}`
-    : null
-
-  // ── Send email ────────────────────────────────────────────────
-  let emailSent = false
-  if (contactEmail) {
-    try {
-      await sendJobSubmittedEmployer({
-        employerEmail: contactEmail,
-        employerName: contact.first_name as string | undefined ?? company.name as string | undefined,
-        internFirstName: String(intern.first_name ?? ''),
-        internLastName: String(intern.last_name ?? ''),
-        jobTitle: String(job.public_title ?? job.title ?? ''),
-        cvUrl: cvUrl ?? undefined,
-        caseId: id,
-        portalUrl: portalUrl ?? undefined,
+      const newToken = crypto.randomUUID()
+      await admin.from('employer_portal_access').insert({
+        company_id: companyId,
+        token: newToken,
+        case_id: id, // kept for backward compat
+        created_at: new Date().toISOString(),
       })
-      emailSent = true
-    } catch (e) {
-      console.error('[send-to-employer] email error:', e)
+      portalToken = newToken
     }
   }
 
-  // ── Update job_submission ─────────────────────────────────────
-  await admin
-    .from('job_submissions')
-    .update({
-      status: 'sent',
-      submitted_at: new Date().toISOString(),
-      cv_sent_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+  const portalUrl = portalToken ? `${appUrl}/portal/employer/${portalToken}` : null
+
+  // ── Send email ─────────────────────────────────────────────────────────
+  try {
+    await sendJobSubmittedEmployer({
+      to: employerEmail,
+      employerFirstName: contact?.first_name as string ?? 'there',
+      internFirstName: intern?.first_name as string ?? '',
+      internLastName: intern?.last_name as string ?? '',
+      internEmail: intern?.email as string ?? '',
+      internWhatsapp: intern?.whatsapp as string ?? '',
+      jobTitle: (job?.title || job?.public_title) as string ?? '',
+      cvUrl: cvUrl ?? '',
+      portalUrl: portalUrl ?? undefined,
     })
-    .eq('id', subId)
-
-  // ── Log activity ──────────────────────────────────────────────
-  await logActivity({
-    caseId: id,
-    type: 'job_sent_employer',
-    title: `Application sent to ${company.name ?? 'employer'}`,
-    description: `"${job.public_title ?? job.title}" sent by email${emailSent ? '' : ' (EMAIL FAILED)'}`,
-    metadata: { job_id: job.id, employer: company.name, emailSent, portalUrl },
-  })
-
-  // ── Alert admin if email failed ───────────────────────────────
-  if (!emailSent) {
-    await admin.from('admin_notifications').insert({
-      type: 'email_failed',
-      title: `⚠️ Email not sent — ${company.name ?? 'employer'} has no valid email`,
-      message: `Could not send CV for ${intern.first_name} ${intern.last_name} to employer. Check company email in the OS.`,
-      case_id: id,
-      priority: 'high',
-      read: false,
-    }).then(() => null, () => null)
+  } catch (e) {
+    console.error('[send-to-employer] email error:', e)
+    return NextResponse.json({ error: 'Email send failed', emailSent: false }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true, emailSent, portalToken, portalUrl })
+  // ── Update submission status ───────────────────────────────────────────
+  await admin.from('job_submissions').update({
+    status: 'sent',
+    employer_decision: 'pending',
+    submitted_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }).eq('id', subId)
+
+  // ── Send "interview_imminent" email to intern ──────────────────────────
+  if (intern?.email) {
+    const deadline = new Date(); deadline.setDate(deadline.getDate() + 7)
+    const deadlineStr = deadline.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    const portalInternUrl = `${appUrl}/portal/${caseRow.portal_token}`
+    void sendFromTemplate({
+      slug: 'interview_imminent',
+      to: intern.email as string,
+      vars: {
+        first_name: intern.first_name as string ?? 'there',
+        contact_deadline: deadlineStr,
+        portal_url: portalInternUrl,
+      },
+    })
+  }
+
+  // ── Admin notification ─────────────────────────────────────────────────
+  await admin.from('admin_notifications').insert({
+    type: 'cv_sent',
+    title: `CV sent — ${intern?.first_name} ${intern?.last_name}`,
+    message: `CV sent to ${company?.name ?? employerEmail} for ${(job?.title || job?.public_title) as string}`,
+    case_id: id,
+    priority: 'normal',
+    created_at: new Date().toISOString(),
+  }).then(() => null, () => null)
+
+  // ── Activity log ──────────────────────────────────────────────────────
+  await admin.from('activity_feed').insert({
+    case_id: id,
+    type: 'cv_sent',
+    title: 'CV sent to employer',
+    description: `Sent to ${company?.name ?? employerEmail} — ${(job?.title || job?.public_title) as string}`,
+    source: 'manual',
+    status: 'completed',
+    created_at: new Date().toISOString(),
+  }).then(() => null, () => null)
+
+  return NextResponse.json({ success: true, emailSent: true, portalToken, portalUrl })
 }
