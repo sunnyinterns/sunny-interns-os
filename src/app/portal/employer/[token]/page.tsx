@@ -118,6 +118,11 @@ export default function EmployerPortal() {
   const [sigData, setSigData] = useState<string | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [drawing, setDrawing] = useState(false)
+  // Candidates tab states
+  const [submissions, setSubmissions] = useState<Record<string,unknown>[]>([])
+  const [responding, setResponding] = useState<string | null>(null)
+  const [comments, setComments] = useState<Record<string, string>>({})
+  const [loadingCandidates, setLoadingCandidates] = useState(false)
   const lastPos = useRef<{ x: number; y: number } | null>(null)
 
   const load = useCallback(async () => {

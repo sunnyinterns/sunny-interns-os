@@ -60,9 +60,11 @@ export async function POST(
   }).eq('id', subId)
 
   // Fetch intern + job info for notifications
-  const internData = (Array.isArray((sub.cases as Record<string,unknown>)?.interns) ? ((sub.cases as Record<string,unknown>).interns as Record<string,unknown>[])[0] : ((sub.cases as Record<string,unknown>)?.interns ?? {})) as Record<string,unknown>
-  const jobData = (sub.jobs ?? {}) as Record<string,unknown>
-  const companyData = (jobData.companies ?? {}) as Record<string,unknown>
+  const caseObj = (sub as Record<string,unknown>)['cases'] as Record<string,unknown> | null
+  const internData = (Array.isArray(caseObj?.['interns']) ? (caseObj?.['interns'] as Record<string,unknown>[])?.[0] ?? {} : (caseObj?.['interns'] as Record<string,unknown>) ?? {}) as Record<string,unknown>
+  const jobRaw = Array.isArray(sub.jobs) ? sub.jobs[0] : sub.jobs
+  const jobData = (jobRaw as unknown as Record<string,unknown>) ?? {}
+  const companyData = (jobData['companies'] as Record<string,unknown> | null) ?? {}
   const internName = `${internData.first_name ?? ''} ${internData.last_name ?? ''}`.trim()
   const jobTitle = String(jobData.public_title ?? jobData.title ?? '')
   const employerName = String(companyData.name ?? '')

@@ -14,10 +14,7 @@ interface PublicJob {
   intern_interested: boolean | null
   intern_priority?: number | null
   employer_first_name?: string | null
-  submission_status: string
-  candidate_decision?: string | null  // sent / pending / retained / cancelled
-  employer_decision?: string | null
-  candidate_decision?: string | null
+  submission_status: string           // pending / sent / interview / retained / rejected / cancelled
   employer_decision?: string | null   // pending / interested / not_interested
   candidate_decision?: string | null  // pending / interested / not_interested
 }
@@ -28,7 +25,6 @@ export default function PortalJobsPage() {
   const [jobs, setJobs] = useState<PublicJob[]>([])
   const [loading, setLoading] = useState(true)
   const [responding, setResponding] = useState<string | null>(null)
-  const [candidateResponding, setCandidateResponding] = useState<string | null>(null)
   const [moving, setMoving] = useState<string | null>(null)
 
   useEffect(() => {
@@ -196,7 +192,7 @@ export default function PortalJobsPage() {
   )
 }
 
-function JobCard({ job, responding, moving, onRespond, showPriority, priority, totalPriority, onMove }: {
+function JobCard({ job, responding, moving, onRespond, showPriority, priority, totalPriority, onMove, onCandidateDecision }: {
   job: PublicJob
   responding: string | null
   moving: string | null
@@ -206,6 +202,7 @@ function JobCard({ job, responding, moving, onRespond, showPriority, priority, t
   priority?: number
   totalPriority?: number
   onMove?: (id: string, dir: 'up' | 'down') => Promise<void>
+  onCandidateDecision?: (subId: string, decision: 'interested' | 'not_interested') => void
 }) {
   return (
     <div style={{
@@ -241,11 +238,11 @@ function JobCard({ job, responding, moving, onRespond, showPriority, priority, t
             <div style={{ display: 'flex', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '11px', fontWeight: 600, color: '#6d28d9' }}>🗓️ Interview stage — what do you think?</span>
               <button
-                onClick={() => void handleCandidateDecision(job.submission_id, 'interested')}
+                onClick={() => onCandidateDecision?.(job.submission_id, 'interested')}
                 style={{ padding: '6px 12px', background: '#FFCC00', color: '#1A1A1A', border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
               >🙋 I want to join</button>
               <button
-                onClick={() => void handleCandidateDecision(job.submission_id, 'not_interested')}
+                onClick={() => onCandidateDecision?.(job.submission_id, 'not_interested')}
                 style={{ padding: '6px 12px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
               >❌ Not for me</button>
             </div>
@@ -279,13 +276,13 @@ function JobCard({ job, responding, moving, onRespond, showPriority, priority, t
           {job.submission_status === 'interview' && !job.candidate_decision && (
             <div style={{ display: 'flex', gap: '6px', marginTop: '8px', width: '100%' }}>
               <button
-                onClick={() => void handleCandidateDecision(job.submission_id, 'interested')}
+                onClick={() => onCandidateDecision?.(job.submission_id, 'interested')}
                 style={{ flex: 1, padding: '8px 0', background: '#FFCC00', color: '#1A1A1A', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
               >
                 🙋 I want to join
               </button>
               <button
-                onClick={() => void handleCandidateDecision(job.submission_id, 'not_interested')}
+                onClick={() => onCandidateDecision?.(job.submission_id, 'not_interested')}
                 style={{ flex: 1, padding: '8px 0', background: '#f3f4f6', color: '#6b7280', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
               >
                 Not for me
@@ -314,16 +311,16 @@ function JobCard({ job, responding, moving, onRespond, showPriority, priority, t
               <p style={{ fontSize: '11px', color: '#92400e', marginBottom: '8px', fontWeight: 500 }}>The employer wants to meet you — what would you like to do?</p>
               <div style={{ display: 'flex', gap: '6px' }}>
                 <button
-                  onClick={() => void handleCandidateDecision(job.submission_id, 'interested')}
-                  disabled={candidateResponding === job.submission_id}
+                  onClick={() => onCandidateDecision?.(job.submission_id, 'interested')}
+                  disabled={responding === job.submission_id}
                   style={{ flex: 1, padding: '8px', background: '#FFCC00', color: '#1A1A1A', border: 'none', borderRadius: '7px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
-                  {candidateResponding === job.submission_id ? '…' : '🙋 I want to join'}
+                  {'🙋 I want to join'}
                 </button>
                 <button
-                  onClick={() => void handleCandidateDecision(job.submission_id, 'not_interested')}
-                  disabled={candidateResponding === job.submission_id}
+                  onClick={() => onCandidateDecision?.(job.submission_id, 'not_interested')}
+                  disabled={responding === job.submission_id}
                   style={{ flex: 1, padding: '8px', background: '#f3f4f6', color: '#374151', border: '1px solid #e5e7eb', borderRadius: '7px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
-                  {candidateResponding === job.submission_id ? '…' : '❌ Not the right fit'}
+                  {'❌ Not the right fit'}
                 </button>
               </div>
             </div>
