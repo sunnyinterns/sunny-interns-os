@@ -139,8 +139,9 @@ export async function sendJobSubmittedEmployer(params: {
   employerEmail: string; employerName?: string
   internFirstName: string; internLastName: string
   jobTitle: string; cvUrl?: string | null; caseId: string
+  portalUrl?: string | null
 }) {
-  const { employerEmail, employerName, internFirstName, internLastName, jobTitle, cvUrl, caseId } = params
+  const { employerEmail, employerName, internFirstName, internLastName, jobTitle, cvUrl, caseId, portalUrl } = params
   await sendFromTemplate({
     slug: 'job_submitted_employer',
     to: employerEmail,
@@ -150,6 +151,7 @@ export async function sendJobSubmittedEmployer(params: {
       job_title: jobTitle,
       cv_url: cvUrl ?? '',
       verify_url: `${APP_URL}/verify/${caseId}`,
+      portal_url: portalUrl ?? `${APP_URL}/portal/employer/`,
     },
   })
 }

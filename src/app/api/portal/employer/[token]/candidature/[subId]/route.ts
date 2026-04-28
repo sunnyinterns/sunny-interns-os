@@ -2,113 +2,103 @@ import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
 function getAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
-async function sendFromTemplate(opts: { slug: string; to: string; vars: Record<string, string> }) {
-  const admin = getAdmin()
-  const { data: tmpl } = await admin.from('email_templates').select('subject, body_html')
-    .eq('slug', opts.slug).eq('is_active', true).single()
-  if (!tmpl) return
-  let subject = tmpl.subject as string
-  let html = tmpl.body_html as string
-  for (const [k, v] of Object.entries(opts.vars)) {
-    const re = new RegExp(`{{${k}}}`, 'g')
-    subject = subject.replace(re, v ?? '')
-    html = html.replace(re, v ?? '')
-  }
-  const { Resend } = await import('resend')
-  await new Resend(process.env.RESEND_API_KEY).emails.send({
-    from: 'Bali Interns <team@bali-interns.com>',
-    to: opts.to,
-    subject,
-    html,
-  })
-}
-
+// POST /api/portal/employer/[token]/candidature/[subId]
+// Body: { decision: 'interested' | 'not_interested', comment?: string }
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ token: string; subId: string }> }
 ) {
   const { token, subId } = await params
   const admin = getAdmin()
-  const body = await req.json() as { decision: 'interested' | 'not_interested' }
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
 
-  if (!['interested', 'not_interested'].includes(body.decision)) {
+  // Validate token
+  const { data: access } = await admin
+    .from('employer_portal_access')
+    .select('id, company_id, viewed_at, viewed_at_notified_at')
+    .eq('token', token)
+    .single()
+  if (!access) return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+
+  const body = await req.json() as { decision: string; comment?: string }
+  const { decision, comment } = body
+  if (!['interested', 'not_interested'].includes(decision)) {
     return NextResponse.json({ error: 'Invalid decision' }, { status: 400 })
   }
 
-  // Verify token
-  const { data: access } = await admin
-    .from('employer_portal_access')
-    .select('company_id, contact_id')
-    .eq('token', token)
-    .single()
-  if (!access) return NextResponse.json({ error: 'Invalid token' }, { status: 403 })
-
-  // Load submission
+  // Fetch submission to verify it belongs to this company
   const { data: sub } = await admin
     .from('job_submissions')
-    .select(`*, jobs(public_title, title, companies!jobs_company_id_fkey(name)),
-      cases!job_submissions_case_id_fkey(interns(first_name, last_name))`)
+    .select(`id, case_id, employer_decision, status,
+      jobs(public_title, title, companies(id, name)),
+      cases(interns(first_name, last_name))`)
     .eq('id', subId)
     .single()
+
   if (!sub) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  // Update decision
+  // Verify company matches
+  const jobCompanyId = ((sub.jobs as Record<string, unknown>)?.companies as Record<string, unknown>)?.id
+  if (jobCompanyId !== access.company_id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  // Idempotency: if already same decision, return ok
+  if (sub.employer_decision === decision) {
+    return NextResponse.json({ ok: true, decision, unchanged: true })
+  }
+
+  // Update job_submission
   await admin.from('job_submissions').update({
-    employer_decision: body.decision,
+    employer_decision: decision,
     employer_decision_at: new Date().toISOString(),
+    employer_comment: comment ?? null,
     updated_at: new Date().toISOString(),
   }).eq('id', subId)
 
-  // Notify Charly
-  const job = sub.jobs as Record<string, unknown> | null
-  const caseData = sub.cases as Record<string, unknown> | null
-  const internsRaw = caseData?.interns
-  const intern = (Array.isArray(internsRaw) ? (internsRaw as Record<string,unknown>[])[0] : internsRaw) as Record<string, unknown> ?? {}
-  const company = (job?.companies ?? {}) as Record<string, unknown>
-  const title = (job?.public_title ?? job?.title ?? 'internship') as string
-  const internName = `${intern.first_name ?? ''} ${intern.last_name ?? ''}`.trim()
-  const decisionLabel = body.decision === 'interested' ? '✅ Interested' : '❌ Not a match'
+  // Fetch intern + job info for notifications
+  const internData = (Array.isArray((sub.cases as Record<string,unknown>)?.interns) ? ((sub.cases as Record<string,unknown>).interns as Record<string,unknown>[])[0] : ((sub.cases as Record<string,unknown>)?.interns ?? {})) as Record<string,unknown>
+  const jobData = (sub.jobs ?? {}) as Record<string,unknown>
+  const companyData = (jobData.companies ?? {}) as Record<string,unknown>
+  const internName = `${internData.first_name ?? ''} ${internData.last_name ?? ''}`.trim()
+  const jobTitle = String(jobData.public_title ?? jobData.title ?? '')
+  const employerName = String(companyData.name ?? '')
+  const caseId = sub.case_id as string
 
+  // Admin notification → Charly
   await admin.from('admin_notifications').insert({
-    type: 'employer_decision',
-    title: `Employer ${decisionLabel} — ${internName}`,
-    message: `${company.name ?? 'Employer'} marked "${decisionLabel}" for ${internName} (${title}). ${body.decision === 'interested' ? 'Contact the candidate — they need to confirm their interest too.' : 'Consider proposing another candidate.'}`,
-    case_id: sub.case_id,
-    priority: body.decision === 'interested' ? 'high' : 'normal',
+    type: decision === 'interested' ? 'employer_interested' : 'employer_not_interested',
+    title: decision === 'interested'
+      ? `✅ ${employerName} is interested in ${internName}`
+      : `❌ ${employerName} is not interested in ${internName}`,
+    message: `Job: ${jobTitle}${comment ? ` — Comment: ${comment}` : ''}`,
+    case_id: caseId,
+    priority: decision === 'interested' ? 'high' : 'normal',
     read: false,
   }).then(() => null, () => null)
 
-  // Notify Charly by email
-  try {
-    await sendFromTemplate({
-      slug: 'internal_employer_decision',
+  // Internal alert email to Charly if interested
+  if (decision === 'interested') {
+    const { Resend } = await import('resend')
+    const resend = new Resend(process.env.RESEND_API_KEY)
+    await resend.emails.send({
+      from: 'Bali Interns OS <team@bali-interns.com>',
       to: 'team@bali-interns.com',
-      vars: {
-        employer_name: company.name as string ?? '',
-        intern_name: internName,
-        job_title: title,
-        decision: decisionLabel,
-        action_needed: body.decision === 'interested'
-          ? 'Contact the candidate directly — they need to confirm their interest on their portal or via WhatsApp.'
-          : 'Consider sending another candidate profile.',
-      },
-    })
-  } catch { /* non-blocking */ }
+      subject: `[Action needed] ${employerName} is interested in ${internName}`,
+      html: `<p><strong>${employerName}</strong> marked <strong>${internName}</strong> as <strong>Interested</strong>.</p>
+<p>Job: ${jobTitle}</p>
+${comment ? `<p>Employer comment: ${comment}</p>` : ''}
+<p><a href="${appUrl}/fr/cases/${caseId}">→ Open case in OS</a></p>`,
+    }).catch(() => null)
+  }
 
-  await admin.from('activity_feed').insert({
-    case_id: sub.case_id,
-    type: 'employer_decision',
-    title: `Employer: ${decisionLabel}`,
-    description: `${company.name ?? 'Employer'} responded "${body.decision}" for "${title}"`,
-    source: 'employer_portal',
-    status: 'completed',
-  }).then(() => null, () => null)
+  // Update portal last_active
+  await admin.from('employer_portal_access').update({
+    last_active_at: new Date().toISOString(),
+  }).eq('token', token)
 
-  return NextResponse.json({ ok: true, decision: body.decision })
+  return NextResponse.json({ ok: true, decision })
 }
