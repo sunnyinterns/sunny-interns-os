@@ -73,7 +73,7 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
 
   async function handleVisaUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    const caseId = (data as DossierResp)?.case_id ?? (data as Record<string,unknown>)?.case_id as string | null
+    const caseId = (data as unknown as DossierResp)?.case_id ?? null
     if (!file || !caseId) return
     setVisaUploading(true)
     try {
