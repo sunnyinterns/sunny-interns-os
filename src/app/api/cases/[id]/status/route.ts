@@ -112,7 +112,7 @@ export async function PATCH(
         return NextResponse.json({
           error: gate.message,
           blocked: true,
-          hint: 'Confirmez le paiement en passant le dossier en "payment_received" d\'abord.',
+          hint: 'Confirm payment by marking the case as "payment_received" first.',
         }, { status: 422 })
       }
     }
@@ -211,7 +211,7 @@ export async function PATCH(
         const qualNotes = (caseRow as Record<string, unknown>).qualification_notes_for_intern as string ?? ''
         if (intern?.email) {
           void sendQualificationEmail({
-            internEmail: intern.email, prenom: intern.first_name ?? 'Stagiaire',
+            internEmail: intern.email, prenom: intern.first_name ?? 'Intern',
             nom: intern.last_name ?? '', portalToken, tempPassword,
             qualificationNotes: qualNotes,
             portalUrl: `${appUrl}/portal/${portalToken}/login`,
@@ -223,18 +223,32 @@ export async function PATCH(
 
   if (newStatus === 'payment_pending') {
     try {
-      const { data: caseRow } = await supabase
+      const adminPay = getAdmin()
+      const { data: caseRow } = await adminPay
         .from('cases')
-        .select('payment_amount, portal_token, interns(first_name, email)')
+        .select('payment_amount, portal_token, billing_company_id, interns(first_name, email)')
         .eq('id', id).single()
       if (caseRow) {
         const intern = (caseRow as Record<string, unknown>).interns as { first_name?: string; email?: string } | null
+        const billingCompanyId = (caseRow as Record<string, unknown>).billing_company_id as string | null
+        let bankIban = '', bankBic = '', bankName = ''
+        if (billingCompanyId) {
+          const { data: bc } = await adminPay.from('billing_companies')
+            .select('bank_iban, bank_bic, bank_name').eq('id', billingCompanyId).single()
+          if (bc) { bankIban = (bc as Record<string,unknown>).bank_iban as string ?? ''; bankBic = (bc as Record<string,unknown>).bank_bic as string ?? ''; bankName = (bc as Record<string,unknown>).bank_name as string ?? '' }
+        } else {
+          // Fallback: default billing company
+          const { data: defBc } = await adminPay.from('billing_companies')
+            .select('bank_iban, bank_bic, bank_name').eq('is_default', true).single()
+          if (defBc) { bankIban = (defBc as Record<string,unknown>).bank_iban as string ?? ''; bankBic = (defBc as Record<string,unknown>).bank_bic as string ?? ''; bankName = (defBc as Record<string,unknown>).bank_name as string ?? '' }
+        }
         if (intern?.email) {
           void sendPaymentRequest({
             internEmail: intern.email,
-            internFirstName: intern.first_name ?? 'Stagiaire',
+            internFirstName: intern.first_name ?? 'Intern',
             amount: (caseRow as Record<string, unknown>).payment_amount as number ?? 0,
-            invoiceUrl: (caseRow as Record<string, unknown>).portal_token as string | null ?? null,
+            portalToken: (caseRow as Record<string, unknown>).portal_token as string | null ?? null,
+            bankIban, bankBic, bankName,
           })
         }
       }
@@ -285,7 +299,7 @@ export async function PATCH(
         if (amount > 0) {
           await admin.from('billing_entries').insert({
             case_id: id, type: 'revenue', category: 'package',
-            label: `Paiement ${intern?.first_name ?? ''} ${intern?.last_name ?? ''} — ${pkg?.name ?? 'Package'}`,
+            label: `Payment ${intern?.first_name ?? ''} ${intern?.last_name ?? ''} — ${pkg?.name ?? 'Package'}`,
             amount_eur: amount,
             paid_at: new Date().toISOString(), recorded_at: new Date().toISOString(), billing_type: 'payment',
           })
@@ -377,7 +391,7 @@ export async function PATCH(
         if (intern?.email && token) {
           void sendJobRetenu({
             internEmail: intern.email,
-            prenom: intern.first_name ?? 'Stagiaire',
+            prenom: intern.first_name ?? 'Intern',
             companyName: company?.name ?? 'l\'entreprise',
             portalToken: token,
           })
@@ -472,7 +486,7 @@ export async function PATCH(
         if (intern?.email && token) {
           void sendWelcomeKit({
             internEmail: intern.email,
-            prenom: intern.first_name ?? 'Stagiaire',
+            prenom: intern.first_name ?? 'Intern',
             portalToken: token,
           })
         }

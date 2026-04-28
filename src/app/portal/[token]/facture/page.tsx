@@ -65,7 +65,7 @@ export default function PortalFacturePage() {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
         <Link href={`/portal/${token}`} style={{ color: '#FFCC00', fontSize: '14px', textDecoration: 'none' }}>← Back</Link>
-        <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1A1A1A', margin: 0 }}>Ma facture</h1>
+        <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1A1A1A', margin: 0 }}>My invoice</h1>
       </div>
 
       {loading ? (
@@ -73,11 +73,11 @@ export default function PortalFacturePage() {
       ) : fetchError ? (
         <div style={{ padding: '32px 24px', textAlign: 'center', background: '#fef2f2', borderRadius: '16px', border: '1px solid #fecaca' }}>
           <p style={{ fontSize: '32px', marginBottom: '12px' }}>⚠️</p>
-          <p style={{ color: '#dc2626', fontSize: '14px', fontWeight: 600 }}>Impossible de charger les données.</p>
-          <p style={{ color: '#6b7280', fontSize: '13px', marginTop: '6px' }}>Réessaie dans quelques instants ou contacte notre équipe.</p>
+          <p style={{ color: '#dc2626', fontSize: '14px', fontWeight: 600 }}>Unable to load your invoice.</p>
+          <p style={{ color: '#6b7280', fontSize: '13px', marginTop: '6px' }}>Please try again in a moment or contact our team.</p>
           <button
             onClick={() => { setFetchError(false); setLoading(true); window.location.reload() }}
-            style={{ marginTop: '16px', padding: '10px 20px', background: '#FFCC00', color: 'white', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+            style={{ marginTop: '16px', padding: '10px 20px', background: '#FFCC00', color: '#1A1A1A', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
           >
             Réessayer
           </button>

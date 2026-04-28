@@ -186,6 +186,9 @@ export async function sendPaymentRequest(params: {
       amount: `€${amount}`,
       invoice_number: invoiceNumber ?? '',
       portal_url: portalToken ? `${APP_URL}/portal/${portalToken}` : APP_URL,
+      bank_iban: (params as Record<string,unknown>).bankIban as string ?? '',
+      bank_bic: (params as Record<string,unknown>).bankBic as string ?? '',
+      bank_name: (params as Record<string,unknown>).bankName as string ?? '',
     },
   })
 }
