@@ -528,6 +528,45 @@ export async function PATCH(
     } catch { /* non-blocking */ }
   }
 
+
+  // ── Disqualification → thank you email ────────────────────────────────────
+  const DISQUALIFICATION_STATUSES = [
+    'not_interested', 'not_qualified', 'no_show',
+    'hors_qualification', 'no_budget', 'refus_general',
+  ]
+  const DISQUALIFICATION_NOTES: Record<string, string> = {
+    not_interested: 'but we completely understand — timing and priorities change.',
+    not_qualified:  'but our current openings aren't the right fit for your profile at this stage.',
+    no_show:        'but we weren't able to connect at our scheduled time.',
+    hors_qualification: 'but our current openings aren't the right fit for your profile at this stage.',
+    no_budget:      'but the timing doesn't work out financially right now.',
+    refus_general:  'but we're not the right match at this point.',
+  }
+
+  if (DISQUALIFICATION_STATUSES.includes(newStatus) && !DISQUALIFICATION_STATUSES.includes(oldStatus)) {
+    try {
+      const adminDq = getAdmin()
+      const { data: dqRow } = await adminDq
+        .from('cases')
+        .select('interns(first_name, email)')
+        .eq('id', id).single()
+      if (dqRow) {
+        const dqIntern = (dqRow as Record<string,unknown>).interns as { first_name?: string; email?: string } | null
+        if (dqIntern?.email) {
+          const { sendFromTemplate } = await import('@/lib/email/resend')
+          void sendFromTemplate({
+            slug: 'disqualification_thank_you',
+            to: dqIntern.email,
+            vars: {
+              first_name: dqIntern.first_name ?? 'there',
+              reason_note: DISQUALIFICATION_NOTES[newStatus] ?? 'but the timing isn't right at this stage.',
+            },
+          })
+        }
+      }
+    } catch { /* non-blocking */ }
+  }
+
   return NextResponse.json({ success: true, new_status: newStatus })
 }
 
