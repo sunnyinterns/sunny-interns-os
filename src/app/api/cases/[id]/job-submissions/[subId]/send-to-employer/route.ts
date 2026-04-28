@@ -99,14 +99,13 @@ export async function POST(
   // ── Send email ─────────────────────────────────────────────────────────
   try {
     await sendJobSubmittedEmployer({
-      to: employerEmail,
-      employerFirstName: contact?.first_name as string ?? 'there',
+      employerEmail,
+      employerName: contact?.first_name as string ?? 'there',
       internFirstName: intern?.first_name as string ?? '',
       internLastName: intern?.last_name as string ?? '',
-      internEmail: intern?.email as string ?? '',
-      internWhatsapp: intern?.whatsapp as string ?? '',
       jobTitle: (job?.title || job?.public_title) as string ?? '',
       cvUrl: cvUrl ?? '',
+      caseId: id,
       portalUrl: portalUrl ?? undefined,
     })
   } catch (e) {
