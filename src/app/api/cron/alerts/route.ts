@@ -113,5 +113,32 @@ export async function GET(request: Request) {
     }
   }
 
+
+  // ── J+7 no employer response ──────────────────────────────────────────────
+  const j7ago = new Date(); j7ago.setDate(j7ago.getDate() - 7)
+  const { data: noResponseSubs } = await admin
+    .from('job_submissions')
+    .select('id, case_id, submitted_at, no_employer_response_alerted_at, jobs(title, public_title, companies(name))')
+    .eq('status', 'sent')
+    .eq('employer_decision', 'pending')
+    .lt('submitted_at', j7ago.toISOString())
+    .is('no_employer_response_alerted_at', null)
+    .limit(50)
+
+  for (const sub of noResponseSubs ?? []) {
+    const job = sub.jobs as Record<string, unknown> | null
+    await admin.from('admin_notifications').insert({
+      type: 'no_employer_response',
+      title: `⏰ No response — ${(job?.companies as Record<string,unknown> | null)?.name ?? 'Employer'} (7 days)`,
+      body: `Position: ${job?.public_title ?? job?.title ?? 'Internship'}. Consider sending a WhatsApp follow-up.`,
+      case_id: sub.case_id,
+      priority: 'high',
+      is_read: false,
+    }).then(() => null, () => null)
+    await admin.from('job_submissions').update({
+      no_employer_response_alerted_at: new Date().toISOString()
+    }).eq('id', sub.id)
+  }
+
   return NextResponse.json({ processed: cases.length, alerts_sent: alertsSent, errors, date: today.toISOString().split('T')[0] })
 }

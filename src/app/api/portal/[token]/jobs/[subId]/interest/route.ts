@@ -1,111 +1,120 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-function getAdmin() {
+function svc() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
-// POST /api/portal/[token]/jobs/[subId]/interest
-// Body: { decision: 'interested' | 'not_interested' }
+/**
+ * Candidate marks their interest/decision on a job from their portal
+ * POST /api/portal/[token]/jobs/[subId]/interest
+ * Body: { decision: 'interested' | 'not_interested' }
+ */
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ token: string; subId: string }> }
 ) {
   const { token, subId } = await params
-  const admin = getAdmin()
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+  const body = await req.json() as { decision: 'interested' | 'not_interested' }
 
-  // Validate token via case
-  const { data: caseRow } = await admin
-    .from('cases')
-    .select('id, portal_token, interns(first_name, last_name)')
-    .eq('portal_token', token)
-    .single()
-  if (!caseRow) return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
-
-  const body = await req.json() as { decision: string }
-  const { decision } = body
-  if (!['interested', 'not_interested'].includes(decision)) {
+  if (!['interested', 'not_interested'].includes(body.decision)) {
     return NextResponse.json({ error: 'Invalid decision' }, { status: 400 })
   }
 
-  // Fetch submission — must belong to this case
-  const { data: sub } = await admin
+  const sb = svc()
+
+  // Verify token belongs to this candidate's case
+  const { data: caseRow } = await sb
+    .from('cases')
+    .select('id, status, interns(first_name, last_name, email)')
+    .eq('portal_token', token)
+    .single()
+
+  if (!caseRow) return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+
+  // Get the submission
+  const { data: sub } = await sb
     .from('job_submissions')
-    .select('id, case_id, candidate_decision, status, jobs(public_title, title, companies(name))')
+    .select('id, case_id, employer_decision, candidate_decision, jobs(id, public_title, title)')
     .eq('id', subId)
     .eq('case_id', caseRow.id)
     .single()
 
   if (!sub) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  // Only allow decision when status = interview
-  if (sub.status !== 'interview') {
-    return NextResponse.json({ error: 'Decision only possible after interview stage' }, { status: 422 })
-  }
-
   // Idempotency
-  if (sub.candidate_decision === decision) {
-    return NextResponse.json({ ok: true, decision, unchanged: true })
+  if (sub.candidate_decision === body.decision) {
+    return NextResponse.json({ ok: true, unchanged: true })
   }
 
-  await admin.from('job_submissions').update({
-    candidate_decision: decision,
+  // Must be in interview status to declare interest
+  if (sub.candidate_decision === 'pending' && !['interview', 'sent', 'proposed', 'pending'].includes(sub.candidate_decision)) {
+    return NextResponse.json({ error: 'Cannot declare interest at this stage' }, { status: 422 })
+  }
+
+  // Update decision
+  await sb.from('job_submissions').update({
+    candidate_decision: body.decision,
     candidate_decision_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   }).eq('id', subId)
 
-  const internRaw = Array.isArray(caseRow.interns) ? caseRow.interns[0] : (caseRow.interns ?? {})
-  const intern = (internRaw as unknown) as Record<string, unknown>
-  const job = (sub.jobs ?? {}) as Record<string, unknown>
-  const company = (job.companies ?? {}) as Record<string, unknown>
-  const internName = `${intern.first_name ?? ''} ${intern.last_name ?? ''}`.trim()
-  const jobTitle = String(job.public_title ?? job.title ?? '')
-  const companyName = String(company.name ?? '')
+  const job = sub.jobs as Record<string, unknown> | null
+  const intern = caseRow.interns as Record<string, unknown> | null
+  const internName = `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim()
+  const jobTitle = String(job?.public_title ?? job?.title ?? 'Internship')
+  const caseId = caseRow.id as string
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
 
-  // Admin notification
-  await admin.from('admin_notifications').insert({
-    type: decision === 'interested' ? 'candidate_interested' : 'candidate_not_interested',
-    title: decision === 'interested'
-      ? `🙋 ${internName} wants to join ${companyName}`
-      : `❌ ${internName} declined ${companyName}`,
-    message: `Job: ${jobTitle}`,
-    case_id: caseRow.id,
-    priority: decision === 'interested' ? 'high' : 'normal',
-    read: false,
+  // Activity log
+  await sb.from('activity_feed').insert({
+    case_id: caseId,
+    type: 'candidate_decision',
+    title: `Candidate: ${body.decision === 'interested' ? 'Wants to join ✅' : 'Not interested ❌'}`,
+    description: `${internName} marked "${jobTitle}" as ${body.decision}`,
+    source: 'portal_intern',
+    status: 'completed',
   }).then(() => null, () => null)
 
-  // Email Charly
-  const { Resend } = await import('resend')
-  const resend = new Resend(process.env.RESEND_API_KEY)
-  await resend.emails.send({
-    from: 'Bali Interns OS <team@bali-interns.com>',
-    to: 'team@bali-interns.com',
-    subject: decision === 'interested'
-      ? `[Action needed] ${internName} wants to join ${companyName}`
-      : `[FYI] ${internName} declined ${companyName}`,
-    html: `<p><strong>${internName}</strong> marked ${decision === 'interested' ? '<strong>I want to join</strong>' : '<strong>Not for me</strong>'} for:</p>
-<p>Company: ${companyName} — Job: ${jobTitle}</p>
-<p><a href="${appUrl}/fr/cases/${caseRow.id}">→ Open case in OS</a></p>`,
-  }).catch(() => null)
+  // Admin notification → Charly (always: candidate has the last word)
+  await sb.from('admin_notifications').insert({
+    type: body.decision === 'interested' ? 'candidate_interested' : 'candidate_not_interested',
+    title: body.decision === 'interested'
+      ? `🙋 ${intern?.first_name ?? 'Candidate'} wants to join — action required`
+      : `❌ ${intern?.first_name ?? 'Candidate'} is not interested in this position`,
+    body: `Position: ${jobTitle}\n${body.decision === 'interested' ? 'Both sides must agree for the match to be confirmed. Check employer decision.' : ''}`,
+    case_id: caseId,
+    priority: body.decision === 'interested' ? 'high' : 'normal',
+    is_read: false,
+  }).then(() => null, () => null)
 
-  // Check if both sides are interested → suggest retain to Charly
-  const { data: updatedSub } = await admin
-    .from('job_submissions')
-    .select('employer_decision, candidate_decision')
-    .eq('id', subId)
-    .single()
-
-  if (updatedSub?.employer_decision === 'interested' && updatedSub?.candidate_decision === 'interested') {
-    await admin.from('admin_notifications').insert({
-      type: 'match_ready',
-      title: `🎯 MATCH — ${internName} + ${companyName} — confirm as Retained`,
-      message: `Both sides agreed. Open the case to confirm the placement.`,
-      case_id: caseRow.id,
-      priority: 'critical',
-      read: false,
-    }).then(() => null, () => null)
+  // Check mutual interest → auto-retain
+  if (body.decision === 'interested' && sub.employer_decision === 'interested') {
+    // Both interested → trigger retain
+    const { data: existing } = await sb.from('job_submissions').select('status').eq('id', subId).single()
+    if (existing?.status !== 'retained') {
+      await sb.from('job_submissions').update({ status: 'retained', updated_at: new Date().toISOString() }).eq('id', subId)
+      await sb.from('job_submissions').update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .eq('case_id', caseId).neq('id', subId).neq('status', 'retained')
+      await sb.from('cases').update({ status: 'job_retained', updated_at: new Date().toISOString() }).eq('id', caseId)
+      await sb.from('admin_notifications').insert({
+        type: 'mutual_match',
+        title: `🎉 Mutual match — ${internName}`,
+        body: `Both sides agreed on "${jobTitle}". Case → Job Retained. Send cancellation emails to other employers.`,
+        case_id: caseId,
+        priority: 'critical',
+        is_read: false,
+      }).then(() => null, () => null)
+      await sb.from('activity_feed').insert({
+        case_id: caseId,
+        type: 'mutual_match',
+        title: '🎉 Mutual match confirmed',
+        description: `${internName} and employer both agreed on "${jobTitle}". Action required: send cancellation emails to other employers.`,
+        source: 'system',
+        status: 'action_required',
+      }).then(() => null, () => null)
+    }
   }
 
-  return NextResponse.json({ ok: true, decision })
+  return NextResponse.json({ ok: true, decision: body.decision })
 }

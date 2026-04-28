@@ -15,6 +15,8 @@ interface PublicJob {
   intern_priority?: number | null
   employer_first_name?: string | null
   submission_status: string  // sent / pending / retained / cancelled
+  employer_decision?: string | null
+  candidate_decision?: string | null
   employer_decision?: string | null   // pending / interested / not_interested
   candidate_decision?: string | null  // pending / interested / not_interested
 }
@@ -233,6 +235,29 @@ function JobCard({ job, responding, moving, onRespond, showPriority, priority, t
         </div>
         {/* Status + priority */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
+          {job.submission_status === 'interview' && !job.candidate_decision && (
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: '#6d28d9' }}>🗓️ Interview stage — what do you think?</span>
+              <button
+                onClick={() => void handleCandidateDecision(job.submission_id, 'interested')}
+                style={{ padding: '6px 12px', background: '#FFCC00', color: '#1A1A1A', border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
+              >🙋 I want to join</button>
+              <button
+                onClick={() => void handleCandidateDecision(job.submission_id, 'not_interested')}
+                style={{ padding: '6px 12px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
+              >❌ Not for me</button>
+            </div>
+          )}
+          {job.candidate_decision === 'interested' && (
+            <span style={{ fontSize: '10px', fontWeight: 600, padding: '2px 7px', background: '#d1fae5', color: '#059669', borderRadius: '99px', marginBottom: '2px' }}>
+              🙋 You said yes — waiting for confirmation
+            </span>
+          )}
+          {job.candidate_decision === 'not_interested' && (
+            <span style={{ fontSize: '10px', fontWeight: 600, padding: '2px 7px', background: '#fee2e2', color: '#dc2626', borderRadius: '99px', marginBottom: '2px' }}>
+              ❌ Not for me
+            </span>
+          )}
           {job.submission_status === 'sent' && (
             <span style={{ fontSize: '10px', fontWeight: 600, padding: '2px 7px', background: '#dbeafe', color: '#1d4ed8', borderRadius: '99px', marginBottom: '2px' }}>
               ✉ Application sent
