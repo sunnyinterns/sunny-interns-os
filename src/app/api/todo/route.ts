@@ -107,6 +107,31 @@ export async function GET() {
     })
   })
 
+  // 3b. Visa refusé — action requise
+  const { data: visaRefused } = await adminClient
+    .from('cases')
+    .select('id, status, updated_at, interns(first_name, last_name)')
+    .eq('status', 'visa_refused')
+    .lt('updated_at', new Date(Date.now() - 1 * 86400000).toISOString())
+    .limit(10)
+
+  visaRefused?.forEach(c => {
+    const intern = (Array.isArray(c.interns) ? c.interns[0] : c.interns) as unknown as { first_name: string; last_name: string } | null
+    todos.push({
+      id: `visaref-${c.id}`,
+      type: 'alerte',
+      priority: 'urgent',
+      case_id: c.id,
+      intern_name: `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim(),
+      title: 'Visa refused — action required',
+      description: 'Contact visa agent to understand the reason · Plan next steps (re-submit or alternative)',
+      cta_label: 'Open visa file',
+      cta_url: `/fr/cases/${c.id}?tab=visa`,
+      days_waiting: 0,
+      status: c.status,
+    })
+  })
+
   // 4. Visa en cours depuis + 30 jours
   const { data: visaLong } = await adminClient
     .from('cases')

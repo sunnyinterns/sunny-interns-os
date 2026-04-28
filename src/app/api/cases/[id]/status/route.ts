@@ -23,13 +23,13 @@ function getAdmin() {
 
 const STATUS_LABELS: Record<string, string> = {
   lead: 'Nouveau lead', rdv_booked: 'RDV booké', qualification_done: 'Qualifié',
-  job_submitted: 'Jobs proposés', job_retained: 'Job retenu', convention_signed: 'Convention signée',
-  payment_pending: 'Paiement en attente', payment_received: 'Payé',
-  visa_in_progress: 'Visa en cours', visa_received: 'Visa reçu',
-  arrival_prep: 'Prép. arrivée', active: 'En stage', alumni: 'Alumni',
+  job_submitted: 'Jobs proposed', job_retained: 'Job retained', convention_signed: 'Convention signed',
+  payment_pending: 'Payment pending', payment_received: 'Paid',
+  visa_in_progress: 'Visa in progress', visa_received: 'Visa received',
+  arrival_prep: 'Arrival prep', active: 'Active', alumni: 'Alumni',
   not_interested: 'Pas intéressé', not_qualified: 'Non qualifié',
   to_recontact: 'À recontacter',
-  on_hold: 'En attente', suspended: 'Suspendu', visa_refused: 'Visa refusé', archived: 'Archivé',
+  on_hold: 'On hold', suspended: 'Suspended', visa_refused: 'Visa refused', archived: 'Archived',
 }
 
 // ── Transition rules ────────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ const TRANSITION_GATES: Record<string, {
   },
   visa_received: {
     allowedFrom: ['visa_in_progress', 'visa_refused'],
-    message: 'Le statut visa reçu ne peut suivre que visa_in_progress ou visa_refused.',
+    message: 'visa_received can only follow visa_in_progress or visa_refused.',
   },
   arrival_prep: {
     allowedFrom: ['visa_received'],
@@ -532,8 +532,8 @@ export async function PATCH(
     job_retained:       { title: `🎉 Job retenu — ${internName}`, type: 'job', priority: 'high' },
     convention_signed:  { title: `📝 Convention signée — ${internName}`, type: 'contract', priority: 'high' },
     payment_received:   { title: `💰 Paiement reçu — ${internName}`, type: 'payment', priority: 'critical' },
-    visa_received:      { title: `🛂 Visa reçu — ${internName}`, type: 'visa', priority: 'high' },
-    visa_refused:       { title: `❌ Visa refusé — ${internName}`, type: 'visa', priority: 'critical' },
+    visa_received:      { title: `🛂 Visa received — ${internName} — next: arrival prep`, type: 'visa', priority: 'high' },
+    visa_refused:       { title: `❌ Visa refused — ${internName} — contact agent for reason`, type: 'visa', priority: 'critical' },
     active:             { title: `🌴 Stage démarré — ${internName}`, type: 'stage', priority: 'normal' },
     alumni:             { title: `🎓 Stage terminé — ${internName}`, type: 'alumni', priority: 'normal' },
     to_recontact:       { title: `🔄 À recontacter — ${internName}`, type: 'recontact', priority: 'normal' },
