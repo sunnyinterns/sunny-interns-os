@@ -27,7 +27,7 @@ export async function POST(
   const { data: sub } = await admin
     .from('job_submissions')
     .select(`
-      id, case_id, status, candidate_decision, employer_decision,
+      id, case_id, job_id, status, candidate_decision, employer_decision,
       jobs!job_submissions_job_id_fkey(title, public_title,
         contacts!jobs_contact_id_fkey(first_name, companies!contacts_company_id_fkey(name))
       )
