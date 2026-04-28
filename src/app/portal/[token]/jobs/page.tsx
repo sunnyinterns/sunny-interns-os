@@ -13,8 +13,8 @@ interface PublicJob {
   public_description?: string | null
   intern_interested: boolean | null
   intern_priority?: number | null
-  company_name?: string | null
-  status: string
+  employer_first_name?: string | null
+  submission_status: string  // sent / pending / retained / cancelled
 }
 
 export default function PortalJobsPage() {
@@ -96,7 +96,7 @@ export default function PortalJobsPage() {
       <div className="flex items-center gap-3 mb-4">
         <Link href={`/portal/${token}`} className="text-[#FFCC00] text-sm">← Back</Link>
         <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1A1A1A', margin: 0 }}>
-          Offres de stage
+          Internship offers
         </h1>
       </div>
 
@@ -148,7 +148,7 @@ export default function PortalJobsPage() {
           {pendingJobs.length > 0 && (
             <div>
               <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280', marginBottom: '10px' }}>
-                À évaluer ({pendingJobs.length})
+                To review ({pendingJobs.length})
               </p>
               <div className="space-y-3">
                 {pendingJobs.map((job) => (
@@ -162,7 +162,7 @@ export default function PortalJobsPage() {
           {notInterestedJobs.length > 0 && (
             <div>
               <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af', marginBottom: '10px' }}>
-                Pas pour moi ({notInterestedJobs.length})
+                Not for me ({notInterestedJobs.length})
               </p>
               <div className="space-y-3">
                 {notInterestedJobs.map((job) => (
@@ -182,6 +182,7 @@ function JobCard({ job, responding, moving, onRespond, showPriority, priority, t
   responding: string | null
   moving: string | null
   onRespond: (id: string, interested: boolean) => Promise<void>
+  token?: string
   showPriority?: boolean
   priority?: number
   totalPriority?: number
@@ -202,8 +203,8 @@ function JobCard({ job, responding, moving, onRespond, showPriority, priority, t
             {job.title}
           </h3>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {job.company_name && (
-              <span style={{ fontSize: '12px', color: '#4b5563', fontWeight: 500 }}>{job.company_name}</span>
+            {job.employer_first_name && (
+              <span style={{ fontSize: '12px', color: '#6b7280' }}>Contact: {job.employer_first_name}</span>
             )}
             {job.sector && (
               <span style={{ fontSize: '12px', color: '#6b7280', background: '#f9fafb', padding: '2px 8px', borderRadius: '6px' }}>
@@ -217,6 +218,16 @@ function JobCard({ job, responding, moving, onRespond, showPriority, priority, t
         </div>
         {/* Status + priority */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
+          {job.submission_status === 'sent' && (
+            <span style={{ fontSize: '10px', fontWeight: 600, padding: '2px 7px', background: '#dbeafe', color: '#1d4ed8', borderRadius: '99px', marginBottom: '2px' }}>
+              ✉ Application sent
+            </span>
+          )}
+          {job.submission_status === 'pending' && (
+            <span style={{ fontSize: '10px', fontWeight: 600, padding: '2px 7px', background: '#f3f4f6', color: '#6b7280', borderRadius: '99px', marginBottom: '2px' }}>
+              ⏳ Not sent yet
+            </span>
+          )}
           {job.intern_interested === true && (
             <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', background: '#d1fae5', color: '#065f46', borderRadius: '20px' }}>
               ✓ Interested
@@ -224,7 +235,7 @@ function JobCard({ job, responding, moving, onRespond, showPriority, priority, t
           )}
           {job.intern_interested === false && (
             <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', background: '#f3f4f6', color: '#9ca3af', borderRadius: '20px' }}>
-              Pas pour moi
+              Not for me
             </span>
           )}
           {showPriority && priority && (
@@ -267,7 +278,7 @@ function JobCard({ job, responding, moving, onRespond, showPriority, priority, t
               opacity: responding === job.submission_id ? 0.6 : 1,
             }}
           >
-            {responding === job.submission_id ? '…' : 'Je suis intéressé(e) ✓'}
+            {responding === job.submission_id ? '…' : 'I\'m interested ✓'}
           </button>
           <button
             disabled={responding === job.submission_id}
@@ -279,7 +290,7 @@ function JobCard({ job, responding, moving, onRespond, showPriority, priority, t
               opacity: responding === job.submission_id ? 0.6 : 1,
             }}
           >
-            Pas pour moi
+            Not for me
           </button>
         </div>
       )}

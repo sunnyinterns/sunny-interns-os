@@ -309,6 +309,7 @@ export function TabProcess({
   const timelineIdx = STATUTS_ORDRE.findIndex(s => s.key === mappedKey)
 
   const DISQUALIFICATION_STATUTS: { value: CaseStatus; label: string; color: string; desc: string }[] = [
+    { value: 'not_interested', label: 'Not interested', color: '#6b7280', desc: 'Candidate is not interested' },
     { value: 'no_show', label: 'No Show', color: '#f59e0b', desc: 'Candidate did not show up' },
     { value: 'to_recontact', label: 'À recontacter', color: '#6b7280', desc: 'Retombe en lead - sera recontacté' },
     { value: 'hors_qualification', label: 'Not Qualified', color: '#dc2626', desc: 'Curriculum or profile not suitable' },
@@ -395,6 +396,24 @@ export function TabProcess({
                   &rarr; {s.label}
                 </button>
               ))}
+              {/* If next is qualification_done, also offer "Qualifié + CV à refaire" */}
+              {nextStatuses.some(s => s.value === 'qualification_done') && (
+                <button
+                  onClick={() => {
+                    void handleStatusChange('qualification_done')
+                    // Set cv_revision_requested via PATCH
+                    void fetch(`/api/cases/${caseId}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ cv_revision_requested: true, cv_status: 'revision_needed' }),
+                    })
+                  }}
+                  disabled={statusChanging}
+                  className="text-xs px-3 py-1.5 bg-amber-500 text-white rounded-xl font-semibold hover:bg-amber-600 disabled:opacity-50 transition-colors"
+                >
+                  ✏️ Qualifié — CV à refaire
+                </button>
+              )}
             </div>
           </div>
         )}

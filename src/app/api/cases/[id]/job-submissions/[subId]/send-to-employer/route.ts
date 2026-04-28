@@ -32,6 +32,16 @@ export async function POST(
 
   if (!sub || !caseRow) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
+  // Gate: CV must be validated before sending to employer
+  const cvStatus = (caseRow as Record<string, unknown>).cv_status as string | null
+  if (cvStatus && cvStatus !== 'validated') {
+    return NextResponse.json({
+      error: 'CV must be validated before sending to employer',
+      cv_status: cvStatus,
+      hint: 'Validate the CV first in the case detail (CV tab)',
+    }, { status: 422 })
+  }
+
   const intern = (caseRow.interns ?? {}) as Record<string, unknown>
   const job = (sub.jobs ?? {}) as Record<string, unknown>
   const company = ((job.companies ?? {}) as Record<string, unknown>)

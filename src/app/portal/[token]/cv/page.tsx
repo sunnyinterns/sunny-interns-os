@@ -48,13 +48,13 @@ export default function PortalCvPage() {
 
   async function handleUpload(file: File) {
     if (!data) return
-    if (file.size > 10 * 1024 * 1024) { setError('Fichier trop lourd (max 10MB)'); return }
+    if (file.size > 10 * 1024 * 1024) { setError('File too large (max 10MB)'); return }
     const ext = file.name.split('.').pop()?.toLowerCase()
-    if (!['pdf', 'doc', 'docx'].includes(ext ?? '')) { setError('Format accepté : PDF, DOC, DOCX'); return }
+    if (!['pdf', 'doc', 'docx'].includes(ext ?? '')) { setError('Accepted formats: PDF, DOC, DOCX'); return }
 
     setUploading(true)
     setError(null)
-    setUploadProgress('Upload en cours…')
+    setUploadProgress('Uploading…')
 
     try {
       // Upload to Supabase Storage via API
@@ -92,7 +92,7 @@ export default function PortalCvPage() {
   }
 
   if (loading) return <p style={{ color: '#6b7280', textAlign: 'center', marginTop: '48px' }}>Loading…</p>
-  if (!data) return <p style={{ color: '#dc2626', textAlign: 'center', marginTop: '48px' }}>Lien invalide.</p>
+  if (!data) return <p style={{ color: '#dc2626', textAlign: 'center', marginTop: '48px' }}>Invalid link.</p>
 
   return (
     <div>
@@ -105,14 +105,14 @@ export default function PortalCvPage() {
       {/* Banner révision */}
       {data.cv_revision_requested && !success && (
         <div style={{ background: '#fff7ed', border: '1.5px solid #d97706', borderRadius: '10px', padding: '14px 16px', marginBottom: '20px' }}>
-          <p style={{ fontWeight: 700, color: '#d97706', fontSize: '14px', marginBottom: '2px' }}>Charly vous demande une nouvelle version</p>
-          <p style={{ color: '#78350f', fontSize: '13px' }}>Uploadez votre nouveau CV puis cliquez sur Valider.</p>
+          <p style={{ fontWeight: 700, color: '#d97706', fontSize: '14px', marginBottom: '2px' }}>Your advisor requested a new version</p>
+          <p style={{ color: '#78350f', fontSize: '13px' }}>Upload your updated CV below.</p>
         </div>
       )}
 
       {success && (
         <div style={{ background: '#f0fdf4', border: '1.5px solid #0d9e75', borderRadius: '10px', padding: '14px 16px', marginBottom: '20px' }}>
-          <p style={{ fontWeight: 700, color: '#0d9e75', fontSize: '14px' }}>✓ CV uploadé avec succès !</p>
+          <p style={{ fontWeight: 700, color: '#0d9e75', fontSize: '14px' }}>✓ CV uploaded successfully!</p>
         </div>
       )}
 
@@ -144,7 +144,7 @@ export default function PortalCvPage() {
         ) : (
           <>
             <p style={{ fontWeight: 600, fontSize: '15px', color: '#1A1A1A', marginBottom: '4px' }}>
-              Glissez votre CV ici ou cliquez pour parcourir
+              Drag your CV here or click to browse
             </p>
             <p style={{ color: '#9ca3af', fontSize: '12px' }}>PDF, DOC, DOCX — max 10MB</p>
           </>
@@ -155,7 +155,7 @@ export default function PortalCvPage() {
       {/* Historique versions */}
       {versions.length > 0 && (
         <div style={{ marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#1A1A1A', marginBottom: '10px' }}>Historique des versions</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#1A1A1A', marginBottom: '10px' }}>Version history</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {versions.map((v, i) => (
               <div key={v.id} style={{
@@ -167,7 +167,7 @@ export default function PortalCvPage() {
                   <p style={{ fontSize: '13px', fontWeight: 500, color: '#1A1A1A' }}>{v.filename}</p>
                   <p style={{ fontSize: '11px', color: '#9ca3af' }}>
                     {new Date(v.uploaded_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    {i === 0 && <span style={{ marginLeft: '6px', color: '#FFCC00', fontWeight: 600 }}>· Version actuelle</span>}
+                    {i === 0 && <span style={{ marginLeft: '6px', color: '#FFCC00', fontWeight: 600 }}>· Current version</span>}
                   </p>
                 </div>
                 <a href={v.url} target="_blank" rel="noopener noreferrer" style={{
