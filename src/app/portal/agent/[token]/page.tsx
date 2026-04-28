@@ -46,6 +46,7 @@ interface Access {
 }
 
 interface DossierResp {
+  case_id?: string | null
   type: 'dossier'
   access: Access
 }
@@ -67,6 +68,31 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [lang, setLang] = useState<AgentLang>('en')
+  const [visaUploading, setVisaUploading] = useState(false)
+  const [visaUploaded, setVisaUploaded] = useState(false)
+
+  async function handleVisaUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    const caseId = (data as DossierResp)?.case_id ?? (data as Record<string,unknown>)?.case_id as string | null
+    if (!file || !caseId) return
+    setVisaUploading(true)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('case_id', caseId!)
+      form.append('source', 'agent')
+      const res = await fetch('/api/cases/upload-visa', {
+        method: 'POST',
+        headers: { 'x-internal-key': '' }, // no key needed — will use public route
+        body: form,
+      })
+      if (res.ok) {
+        setVisaUploaded(true)
+        // Refresh data
+        setTimeout(() => window.location.reload(), 1000)
+      }
+    } catch { /* non-blocking */ } finally { setVisaUploading(false) }
+  }
 
   useEffect(() => {
     fetch(`/api/portal/agent/${token}`)
@@ -292,6 +318,28 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
               {savingComment ? ta(lang, 'sending') : ta(lang, 'send')}
             </button>
           </div>
+        </section>
+
+        {/* ── Upload visa section ── */}
+        <section className="bg-[#f0fdf4] border border-[#bbf7d0] rounded-2xl p-6 mb-4">
+          <h2 className="text-xs font-bold text-[#15803d] uppercase tracking-wider mb-3">
+            📎 Upload visa document
+          </h2>
+          {visaUploaded ? (
+            <p className="text-sm text-[#15803d] font-medium">✅ Visa uploaded — Bali Interns team notified</p>
+          ) : (
+            <>
+              <p className="text-sm text-zinc-600 mb-3">
+                Once you have received the visa, upload it here.
+                The intern will be notified automatically.
+              </p>
+              <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#FFCC00] text-[#1A1A1A] text-sm font-bold rounded-xl cursor-pointer hover:bg-[#E6B800]">
+                {visaUploading ? 'Uploading…' : '📤 Upload visa (PDF / JPG)'}
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
+                  onChange={(e) => { void handleVisaUpload(e) }} disabled={visaUploading} />
+              </label>
+            </>
+          )}
         </section>
 
         <section className="bg-white border border-zinc-100 rounded-2xl p-6 mb-4">

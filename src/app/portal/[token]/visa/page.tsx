@@ -22,6 +22,8 @@ interface PortalData {
   actual_end_date?: string | null
   visa_submitted_to_agent_at?: string | null
   visa_recu?: boolean | null
+  visa_url?: string | null
+  visa_uploaded_at?: string | null
   interns?: {
     passport_page4_url?: string | null
     photo_id_url?: string | null
@@ -38,7 +40,7 @@ const DOC_SECTIONS: DocSection[] = [
   { key: 'passport_page4_url', label: 'Passport page 4 (high resolution)', instruction: 'The page with your photo and details. Sharp photo, all text legible.', apiField: 'passport_page4_url' },
   { key: 'photo_id_url', label: 'White background photo', instruction: 'Recent photo, white background, passport format. Head straight, neutral expression.', apiField: 'photo_id_url' },
   { key: 'bank_statement_url', label: 'Bank statement (min €2,000)', instruction: 'Statement showing a balance of at least €2,000. Your name must be clearly visible.', apiField: 'bank_statement_url' },
-  { key: 'return_plane_ticket_url', label: 'Billet avion aller-retour', instruction: 'Billet confirmé avec dates de vol.', apiField: 'return_plane_ticket_url' },
+  { key: 'return_plane_ticket_url', label: 'Return flight ticket', instruction: 'Confirmed ticket with flight dates.', apiField: 'return_plane_ticket_url' },
 ]
 
 export default function PortalVisaPage() {

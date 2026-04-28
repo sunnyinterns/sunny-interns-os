@@ -443,16 +443,19 @@ export async function PATCH(
   if (newStatus === 'visa_received' && oldStatus !== 'visa_received') {
     try {
       const adminVr = getAdmin()
-      const { data: vrRow } = await adminVr.from('cases').select('portal_token, desired_start_date, interns(first_name, email)').eq('id', id).single()
+      const { data: vrRow } = await adminVr.from('cases')
+        .select('portal_token, visa_url, interns(first_name, email)')
+        .eq('id', id).single()
       if (vrRow) {
         const vrIntern = (vrRow as Record<string,unknown>).interns as { first_name?: string; email?: string } | null
         const vrToken = (vrRow as Record<string,unknown>).portal_token as string | null
-        const vrStart = (vrRow as Record<string,unknown>).desired_start_date as string | null
+        const vrVisaUrl = (vrRow as Record<string,unknown>).visa_url as string | null
         if (vrIntern?.email && vrToken) {
           void sendVisaReceived({
             internEmail: vrIntern.email,
-            prenom: vrIntern.first_name ?? 'Candidat',
+            prenom: vrIntern.first_name ?? 'Intern',
             portalToken: vrToken ?? undefined,
+            visaUrl: vrVisaUrl ?? undefined,
           })
         }
       }

@@ -407,6 +407,67 @@ export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPorta
     )
   }
 
+  // ── VISA RECEIVED ──
+  if (status === 'visa_received') {
+    const visaUrl = (caseData as Record<string, unknown>).visa_url as string | null
+    const internWA = (intern as Record<string, unknown> | null)?.whatsapp as string | null
+    const waNum = internWA?.replace(/\D/g, '') ?? ''
+    const waText = encodeURIComponent(
+      `Hi ${intern?.first_name ?? 'there'}! 🎉 Great news — your visa has been received! ` +
+      (visaUrl ? `You can download it here: ${visaUrl} ` : '') +
+      `Please find it also in your intern portal. ` +
+      `Next step: we'll prepare your arrival to Bali. 🌴`
+    )
+    return bandeau('#f0fdf4', '#bbf7d060',
+      <>
+        <div className="flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-green-700 mb-0.5">
+            🛂 Visa received — send to intern
+          </p>
+          {visaUrl ? (
+            <p className="text-sm font-medium text-[#1A1A1A]">
+              Visa document ready.
+              <a href={visaUrl} target="_blank" rel="noopener noreferrer" className="text-[#0d9e75] underline ml-2">
+                View visa ↗
+              </a>
+            </p>
+          ) : (
+            <p className="text-sm font-medium text-[#1A1A1A]">
+              Upload the visa document received by email or WA.
+            </p>
+          )}
+          <p className="text-xs text-zinc-400 mt-0.5">
+            Next step: prepare intern arrival → arrival_prep
+          </p>
+        </div>
+        <div className="flex gap-2 flex-shrink-0 flex-col items-end">
+          {/* Upload visa */}
+          {!visaUrl && (
+            <label className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#0d9e75] text-white cursor-pointer whitespace-nowrap">
+              📎 Upload visa
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  if (!file || !caseData.id) return
+                  const form = new FormData(); form.append('file', file); form.append('case_id', String(caseData.id)); form.append('source', 'charly')
+                  const r = await fetch('/api/cases/upload-visa', { method: 'POST', body: form })
+                  if (r.ok) { window.location.reload() }
+                }} />
+            </label>
+          )}
+          {/* WA pré-rédigé */}
+          {waNum && (
+            <a href={`https://wa.me/${waNum}?text=${waText}`} target="_blank" rel="noopener noreferrer"
+              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#25D366] text-white whitespace-nowrap">
+              💬 Send visa via WA
+            </a>
+          )}
+        </div>
+      </>,
+      <><span>⚡</span><span><strong>Available in intern portal</strong> · {visaUrl ? 'Visa uploaded ✅' : 'Upload required'}</span></>
+    )
+  }
+
   // ── TO RECONTACT ──
   if (status === 'to_recontact') {
     const recontactMonth = (caseData as any).recontact_month as string | null
