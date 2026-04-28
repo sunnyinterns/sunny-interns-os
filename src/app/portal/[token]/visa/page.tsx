@@ -127,17 +127,17 @@ export default function PortalVisaPage() {
         ← Back
       </Link>
 
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1918', marginBottom: 6 }}>Documents visa</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1A1A1A', marginBottom: 6 }}>Documents visa</h1>
       <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 8 }}>Uploadez vos documents et remplissez les informations complémentaires.</p>
 
       {/* Progress */}
       <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 16px', marginBottom: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1918' }}>{completedCount}/4 documents</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#1A1A1A' }}>{completedCount}/4 documents</span>
           <span style={{ fontSize: 12, color: completedCount === 4 ? '#0d9e75' : '#9ca3af' }}>{completedCount === 4 ? '✓ Complet' : 'En cours'}</span>
         </div>
         <div style={{ height: 6, background: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${(completedCount / 4) * 100}%`, background: '#c8a96e', transition: 'width 0.4s', borderRadius: 3 }} />
+          <div style={{ height: '100%', width: `${(completedCount / 4) * 100}%`, background: '#FFCC00', transition: 'width 0.4s', borderRadius: 3 }} />
         </div>
       </div>
 
@@ -157,14 +157,14 @@ export default function PortalVisaPage() {
           return (
             <div key={section.key} style={{ background: 'white', border: `1.5px solid ${uploaded ? '#0d9e75' : '#e5e7eb'}`, borderRadius: 12, padding: 16, transition: 'border-color 0.2s' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                <p style={{ fontWeight: 600, fontSize: 14, color: '#1a1918', flex: 1 }}>{section.label}</p>
+                <p style={{ fontWeight: 600, fontSize: 14, color: '#1A1A1A', flex: 1 }}>{section.label}</p>
                 {uploaded && <span style={{ color: '#0d9e75', fontSize: 16, marginLeft: 8 }}>✅</span>}
               </div>
               <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 12 }}>{section.instruction}</p>
               {err && <p style={{ fontSize: 12, color: '#dc2626', marginBottom: 8 }}>{err}</p>}
               <input ref={el => { inputRefs.current[section.key] = el }} type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={e => { const file = e.target.files?.[0]; if (file) void handleUpload(file, section) }} />
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <button onClick={() => inputRefs.current[section.key]?.click()} disabled={isUploading} style={{ padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: isUploading ? 'not-allowed' : 'pointer', border: 'none', background: uploaded ? '#dcfce7' : '#c8a96e', color: uploaded ? '#0d9e75' : 'white', opacity: isUploading ? 0.7 : 1 }}>
+                <button onClick={() => inputRefs.current[section.key]?.click()} disabled={isUploading} style={{ padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: isUploading ? 'not-allowed' : 'pointer', border: 'none', background: uploaded ? '#dcfce7' : '#FFCC00', color: uploaded ? '#0d9e75' : 'white', opacity: isUploading ? 0.7 : 1 }}>
                   {isUploading ? 'Upload…' : uploaded ? '✓ Remplacer' : 'Uploader'}
                 </button>
                 {uploaded && <a href={data.interns?.[section.key] ?? '#'} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#6b7280', textDecoration: 'underline' }}>View</a>}
@@ -176,7 +176,7 @@ export default function PortalVisaPage() {
 
       {/* Flight info */}
       <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>Informations de vol</h3>
+        <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Informations de vol</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div><label style={labelStyle}>N° de vol arrivant à Bali</label><input style={inputStyle} placeholder="ex: SQ321" value={extras.flight_number} onChange={e => setExtras(x => ({ ...x, flight_number: e.target.value }))} /></div>
           <div><label style={labelStyle}>Ville de départ dernier vol</label><input style={inputStyle} placeholder="ex: Singapore SIN" value={extras.flight_departure_city} onChange={e => setExtras(x => ({ ...x, flight_departure_city: e.target.value }))} /></div>
@@ -186,7 +186,7 @@ export default function PortalVisaPage() {
 
       {/* Mother identity */}
       <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>Identité de votre mère</h3>
+        <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Identité de votre mère</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div><label style={labelStyle}>Prénom</label><input style={inputStyle} value={extras.mother_first_name} onChange={e => setExtras(x => ({ ...x, mother_first_name: e.target.value }))} /></div>
           <div><label style={labelStyle}>Nom</label><input style={inputStyle} value={extras.mother_last_name} onChange={e => setExtras(x => ({ ...x, mother_last_name: e.target.value }))} /></div>
@@ -195,7 +195,7 @@ export default function PortalVisaPage() {
 
       {/* Emergency contact */}
       <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>Contact d&apos;urgence</h3>
+        <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Contact d&apos;urgence</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div><label style={labelStyle}>Nom complet</label><input style={inputStyle} value={extras.emergency_name} onChange={e => setExtras(x => ({ ...x, emergency_name: e.target.value }))} /></div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -208,7 +208,7 @@ export default function PortalVisaPage() {
       <button
         onClick={() => { void saveExtras() }}
         disabled={savingExtras}
-        style={{ width: '100%', padding: 14, background: extrasSaved ? '#0d9e75' : '#c8a96e', color: 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s', marginBottom: 24 }}
+        style={{ width: '100%', padding: 14, background: extrasSaved ? '#0d9e75' : '#FFCC00', color: 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s', marginBottom: 24 }}
       >
         {savingExtras ? 'Saving…' : extrasSaved ? '✓ Enregistré !' : 'Enregistrer les informations'}
       </button>
@@ -216,17 +216,17 @@ export default function PortalVisaPage() {
       {/* ── DATES DE STAGE ── */}
       {(data.actual_start_date || data.actual_end_date) ? (
         <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>Dates de votre stage</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Dates de votre stage</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <p style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>Début</p>
-              <p style={{ fontSize: 14, fontWeight: 600, color: '#1a1918' }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#1A1A1A' }}>
                 {data.actual_start_date ? new Date(data.actual_start_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
               </p>
             </div>
             <div>
               <p style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>Fin</p>
-              <p style={{ fontSize: 14, fontWeight: 600, color: '#1a1918' }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#1A1A1A' }}>
                 {data.actual_end_date ? new Date(data.actual_end_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
               </p>
             </div>
@@ -245,7 +245,7 @@ export default function PortalVisaPage() {
 
       {/* ── STATUT DU VISA ── */}
       <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>Statut du visa</h3>
+        <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Statut du visa</h3>
         {data.visa_recu ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: '#f0fdf4', borderRadius: 10, border: '1.5px solid #0d9e75' }}>
             <span style={{ fontSize: 20 }}>🛂</span>
@@ -285,7 +285,7 @@ export default function PortalVisaPage() {
       </div>
 
       <p style={{ color: '#9ca3af', fontSize: 12, textAlign: 'center' }}>
-        Questions ? <a href="mailto:team@bali-interns.com" style={{ color: '#c8a96e' }}>team@bali-interns.com</a>
+        Questions ? <a href="mailto:team@bali-interns.com" style={{ color: '#FFCC00' }}>team@bali-interns.com</a>
       </p>
     </div>
   )

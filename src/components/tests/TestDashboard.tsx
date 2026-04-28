@@ -195,7 +195,7 @@ function Lightbox({ url, title, onClose }: { url: string; title: string; onClose
             <span className="w-3 h-3 rounded-full bg-yellow-400"/>
             <span className="w-3 h-3 rounded-full bg-green-400"/>
           </div>
-          <span className="text-sm text-zinc-300 font-mono">sunny-interns-os.vercel.app — {title}</span>
+          <span className="text-sm text-zinc-300 font-mono">bali-interns-os.vercel.app — {title}</span>
         </div>
         <div className="flex items-center gap-3">
           <a href={url} target="_blank" rel="noopener noreferrer"
@@ -293,7 +293,7 @@ function StepRow({ step, runId }: { step: TestStep; runId: string }) {
                 <span className="w-2.5 h-2.5 rounded-full bg-green-400"/>
               </div>
               <span className="text-[10px] text-zinc-400 flex-1 truncate font-mono">
-                sunny-interns-os.vercel.app
+                bali-interns-os.vercel.app
               </span>
               <button onClick={() => setLightbox(true)}
                 className="text-[10px] text-[#c8a96e] hover:text-white font-semibold transition-colors">

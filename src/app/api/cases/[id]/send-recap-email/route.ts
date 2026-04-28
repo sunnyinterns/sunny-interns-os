@@ -27,7 +27,7 @@ export async function POST(
   const intern = ((Array.isArray(caseRow.interns) ? caseRow.interns[0] : caseRow.interns) ?? {}) as unknown as Record<string, unknown>
   const submissions = (caseRow.job_submissions ?? []) as unknown as Array<Record<string, unknown>>
   const isFr = false // All communications in English
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bali-interns-os.vercel.app'
   const portalUrl = `${appUrl}/portal/${caseRow.portal_token}`
 
   const jobsHtml = submissions.map((sub, i) => {

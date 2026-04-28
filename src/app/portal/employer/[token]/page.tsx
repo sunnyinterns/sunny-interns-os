@@ -51,7 +51,7 @@ const VARIANT_INFO = {
   C: { label: 'Indonesian Company / Indonesian Director', desc: 'PT/CV Indonesian company with Indonesian national director — full KTP + legal deed required', color: 'bg-emerald-50 border-emerald-200 text-emerald-800' },
 }
 
-const inp = 'w-full px-3 py-2.5 border border-zinc-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#c8a96e]'
+const inp = 'w-full px-3 py-2.5 border border-zinc-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#FFCC00]'
 const label = (text: string, required = false) =>
   <label className="block text-xs font-medium text-zinc-600 mb-1">{text}{required && <span className="text-red-500 ml-0.5">*</span>}</label>
 
@@ -190,7 +190,7 @@ export default function EmployerPortal() {
     const ctx = canvasRef.current.getContext('2d')!
     const pos = getPos(e)
     ctx.beginPath(); ctx.moveTo(lastPos.current!.x, lastPos.current!.y)
-    ctx.lineTo(pos.x, pos.y); ctx.strokeStyle = '#1a1918'; ctx.lineWidth = 2
+    ctx.lineTo(pos.x, pos.y); ctx.strokeStyle = '#1A1A1A'; ctx.lineWidth = 2
     ctx.lineCap = 'round'; ctx.stroke(); lastPos.current = pos
   }
   function endDraw() {
@@ -205,7 +205,7 @@ export default function EmployerPortal() {
 
   if (loading) return (
     <div className="min-h-screen bg-[#faf9f7] flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-[#c8a96e] border-t-transparent rounded-full animate-spin"/>
+      <div className="w-8 h-8 border-2 border-[#FFCC00] border-t-transparent rounded-full animate-spin"/>
     </div>
   )
   if (error || !data) return (
@@ -224,13 +224,14 @@ export default function EmployerPortal() {
   const legalTypes = LEGAL_TYPES_BY_COUNTRY[(company.registration_country_code ?? co.registration_country_code ?? 'DEFAULT')] ?? LEGAL_TYPES_BY_COUNTRY.DEFAULT
 
   return (
-    <div className="min-h-screen bg-[#faf9f7]">
+    <div className="min-h-screen" style={{background:'#FFFBF0',fontFamily:"'Outfit', system-ui, sans-serif"}}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap'); * { font-family: 'Outfit', system-ui, sans-serif; }`}</style>
       {/* Header */}
       <header className="bg-white border-b border-zinc-100 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm"
-              style={{ background: 'linear-gradient(135deg,#F5A623,#E8930A)' }}>BI</div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="https://djoqjgiyseobotsjqcgz.supabase.co/storage/v1/object/public/brand-assets/logos/logo_landscape_black.png" alt="Bali Interns" style={{ height: '22px', width: 'auto' }} />
             <div>
               <p className="text-sm font-bold text-[#1a1918]">{co.name}</p>
               <p className="text-xs text-zinc-400">Partner portal{internName ? ` · ${internName}` : ''}</p>
@@ -241,12 +242,12 @@ export default function EmployerPortal() {
         {/* Tabs */}
         <div className="max-w-2xl mx-auto px-4 flex border-t border-zinc-50">
           <button onClick={() => setTab('infos')}
-            className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${tab==='infos'?'border-[#c8a96e] text-[#c8a96e]':'border-transparent text-zinc-500'}`}>
+            className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${tab==='infos'?'border-[#FFCC00] text-[#FFCC00]':'border-transparent text-zinc-500'}`}>
             Information{data.access.company_info_validated ? ' ✅' : ''}
           </button>
           {data.agreement_unlocked
             ? <button onClick={() => setTab('agreement')}
-                className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${tab==='agreement'?'border-[#c8a96e] text-[#c8a96e]':'border-transparent text-zinc-500'}`}>
+                className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${tab==='agreement'?'border-[#FFCC00] text-[#FFCC00]':'border-transparent text-zinc-500'}`}>
                 Agreement{data.contract_signed ? ' ✅' : ''}
               </button>
             : <div className="px-5 py-3 text-sm text-zinc-300 flex items-center gap-1.5 cursor-not-allowed" title="Save your company information first">
@@ -255,7 +256,7 @@ export default function EmployerPortal() {
           }
           {data.contract_signed &&
             <button onClick={() => setTab('intern')}
-              className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${tab==='intern'?'border-[#c8a96e] text-[#c8a96e]':'border-transparent text-zinc-500'}`}>
+              className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${tab==='intern'?'border-[#FFCC00] text-[#FFCC00]':'border-transparent text-zinc-500'}`}>
               🎓 Intern
             </button>
           }
@@ -284,7 +285,7 @@ export default function EmployerPortal() {
                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Your Bali Interns contact</p>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
-                    style={{ background: 'linear-gradient(135deg,#F5A623,#E8930A)' }}>
+                    style={{ background: '#1A1A1A' }}>
                     {(data.manager.first_name?.[0] ?? 'B').toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -386,7 +387,7 @@ export default function EmployerPortal() {
                   {contacts.map(c => (
                     <button key={c.id} type="button"
                       onClick={() => setSigningContactId(c.id)}
-                      className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-colors ${signingContactId === c.id ? 'border-[#c8a96e] bg-[#c8a96e]/5' : 'border-zinc-100 hover:border-zinc-200'}`}>
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-colors ${signingContactId === c.id ? 'border-[#FFCC00] bg-[#FFCC00]/5' : 'border-zinc-100 hover:border-zinc-200'}`}>
                       <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-xs font-bold text-zinc-500 shrink-0">
                         {(c.first_name?.[0] ?? '?').toUpperCase()}
                       </div>
@@ -394,13 +395,13 @@ export default function EmployerPortal() {
                         <p className="text-sm font-medium text-[#1a1918]">{c.first_name} {c.last_name}</p>
                         <p className="text-xs text-zinc-400">{c.job_title ?? 'No title'}{c.nationality ? ` · ${c.nationality}` : ''}</p>
                       </div>
-                      {signingContactId === c.id && <span className="text-[#c8a96e]">✓</span>}
+                      {signingContactId === c.id && <span className="text-[#FFCC00]">✓</span>}
                     </button>
                   ))}
                 </div>
               )}
               <button type="button" onClick={() => setShowNewContact(!showNewContact)}
-                className="w-full py-2.5 border border-dashed border-zinc-200 rounded-xl text-sm text-zinc-500 hover:border-[#c8a96e] hover:text-[#c8a96e] transition-colors">
+                className="w-full py-2.5 border border-dashed border-zinc-200 rounded-xl text-sm text-zinc-500 hover:border-[#FFCC00] hover:text-[#FFCC00] transition-colors">
                 + Add another signatory
               </button>
 
@@ -430,7 +431,7 @@ export default function EmployerPortal() {
                     </>
                   )}
                   <button type="submit" disabled={savingContact}
-                    className="w-full py-2.5 bg-[#c8a96e] text-white text-sm font-semibold rounded-xl disabled:opacity-50">
+                    className="w-full py-2.5 bg-[#FFCC00] text-white text-sm font-semibold rounded-xl disabled:opacity-50">
                     {savingContact ? 'Saving…' : 'Save signatory'}
                   </button>
                 </form>
@@ -438,7 +439,7 @@ export default function EmployerPortal() {
             </div>
 
             <button type="submit" disabled={saving}
-              className="w-full py-4 bg-[#c8a96e] text-white font-bold rounded-2xl hover:bg-[#b8945a] disabled:opacity-50 transition-colors">
+              className="w-full py-4 bg-[#FFCC00] text-white font-bold rounded-2xl hover:bg-[#E6B800] disabled:opacity-50 transition-colors">
               {saving ? 'Saving…' : saved ? '✅ Saved — Agreement tab unlocked' : 'Save & unlock Agreement →'}
             </button>
           </form>
@@ -474,7 +475,7 @@ export default function EmployerPortal() {
                   </div>
                 )}
                 <button onClick={() => setTab('intern')}
-                  className="mt-4 px-6 py-2.5 bg-[#c8a96e] text-white text-sm font-bold rounded-xl hover:bg-[#b8945a]">
+                  className="mt-4 px-6 py-2.5 bg-[#FFCC00] text-white text-sm font-bold rounded-xl hover:bg-[#E6B800]">
                   View intern details →
                 </button>
               </div>
@@ -484,7 +485,7 @@ export default function EmployerPortal() {
                 <div className="bg-white border border-zinc-100 rounded-2xl overflow-hidden">
                   <div className="px-5 py-3 border-b border-zinc-100 flex items-center justify-between">
                     <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Partnership Agreement + Annex I Mission Letter</p>
-                    <button onClick={loadTemplate} className="text-xs text-[#c8a96e] hover:underline">↺ Reload</button>
+                    <button onClick={loadTemplate} className="text-xs text-[#FFCC00] hover:underline">↺ Reload</button>
                   </div>
                   {templateLoading
                     ? <div className="flex items-center justify-center h-64 text-zinc-400 text-sm">Loading document…</div>
@@ -516,7 +517,7 @@ export default function EmployerPortal() {
                       Clear
                     </button>
                     <button type="button" onClick={handleSign} disabled={!sigData || signing}
-                      className="flex-1 py-2.5 bg-[#c8a96e] text-white text-sm font-bold rounded-xl hover:bg-[#b8945a] disabled:opacity-40">
+                      className="flex-1 py-2.5 bg-[#FFCC00] text-white text-sm font-bold rounded-xl hover:bg-[#E6B800] disabled:opacity-40">
                       {signing ? 'Signing…' : 'Sign Agreement →'}
                     </button>
                   </div>
@@ -579,7 +580,7 @@ export default function EmployerPortal() {
       </main>
 
       <footer className="text-center text-xs text-zinc-400 py-8 mt-4 border-t border-zinc-100">
-        <p>Sunny Interns · <a href="mailto:team@bali-interns.com" className="text-[#c8a96e]">team@bali-interns.com</a></p>
+        <p>Bali Interns · <a href="mailto:team@bali-interns.com" className="text-[#FFCC00]">team@bali-interns.com</a></p>
         <p className="mt-1">Canggu, Bali, Indonesia</p>
       </footer>
     </div>

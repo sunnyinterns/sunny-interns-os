@@ -67,15 +67,15 @@ export default function EngagementPage() {
   if (signed && signedAt) {
     return (
       <div>
-        <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '13px', textDecoration: 'none' }}>← Back</Link>
+        <Link href={`/portal/${token}`} style={{ color: '#FFCC00', fontSize: '13px', textDecoration: 'none' }}>← Back</Link>
         <div style={{ marginTop: '24px', background: 'white', border: '1px solid #d1fae5', borderRadius: '16px', padding: '32px', textAlign: 'center' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
-          <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', marginBottom: '8px' }}>Commitment letter signed</h2>
+          <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1A1A1A', marginBottom: '8px' }}>Commitment letter signed</h2>
           <p style={{ color: '#6b7280', marginBottom: '24px' }}>Thank you. Your commitment has been recorded.</p>
         </div>
 
         {/* Signature record */}
-        <div style={{ marginTop: '16px', background: '#fafaf9', border: '1px solid #e5e7eb', borderRadius: '16px', padding: '24px' }}>
+        <div style={{ marginTop: '16px', background: '#FFFBF0', border: '1px solid #e5e7eb', borderRadius: '16px', padding: '24px' }}>
           <p style={{ fontSize: '11px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '16px' }}>Signature record</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '14px', color: '#374151' }}>
             <div style={{ display: 'flex', gap: '8px' }}>
@@ -88,7 +88,7 @@ export default function EngagementPage() {
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <span style={{ color: '#9ca3af', minWidth: '100px' }}>Document</span>
-              <span>Sunny Interns Commitment Letter</span>
+              <span>Bali Interns Commitment Letter</span>
             </div>
           </div>
           {signatureData && (
@@ -101,7 +101,7 @@ export default function EngagementPage() {
         </div>
 
         <div style={{ marginTop: '16px', textAlign: 'center' }}>
-          <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontWeight: 600, textDecoration: 'none' }}>← Back au tableau de bord</Link>
+          <Link href={`/portal/${token}`} style={{ color: '#FFCC00', fontWeight: 600, textDecoration: 'none' }}>← Back au tableau de bord</Link>
         </div>
       </div>
     )
@@ -109,24 +109,24 @@ export default function EngagementPage() {
 
   return (
     <div>
-      <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '13px', textDecoration: 'none' }}>← Back</Link>
-      <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', margin: '16px 0 4px' }}>Commitment Letter</h1>
+      <Link href={`/portal/${token}`} style={{ color: '#FFCC00', fontSize: '13px', textDecoration: 'none' }}>← Back</Link>
+      <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1A1A1A', margin: '16px 0 4px' }}>Commitment Letter</h1>
       <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>Lis attentivement et signe ta lettre d&apos;engagement.</p>
 
       <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', marginBottom: '24px', fontSize: '14px', lineHeight: 1.7, color: '#374151' }}>
-        <p><strong>Sunny Interns Commitment Letter</strong></p>
+        <p><strong>Bali Interns Commitment Letter</strong></p>
         <p>
           Je soussigné(e), <strong>{prenom} {nom}</strong>, m&apos;engage à :
         </p>
         <ul style={{ paddingLeft: '20px', margin: '12px 0' }}>
           <li>Respect the rules and values of my host company throughout my internship.</li>
           <li>Maintenir un comportement professionnel et respectueux envers mes collègues et responsables.</li>
-          <li>Inform Sunny Interns of any difficulties encountered as soon as possible.</li>
+          <li>Inform Bali Interns of any difficulties encountered as soon as possible.</li>
           <li>Not cancel my internship after placement confirmation, except in cases of force majeure.</li>
           <li>Respect the confidentiality policies of my host company.</li>
         </ul>
         <p>
-          I understand that failure to comply with these commitments may result in the termination of the internship agreement and could affect my support from Sunny Interns.
+          I understand that failure to comply with these commitments may result in the termination of the internship agreement and could affect my support from Bali Interns.
         </p>
         <p style={{ marginBottom: 0 }}>
           En signant ci-dessous, je confirme avoir lu, compris et accepté les termes de cette lettre d&apos;engagement.

@@ -11,7 +11,7 @@ export async function POST(
 
   const { id } = await params
   try {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bali-interns-os.vercel.app'
     const cardUrl = `${appUrl}/verify/${id}`
 
     await supabase

@@ -165,7 +165,7 @@ function CVUploadSection({ token }: { token: string }) {
 
   return (
     <div style={{ background: '#fef9ee', border: '1px solid #fde68a', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-      <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 4 }}>
+      <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 4 }}>
         Mise à jour CV demandée
       </h2>
       <p style={{ fontSize: 12, color: '#92400e', marginBottom: 12 }}>
@@ -188,7 +188,7 @@ function CVUploadSection({ token }: { token: string }) {
             onClick={() => void handleUpload()}
             disabled={!file || uploading}
             style={{
-              padding: '10px 16px', background: file && !uploading ? '#c8a96e' : '#d1d5db',
+              padding: '10px 16px', background: file && !uploading ? '#FFCC00' : '#d1d5db',
               color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700,
               cursor: file && !uploading ? 'pointer' : 'not-allowed',
             }}>
@@ -246,7 +246,7 @@ function JobCommentCard({ sub, token }: { sub: PortalJobItem; token: string }) {
   return (
     <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 12 }}>
       <div style={{ marginBottom: 8 }}>
-        <p style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', margin: 0 }}>{sub.title}</p>
+        <p style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', margin: 0 }}>{sub.title}</p>
         {sub.sector && <p style={{ fontSize: 12, color: '#6b7280', margin: '2px 0 0' }}>{sub.sector}</p>}
         <p style={{ fontSize: 12, fontWeight: 500, color: st.color, margin: '4px 0 0' }}>{st.label}</p>
       </div>
@@ -257,7 +257,7 @@ function JobCommentCard({ sub, token }: { sub: PortalJobItem; token: string }) {
 
       {/* Hook accroche */}
       {sub.public_hook && !sub.public_description && (
-        <p style={{ fontSize: 13, color: '#c8a96e', fontStyle: 'italic', margin: '8px 0' }}>&ldquo;{sub.public_hook}&rdquo;</p>
+        <p style={{ fontSize: 13, color: '#FFCC00', fontStyle: 'italic', margin: '8px 0' }}>&ldquo;{sub.public_hook}&rdquo;</p>
       )}
 
       {/* Ambiance */}
@@ -277,7 +277,7 @@ function JobCommentCard({ sub, token }: { sub: PortalJobItem; token: string }) {
       {/* Lien page publique */}
       {sub.seo_slug && (
         <a href={`/jobs/${sub.seo_slug}`} target="_blank" rel="noopener noreferrer"
-          style={{ display: 'inline-block', fontSize: 11, color: '#c8a96e', textDecoration: 'none', margin: '4px 0 8px' }}>
+          style={{ display: 'inline-block', fontSize: 11, color: '#FFCC00', textDecoration: 'none', margin: '4px 0 8px' }}>
           🔗 View full listing ↗
         </a>
       )}
@@ -332,7 +332,7 @@ function JobCommentCard({ sub, token }: { sub: PortalJobItem; token: string }) {
               disabled={saving || !comment.trim()}
               style={{
                 alignSelf: 'flex-end', padding: '8px 16px', fontSize: 13, fontWeight: 600,
-                background: comment.trim() && !saving ? '#c8a96e' : '#d1d5db', color: 'white',
+                background: comment.trim() && !saving ? '#FFCC00' : '#d1d5db', color: 'white',
                 border: 'none', borderRadius: 8, cursor: comment.trim() && !saving ? 'pointer' : 'not-allowed',
               }}
             >
@@ -358,7 +358,7 @@ function PartnerCard({ partner }: { partner: PortalPartner }) {
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-          <p style={{ fontSize: 13, fontWeight: 600, color: '#1a1918', margin: 0 }}>{partner.name}</p>
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#1A1A1A', margin: 0 }}>{partner.name}</p>
           {partner.partner_category && (
             <span style={{ fontSize: 10, background: '#f4f4f5', color: '#6b7280', padding: '1px 6px', borderRadius: 10 }}>{partner.partner_category}</span>
           )}
@@ -369,7 +369,7 @@ function PartnerCard({ partner }: { partner: PortalPartner }) {
       </div>
       {partner.website && (
         <a href={partner.website} target="_blank" rel="noopener noreferrer"
-          style={{ fontSize: 11, padding: '6px 12px', background: '#c8a96e', color: 'white', borderRadius: 8, fontWeight: 600, textDecoration: 'none', flexShrink: 0 }}>
+          style={{ fontSize: 11, padding: '6px 12px', background: '#FFCC00', color: 'white', borderRadius: 8, fontWeight: 600, textDecoration: 'none', flexShrink: 0 }}>
           View →
         </a>
       )}
@@ -465,7 +465,7 @@ export default function PortalPage() {
   return (
     <div>
       {/* Header */}
-      <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a1918', marginBottom: 4 }}>
+      <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1A1A1A', marginBottom: 4 }}>
         {tp(lang, 'greeting', prenom)}
       </h1>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -473,7 +473,7 @@ export default function PortalPage() {
           display: 'inline-block', padding: '3px 10px', borderRadius: 20, fontSize: 12,
           fontWeight: 600,
           background: currentStep >= 8 ? '#d1fae5' : currentStep >= 5 ? '#fef3c7' : '#ede9e3',
-          color: currentStep >= 8 ? '#065f46' : currentStep >= 5 ? '#92400e' : '#1a1918',
+          color: currentStep >= 8 ? '#065f46' : currentStep >= 5 ? '#92400e' : '#1A1A1A',
         }}>
           {STEPS[currentStep - 1]?.label ?? 'En cours'}
         </span>
@@ -494,7 +494,7 @@ export default function PortalPage() {
               <div key={s.num} style={{ flex: 1, textAlign: 'center' }}>
                 <div style={{
                   width: 28, height: 28, borderRadius: '50%', margin: '0 auto 4px',
-                  background: done ? '#c8a96e' : '#e5e7eb',
+                  background: done ? '#FFCC00' : '#e5e7eb',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 11, fontWeight: 700, color: done ? 'white' : '#9ca3af',
                   boxShadow: active ? '0 0 0 3px rgba(200,169,110,0.3)' : 'none',
@@ -502,7 +502,7 @@ export default function PortalPage() {
                 }}>
                   {done && s.num < currentStep ? '✓' : s.num}
                 </div>
-                <span style={{ fontSize: 9, lineHeight: 1.2, display: 'block', color: done ? '#c8a96e' : '#9ca3af', fontWeight: active ? 700 : 400 }}>
+                <span style={{ fontSize: 9, lineHeight: 1.2, display: 'block', color: done ? '#FFCC00' : '#9ca3af', fontWeight: active ? 700 : 400 }}>
                   {s.label}
                 </span>
               </div>
@@ -510,7 +510,7 @@ export default function PortalPage() {
           })}
         </div>
         <div style={{ height: 6, background: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${((currentStep - 1) / 7) * 100}%`, background: 'linear-gradient(90deg, #c8a96e, #d4b87a)', transition: 'width 0.6s ease', borderRadius: 3 }} />
+          <div style={{ height: '100%', width: `${((currentStep - 1) / 7) * 100}%`, background: 'linear-gradient(90deg, #FFCC00, #d4b87a)', transition: 'width 0.6s ease', borderRadius: 3 }} />
         </div>
       </div>
 
@@ -523,7 +523,7 @@ export default function PortalPage() {
               <Link key={action.href} href={action.href} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: '#78350f' }}>
                 <span style={{ fontSize: 18, flexShrink: 0 }}>{action.icon}</span>
                 <span style={{ fontSize: 14, fontWeight: 500, flex: 1 }}>{action.label}</span>
-                <span style={{ fontSize: 13, color: '#c8a96e', fontWeight: 700 }}>→</span>
+                <span style={{ fontSize: 13, color: '#FFCC00', fontWeight: 700 }}>→</span>
               </Link>
             ))}
           </div>
@@ -560,11 +560,11 @@ export default function PortalPage() {
       {/* Ton RDV */}
       {data.intern_first_meeting_date && (
         <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>{tp(lang, 'rdvTitle')}</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>{tp(lang, 'rdvTitle')}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 13, color: '#6b7280' }}>{tp(lang, 'rdvDateLabel')}</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1918' }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#1A1A1A' }}>
                 {new Date(data.intern_first_meeting_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                 {' '}
                 {new Date(data.intern_first_meeting_date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })} WITA
@@ -596,7 +596,7 @@ export default function PortalPage() {
       {/* JOBS PROPOSÉS — avec commentaire + intérêt */}
       {qualificationDone && portalJobs.length > 0 && (
         <section style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1918', marginBottom: 4 }}>Offres de stage proposées</h2>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1A1A1A', marginBottom: 4 }}>Offres de stage proposées</h2>
           <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16 }}>
             Rate your interest and leave a comment for each offer.
           </p>
@@ -609,14 +609,14 @@ export default function PortalPage() {
       {/* Actions requises */}
       {pendingActions.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 10 }}>{tp(lang, 'actionsRequises')}</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 10 }}>{tp(lang, 'actionsRequises')}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {pendingActions.map(a => (
               <Link key={a.href} href={a.href} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '14px 16px', background: 'white', borderRadius: 12,
                 border: `1.5px solid ${a.urgent ? '#d97706' : '#e5e7eb'}`,
-                textDecoration: 'none', color: '#1a1918',
+                textDecoration: 'none', color: '#1A1A1A',
               }}>
                 <div>
                   {a.urgent && (
@@ -626,7 +626,7 @@ export default function PortalPage() {
                   )}
                   <span style={{ fontSize: 14, fontWeight: 500 }}>{a.label}</span>
                 </div>
-                <span style={{ fontSize: 13, color: a.urgent ? '#d97706' : '#c8a96e', fontWeight: 600 }}>
+                <span style={{ fontSize: 13, color: a.urgent ? '#d97706' : '#FFCC00', fontWeight: 600 }}>
                   Compléter →
                 </span>
               </Link>
@@ -638,7 +638,7 @@ export default function PortalPage() {
       {/* Actions faites */}
       {doneActions.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 10 }}>Complété</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 10 }}>Complété</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {doneActions.map(a => (
               <div key={a.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#f0fdf4', borderRadius: 10, border: '1px solid #bbf7d0' }}>
@@ -653,12 +653,12 @@ export default function PortalPage() {
       {/* Ton stage */}
       {retainedSub && currentStep >= 4 && (
         <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>Ton stage</h2>
-          <p style={{ fontSize: 16, fontWeight: 700, color: '#c8a96e', marginBottom: 6 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Ton stage</h2>
+          <p style={{ fontSize: 16, fontWeight: 700, color: '#FFCC00', marginBottom: 6 }}>
             {retainedSub.jobs?.public_title ?? retainedSub.jobs?.title ?? 'Internship found!'}
           </p>
           {retainedCompany?.name && (
-            <p style={{ fontSize: 13, color: '#1a1918', fontWeight: 600 }}>{retainedCompany.name}</p>
+            <p style={{ fontSize: 13, color: '#1A1A1A', fontWeight: 600 }}>{retainedCompany.name}</p>
           )}
           {data.actual_start_date && data.actual_end_date && (
             <>
@@ -672,29 +672,29 @@ export default function PortalPage() {
       {/* Infos entreprise pour convention */}
       {retainedCompany && (data.status === 'job_retained' || data.status === 'convention_signed' || data.status === 'payment_pending') && (
         <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 4 }}>Informations pour ta convention</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 4 }}>Informations pour ta convention</h2>
           <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 12 }}>Utilise ces informations pour faire rédiger ta convention de stage par ton école.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', gap: 12 }}>
               <span style={{ fontSize: 12, color: '#9ca3af', width: 120, flexShrink: 0 }}>Entreprise</span>
-              <span style={{ fontSize: 13, color: '#1a1918', fontWeight: 500 }}>{retainedCompany.name ?? '—'}</span>
+              <span style={{ fontSize: 13, color: '#1A1A1A', fontWeight: 500 }}>{retainedCompany.name ?? '—'}</span>
             </div>
             {retainedCompany.address && (
               <div style={{ display: 'flex', gap: 12 }}>
                 <span style={{ fontSize: 12, color: '#9ca3af', width: 120, flexShrink: 0 }}>Adresse</span>
-                <span style={{ fontSize: 13, color: '#1a1918' }}>{retainedCompany.address}</span>
+                <span style={{ fontSize: 13, color: '#1A1A1A' }}>{retainedCompany.address}</span>
               </div>
             )}
             {retainedCompany.registration_number && (
               <div style={{ display: 'flex', gap: 12 }}>
                 <span style={{ fontSize: 12, color: '#9ca3af', width: 120, flexShrink: 0 }}>N° registre</span>
-                <span style={{ fontSize: 13, color: '#1a1918', fontFamily: 'monospace' }}>{retainedCompany.registration_number}</span>
+                <span style={{ fontSize: 13, color: '#1A1A1A', fontFamily: 'monospace' }}>{retainedCompany.registration_number}</span>
               </div>
             )}
             {retainedCompany.website && (
               <div style={{ display: 'flex', gap: 12 }}>
                 <span style={{ fontSize: 12, color: '#9ca3af', width: 120, flexShrink: 0 }}>Site web</span>
-                <a href={retainedCompany.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#c8a96e' }}>{retainedCompany.website}</a>
+                <a href={retainedCompany.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#FFCC00' }}>{retainedCompany.website}</a>
               </div>
             )}
           </div>
@@ -704,16 +704,16 @@ export default function PortalPage() {
       {/* Paiement */}
       {showPayment && !isPaid && (
         <div style={{ background: '#fef9ee', border: '1px solid #fde68a', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>Paiement</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Paiement</h2>
           <div style={{ background: 'white', borderRadius: 8, padding: 12, marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 12, color: '#9ca3af' }}>Montant à régler</span>
-              <span style={{ fontSize: 22, fontWeight: 700, color: '#1a1918' }}>{paymentTotal.toFixed(0)} €</span>
+              <span style={{ fontSize: 22, fontWeight: 700, color: '#1A1A1A' }}>{paymentTotal.toFixed(0)} €</span>
             </div>
             {data.invoice_number && (
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
                 <span style={{ fontSize: 12, color: '#9ca3af' }}>Référence</span>
-                <span style={{ fontSize: 13, color: '#1a1918', fontWeight: 600, fontFamily: 'monospace' }}>{data.invoice_number}</span>
+                <span style={{ fontSize: 13, color: '#1A1A1A', fontWeight: 600, fontFamily: 'monospace' }}>{data.invoice_number}</span>
               </div>
             )}
           </div>
@@ -721,19 +721,19 @@ export default function PortalPage() {
           <div style={{ background: 'white', borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
               <span style={{ fontSize: 12, color: '#9ca3af' }}>Société</span>
-              <span style={{ fontSize: 12, color: '#1a1918' }}>{data.billing_companies?.name ?? 'SIDLYS INTERNATIONAL LLC'}</span>
+              <span style={{ fontSize: 12, color: '#1A1A1A' }}>{data.billing_companies?.name ?? 'SIDLYS INTERNATIONAL LLC'}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
               <span style={{ fontSize: 12, color: '#9ca3af' }}>IBAN</span>
-              <span style={{ fontSize: 12, color: '#1a1918', fontFamily: 'monospace' }}>{data.billing_companies?.bank_iban ?? 'GB76REVO00996903517949'}</span>
+              <span style={{ fontSize: 12, color: '#1A1A1A', fontFamily: 'monospace' }}>{data.billing_companies?.bank_iban ?? 'GB76REVO00996903517949'}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
               <span style={{ fontSize: 12, color: '#9ca3af' }}>BIC</span>
-              <span style={{ fontSize: 12, color: '#1a1918', fontFamily: 'monospace' }}>{PAYMENT_INFO_FALLBACK.bic ?? '—'}</span>
+              <span style={{ fontSize: 12, color: '#1A1A1A', fontFamily: 'monospace' }}>{PAYMENT_INFO_FALLBACK.bic ?? '—'}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
               <span style={{ fontSize: 12, color: '#9ca3af' }}>Banque</span>
-              <span style={{ fontSize: 12, color: '#1a1918' }}>{PAYMENT_INFO_FALLBACK.bank ?? '—'}</span>
+              <span style={{ fontSize: 12, color: '#1A1A1A' }}>{PAYMENT_INFO_FALLBACK.bank ?? '—'}</span>
             </div>
           </div>
           <p style={{ fontSize: 11, color: '#a16207', marginTop: 10, fontStyle: 'italic' }}>Paiement par carte (Stripe) disponible prochainement.</p>
@@ -742,12 +742,12 @@ export default function PortalPage() {
 
       {/* Documents */}
       <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>Mes documents</h2>
+        <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Mes documents</h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {docs.map(d => (
             <div key={d.label} style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8,
-              background: d.done ? '#f0fdf4' : '#fafaf7', border: `1px solid ${d.done ? '#bbf7d0' : '#e5e7eb'}`,
+              background: d.done ? '#f0fdf4' : '#FFFBF0', border: `1px solid ${d.done ? '#bbf7d0' : '#e5e7eb'}`,
             }}>
               <span style={{ fontSize: 14, width: 20, textAlign: 'center' }}>{d.done ? '✅' : '❌'}</span>
               <span style={{ fontSize: 13, fontWeight: 500, color: d.done ? '#065f46' : '#6b7280' }}>{d.label}</span>
@@ -759,30 +759,30 @@ export default function PortalPage() {
       {/* Infos profil */}
       {data.interns && (
         <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>Mon profil</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Mon profil</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {data.interns.email && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 13, color: '#6b7280' }}>Email</span>
-                <span style={{ fontSize: 13, color: '#1a1918' }}>{data.interns.email}</span>
+                <span style={{ fontSize: 13, color: '#1A1A1A' }}>{data.interns.email}</span>
               </div>
             )}
             {data.interns.phone && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 13, color: '#6b7280' }}>Téléphone</span>
-                <span style={{ fontSize: 13, color: '#1a1918' }}>{data.interns.phone}</span>
+                <span style={{ fontSize: 13, color: '#1A1A1A' }}>{data.interns.phone}</span>
               </div>
             )}
             {data.interns.whatsapp && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 13, color: '#6b7280' }}>WhatsApp</span>
-                <span style={{ fontSize: 13, color: '#1a1918' }}>{data.interns.whatsapp}</span>
+                <span style={{ fontSize: 13, color: '#1A1A1A' }}>{data.interns.whatsapp}</span>
               </div>
             )}
             {data.interns.cv_url && (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 13, color: '#6b7280' }}>CV</span>
-                <a href={data.interns.cv_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#c8a96e', fontWeight: 600 }}>
+                <a href={data.interns.cv_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#FFCC00', fontWeight: 600 }}>
                   View my CV
                 </a>
               </div>
@@ -800,10 +800,10 @@ export default function PortalPage() {
 
       {/* Carte stagiaire */}
       {data.status === 'active' && (
-        <div style={{ background: 'linear-gradient(135deg, #111110, #2a2927)', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <p style={{ color: '#c8a96e', fontWeight: 700, marginBottom: 6, fontSize: 15 }}>Ta carte Bali Interns</p>
+        <div style={{ background: 'linear-gradient(135deg, #1A1A1A, #2a2927)', borderRadius: 12, padding: 16, marginBottom: 24 }}>
+          <p style={{ color: '#FFCC00', fontWeight: 700, marginBottom: 6, fontSize: 15 }}>Ta carte Bali Interns</p>
           <p style={{ color: '#9ca3af', fontSize: 13, marginBottom: 12 }}>Affiche ta carte digitale pour te présenter en stage.</p>
-          <Link href={`/portal/${token}/carte`} style={{ display: 'inline-block', padding: '8px 16px', background: '#c8a96e', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+          <Link href={`/portal/${token}/carte`} style={{ display: 'inline-block', padding: '8px 16px', background: '#FFCC00', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
             View ma carte →
           </Link>
         </div>
@@ -811,9 +811,9 @@ export default function PortalPage() {
 
       {/* Parrainage */}
       <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 6 }}>Programme parrainage</h2>
+        <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 6 }}>Programme parrainage</h2>
         <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>Gagne 100€ pour chaque ami placé à Bali !</p>
-        <Link href={`/portal/${token}/affiliation`} style={{ display: 'inline-block', padding: '8px 16px', background: '#c8a96e', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+        <Link href={`/portal/${token}/affiliation`} style={{ display: 'inline-block', padding: '8px 16px', background: '#FFCC00', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
           View my code →
         </Link>
       </div>
@@ -821,28 +821,28 @@ export default function PortalPage() {
       {/* Flight info */}
       {currentStep >= 7 && data.flight_number && (
         <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1918', marginBottom: 12 }}>Infos vol</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Infos vol</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 13, color: '#6b7280' }}>N° de vol</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1918' }}>{data.flight_number}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#1A1A1A' }}>{data.flight_number}</span>
             </div>
             {data.flight_departure_city && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 13, color: '#6b7280' }}>Départ</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1918' }}>{data.flight_departure_city}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#1A1A1A' }}>{data.flight_departure_city}</span>
               </div>
             )}
             {data.flight_last_stopover && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 13, color: '#6b7280' }}>Escale</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1918' }}>{data.flight_last_stopover}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#1A1A1A' }}>{data.flight_last_stopover}</span>
               </div>
             )}
             {data.flight_arrival_time_local && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 13, color: '#6b7280' }}>Arrivée Bali</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1918' }}>{data.flight_arrival_time_local}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#1A1A1A' }}>{data.flight_arrival_time_local}</span>
               </div>
             )}
             <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
@@ -859,22 +859,22 @@ export default function PortalPage() {
 
       {/* Logement & Scooters — unlock after payment */}
       {isPaid && (
-        <div style={{ background: 'white', border: '1.5px solid #c8a96e', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#c8a96e', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>🏠 Avant le décollage</p>
+        <div style={{ background: 'white', border: '1.5px solid #FFCC00', borderRadius: 12, padding: 16, marginBottom: 24 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#FFCC00', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>🏠 Avant le décollage</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <a href={`/portal/${token}/logement`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#fafaf7', borderRadius: 10, border: '1px solid #e5e7eb', textDecoration: 'none', color: '#1a1918' }}>
+            <a href={`/portal/${token}/logement`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#FFFBF0', borderRadius: 10, border: '1px solid #e5e7eb', textDecoration: 'none', color: '#1A1A1A' }}>
               <div>
                 <p style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>🏠 Choisir mon logement</p>
                 <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6b7280' }}>33 guesthouses partenaires Bali Interns — Canggu, Seminyak, Ubud</p>
               </div>
-              <span style={{ fontSize: 13, color: '#c8a96e', fontWeight: 700, flexShrink: 0 }}>{data.housing_reserved ? '✅' : '→'}</span>
+              <span style={{ fontSize: 13, color: '#FFCC00', fontWeight: 700, flexShrink: 0 }}>{data.housing_reserved ? '✅' : '→'}</span>
             </a>
-            <a href={`/portal/${token}/logement`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#fafaf7', borderRadius: 10, border: '1px solid #e5e7eb', textDecoration: 'none', color: '#1a1918' }}>
+            <a href={`/portal/${token}/logement`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#FFFBF0', borderRadius: 10, border: '1px solid #e5e7eb', textDecoration: 'none', color: '#1A1A1A' }}>
               <div>
                 <p style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>🛵 Louer un scooter</p>
                 <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6b7280' }}>7 prestataires partenaires — tarifs négociés stagiaires</p>
               </div>
-              <span style={{ fontSize: 13, color: '#c8a96e', fontWeight: 700, flexShrink: 0 }}>→</span>
+              <span style={{ fontSize: 13, color: '#FFCC00', fontWeight: 700, flexShrink: 0 }}>→</span>
             </a>
           </div>
         </div>
@@ -883,7 +883,7 @@ export default function PortalPage() {
       {/* Partenaires */}
       {partners.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a1918', marginBottom: 4 }}>Nos partenaires</h2>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1A1A1A', marginBottom: 4 }}>Nos partenaires</h2>
           <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 12 }}>Des deals exclusifs pour les stagiaires Bali Interns.</p>
 
           {partners.filter(p => p.partner_timing === 'pre_arrival' || p.partner_timing === 'both').length > 0 && (
@@ -921,7 +921,7 @@ export default function PortalPage() {
 
       {/* Contact */}
       <p style={{ color: '#9ca3af', fontSize: 12, textAlign: 'center', marginTop: 24 }}>
-        Questions ? <a href="mailto:team@bali-interns.com" style={{ color: '#c8a96e' }}>team@bali-interns.com</a>
+        Questions ? <a href="mailto:team@bali-interns.com" style={{ color: '#FFCC00' }}>team@bali-interns.com</a>
       </p>
     </div>
   )

@@ -33,7 +33,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
     subject: `💰 Payment notified — ${name}`,
     html: `<p><strong>${name}</strong> has notified a payment.</p>` +
       (body.note ? `<p>Note: ${body.note}</p>` : '') +
-      `<p><a href="${process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'}/fr/cases/${c.id}">Verify and validate in the case →</a></p>`,
+      `<p><a href="${process.env.NEXT_PUBLIC_APP_URL ?? 'https://bali-interns-os.vercel.app'}/fr/cases/${c.id}">Verify and validate in the case →</a></p>`,
   })
 
   return NextResponse.json({ success: true })

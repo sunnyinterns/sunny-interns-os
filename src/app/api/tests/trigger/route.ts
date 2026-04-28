@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN ?? ''
-const GITHUB_OWNER = 'sunnyinterns'
-const GITHUB_REPO = 'sunny-interns-os'
+const GITHUB_OWNER = 'bali-interns'
+const GITHUB_REPO = 'bali-interns-os'
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
 

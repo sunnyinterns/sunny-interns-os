@@ -64,8 +64,8 @@ export default function PortalFacturePage() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '14px', textDecoration: 'none' }}>← Back</Link>
-        <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', margin: 0 }}>Ma facture</h1>
+        <Link href={`/portal/${token}`} style={{ color: '#FFCC00', fontSize: '14px', textDecoration: 'none' }}>← Back</Link>
+        <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1A1A1A', margin: 0 }}>Ma facture</h1>
       </div>
 
       {loading ? (
@@ -77,7 +77,7 @@ export default function PortalFacturePage() {
           <p style={{ color: '#6b7280', fontSize: '13px', marginTop: '6px' }}>Réessaie dans quelques instants ou contacte notre équipe.</p>
           <button
             onClick={() => { setFetchError(false); setLoading(true); window.location.reload() }}
-            style={{ marginTop: '16px', padding: '10px 20px', background: '#c8a96e', color: 'white', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+            style={{ marginTop: '16px', padding: '10px 20px', background: '#FFCC00', color: 'white', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
           >
             Réessayer
           </button>
@@ -85,13 +85,13 @@ export default function PortalFacturePage() {
       ) : data?.payment_date ? (
         <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', padding: '24px', textAlign: 'center' }}>
           <p style={{ fontSize: '48px', marginBottom: '12px' }}>🧾</p>
-          <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#1a1918', marginBottom: '8px' }}>Facture disponible</h2>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#1A1A1A', marginBottom: '8px' }}>Facture disponible</h2>
           <p style={{ color: '#6b7280', fontSize: '13px', marginBottom: '24px' }}>
             Paiement confirmé le {new Date(data.payment_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
           <button
             onClick={openInvoice}
-            style={{ padding: '12px 28px', background: '#1a1918', color: 'white', border: 'none', borderRadius: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
+            style={{ padding: '12px 28px', background: '#1A1A1A', color: 'white', border: 'none', borderRadius: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
           >
             Download ma facture (PDF)
           </button>
@@ -106,7 +106,7 @@ export default function PortalFacturePage() {
             <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', padding: '24px' }}>
               <p style={{ fontSize: '11px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '12px' }}>Montant à régler</p>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                <span style={{ fontSize: '36px', fontWeight: 800, color: '#1a1918' }}>{discountedAmount}€</span>
+                <span style={{ fontSize: '36px', fontWeight: 800, color: '#1A1A1A' }}>{discountedAmount}€</span>
                 {data?.discount_percentage && data.discount_percentage > 0 && data.payment_amount && (
                   <span style={{ fontSize: '14px', color: '#9ca3af', textDecoration: 'line-through' }}>{data.payment_amount}€</span>
                 )}
@@ -135,7 +135,7 @@ export default function PortalFacturePage() {
                 {!showNoteInput ? (
                   <button
                     onClick={() => setShowNoteInput(true)}
-                    style={{ width: '100%', padding: '14px', background: '#c8a96e', color: 'white', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}
+                    style={{ width: '100%', padding: '14px', background: '#FFCC00', color: 'white', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 700, cursor: 'pointer' }}
                   >
                     💰 J&apos;ai effectué mon paiement
                   </button>
@@ -162,7 +162,7 @@ export default function PortalFacturePage() {
                       <button
                         onClick={() => { void handleNotifyPayment() }}
                         disabled={notifying}
-                        style={{ flex: 1, padding: '10px', background: '#c8a96e', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: notifying ? 'not-allowed' : 'pointer', opacity: notifying ? 0.7 : 1 }}
+                        style={{ flex: 1, padding: '10px', background: '#FFCC00', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: notifying ? 'not-allowed' : 'pointer', opacity: notifying ? 0.7 : 1 }}
                       >
                         {notifying ? 'Sending…' : 'Confirm'}
                       </button>

@@ -4,7 +4,7 @@ import { createClient as svcClient } from '@supabase/supabase-js'
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 const FROM = 'Charly from Bali Interns <team@bali-interns.com>'
 const CHARLY = 'charly@bali-interns.com'
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bali-interns-os.vercel.app'
 
 // ─── Low-level send ───────────────────────────────────────────────────────────
 async function send(opts: {

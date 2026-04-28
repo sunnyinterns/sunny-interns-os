@@ -83,8 +83,8 @@ export default function PortalDocumentsPage() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '14px', textDecoration: 'none' }}>← Back</Link>
-        <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', margin: 0 }}>Mes documents</h1>
+        <Link href={`/portal/${token}`} style={{ color: '#FFCC00', fontSize: '14px', textDecoration: 'none' }}>← Back</Link>
+        <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1A1A1A', margin: 0 }}>Mes documents</h1>
       </div>
 
       {/* Revision request alert */}
@@ -100,7 +100,7 @@ export default function PortalDocumentsPage() {
 
       {/* Upload zone */}
       <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', padding: '24px', marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#1a1918', marginBottom: '16px' }}>Déposer mon CV</h2>
+        <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#1A1A1A', marginBottom: '16px' }}>Déposer mon CV</h2>
 
         <div
           onClick={() => fileRef.current?.click()}
@@ -112,7 +112,7 @@ export default function PortalDocumentsPage() {
             cursor: 'pointer',
             transition: 'border-color 0.2s',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#c8a96e')}
+          onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#FFCC00')}
           onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#d1d5db')}
         >
           {uploading ? (
@@ -144,7 +144,7 @@ export default function PortalDocumentsPage() {
       {/* Version history */}
       {!loading && versions.length > 0 && (
         <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', padding: '20px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#1a1918', marginBottom: '14px' }}>Historique des versions</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#1A1A1A', marginBottom: '14px' }}>Historique des versions</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {versions.map((v) => (
               <div
@@ -152,18 +152,18 @@ export default function PortalDocumentsPage() {
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   padding: '12px 14px',
-                  border: `1.5px solid ${v.is_current ? '#c8a96e' : '#f3f4f6'}`,
+                  border: `1.5px solid ${v.is_current ? '#FFCC00' : '#f3f4f6'}`,
                   borderRadius: '10px',
                   background: v.is_current ? '#fffdf7' : '#fafafa',
                 }}
               >
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 500, color: '#1a1918' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 500, color: '#1A1A1A' }}>
                       {v.filename ?? `CV v${v.version_number}`}
                     </span>
                     {v.is_current && (
-                      <span style={{ fontSize: '10px', padding: '1px 6px', background: '#c8a96e', color: 'white', borderRadius: '4px', fontWeight: 600 }}>
+                      <span style={{ fontSize: '10px', padding: '1px 6px', background: '#FFCC00', color: 'white', borderRadius: '4px', fontWeight: 600 }}>
                         ACTUEL
                       </span>
                     )}
@@ -177,7 +177,7 @@ export default function PortalDocumentsPage() {
                   href={v.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ fontSize: '13px', color: '#c8a96e', textDecoration: 'none', fontWeight: 500 }}
+                  style={{ fontSize: '13px', color: '#FFCC00', textDecoration: 'none', fontWeight: 500 }}
                 >
                   View →
                 </a>

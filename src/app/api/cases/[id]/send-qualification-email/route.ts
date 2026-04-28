@@ -89,7 +89,7 @@ export async function POST(
     portal_temp_password: tempPassword,
   }).eq('id', id)
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bali-interns-os.vercel.app'
   const qualNotes = (caseRow as Record<string, unknown>).qualification_notes_for_intern as string
     ?? (caseRow as Record<string, unknown>).qualification_notes as string
     ?? ''

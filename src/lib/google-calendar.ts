@@ -1,4 +1,4 @@
-// Google Calendar integration — Sunny Interns OS
+// Google Calendar integration — Bali Interns OS
 import { google as googleLib } from 'googleapis'
 
 async function getCalendarClient(refreshToken?: string) {

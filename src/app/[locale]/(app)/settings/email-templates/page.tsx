@@ -25,7 +25,7 @@ const EXAMPLE_VARIABLES: Record<string, string> = {
   duration_weeks: '12',
   dropoff_address: 'Villa Sunset, Seminyak',
   payment_amount: '€990',
-  payment_link: 'https://pay.sunnyinterns.com/xxx',
+  payment_link: 'https://pay.bali-interns.com/xxx',
   invoice_number: 'INV-2026-042',
   package_name: 'Bali Standard',
   intern_name: 'Emma Johnson',

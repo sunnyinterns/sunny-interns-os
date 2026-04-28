@@ -62,7 +62,7 @@ export default function PortalDashboardPage() {
   if (error || !data) return (
     <div className="min-h-screen bg-[#fafaf7] flex items-center justify-center flex-col gap-4">
       <p className="text-[#dc2626]">{error ?? 'Unknown error'}</p>
-      <a href="/portal" className="text-sm text-[#c8a96e] underline">Retour à la connexion</a>
+      <a href="/portal" className="text-sm text-[#FFCC00] underline">Retour à la connexion</a>
     </div>
   )
 
@@ -98,9 +98,9 @@ export default function PortalDashboardPage() {
   return (
     <div className="min-h-screen bg-[#fafaf7]">
       {/* Header */}
-      <header className="bg-[#111110] px-6 py-4 flex items-center justify-between">
+      <header className="bg-[#1A1A1A] px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-[#c8a96e] text-xl">🌴</span>
+          <span className="text-[#FFCC00] text-xl">🌴</span>
           <span className="text-white font-semibold">Bali Interns</span>
         </div>
         <button onClick={() => void handleLogout()} className="text-white/40 hover:text-white text-sm transition-colors">
@@ -112,7 +112,7 @@ export default function PortalDashboardPage() {
         {/* Welcome */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-[#1a1918]">Welcome, {firstName} 👋</h1>
-          <p className="text-zinc-500 text-sm mt-1">Here's your Sunny Interns application status.</p>
+          <p className="text-zinc-500 text-sm mt-1">Here's your Bali Interns application status.</p>
         </div>
 
         {/* Progress */}
@@ -122,11 +122,11 @@ export default function PortalDashboardPage() {
               <div key={s.label} className="flex flex-col items-center flex-1">
                 <div className={[
                   'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold mb-1',
-                  s.done ? 'bg-[#c8a96e] text-white' : 'bg-zinc-100 text-zinc-400',
+                  s.done ? 'bg-[#FFCC00] text-white' : 'bg-zinc-100 text-zinc-400',
                 ].join(' ')}>
                   {s.done ? '✓' : i + 1}
                 </div>
-                <span className={['text-[9px] text-center leading-tight', s.done ? 'text-[#c8a96e]' : 'text-zinc-300'].join(' ')}>
+                <span className={['text-[9px] text-center leading-tight', s.done ? 'text-[#FFCC00]' : 'text-zinc-300'].join(' ')}>
                   {s.label}
                 </span>
               </div>
@@ -134,7 +134,7 @@ export default function PortalDashboardPage() {
           </div>
           <div className="h-1.5 bg-zinc-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#c8a96e] transition-all duration-700"
+              className="h-full bg-[#FFCC00] transition-all duration-700"
               style={{ width: `${(currentStep / steps.length) * 100}%` }}
             />
           </div>
@@ -146,7 +146,7 @@ export default function PortalDashboardPage() {
             <span className="text-amber-500 text-lg">⚠</span>
             <div>
               <p className="text-amber-800 font-medium text-sm">Charly vous demande de déposer une nouvelle version de votre CV</p>
-              <Link href={`/portal/${token}/documents`} className="text-[#c8a96e] text-xs underline mt-1 inline-block">
+              <Link href={`/portal/${token}/documents`} className="text-[#FFCC00] text-xs underline mt-1 inline-block">
                 Mettre à jour mon CV →
               </Link>
             </div>
@@ -163,7 +163,7 @@ export default function PortalDashboardPage() {
               className="flex items-center justify-between px-4 py-3.5 bg-white rounded-xl border border-zinc-100 hover:border-zinc-200 transition-all"
             >
               <span className="text-sm font-medium text-[#1a1918]">{a.label}</span>
-              <span className={['text-xs font-semibold', a.done ? 'text-[#0d9e75]' : 'text-[#c8a96e]'].join(' ')}>
+              <span className={['text-xs font-semibold', a.done ? 'text-[#0d9e75]' : 'text-[#FFCC00]'].join(' ')}>
                 {a.done ? '✓ Fait' : 'À compléter →'}
               </span>
             </Link>
@@ -171,7 +171,7 @@ export default function PortalDashboardPage() {
         </div>
 
         <p className="text-center text-zinc-400 text-xs mt-8">
-          Questions ? <a href="mailto:team@bali-interns.com" className="text-[#c8a96e]">team@bali-interns.com</a>
+          Questions ? <a href="mailto:team@bali-interns.com" className="text-[#FFCC00]">team@bali-interns.com</a>
         </p>
       </main>
     </div>

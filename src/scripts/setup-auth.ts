@@ -11,9 +11,9 @@ dotenv.config({ path: resolve(process.cwd(), '.env.local') })
 const PROJECT_REF = process.env.SUPABASE_PROJECT_REF ?? 'djoqjgiyseobotsjqcgz'
 const ACCESS_TOKEN = process.env.SUPABASE_ACCESS_TOKEN
 
-const SITE_URL = 'https://sunny-interns-os.vercel.app'
+const SITE_URL = 'https://bali-interns-os.vercel.app'
 const REDIRECT_URLS = [
-  'https://sunny-interns-os.vercel.app/auth/callback',
+  'https://bali-interns-os.vercel.app/auth/callback',
   'http://localhost:3000/auth/callback',
 ]
 

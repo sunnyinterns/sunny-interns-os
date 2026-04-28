@@ -113,17 +113,17 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
       <div className="max-w-md bg-white border border-zinc-100 rounded-2xl p-8 text-center">
         <p className="text-4xl mb-3">🔒</p>
         <h1 className="text-lg font-semibold text-[#1a1918] mb-2">Invalid or expired link</h1>
-        <p className="text-sm text-zinc-500">Contact Sunny Interns for a new access link.</p>
+        <p className="text-sm text-zinc-500">Contact Bali Interns for a new access link.</p>
       </div>
     </div>
   )
 
   if (data.type === 'agent') {
     return (
-      <div className="min-h-screen bg-[#fafaf7] p-6 md:p-10">
+      <div className="min-h-screen p-6 md:p-10" style={{background:'#FFFBF0',fontFamily:"'Outfit', system-ui, sans-serif"}}>
         <div className="max-w-4xl mx-auto">
           <header className="bg-white border border-zinc-100 rounded-2xl p-6 mb-6">
-            <p className="text-xs uppercase tracking-wider text-[#c8a96e] font-bold mb-1">Sunny Interns — Visa Agent Portal</p>
+            <p className="text-xs uppercase tracking-wider font-bold mb-1" style={{color:"#FFCC00"}}>Bali Interns — Visa Agent Portal</p>
             <h1 className="text-xl font-semibold text-[#1a1918]">{data.agent.company_name ?? data.agent.name}</h1>
           </header>
           <div className="bg-white border border-zinc-100 rounded-2xl p-6">
@@ -177,7 +177,7 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
     ?? '—'
 
   return (
-    <div className="min-h-screen bg-[#fafaf7] p-6 md:p-10">
+    <div className="min-h-screen p-6 md:p-10" style={{background:'#FFFBF0',fontFamily:"'Outfit', system-ui, sans-serif"}}>
       <div className="max-w-3xl mx-auto">
         <div className="flex justify-end mb-4">
           <AgentLangToggle onLangChange={setLang} />
@@ -188,7 +188,7 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
         </div>
 
         <header className="bg-white border border-zinc-100 rounded-2xl p-6 mb-4">
-          <p className="text-xs uppercase tracking-wider text-[#c8a96e] font-bold mb-1">{ta(lang, 'visaDossier')}</p>
+          <p className="text-xs uppercase tracking-wider text-[#FFCC00] font-bold mb-1">{ta(lang, 'visaDossier')}</p>
           <h1 className="text-xl font-semibold text-[#1a1918]">{fullName}</h1>
           {c?.visa_types && <p className="text-sm text-zinc-500 mt-1">{c.visa_types.code} — {c.visa_types.name}</p>}
         </header>
@@ -228,7 +228,7 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
                   <p className="text-sm text-[#1a1918]">{d.label}</p>
                 </div>
                 {d.url ? (
-                  <a href={d.url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#c8a96e] hover:underline">Download →</a>
+                  <a href={d.url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#FFCC00] hover:underline">Download →</a>
                 ) : (
                   <span className="text-xs text-zinc-400">Missing</span>
                 )}
@@ -243,7 +243,7 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
             <span className={`text-xs px-2 py-1 rounded-full font-medium ${
               a.agent_status === 'received' ? 'bg-green-50 text-green-700' :
               a.agent_status === 'in_progress' ? 'bg-blue-50 text-blue-700' :
-              a.agent_status === 'completed' ? 'bg-[#c8a96e]/10 text-[#c8a96e]' :
+              a.agent_status === 'completed' ? 'bg-[#FFCC00]/10 text-[#FFCC00]' :
               a.agent_status === 'issue' ? 'bg-red-50 text-red-600' :
               'bg-zinc-100 text-zinc-500'
             }`}>
@@ -269,7 +269,7 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
             )}
             {a.agent_status === 'in_progress' && (
               <button disabled={updatingStatus} onClick={() => void updateStatus('completed')}
-                className="text-xs px-3 py-1.5 bg-[#c8a96e]/10 text-[#c8a96e] rounded-lg border border-[#c8a96e]/30 hover:bg-[#c8a96e]/20 disabled:opacity-50">
+                className="text-xs px-3 py-1.5 bg-[#FFCC00]/10 text-[#FFCC00] rounded-lg border border-[#FFCC00]/30 hover:bg-[#FFCC00]/20 disabled:opacity-50">
                 🎉 Mark as completed
               </button>
             )}
@@ -285,10 +285,10 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
               value={comment}
               onChange={e => setComment(e.target.value)}
               placeholder="Missing document, incorrect information, additional request..."
-              className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c8a96e] min-h-[80px]"
+              className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FFCC00] min-h-[80px]"
             />
             <button disabled={savingComment} onClick={() => void saveComment()}
-              className="mt-2 px-4 py-2 bg-[#c8a96e] text-white text-sm rounded-xl disabled:opacity-40 hover:bg-[#b8945a]">
+              className="mt-2 px-4 py-2 bg-[#FFCC00] text-white text-sm rounded-xl disabled:opacity-40 hover:bg-[#b8945a]">
               {savingComment ? ta(lang, 'sending') : ta(lang, 'send')}
             </button>
           </div>
@@ -304,7 +304,7 @@ export default function AgentPortalPage({ params }: { params: Promise<{ token: s
         </section>
 
         <footer className="text-center text-xs text-zinc-400 py-6">
-          Confidential document — Sunny Interns · {new Date().toLocaleDateString('en-GB')}
+          Confidential document — Bali Interns · {new Date().toLocaleDateString('en-GB')}
         </footer>
       </div>
     </div>

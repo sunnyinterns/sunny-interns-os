@@ -53,17 +53,17 @@ export default function LogementPage() {
     return (
       <div style={{ textAlign: 'center', marginTop: '48px' }}>
         <div style={{ fontSize: '48px', marginBottom: '16px' }}>🏠</div>
-        <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', marginBottom: '8px' }}>Préférences enregistrées !</h2>
+        <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1A1A1A', marginBottom: '8px' }}>Préférences enregistrées !</h2>
         <p style={{ color: '#6b7280', marginBottom: '24px' }}>Nous allons confirmer ton logement et scooter rapidement.</p>
-        <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontWeight: 600, textDecoration: 'none' }}>← Back to dashboard</Link>
+        <Link href={`/portal/${token}`} style={{ color: '#FFCC00', fontWeight: 600, textDecoration: 'none' }}>← Back to dashboard</Link>
       </div>
     )
   }
 
   return (
     <div>
-      <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '13px', textDecoration: 'none' }}>← Back</Link>
-      <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', margin: '16px 0 4px' }}>Logement &amp; Scooter</h1>
+      <Link href={`/portal/${token}`} style={{ color: '#FFCC00', fontSize: '13px', textDecoration: 'none' }}>← Back</Link>
+      <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1A1A1A', margin: '16px 0 4px' }}>Logement &amp; Scooter</h1>
       <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>Choisis ton logement et indique si tu veux un scooter.</p>
 
       <form onSubmit={(e) => { void handleSubmit(e) }}>
@@ -76,12 +76,12 @@ export default function LogementPage() {
                   <input type="radio" name="housing" value={g.id} checked={selectedHousing === g.id} onChange={() => setSelectedHousing(g.id)} style={{ display: 'none' }} />
                   <div style={{
                     padding: '14px 16px', background: 'white', borderRadius: '10px',
-                    border: `1.5px solid ${selectedHousing === g.id ? '#c8a96e' : '#e5e7eb'}`,
+                    border: `1.5px solid ${selectedHousing === g.id ? '#FFCC00' : '#e5e7eb'}`,
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '14px', fontWeight: 600, color: '#1a1918' }}>{g.name}</span>
+                      <span style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A1A' }}>{g.name}</span>
                       {g.price_per_month && (
-                        <span style={{ fontSize: '13px', color: '#c8a96e', fontWeight: 600 }}>{g.price_per_month}€/mois</span>
+                        <span style={{ fontSize: '13px', color: '#FFCC00', fontWeight: 600 }}>{g.price_per_month}€/mois</span>
                       )}
                     </div>
                     {g.city && <p style={{ fontSize: '12px', color: '#6b7280', margin: '4px 0 0' }}>{g.city}</p>}
@@ -103,8 +103,8 @@ export default function LogementPage() {
                 <input type="radio" name="scooter" value={v} checked={wantsScooter === v} onChange={() => setWantsScooter(v)} style={{ display: 'none' }} />
                 <div style={{
                   padding: '12px', textAlign: 'center', background: 'white', borderRadius: '10px',
-                  border: `1.5px solid ${wantsScooter === v ? '#c8a96e' : '#e5e7eb'}`,
-                  color: wantsScooter === v ? '#c8a96e' : '#374151',
+                  border: `1.5px solid ${wantsScooter === v ? '#FFCC00' : '#e5e7eb'}`,
+                  color: wantsScooter === v ? '#FFCC00' : '#374151',
                   fontWeight: wantsScooter === v ? 600 : 400,
                   fontSize: '14px',
                 }}>
@@ -116,7 +116,7 @@ export default function LogementPage() {
         </div>
 
         {error && <p style={{ color: '#dc2626', fontSize: '13px', marginBottom: '16px' }}>{error}</p>}
-        <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', background: '#c8a96e', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
+        <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', background: '#FFCC00', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
           {loading ? 'Saving…' : 'Confirm my preferences'}
         </button>
       </form>

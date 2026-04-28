@@ -205,7 +205,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       try {
         const { data: caseForContract } = await supabase.from('cases').select('sponsor_contract_sent_at, employer_contact_id').eq('id', id).single()
         if (caseForContract && !caseForContract.sponsor_contract_sent_at) {
-          const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bali-interns-os.vercel.app'
           void fetch(`${appUrl}/api/cases/${id}/send-sponsor-contract`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${process.env.INTERNAL_API_KEY ?? 'internal'}` },

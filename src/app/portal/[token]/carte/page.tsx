@@ -53,12 +53,12 @@ export default function InternCartePage() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }} className="no-print">
-        <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '14px', textDecoration: 'none' }}>← Back</Link>
-        <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', margin: 0 }}>My Intern Card</h1>
+        <Link href={`/portal/${token}`} style={{ color: '#FFCC00', fontSize: '14px', textDecoration: 'none' }}>← Back</Link>
+        <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1A1A1A', margin: 0 }}>My Intern Card</h1>
       </div>
 
       {loading ? (
-        <div style={{ height: '300px', background: '#1a1918', borderRadius: '20px', animation: 'pulse 1.5s infinite' }} />
+        <div style={{ height: '300px', background: '#1A1A1A', borderRadius: '20px', animation: 'pulse 1.5s infinite' }} />
       ) : !data ? (
         <div style={{ padding: '48px', textAlign: 'center', background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb' }}>
           <p style={{ color: '#6b7280' }}>Card not available yet — it will be generated once your payment is confirmed.</p>
@@ -69,7 +69,7 @@ export default function InternCartePage() {
           <div
             ref={cardRef}
             style={{
-              background: 'linear-gradient(135deg, #111110 0%, #1a1611 50%, #111110 100%)',
+              background: 'linear-gradient(135deg, #1A1A1A 0%, #1a1611 50%, #1A1A1A 100%)',
               borderRadius: '20px',
               padding: '28px',
               marginBottom: '20px',
@@ -85,7 +85,7 @@ export default function InternCartePage() {
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
               <div>
-                <p style={{ color: '#c8a96e', fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', margin: 0 }}>
+                <p style={{ color: '#FFCC00', fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', margin: 0 }}>
                   SUNNY INTERNS
                 </p>
                 <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '9px', marginTop: '2px' }}>Formerly Bali Interns</p>
@@ -110,14 +110,14 @@ export default function InternCartePage() {
                   background: 'linear-gradient(135deg, rgba(200,169,110,0.3), rgba(200,169,110,0.1))',
                   border: '2px solid rgba(200,169,110,0.4)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '20px', fontWeight: 700, color: '#c8a96e',
+                  fontSize: '20px', fontWeight: 700, color: '#FFCC00',
                 }}>
                   <Initials name={fullName} />
                 </div>
               )}
               <div>
                 <p style={{ color: 'white', fontSize: '20px', fontWeight: 700, margin: 0, lineHeight: 1.2 }}>{fullName}</p>
-                <p style={{ color: '#c8a96e', fontSize: '11px', marginTop: '4px', fontWeight: 500 }}>Official Sunny Interns Member</p>
+                <p style={{ color: '#FFCC00', fontSize: '11px', marginTop: '4px', fontWeight: 500 }}>Official Bali Interns Member</p>
               </div>
             </div>
 
@@ -155,7 +155,7 @@ export default function InternCartePage() {
             className="no-print"
             style={{
               width: '100%', padding: '12px',
-              background: '#1a1918', color: 'white',
+              background: '#1A1A1A', color: 'white',
               border: 'none', borderRadius: '12px',
               fontSize: '14px', fontWeight: 600, cursor: 'pointer',
               marginBottom: '20px',
@@ -167,16 +167,16 @@ export default function InternCartePage() {
           {/* Partenaires */}
           {data.partners.length > 0 && (
             <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', padding: '20px' }}>
-              <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#1a1918', marginBottom: '14px' }}>
+              <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#1A1A1A', marginBottom: '14px' }}>
                 Avantages partenaires 🎁
               </h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {data.partners.map((p) => (
-                  <div key={p.id} style={{ padding: '12px 14px', background: '#fafaf7', borderRadius: '10px', border: '1px solid #f3f4f6' }}>
+                  <div key={p.id} style={{ padding: '12px 14px', background: '#FFFBF0', borderRadius: '10px', border: '1px solid #f3f4f6' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '14px', fontWeight: 500, color: '#1a1918' }}>{p.name}</span>
+                      <span style={{ fontSize: '14px', fontWeight: 500, color: '#1A1A1A' }}>{p.name}</span>
                       {p.discount_percentage && (
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#c8a96e', background: 'rgba(200,169,110,0.1)', padding: '2px 8px', borderRadius: '6px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#FFCC00', background: 'rgba(200,169,110,0.1)', padding: '2px 8px', borderRadius: '6px' }}>
                           -{p.discount_percentage}%
                         </span>
                       )}

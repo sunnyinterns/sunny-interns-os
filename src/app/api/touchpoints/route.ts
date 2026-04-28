@@ -95,7 +95,7 @@ export async function POST(request: Request) {
     const intern = caseData.interns as unknown as { email?: string; first_name?: string } | null
     if (!intern?.email) return NextResponse.json({ error: 'Intern email missing' }, { status: 422 })
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bali-interns-os.vercel.app'
     const portalToken = (caseData as Record<string, unknown>).portal_token as string | null
 
     // UGC token for j30 (linked to submit-content page)

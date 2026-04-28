@@ -46,7 +46,7 @@ export async function POST(
   const amount = Number(c.payment_amount ?? 990)
   const discount = Number(c.discount_percentage ?? 0)
   const total = discount > 0 ? amount * (1 - discount / 100) : amount
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bali-interns-os.vercel.app'
   const portalUrl = `${appUrl}/portal/${c.portal_token}`
 
   const titre = isFr ? `Informations de paiement — Bali Interns` : `Payment information — Bali Interns`

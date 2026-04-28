@@ -78,7 +78,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       description: desc,
       images: heroImg ? [heroImg] : [],
     },
-    alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://sunny-interns-os.vercel.app"}/offre/${slug}` },
+    alternates: { canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://bali-interns-os.vercel.app"}/offre/${slug}` },
   }
 }
 

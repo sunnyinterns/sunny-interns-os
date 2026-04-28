@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
-const SECRET = process.env.E2E_TEST_SECRET ?? 'e2e-sunny-interns-2026'
+const SECRET = process.env.E2E_TEST_SECRET ?? 'e2e-bali-interns-2026'
 
 export async function GET(req: NextRequest) {
   const secret = req.nextUrl.searchParams.get('secret')

@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// i18n — Système multilingue Sunny Interns OS
+// i18n — Système multilingue Bali Interns OS
 // Langues supportées :
 //   - fr  → OS admin + portail candidat
 //   - en  → portail candidat (option) + portail employeur

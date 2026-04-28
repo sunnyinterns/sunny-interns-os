@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   }
 
   const geminiKey = (process.env.GOOGLE_AI_STUDIO_KEY ?? process.env.GEMINI_API_KEY ?? '').trim()
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://sunny-interns-os.vercel.app'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://bali-interns-os.vercel.app'
   const fallbackUrl = `${baseUrl}/api/og/blog-card?title=${encodeURIComponent(title)}&category=${encodeURIComponent(category)}`
 
   // Use custom prompt if provided, else auto-generate

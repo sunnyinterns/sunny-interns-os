@@ -7,7 +7,7 @@ type BugStatus = 'idle' | 'submitting' | 'open' | 'fixing' | 'fixed'
 
 const CASE_ID = 'cf00ef63-f634-4aad-808e-28cf33ffba3f'
 const PORTAL_TOKEN = 'f90af311-4a0a-40d9-8b6d-5ee9bf7898f8'
-const BASE = typeof window !== 'undefined' ? window.location.origin : 'https://sunny-interns-os.vercel.app'
+const BASE = typeof window !== 'undefined' ? window.location.origin : 'https://bali-interns-os.vercel.app'
 
 const STEPS = [
   { id:'rdv_booked', status:'rdv_booked', title:'1. Voir le dossier dans Candidats', action:'Va sur /fr/cases → cliquer "Test Stagiaire" → vérifier statut "RDV booké" + boutons dispo', expected:['Dossier visible dans Candidats','Statut "RDV booké" affiché','Boutons : ✅ Qualif faite + ❌ Pas intéressé'] },
@@ -241,7 +241,7 @@ export function QAWidget() {
               <span>🌐</span>
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] font-bold text-purple-400 uppercase">Portail à vérifier</p>
-                <p className="text-[10px] text-purple-300 truncate">{(step.portal as string).replace('https://sunny-interns-os.vercel.app','')}</p>
+                <p className="text-[10px] text-purple-300 truncate">{(step.portal as string).replace('https://bali-interns-os.vercel.app','')}</p>
               </div>
               <span className="text-purple-400 shrink-0">↗</span>
             </a>

@@ -58,7 +58,7 @@ export async function POST(
   const internName = intern ? `${intern.first_name} ${intern.last_name}` : 'the intern'
   const jobTitle = retained?.jobs?.public_title ?? retained?.jobs?.title ?? 'Internship'
   const duration = retained?.jobs?.wished_duration_months ?? '?'
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bali-interns-os.vercel.app'
 
   // Create portal access
   const { data: existing } = await sb.from('employer_portal_access').select('token').eq('case_id', caseId).maybeSingle()

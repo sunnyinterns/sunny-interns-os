@@ -37,7 +37,7 @@ export async function GET(request: Request) {
   }).join('\n')
 
   const csv = header + rows
-  const filename = `sunny-interns-finances-${from}-${to}.csv`
+  const filename = `bali-interns-finances-${from}-${to}.csv`
 
   return new NextResponse(csv, {
     headers: {

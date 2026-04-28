@@ -81,8 +81,8 @@ export default function PortalAffiliationPage() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '14px', textDecoration: 'none' }}>← Back</Link>
-        <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', margin: 0 }}>Programme parrainage</h1>
+        <Link href={`/portal/${token}`} style={{ color: '#FFCC00', fontSize: '14px', textDecoration: 'none' }}>← Back</Link>
+        <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1A1A1A', margin: 0 }}>Programme parrainage</h1>
       </div>
 
       {/* Hero */}
@@ -109,12 +109,12 @@ export default function PortalAffiliationPage() {
               Ton lien de parrainage
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <code style={{ flex: 1, fontSize: '12px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px 12px', wordBreak: 'break-all', color: '#1a1918' }}>
+              <code style={{ flex: 1, fontSize: '12px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px 12px', wordBreak: 'break-all', color: '#1A1A1A' }}>
                 {shareUrl}
               </code>
               <button
                 onClick={copyLink}
-                style={{ flexShrink: 0, padding: '8px 12px', background: copied ? '#0d9e75' : '#c8a96e', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
+                style={{ flexShrink: 0, padding: '8px 12px', background: copied ? '#0d9e75' : '#FFCC00', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}
               >
                 {copied ? '✓' : '📋'}
               </button>
@@ -136,9 +136,9 @@ export default function PortalAffiliationPage() {
             </p>
             {ibanSaved && !editIban ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontSize: '13px', color: '#1a1918', fontFamily: 'monospace' }}>{maskedIban}</span>
+                <span style={{ fontSize: '13px', color: '#1A1A1A', fontFamily: 'monospace' }}>{maskedIban}</span>
                 <span style={{ fontSize: '11px', background: '#d1fae5', color: '#065f46', padding: '2px 8px', borderRadius: '20px' }}>✓ Enregistré</span>
-                <button onClick={() => setEditIban(true)} style={{ fontSize: '12px', color: '#c8a96e', background: 'none', border: 'none', cursor: 'pointer', marginLeft: 'auto' }}>Edit</button>
+                <button onClick={() => setEditIban(true)} style={{ fontSize: '12px', color: '#FFCC00', background: 'none', border: 'none', cursor: 'pointer', marginLeft: 'auto' }}>Edit</button>
               </div>
             ) : (
               <div className="space-y-3">
@@ -158,7 +158,7 @@ export default function PortalAffiliationPage() {
                 <button
                   onClick={() => void saveIban()}
                   disabled={!ibanInput.trim() || savingIban}
-                  style={{ width: '100%', padding: '12px', background: !ibanInput.trim() || savingIban ? '#e5e7eb' : '#c8a96e', color: !ibanInput.trim() || savingIban ? '#9ca3af' : 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: !ibanInput.trim() || savingIban ? 'not-allowed' : 'pointer' }}
+                  style={{ width: '100%', padding: '12px', background: !ibanInput.trim() || savingIban ? '#e5e7eb' : '#FFCC00', color: !ibanInput.trim() || savingIban ? '#9ca3af' : 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: !ibanInput.trim() || savingIban ? 'not-allowed' : 'pointer' }}
                 >
                   {savingIban ? 'Saving…' : 'Enregistrer mes coordonnées bancaires'}
                 </button>
@@ -169,8 +169,8 @@ export default function PortalAffiliationPage() {
           {/* Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             {[
-              { label: 'Amis parrainés', value: data.total_referred, color: '#1a1918' },
-              { label: 'Ont payé', value: data.total_paid, color: '#1a1918' },
+              { label: 'Amis parrainés', value: data.total_referred, color: '#1A1A1A' },
+              { label: 'Ont payé', value: data.total_paid, color: '#1A1A1A' },
               { label: 'En attente', value: `${data.pending_payout}€`, color: '#d97706' },
               { label: 'Versé', value: `${data.paid_out}€`, color: '#0d9e75' },
             ].map((s) => (
@@ -183,7 +183,7 @@ export default function PortalAffiliationPage() {
 
           {/* Referrals list */}
           <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', padding: '20px' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#1a1918', marginBottom: '14px' }}>👥 Mes filleuls</h3>
+            <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A1A', marginBottom: '14px' }}>👥 Mes filleuls</h3>
             {data.referrals.length === 0 ? (
               <p style={{ fontSize: '13px', color: '#9ca3af', fontStyle: 'italic' }}>Pas encore de filleuls. Partage ton lien !</p>
             ) : (
@@ -191,7 +191,7 @@ export default function PortalAffiliationPage() {
                 {data.referrals.map(r => (
                   <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: '10px', marginBottom: '10px', borderBottom: '1px solid #f3f4f6' }}>
                     <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: '14px', color: '#1a1918', margin: 0 }}>{r.first_name} {r.last_name?.charAt(0)}.</p>
+                      <p style={{ fontSize: '14px', color: '#1A1A1A', margin: 0 }}>{r.first_name} {r.last_name?.charAt(0)}.</p>
                       <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0 }}>{r.created_at ? new Date(r.created_at).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : ''}</p>
                     </div>
                     <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: r.status === 'paid' ? '#d1fae5' : r.status === 'client' ? '#dbeafe' : '#f3f4f6', color: r.status === 'paid' ? '#065f46' : r.status === 'client' ? '#1d4ed8' : '#6b7280' }}>
@@ -205,7 +205,7 @@ export default function PortalAffiliationPage() {
 
           {/* How it works */}
           <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb', padding: '20px' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#1a1918', marginBottom: '14px' }}>Comment ça marche ?</h3>
+            <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A1A', marginBottom: '14px' }}>Comment ça marche ?</h3>
             {[
               { step: '1', text: 'Partage ton lien à un ami intéressé par un stage à Bali' },
               { step: '2', text: 'Ton ami candidate et est accepté dans le programme' },
@@ -213,7 +213,7 @@ export default function PortalAffiliationPage() {
               { step: '4', text: 'Bali Interns te vire la commission sur ton compte bancaire' },
             ].map((s) => (
               <div key={s.step} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '12px' }}>
-                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#c8a96e', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>
+                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#FFCC00', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>
                   {s.step}
                 </div>
                 <p style={{ fontSize: '13px', color: '#4b5563', lineHeight: 1.5, margin: 0 }}>{s.text}</p>

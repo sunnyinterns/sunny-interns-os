@@ -207,7 +207,7 @@ export async function PATCH(
         const tempPassword = generatePassword()
         if (!portalToken) portalToken = crypto.randomUUID()
         await admin.from('cases').update({ portal_token: portalToken, portal_temp_password: tempPassword }).eq('id', id)
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bali-interns-os.vercel.app'
         const qualNotes = (caseRow as Record<string, unknown>).qualification_notes_for_intern as string ?? ''
         if (intern?.email) {
           void sendQualificationEmail({
@@ -292,7 +292,7 @@ export async function PATCH(
         }
         // Send payment confirmed email
         if (intern?.email && intern.first_name) {
-          const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bali-interns-os.vercel.app'
           const { data: caseTokenRow } = await admin.from('cases').select('portal_token').eq('id', id).single()
           const token = (caseTokenRow as Record<string, unknown>)?.portal_token as string | null
           if (token) {

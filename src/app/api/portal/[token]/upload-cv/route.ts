@@ -57,7 +57,7 @@ export async function POST(
 
   if (process.env.RESEND_API_KEY) {
     const intern = ((Array.isArray(caseRow.interns) ? caseRow.interns[0] : caseRow.interns) ?? {}) as unknown as Record<string, unknown>
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bali-interns-os.vercel.app'
     const { sendInternCommentNotification } = await import('@/lib/email/resend')
     await sendInternCommentNotification({
       caseId: caseRow.id,

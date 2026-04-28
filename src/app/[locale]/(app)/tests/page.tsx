@@ -3,7 +3,7 @@ import { TEST_SUITES, TOTAL_TESTS } from '@/lib/test-meta'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Tests E2E — Sunny Interns OS',
+  title: 'Tests E2E — Bali Interns OS',
 }
 
 export default function TestsPage() {
@@ -19,7 +19,7 @@ export default function TestsPage() {
         </div>
         <div className="flex items-center gap-2 text-xs text-zinc-400">
           <span className="w-2 h-2 rounded-full bg-[#0d9e75] inline-block" />
-          sunny-interns-os.vercel.app
+          bali-interns-os.vercel.app
         </div>
       </div>
 

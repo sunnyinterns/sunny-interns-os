@@ -69,7 +69,7 @@ export async function POST(
   })
 
   // Notify manager
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bali-interns-os.vercel.app'
   void sendInternCommentNotification({
     managerEmail: 'charly@bali-interns.com',
     prenom: intern?.first_name ?? 'Stagiaire',

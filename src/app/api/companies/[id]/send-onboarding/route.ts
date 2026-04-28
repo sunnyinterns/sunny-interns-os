@@ -29,7 +29,7 @@ export async function POST(
       .eq('id', id)
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.sunny-interns.com'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.bali-interns.com'
   const link = `${appUrl}/onboarding/company/${token}`
 
   return NextResponse.json({ link, token })

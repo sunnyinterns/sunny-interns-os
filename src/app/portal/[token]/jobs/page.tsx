@@ -94,14 +94,14 @@ export default function PortalJobsPage() {
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
-        <Link href={`/portal/${token}`} className="text-[#c8a96e] text-sm">← Back</Link>
-        <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', margin: 0 }}>
+        <Link href={`/portal/${token}`} className="text-[#FFCC00] text-sm">← Back</Link>
+        <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1A1A1A', margin: 0 }}>
           Offres de stage
         </h1>
       </div>
 
       {jobs.length > 0 && (
-        <div style={{ background: '#fffbf0', border: '1px solid #c8a96e', borderRadius: '12px', padding: '12px 16px', marginBottom: '20px' }}>
+        <div style={{ background: '#fffbf0', border: '1px solid #FFCC00', borderRadius: '12px', padding: '12px 16px', marginBottom: '20px' }}>
           <p style={{ fontSize: '13px', color: '#92400e', margin: 0 }}>
             💡 Rank your offers by preference — it helps your advisor prioritise outreach!
           </p>
@@ -198,7 +198,7 @@ function JobCard({ job, responding, moving, onRespond, showPriority, priority, t
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '10px', gap: '8px' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1a1918', margin: 0, marginBottom: '4px' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1A1A1A', margin: 0, marginBottom: '4px' }}>
             {job.title}
           </h3>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -229,7 +229,7 @@ function JobCard({ job, responding, moving, onRespond, showPriority, priority, t
           )}
           {showPriority && priority && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ fontSize: '11px', color: '#c8a96e', fontWeight: 600 }}>#{priority}</span>
+              <span style={{ fontSize: '11px', color: '#FFCC00', fontWeight: 600 }}>#{priority}</span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
                 <button
                   onClick={() => void onMove?.(job.submission_id, 'up')}

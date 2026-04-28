@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { sendFromTemplate } from '@/lib/email/resend'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bali-interns-os.vercel.app'
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient()

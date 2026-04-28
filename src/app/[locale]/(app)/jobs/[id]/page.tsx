@@ -593,7 +593,7 @@ export default function JobDetailPage() {
           </label>
 
           {job.is_public && job.seo_slug ? (
-            <a href={`${process.env.NEXT_PUBLIC_APP_URL ?? "https://sunny-interns-os.vercel.app"}/jobs/${job.seo_slug}`} target="_blank" rel="noopener noreferrer"
+            <a href={`${process.env.NEXT_PUBLIC_APP_URL ?? "https://bali-interns-os.vercel.app"}/jobs/${job.seo_slug}`} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-xs text-[#c8a96e] hover:underline font-medium">
               🌐 {process.env.NEXT_PUBLIC_APP_URL?.replace("https://","") ?? "os.bali-interns.com"}/jobs/{job.seo_slug} ↗
             </a>
@@ -1038,7 +1038,7 @@ export default function JobDetailPage() {
           <div className="flex items-center justify-between pt-3 border-t border-zinc-100">
             <div>
               <p className="text-sm font-medium text-[#1a1918]">Page publique activée</p>
-              <p className="text-xs text-zinc-400">Page visible on sunny-interns-os.vercel.app</p>
+              <p className="text-xs text-zinc-400">Page visible on bali-interns-os.vercel.app</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" checked={!!job.is_public} onChange={e => void patchJob({ is_public: e.target.checked })} className="sr-only peer" />

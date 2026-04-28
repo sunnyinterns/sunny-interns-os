@@ -33,7 +33,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
   }
   if (!access.company_id) {
     console.error('[employer-portal] company_id null for token:', token)
-    return NextResponse.json({ error: 'Configuration incomplète — contactez l\'équipe Sunny Interns' }, { status: 422 })
+    return NextResponse.json({ error: 'Configuration incomplète — contactez l\'équipe Bali Interns' }, { status: 422 })
   }
 
   if (!access.viewed_at) {

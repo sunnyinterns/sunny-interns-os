@@ -34,14 +34,14 @@ export default function PortalTokenLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#111110] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#1A1A1A] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#c8a96e]/20 border border-[#c8a96e]/40 mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#FFCC00]/20 border border-[#FFCC00]/40 mb-4">
             <span className="text-3xl">🌴</span>
           </div>
           <h1 className="text-2xl font-bold text-white">Intern Portal</h1>
-          <p className="text-white/40 text-sm mt-1">Sunny Interns · Sign in to your account</p>
+          <p className="text-white/40 text-sm mt-1">Bali Interns · Sign in to your account</p>
         </div>
 
         <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
@@ -52,7 +52,7 @@ export default function PortalTokenLoginPage() {
                 type="email" value={email} required
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#c8a96e] text-sm"
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#FFCC00] text-sm"
               />
             </div>
             <div>
@@ -61,18 +61,18 @@ export default function PortalTokenLoginPage() {
                 type="password" value={password} required
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#c8a96e] text-sm"
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#FFCC00] text-sm"
               />
             </div>
             {error && <p className="text-red-400 text-sm">{error}</p>}
             <button type="submit" disabled={loading}
-              className="w-full py-3 bg-[#c8a96e] hover:bg-[#b8994e] disabled:opacity-60 text-[#111110] font-bold rounded-xl transition-all text-sm cursor-pointer">
+              className="w-full py-3 bg-[#FFCC00] hover:bg-[#E6B800] disabled:opacity-60 text-[#1A1A1A] font-bold rounded-xl transition-all text-sm cursor-pointer">
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
           <p className="text-center text-white/30 text-xs mt-4">
             Lost your access?{' '}
-            <a href="/portal" className="text-[#c8a96e] hover:underline">Request a new link</a>
+            <a href="/portal" className="text-[#FFCC00] hover:underline">Request a new link</a>
           </p>
         </div>
       </div>

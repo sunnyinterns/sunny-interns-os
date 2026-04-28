@@ -32,7 +32,7 @@ export function InternCardDigital({ caseData }: InternCardDigitalProps) {
 
   const appUrl = typeof window !== 'undefined'
     ? window.location.origin
-    : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app')
+    : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://bali-interns-os.vercel.app')
   const verifyUrl = `${appUrl}/verify/${caseData.id}`
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(verifyUrl)}`
 

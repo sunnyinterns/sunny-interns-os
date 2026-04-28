@@ -100,7 +100,7 @@ export default function PortalCvPage() {
         ← Back
       </Link>
 
-      <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#1a1918', marginBottom: '6px' }}>Your CV</h1>
+      <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#1A1A1A', marginBottom: '6px' }}>Your CV</h1>
 
       {/* Banner révision */}
       {data.cv_revision_requested && !success && (
@@ -134,7 +134,7 @@ export default function PortalCvPage() {
         style={{
           border: '2px dashed #d1d5db', borderRadius: '12px', padding: '36px 24px',
           textAlign: 'center', cursor: uploading ? 'not-allowed' : 'pointer',
-          background: '#fafaf7', marginBottom: '24px',
+          background: '#FFFBF0', marginBottom: '24px',
           transition: 'border-color 0.2s',
         }}
       >
@@ -143,7 +143,7 @@ export default function PortalCvPage() {
           <p style={{ color: '#6b7280', fontSize: '14px' }}>{uploadProgress}</p>
         ) : (
           <>
-            <p style={{ fontWeight: 600, fontSize: '15px', color: '#1a1918', marginBottom: '4px' }}>
+            <p style={{ fontWeight: 600, fontSize: '15px', color: '#1A1A1A', marginBottom: '4px' }}>
               Glissez votre CV ici ou cliquez pour parcourir
             </p>
             <p style={{ color: '#9ca3af', fontSize: '12px' }}>PDF, DOC, DOCX — max 10MB</p>
@@ -155,23 +155,23 @@ export default function PortalCvPage() {
       {/* Historique versions */}
       {versions.length > 0 && (
         <div style={{ marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#1a1918', marginBottom: '10px' }}>Historique des versions</h2>
+          <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#1A1A1A', marginBottom: '10px' }}>Historique des versions</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {versions.map((v, i) => (
               <div key={v.id} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '12px 14px', background: 'white', borderRadius: '10px',
-                border: `1px solid ${i === 0 ? '#c8a96e' : '#e5e7eb'}`,
+                border: `1px solid ${i === 0 ? '#FFCC00' : '#e5e7eb'}`,
               }}>
                 <div>
-                  <p style={{ fontSize: '13px', fontWeight: 500, color: '#1a1918' }}>{v.filename}</p>
+                  <p style={{ fontSize: '13px', fontWeight: 500, color: '#1A1A1A' }}>{v.filename}</p>
                   <p style={{ fontSize: '11px', color: '#9ca3af' }}>
                     {new Date(v.uploaded_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    {i === 0 && <span style={{ marginLeft: '6px', color: '#c8a96e', fontWeight: 600 }}>· Version actuelle</span>}
+                    {i === 0 && <span style={{ marginLeft: '6px', color: '#FFCC00', fontWeight: 600 }}>· Version actuelle</span>}
                   </p>
                 </div>
                 <a href={v.url} target="_blank" rel="noopener noreferrer" style={{
-                  fontSize: '12px', color: '#c8a96e', fontWeight: 600, textDecoration: 'none',
+                  fontSize: '12px', color: '#FFCC00', fontWeight: 600, textDecoration: 'none',
                   padding: '4px 10px', borderRadius: '6px', background: '#faf6ef',
                 }}>
                   Download
@@ -183,7 +183,7 @@ export default function PortalCvPage() {
       )}
 
       <p style={{ color: '#9ca3af', fontSize: '12px', textAlign: 'center' }}>
-        Questions ? <a href="mailto:team@bali-interns.com" style={{ color: '#c8a96e' }}>team@bali-interns.com</a>
+        Questions ? <a href="mailto:team@bali-interns.com" style={{ color: '#FFCC00' }}>team@bali-interns.com</a>
       </p>
     </div>
   )

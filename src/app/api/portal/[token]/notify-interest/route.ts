@@ -10,7 +10,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
   const { token } = await params
   const body = await req.json() as { submission_id?: string }
   const supabase = getAdmin()
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bali-interns-os.vercel.app'
 
   const { data: c } = await supabase
     .from('cases')

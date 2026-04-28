@@ -39,7 +39,7 @@ export async function POST(
   }
 
   const token = (formRequest as Record<string, unknown>).token as string
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bali-interns-os.vercel.app'
   const formUrl = `${appUrl}/form/company/${token}`
   const contactName = [contact.first_name, contact.last_name].filter(Boolean).join(' ')
 

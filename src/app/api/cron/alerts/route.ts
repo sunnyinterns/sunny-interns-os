@@ -28,7 +28,7 @@ export async function GET(request: Request) {
 
   const supabase = getServiceClient()
   const today = new Date(); today.setHours(0, 0, 0, 0)
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bali-interns-os.vercel.app'
 
   const { data: alertConfigs } = await supabase.from('alert_configs').select('*').eq('is_active', true)
   if (!alertConfigs?.length) return NextResponse.json({ processed: 0, message: 'No active alert configs' })
