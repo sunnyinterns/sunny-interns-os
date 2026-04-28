@@ -559,7 +559,7 @@ export async function PATCH(
             to: dqIntern.email,
             vars: {
               first_name: dqIntern.first_name ?? 'there',
-              reason_note: DISQUALIFICATION_NOTES[newStatus] ?? 'but the timing isn't right at this stage.',
+              reason_note: DISQUALIFICATION_NOTES[newStatus] ?? "but the timing isn't right at this stage.",
             },
           })
         }
