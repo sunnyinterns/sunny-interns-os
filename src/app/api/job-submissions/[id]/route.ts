@@ -61,7 +61,8 @@ export async function PATCH(
   if (newStatus === 'interview' && oldStatus !== 'interview') {
     try {
       const caseData = current.cases as Record<string, unknown> | null
-      const intern = (caseData?.interns ?? {}) as Record<string, unknown>
+      const internsRaw = caseData?.interns
+      const intern = (Array.isArray(internsRaw) ? internsRaw[0] : internsRaw) as Record<string, unknown> ?? {}
       const portalToken = caseData?.portal_token as string | null
       const internEmail = intern.email as string | null
       const internFirstName = (intern.first_name ?? 'there') as string
