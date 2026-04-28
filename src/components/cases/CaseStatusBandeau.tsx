@@ -46,7 +46,7 @@ export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPorta
 
   const handleConventionSigned = useCallback(async () => {
     if (patchingConvention) return
-    const ok = window.confirm('Confirmer la signature de la convention de stage ? Le dossier passera en Client et la demande de paiement sera envoyée automatiquement.')
+    const ok = window.confirm('Confirm that the internship agreement has been signed?\n\nThis will trigger the payment request email (with IBAN).')
     if (!ok) return
     setPatchingConvention(true)
     try {
@@ -271,38 +271,139 @@ export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPorta
 
   // ── JOB RETAINED ──
   if (status === 'job_retained') {
+    const conventionUrl = (caseData as Record<string, unknown>).convention_url as string | null
     return bandeau('#f0fdf4', '#bbf7d060',
       <>
         <div className="flex-1">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-green-700 mb-0.5">Stage retenu · Faire signer la convention</p>
-          <p className="text-sm font-medium text-[#1a1918]">L'école doit signer la convention de stage · Uploader la version signée ici</p>
-          <p className="text-xs text-zinc-400 mt-0.5">Email "Tu es pris" envoyé au candidat · Infos entreprise transmises pour la convention</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-green-700 mb-0.5">
+            Internship confirmed — Convention de stage
+          </p>
+          <p className="text-sm font-medium text-[#1a1918]">
+            The school must sign the internship agreement (convention de stage).
+            Once signed, confirm below to trigger invoicing.
+          </p>
+          <p className="text-xs text-zinc-400 mt-1">
+            Upload optional — you only need to confirm it was signed.
+          </p>
+          {conventionUrl && (
+            <a href={conventionUrl} target="_blank" rel="noopener noreferrer"
+              className="text-xs text-[#0d9e75] underline mt-1 inline-block">
+              📎 View uploaded convention
+            </a>
+          )}
         </div>
-        <div className="flex gap-2 flex-shrink-0">
-          <button className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#0d9e75] text-white whitespace-nowrap">
-            Uploader convention
+        <div className="flex gap-2 flex-shrink-0 flex-col items-end">
+          {/* Optional upload */}
+          <label className="px-3 py-1.5 text-xs rounded-lg border border-zinc-200 text-zinc-600 bg-white cursor-pointer whitespace-nowrap">
+            {conventionUrl ? '📎 Replace document' : '📎 Upload (optional)'}
+            <input type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0]
+                if (!file || !caseData.id) return
+                const formData = new FormData(); formData.append('file', file); formData.append('case_id', String(caseData.id))
+                const r = await fetch('/api/cases/upload-convention', { method: 'POST', body: formData })
+                if (r.ok) window.location.reload()
+              }} />
+          </label>
+          {/* Main action */}
+          <button
+            onClick={async () => {
+              const ok = window.confirm('Confirm that the internship agreement (convention de stage) has been signed by the school?\n\nThis will trigger invoicing and the payment request email.')
+              if (!ok) return
+              const r = await fetch(`/api/cases/${caseData.id as string}/status`, {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'convention_signed' }),
+              })
+              if (r.ok) onPatchStatus('convention_signed')
+            }}
+            className="px-4 py-1.5 text-xs font-bold rounded-lg bg-[#0d9e75] text-white hover:bg-green-700 whitespace-nowrap"
+          >
+            ✅ Convention signed
           </button>
         </div>
       </>,
-      <><span>📄</span><span><strong>En attente :</strong> Convention signée par l'école · Dès réception, confirmer ci-dessus</span></>
+      <><span>📄</span><span><strong>Waiting for:</strong> School to sign the convention de stage · Once received, confirm above</span></>
     )
   }
 
-  // ── CONVENTION SIGNED → passage en Client ──
+  // ── CONVENTION SIGNED → payment pending auto-triggered via status route ──
   if (status === 'convention_signed') {
     return bandeau('#f0fdf4', '#16a34a40',
       <>
         <div className="flex-1">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-green-700 mb-0.5">Confirmation de la signature de la convention de stage</p>
-          <p className="text-sm font-medium text-[#1a1918]">La convention signée a été reçue · Confirmer pour déclencher le passage en Client et la facturation</p>
-          <p className="text-xs text-red-500 mt-0.5 font-medium">⚠️ Action irréversible · Génère la facture et envoie la demande de paiement automatiquement</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-green-700 mb-0.5">
+            Convention signed ✅ — Invoice & payment request sent
+          </p>
+          <p className="text-sm font-medium text-[#1a1918]">
+            The internship agreement was confirmed.
+            Payment request email + IBAN sent to the intern automatically.
+          </p>
+          <p className="text-xs text-zinc-400 mt-0.5">
+            Waiting for intern to make the transfer and notify you.
+          </p>
         </div>
-        <button onClick={() => { void handleConventionSigned() }} disabled={patchingConvention}
-          className="px-4 py-2 text-xs font-bold rounded-lg bg-[#16a34a] text-white hover:bg-green-700 disabled:opacity-60 transition-colors whitespace-nowrap flex-shrink-0">
-          {patchingConvention ? 'Traitement…' : '✅ Convention signée'}
+      </>,
+      <><span>⚡</span><span><strong>Triggered automatically:</strong> Invoice generated · Payment request + IBAN sent · Admin notification sent</span></>
+    )
+  }
+
+  // ── PAYMENT PENDING — avec notification intern si applicable ──
+  if (status === 'payment_pending') {
+    const notifiedAt = (caseData as Record<string, unknown>).payment_notified_by_intern_at as string | null
+    const notifiedNote = (caseData as Record<string, unknown>).payment_notified_by_intern_note as string | null
+    if (notifiedAt) {
+      const notifDate = new Date(notifiedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+      return bandeau('#fffbeb', '#fcd34d',
+        <>
+          <div className="flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600 mb-0.5">
+              💰 Payment notified by intern — {notifDate}
+            </p>
+            <p className="text-sm font-medium text-[#1a1918]">
+              {intern?.first_name ?? 'The intern'} says they have made the transfer.
+              {notifiedNote ? ` Note: "${notifiedNote}"` : ''}
+            </p>
+            <p className="text-xs text-zinc-400 mt-0.5">Check your bank account, then confirm the payment below.</p>
+          </div>
+          <button
+            onClick={async () => {
+              const r = await fetch(`/api/cases/${caseData.id as string}/status`, {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'payment_received' }),
+              })
+              if (r.ok) onPatchStatus('payment_received')
+            }}
+            className="px-4 py-2 text-xs font-bold rounded-lg bg-[#FFCC00] text-[#1A1A1A] hover:bg-[#E6B800] whitespace-nowrap flex-shrink-0">
+            ✅ Confirm payment received
+          </button>
+        </>,
+        <><span>⚠️</span><span><strong>Action required:</strong> Check bank transfer then confirm — intern card & visa access will be unlocked</span></>
+      )
+    }
+    return bandeau('#fafaf9', '#e5e7eb',
+      <>
+        <div className="flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-0.5">Payment pending</p>
+          <p className="text-sm font-medium text-[#1a1918]">
+            Payment request sent to {intern?.first_name ?? 'intern'} — waiting for bank transfer.
+          </p>
+          <p className="text-xs text-zinc-400 mt-0.5">Intern will notify you once done. You can also confirm manually below.</p>
+        </div>
+        <button
+          onClick={async () => {
+            const ok = window.confirm('Confirm payment received? This will unlock the intern card and visa process.')
+            if (!ok) return
+            const r = await fetch(`/api/cases/${caseData.id as string}/status`, {
+              method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'payment_received' }),
+            })
+            if (r.ok) onPatchStatus('payment_received')
+          }}
+          className="px-4 py-1.5 text-xs rounded-lg border border-zinc-200 text-zinc-600 bg-white hover:bg-zinc-50 whitespace-nowrap flex-shrink-0">
+          Mark as paid ✓
         </button>
       </>,
-      <><span>⚡</span><span><strong>Déclenchement automatique :</strong> Statut → Client (paiement en attente) · Facture générée · Email paiement + IBAN envoyé · Notification admin</span></>
+      <><span>⏳</span><span><strong>Waiting for:</strong> Bank transfer from intern · Auto-alert after 5 days</span></>
     )
   }
 

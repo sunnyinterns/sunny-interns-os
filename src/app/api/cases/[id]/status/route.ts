@@ -256,6 +256,8 @@ export async function PATCH(
   }
 
   // ── convention_signed → convention_request to intern + sponsor_contract to employer ─
+  // Auto-transition: convention_signed immediately moves to payment_pending
+  // (convention signing = client confirmed = invoice sent)
   if (newStatus === 'convention_signed') {
     try {
       // Convention email to intern
@@ -281,6 +283,15 @@ export async function PATCH(
       }
       // Sponsor contract to employer
       void fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/cases/${id}/send-sponsor-contract`, { method: 'POST', headers: { 'x-internal-key': process.env.CRON_SECRET ?? '' } })
+      // Auto-transition to payment_pending — convention_signed is just a confirmation step
+      // payment_pending trigger will handle sending the payment email
+      setTimeout(() => {
+        void fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/cases/${id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'x-internal-key': process.env.CRON_SECRET ?? '' },
+          body: JSON.stringify({ status: 'payment_pending' }),
+        })
+      }, 2000)
     } catch { /* non-blocking */ }
   }
 

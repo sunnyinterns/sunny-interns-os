@@ -48,7 +48,7 @@ export async function GET() {
       intern_name: `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim(),
       title: 'Booker un RDV de qualification',
       description: `Candidature reçue il y a ${days} jour${days > 1 ? 's' : ''} — aucun RDV planifié`,
-      cta_label: 'Ouvrir le dossier',
+      cta_label: 'Open case',
       cta_url: `/fr/cases/${c.id}`,
       days_waiting: days,
       status: c.status,
@@ -98,9 +98,9 @@ export async function GET() {
       priority: days > 10 ? 'urgent' : 'high',
       case_id: c.id,
       intern_name: `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim(),
-      title: 'Relancer pour le paiement',
-      description: `En attente de paiement depuis ${days} jour${days > 1 ? 's' : ''}`,
-      cta_label: 'Ouvrir le dossier',
+      title: 'Follow up on payment',
+      description: `Payment pending for ${days} day${days > 1 ? 's' : ''}`,
+      cta_label: 'Open case',
       cta_url: `/fr/cases/${c.id}`,
       days_waiting: days,
       status: c.status,
@@ -124,9 +124,9 @@ export async function GET() {
       priority: days > 45 ? 'urgent' : 'high',
       case_id: c.id,
       intern_name: `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim(),
-      title: 'Visa en cours depuis trop longtemps',
-      description: `Visa soumis il y a ${days} jours — contacter l'agent visa`,
-      cta_label: 'Voir le dossier visa',
+      title: 'Visa taking too long',
+      description: `Visa submitted ${days} days ago — contact the visa agent`,
+      cta_label: 'View visa file',
       cta_url: `/fr/cases/${c.id}?tab=visa`,
       days_waiting: days,
       status: c.status,
@@ -178,7 +178,7 @@ export async function GET() {
       intern_name: `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim(),
       title: 'RDV planifié mais qualification non faite',
       description: `RDV il y a ${days}j — qualifier ou replanifier`,
-      cta_label: 'Voir le dossier',
+      cta_label: 'Open case',
       cta_url: `/fr/cases/${c.id}`,
       days_waiting: days,
       status: c.status,
@@ -207,9 +207,35 @@ export async function GET() {
       intern_name: `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim(),
       title: `⚠️ Visa en cours — départ dans ${daysLeft}j`,
       description: `Departure planned for ${new Date(c.desired_start_date as string).toLocaleDateString('en-GB')} — visa not yet received`,
-      cta_label: 'Voir le dossier',
+      cta_label: 'Open case',
       cta_url: `/fr/cases/${c.id}?tab=visa`,
       days_waiting: daysLeft,
+      status: c.status,
+    })
+  })
+
+  // 6b. Job retenu mais convention non signée (> 7j) — nouveau
+  const { data: retainedNoDocs } = await adminClient
+    .from('cases')
+    .select('id, status, updated_at, interns(first_name, last_name)')
+    .eq('status', 'job_retained')
+    .lt('updated_at', new Date(Date.now() - 7 * 86400000).toISOString())
+    .limit(20)
+
+  retainedNoDocs?.forEach(c => {
+    const intern = (Array.isArray(c.interns) ? c.interns[0] : c.interns) as unknown as { first_name: string; last_name: string } | null
+    const days = Math.floor((now.getTime() - new Date(c.updated_at).getTime()) / 86400000)
+    todos.push({
+      id: `ret-conv-${c.id}`,
+      type: 'relance',
+      priority: days > 14 ? 'urgent' : 'high',
+      case_id: c.id,
+      intern_name: `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim(),
+      title: 'Follow up on convention de stage',
+      description: `Job retained ${days} days ago — waiting for school to sign the convention`,
+      cta_label: 'Open case',
+      cta_url: `/fr/cases/${c.id}`,
+      days_waiting: days,
       status: c.status,
     })
   })
@@ -231,9 +257,9 @@ export async function GET() {
       priority: days > 14 ? 'urgent' : 'high',
       case_id: c.id,
       intern_name: `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim(),
-      title: 'Convention signée — paiement non reçu',
-      description: `Convention depuis ${days}j — relancer pour le paiement`,
-      cta_label: 'Voir le dossier',
+      title: 'Convention signed — payment not received',
+      description: `Convention signed ${days} days ago — follow up on payment`,
+      cta_label: 'Open case',
       cta_url: `/fr/cases/${c.id}`,
       days_waiting: days,
       status: c.status,
