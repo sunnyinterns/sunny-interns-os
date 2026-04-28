@@ -116,6 +116,7 @@ export async function GET(request: Request) {
 
   // ── J+7 no employer response ──────────────────────────────────────────────
   const j7ago = new Date(); j7ago.setDate(j7ago.getDate() - 7)
+  const admin = getServiceClient()
   const { data: noResponseSubs } = await admin
     .from('job_submissions')
     .select('id, case_id, submitted_at, no_employer_response_alerted_at, jobs(title, public_title, companies(name))')
