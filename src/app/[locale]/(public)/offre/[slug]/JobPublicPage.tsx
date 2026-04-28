@@ -85,7 +85,7 @@ export default function JobPublicPage({ job }: { job: Job }) {
             </a>
             <div className="flex items-center gap-3">
               <span className="hidden sm:block text-xs text-zinc-500">3–8 month internships in Bali</span>
-              <a href="/apply" style={{ background: '#F5A623', fontFamily: "'Outfit', sans-serif" }}
+              <a href="https://bali-interns.com/fr/apply" style={{ background: '#F5A623', fontFamily: "'Outfit', sans-serif" }}
                 className="px-4 py-2 rounded-full text-sm font-black text-[#1a1918] hover:brightness-105 transition-all">
                 Apply free →
               </a>
@@ -282,7 +282,7 @@ export default function JobPublicPage({ job }: { job: Job }) {
                       <h3 style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
                         className="text-xl font-black text-white mb-2">Position filled</h3>
                       <p className="text-white/50 text-sm mb-5">Other opportunities are waiting for you!</p>
-                      <a href="/apply" className="block w-full py-3.5 rounded-xl font-black text-sm text-[#1a1918] text-center transition-all hover:brightness-105"
+                      <a href="https://bali-interns.com/fr/apply" className="block w-full py-3.5 rounded-xl font-black text-sm text-[#1a1918] text-center transition-all hover:brightness-105"
                         style={{ background: '#F5A623' }}>
                         See all positions →
                       </a>
@@ -313,7 +313,7 @@ export default function JobPublicPage({ job }: { job: Job }) {
                           <p className="text-white/30 text-[10px] mt-1">PDF, DOC · max 10MB</p>
                         </div>
                       )}
-                      <a href={`/apply?prefill_job=${job.id}`}
+                      <a href={`https://bali-interns.com/fr/apply?prefill_job=${job.id}`}
                         className="block w-full py-3.5 rounded-xl font-black text-sm text-[#1a1918] text-center transition-all hover:brightness-105"
                         style={{ background: '#F5A623' }}>
                         Apply for free →
@@ -324,7 +324,7 @@ export default function JobPublicPage({ job }: { job: Job }) {
                       <h3 style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
                         className="text-xl font-black text-white mb-2">Interested?</h3>
                       <p className="text-white/50 text-sm mb-5">Apply in 3 minutes — free.</p>
-                      <a href={`/apply?prefill_job=${job.id}`}
+                      <a href={`https://bali-interns.com/fr/apply?prefill_job=${job.id}`}
                         className="block w-full py-3.5 rounded-xl font-black text-sm text-[#1a1918] text-center transition-all hover:brightness-105"
                         style={{ background: '#F5A623' }}>
                         Apply for free →

@@ -38,9 +38,9 @@ export default function PortalDashboardPage() {
   useEffect(() => {
     const supabase = getClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) { setError('Non connecté'); setLoading(false); return }
+      if (!user) { setError('Not signed in'); setLoading(false); return }
       const res = await fetch('/api/portal/me')
-      if (!res.ok) { setError('Dossier introuvable'); setLoading(false); return }
+      if (!res.ok) { setError('File not found'); setLoading(false); return }
       const d = await res.json() as PortalData
       setData(d)
       setLoading(false)
@@ -55,7 +55,7 @@ export default function PortalDashboardPage() {
 
   if (loading) return (
     <div className="min-h-screen bg-[#fafaf7] flex items-center justify-center">
-      <div className="text-zinc-400 text-sm">Chargement…</div>
+      <div className="text-zinc-400 text-sm">Loading…</div>
     </div>
   )
 
@@ -111,8 +111,8 @@ export default function PortalDashboardPage() {
       <main className="max-w-xl mx-auto px-4 py-8">
         {/* Welcome */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-[#1a1918]">Bonjour {firstName} ! 👋</h1>
-          <p className="text-zinc-500 text-sm mt-1">Voici l'état de ton dossier Bali Interns.</p>
+          <h1 className="text-2xl font-bold text-[#1a1918]">Welcome, {firstName} 👋</h1>
+          <p className="text-zinc-500 text-sm mt-1">Here's your Sunny Interns application status.</p>
         </div>
 
         {/* Progress */}

@@ -16,23 +16,23 @@ const STATUS_TO_STEP: Record<string, number> = {
 }
 
 const STEPS = [
-  { num: 1, label: 'Candidature' },
-  { num: 2, label: 'Entretien' },
-  { num: 3, label: 'Recherche' },
-  { num: 4, label: 'Stage trouvé' },
-  { num: 5, label: 'Paiement' },
+  { num: 1, label: 'Application' },
+  { num: 2, label: 'Interview' },
+  { num: 3, label: 'Job Search' },
+  { num: 4, label: 'Job Found' },
+  { num: 5, label: 'Payment' },
   { num: 6, label: 'Visa' },
-  { num: 7, label: 'Départ' },
-  { num: 8, label: 'À Bali !' },
+  { num: 7, label: 'Departure' },
+  { num: 8, label: 'In Bali!' },
 ]
 
 const PORTAL_STEPS = [
-  { key: 'apply', label: 'Candidature', icon: '📋', statuses: ['lead', 'rdv_booked'] },
-  { key: 'interview', label: 'Entretien', icon: '🎤', statuses: ['rdv_booked', 'qualification_done'] },
-  { key: 'jobs', label: 'Offres de stage', icon: '💼', statuses: ['job_submitted', 'job_retained'] },
-  { key: 'convention', label: 'Convention', icon: '📝', statuses: ['convention_signed', 'payment_pending', 'payment_received'] },
+  { key: 'apply', label: 'Application', icon: '📋', statuses: ['lead', 'rdv_booked'] },
+  { key: 'interview', label: 'Interview', icon: '🎤', statuses: ['rdv_booked', 'qualification_done'] },
+  { key: 'jobs', label: 'Internship offers', icon: '💼', statuses: ['job_submitted', 'job_retained'] },
+  { key: 'convention', label: 'Agreement', icon: '📝', statuses: ['convention_signed', 'payment_pending', 'payment_received'] },
   { key: 'visa', label: 'Visa', icon: '🛂', statuses: ['visa_docs_sent', 'visa_in_progress', 'visa_received'] },
-  { key: 'bali', label: 'Départ Bali', icon: '🌴', statuses: ['arrival_prep', 'active', 'alumni'] },
+  { key: 'bali', label: 'Bali departure', icon: '🌴', statuses: ['arrival_prep', 'active', 'alumni'] },
 ]
 
 interface PortalData {

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 
-export default function PortalLoginPage() {
+export default function PortalTokenLoginPage() {
   const params = useParams()
   const router = useRouter()
   const token = typeof params?.token === 'string' ? params.token : ''
@@ -14,8 +14,7 @@ export default function PortalLoginPage() {
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
-    setError('')
-    setLoading(true)
+    setError(''); setLoading(true)
     try {
       const res = await fetch(`/api/portal/${token}/auth`, {
         method: 'POST',
@@ -27,83 +26,55 @@ export default function PortalLoginPage() {
         sessionStorage.setItem('portal_email', email)
         router.push(`/portal/${token}`)
       } else {
-        setError('Email ou mot de passe incorrect')
+        setError('Incorrect email or password')
       }
     } catch {
-      setError('Erreur de connexion')
-    } finally {
-      setLoading(false)
-    }
+      setError('Connection error — please try again')
+    } finally { setLoading(false) }
   }
 
   return (
-    <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: '100%', maxWidth: 400 }}>
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <span style={{ fontSize: 40 }}>🌴</span>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1918', margin: '12px 0 4px' }}>
-            Espace Candidat
-          </h1>
-          <p style={{ fontSize: 14, color: '#6b7280' }}>Bali Interns</p>
+    <div className="min-h-screen bg-[#111110] flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#c8a96e]/20 border border-[#c8a96e]/40 mb-4">
+            <span className="text-3xl">🌴</span>
+          </div>
+          <h1 className="text-2xl font-bold text-white">Intern Portal</h1>
+          <p className="text-white/40 text-sm mt-1">Sunny Interns · Sign in to your account</p>
         </div>
 
-        <form onSubmit={(e) => { void handleLogin(e) }} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              placeholder="ton@email.com"
-              style={{
-                width: '100%', padding: '12px 14px', fontSize: 14,
-                border: '1px solid #e5e7eb', borderRadius: 10,
-                outline: 'none', boxSizing: 'border-box',
-              }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-              Mot de passe
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              placeholder="Mot de passe temporaire"
-              style={{
-                width: '100%', padding: '12px 14px', fontSize: 14,
-                border: '1px solid #e5e7eb', borderRadius: 10,
-                outline: 'none', boxSizing: 'border-box',
-              }}
-            />
-          </div>
-
-          {error && (
-            <p style={{ color: '#dc2626', fontSize: 13, fontWeight: 500, margin: 0 }}>{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%', padding: '14px', fontSize: 15, fontWeight: 700,
-              background: loading ? '#d1d5db' : '#c8a96e', color: 'white',
-              border: 'none', borderRadius: 10, cursor: loading ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {loading ? 'Connexion...' : 'Se connecter'}
-          </button>
-
-          <p style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center', margin: 0 }}>
-            Premiere connexion ? Utilise le mot de passe recu par email.
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+          <form onSubmit={(e) => { void handleLogin(e) }} className="space-y-4">
+            <div>
+              <label className="block text-sm text-white/50 mb-1.5">Email</label>
+              <input
+                type="email" value={email} required
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#c8a96e] text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-white/50 mb-1.5">Password</label>
+              <input
+                type="password" value={password} required
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#c8a96e] text-sm"
+              />
+            </div>
+            {error && <p className="text-red-400 text-sm">{error}</p>}
+            <button type="submit" disabled={loading}
+              className="w-full py-3 bg-[#c8a96e] hover:bg-[#b8994e] disabled:opacity-60 text-[#111110] font-bold rounded-xl transition-all text-sm cursor-pointer">
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
+          </form>
+          <p className="text-center text-white/30 text-xs mt-4">
+            Lost your access?{' '}
+            <a href="/portal" className="text-[#c8a96e] hover:underline">Request a new link</a>
           </p>
-        </form>
+        </div>
       </div>
     </div>
   )

@@ -53,15 +53,15 @@ export default function InternCartePage() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }} className="no-print">
-        <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '14px', textDecoration: 'none' }}>← Retour</Link>
-        <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', margin: 0 }}>Ma carte stagiaire</h1>
+        <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '14px', textDecoration: 'none' }}>← Back</Link>
+        <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', margin: 0 }}>My Intern Card</h1>
       </div>
 
       {loading ? (
         <div style={{ height: '300px', background: '#1a1918', borderRadius: '20px', animation: 'pulse 1.5s infinite' }} />
       ) : !data ? (
         <div style={{ padding: '48px', textAlign: 'center', background: 'white', borderRadius: '16px', border: '1px solid #e5e7eb' }}>
-          <p style={{ color: '#6b7280' }}>Carte non disponible — sera générée à ton arrivée.</p>
+          <p style={{ color: '#6b7280' }}>Card not available yet — it will be generated once your payment is confirmed.</p>
         </div>
       ) : (
         <>
@@ -117,7 +117,7 @@ export default function InternCartePage() {
               )}
               <div>
                 <p style={{ color: 'white', fontSize: '20px', fontWeight: 700, margin: 0, lineHeight: 1.2 }}>{fullName}</p>
-                <p style={{ color: '#c8a96e', fontSize: '11px', marginTop: '4px', fontWeight: 500 }}>Stagiaire Officiel Bali Interns</p>
+                <p style={{ color: '#c8a96e', fontSize: '11px', marginTop: '4px', fontWeight: 500 }}>Official Sunny Interns Member</p>
               </div>
             </div>
 
@@ -126,7 +126,7 @@ export default function InternCartePage() {
               <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', display: 'flex', gap: '24px' }}>
                 {startDate && (
                   <div>
-                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Arrivée</p>
+                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Arrival</p>
                     <p style={{ color: 'white', fontSize: '13px', fontWeight: 500, marginTop: '2px' }}>
                       {new Date(startDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
@@ -134,7 +134,7 @@ export default function InternCartePage() {
                 )}
                 {endDate && (
                   <div>
-                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Départ</p>
+                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Departure</p>
                     <p style={{ color: 'white', fontSize: '13px', fontWeight: 500, marginTop: '2px' }}>
                       {new Date(endDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
@@ -161,7 +161,7 @@ export default function InternCartePage() {
               marginBottom: '20px',
             }}
           >
-            Imprimer / Sauvegarder en PDF
+            Print / Sauvegarder en PDF
           </button>
 
           {/* Partenaires */}

@@ -67,16 +67,16 @@ export default function EngagementPage() {
   if (signed && signedAt) {
     return (
       <div>
-        <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '13px', textDecoration: 'none' }}>← Retour</Link>
+        <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '13px', textDecoration: 'none' }}>← Back</Link>
         <div style={{ marginTop: '24px', background: 'white', border: '1px solid #d1fae5', borderRadius: '16px', padding: '32px', textAlign: 'center' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
-          <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', marginBottom: '8px' }}>Lettre d&apos;engagement signée</h2>
-          <p style={{ color: '#6b7280', marginBottom: '24px' }}>Merci. Votre engagement a été enregistré.</p>
+          <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', marginBottom: '8px' }}>Commitment letter signed</h2>
+          <p style={{ color: '#6b7280', marginBottom: '24px' }}>Thank you. Your commitment has been recorded.</p>
         </div>
 
-        {/* Acte de signature */}
+        {/* Signature record */}
         <div style={{ marginTop: '16px', background: '#fafaf9', border: '1px solid #e5e7eb', borderRadius: '16px', padding: '24px' }}>
-          <p style={{ fontSize: '11px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '16px' }}>Acte de signature</p>
+          <p style={{ fontSize: '11px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '16px' }}>Signature record</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '14px', color: '#374151' }}>
             <div style={{ display: 'flex', gap: '8px' }}>
               <span style={{ color: '#9ca3af', minWidth: '100px' }}>Signataire</span>
@@ -88,7 +88,7 @@ export default function EngagementPage() {
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <span style={{ color: '#9ca3af', minWidth: '100px' }}>Document</span>
-              <span>Lettre d&apos;engagement Bali Interns</span>
+              <span>Sunny Interns Commitment Letter</span>
             </div>
           </div>
           {signatureData && (
@@ -101,7 +101,7 @@ export default function EngagementPage() {
         </div>
 
         <div style={{ marginTop: '16px', textAlign: 'center' }}>
-          <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontWeight: 600, textDecoration: 'none' }}>← Retour au tableau de bord</Link>
+          <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontWeight: 600, textDecoration: 'none' }}>← Back au tableau de bord</Link>
         </div>
       </div>
     )
@@ -109,25 +109,24 @@ export default function EngagementPage() {
 
   return (
     <div>
-      <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '13px', textDecoration: 'none' }}>← Retour</Link>
-      <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', margin: '16px 0 4px' }}>Lettre d&apos;engagement</h1>
+      <Link href={`/portal/${token}`} style={{ color: '#c8a96e', fontSize: '13px', textDecoration: 'none' }}>← Back</Link>
+      <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1a1918', margin: '16px 0 4px' }}>Commitment Letter</h1>
       <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>Lis attentivement et signe ta lettre d&apos;engagement.</p>
 
       <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', marginBottom: '24px', fontSize: '14px', lineHeight: 1.7, color: '#374151' }}>
-        <p><strong>Lettre d&apos;Engagement Bali Interns</strong></p>
+        <p><strong>Sunny Interns Commitment Letter</strong></p>
         <p>
           Je soussigné(e), <strong>{prenom} {nom}</strong>, m&apos;engage à :
         </p>
         <ul style={{ paddingLeft: '20px', margin: '12px 0' }}>
-          <li>Respecter les règles et valeurs de l&apos;entreprise d&apos;accueil tout au long de mon stage.</li>
+          <li>Respect the rules and values of my host company throughout my internship.</li>
           <li>Maintenir un comportement professionnel et respectueux envers mes collègues et responsables.</li>
-          <li>Informer Bali Interns de toute difficulté rencontrée dans les plus brefs délais.</li>
-          <li>Ne pas annuler mon stage après confirmation du placement, sauf cas de force majeure.</li>
-          <li>Respecter les politiques de confidentialité de l&apos;entreprise d&apos;accueil.</li>
+          <li>Inform Sunny Interns of any difficulties encountered as soon as possible.</li>
+          <li>Not cancel my internship after placement confirmation, except in cases of force majeure.</li>
+          <li>Respect the confidentiality policies of my host company.</li>
         </ul>
         <p>
-          Je comprends que le non-respect de ces engagements peut entraîner la résiliation du contrat de stage
-          et pourrait avoir des conséquences sur ma prise en charge par Bali Interns.
+          I understand that failure to comply with these commitments may result in the termination of the internship agreement and could affect my support from Sunny Interns.
         </p>
         <p style={{ marginBottom: 0 }}>
           En signant ci-dessous, je confirme avoir lu, compris et accepté les termes de cette lettre d&apos;engagement.
@@ -136,11 +135,11 @@ export default function EngagementPage() {
 
       {error && <p style={{ color: '#dc2626', fontSize: '13px', marginBottom: '16px' }}>{error}</p>}
       {submitting ? (
-        <div style={{ textAlign: 'center', padding: '24px', color: '#6b7280' }}>Enregistrement de la signature…</div>
+        <div style={{ textAlign: 'center', padding: '24px', color: '#6b7280' }}>Recording signature…</div>
       ) : (
         <SignaturePad
           onSign={(data) => { void handleSign(data) }}
-          label={`Signature de ${prenom} ${nom}`}
+          label={`Signature of ${prenom} ${nom}`}
           disabled={submitting}
         />
       )}

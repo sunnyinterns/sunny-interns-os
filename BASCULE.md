@@ -34,6 +34,16 @@
 - \[ \] **Variable** `OS_URL` **dans vitrine** : `src/lib/config.ts` → `https://os.bali-interns.com` (actuellement `sunny-interns-os.vercel.app`)
 - \[ \] **OS /apply page** interne : toujours liée à Fillout pour le step RDV → déprécier ou pointer vers `https://bali-interns.com/fr/apply`
 
+### Portails — Contenu EN validé
+- [x] portal/page.tsx : login page EN (Google OAuth + magic link)
+- [x] portal/[token]/login/page.tsx : login EN
+- [x] portal/dashboard/page.tsx : EN ("Welcome" + "Your status")
+- [x] portal/[token]/page.tsx : steps EN (Application, Interview, Job Found…)
+- [x] portal/[token]/engagement/page.tsx : commitment letter EN
+- [x] portal/[token]/carte/page.tsx : intern card EN + gating payment_received
+- [x] portal/agent/[token]/page.tsx : EN (labels Bali Interns = nom de marque OK)
+- [x] portal/employer/[token]/page.tsx : EN
+
 ### Validation workflow candidat E2E
 
 - \[ \] **Test complet de bout en bout** avec une vraie candidature (pas email de test) :

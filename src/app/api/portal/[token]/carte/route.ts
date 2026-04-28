@@ -18,7 +18,7 @@ export async function GET(
   const { data: caseData } = await supabase
     .from('cases')
     .select(`
-      id,
+      id, status, payment_received_at,
       actual_start_date, actual_end_date,
       desired_start_date,
       intern_card_generated_at,
@@ -34,6 +34,12 @@ export async function GET(
     .maybeSingle()
 
   if (!caseData) return NextResponse.json({ error: 'Token invalide' }, { status: 404 })
+
+  // Gate: intern card available only after payment confirmed
+  const paymentStatuses = ['payment_received','visa_in_progress','visa_docs_sent','visa_submitted','visa_received','arrival_prep','active','alumni']
+  if (!paymentStatuses.includes((caseData as Record<string,unknown>).status as string ?? '')) {
+    return NextResponse.json({ error: 'Card not yet available — unlocked after payment confirmation', locked: true }, { status: 403 })
+  }
 
   // Active on-site partners
   const { data: partners } = await supabase
