@@ -68,7 +68,8 @@ export async function POST(
   // Notify Charly
   const job = sub.jobs as Record<string, unknown> | null
   const caseData = sub.cases as Record<string, unknown> | null
-  const intern = (caseData?.interns ?? {}) as Record<string, unknown>
+  const internsRaw = caseData?.interns
+  const intern = (Array.isArray(internsRaw) ? (internsRaw as Record<string,unknown>[])[0] : internsRaw) as Record<string, unknown> ?? {}
   const company = (job?.companies ?? {}) as Record<string, unknown>
   const title = (job?.public_title ?? job?.title ?? 'internship') as string
   const internName = `${intern.first_name ?? ''} ${intern.last_name ?? ''}`.trim()
