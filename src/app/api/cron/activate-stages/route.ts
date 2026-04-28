@@ -23,7 +23,6 @@ export async function GET(req: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   const activated = data ?? []
-  console.log(`[CRON] Activated ${activated.length} stages`)
 
   // Créer notifications + activity pour chaque stage activé
   for (const c of activated) {

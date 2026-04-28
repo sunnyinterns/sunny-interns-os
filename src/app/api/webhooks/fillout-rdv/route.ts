@@ -35,7 +35,6 @@ export async function POST(request: Request) {
     const payload = await request.json() as FilloutWebhookPayload
     const supabase = getServiceClient()
 
-    console.log('[fillout-webhook] payload:', JSON.stringify(payload).slice(0, 500))
 
     // Extraire email — plusieurs sources par ordre de fiabilité
     let email: string | null = null
@@ -69,7 +68,6 @@ export async function POST(request: Request) {
 
     if (!email) {
       // Payload de test Fillout sans email — on ignore gracieusement
-      console.log('[Fillout webhook] Test payload received (no email) - webhook is connected!')
       return NextResponse.json({ ok: true, message: 'Webhook connected - test payload received' })
     }
 
@@ -81,7 +79,6 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     if (!intern) {
-      console.log('[Fillout webhook] No intern found for email:', email)
       return NextResponse.json({ ok: true, message: 'No intern found' })
     }
 

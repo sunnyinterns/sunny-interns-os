@@ -49,8 +49,8 @@ export async function POST(
   await admin.from('activity_feed').insert({
     case_id: caseRow.id,
     type: 'cv_uploaded',
-    title: 'Nouveau CV uploadé par le candidat',
-    description: `Fichier: ${file.name}`,
+    title: 'New CV uploaded by candidate',
+    description: `File: ${file.name}`,
     source: 'automation',
     status: 'pending',
   })
@@ -58,19 +58,14 @@ export async function POST(
   if (process.env.RESEND_API_KEY) {
     const intern = ((Array.isArray(caseRow.interns) ? caseRow.interns[0] : caseRow.interns) ?? {}) as unknown as Record<string, unknown>
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: 'Charly de Bali Interns <team@bali-interns.com>',
-        to: ['team@bali-interns.com'],
-        subject: `📄 Nouveau CV — ${intern.first_name ?? ''} ${intern.last_name ?? ''}`,
-        html: `<p>${intern.first_name ?? ''} ${intern.last_name ?? ''} vient de déposer une nouvelle version de son CV.</p><p><a href="${publicUrl}">Voir le CV</a></p><p><a href="${appUrl}/fr/cases/${caseRow.id}">Ouvrir le dossier</a></p>`,
-      }),
-    }).catch(() => null)
+    const { sendInternCommentNotification } = await import('@/lib/email/resend')
+    await sendInternCommentNotification({
+      caseId: caseRow.id,
+      prenom: String(intern.first_name ?? ''),
+      nom: String(intern.last_name ?? ''),
+      comment: `New CV uploaded: ${publicUrl}`,
+      caseUrl: `${appUrl}/fr/cases/${caseRow.id}`,
+    })
   }
 
   return NextResponse.json({ ok: true, url: publicUrl })

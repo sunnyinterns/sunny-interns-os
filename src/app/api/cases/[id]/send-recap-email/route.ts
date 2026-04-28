@@ -26,7 +26,7 @@ export async function POST(
 
   const intern = ((Array.isArray(caseRow.interns) ? caseRow.interns[0] : caseRow.interns) ?? {}) as unknown as Record<string, unknown>
   const submissions = (caseRow.job_submissions ?? []) as unknown as Array<Record<string, unknown>>
-  const isFr = (intern.preferred_language as string) !== 'en'
+  const isFr = false // All communications in English
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
   const portalUrl = `${appUrl}/portal/${caseRow.portal_token}`
 
@@ -75,7 +75,7 @@ export async function POST(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Charly de Bali Interns <team@bali-interns.com>',
+        from: 'Bali Interns <team@bali-interns.com>',
         to: [intern.email as string],
         subject: isFr
           ? `Récap de ton entretien — ${submissions.length} offre${submissions.length > 1 ? 's' : ''} de stage`
@@ -93,8 +93,8 @@ export async function POST(
   await admin.from('activity_feed').insert({
     case_id: id,
     type: 'email_sent',
-    title: 'Email récap entretien envoyé',
-    description: `${submissions.length} offre(s) de stage présentées — accès portail envoyé`,
+    title: 'Interview recap email sent',
+    description: `${submissions.length} internship offer(s) presented — portal access sent`,
     source: 'manual',
     status: 'completed',
   })

@@ -169,7 +169,7 @@ export default function LeadsPage() {
   function relaunch(lead: Lead) {
     const subject = encodeURIComponent('On continue ta candidature Bali Interns ?')
     const body = encodeURIComponent(
-      `Salut${lead.first_name ? ` ${lead.first_name}` : ''},\n\nTu as commencé ta candidature Bali Interns mais tu ne l'as pas terminée. Un coup de main ?\n\nReprends ici : https://sunny-interns-os.vercel.app/apply\n\nCharly`
+      `Hi ${lead.first_name ?? ''},\n\nYou started your Bali Interns application but didn't finish it. Need a hand?\n\nContinue here: ${process.env.NEXT_PUBLIC_VITRINE_URL ?? 'https://bali-interns.com'}/fr/apply\n\nCharly`
     )
     window.open(`mailto:${lead.email}?subject=${subject}&body=${body}`, '_blank')
   }

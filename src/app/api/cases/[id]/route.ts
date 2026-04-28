@@ -68,7 +68,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     // Strip unknown columns to prevent PostgREST 500
     const unknownCols = Object.keys(body).filter(k => !VALID_CASE_COLUMNS.has(k))
-    if (unknownCols.length > 0) console.log('[CASES_PATCH_WARN] Colonnes ignorées:', unknownCols)
     const safeBody = Object.fromEntries(Object.entries(body).filter(([k]) => VALID_CASE_COLUMNS.has(k)))
 
     // Fetch existing case for change detection
@@ -85,7 +84,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       .select()
       .single()
     if (error) {
-      console.log('[CASES_PATCH_SUPABASE]', error.message, error.details ?? '', error.hint ?? '')
       throw error
     }
 
@@ -219,7 +217,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json(data)
   } catch (e) {
     const msg = e instanceof Error ? e.message + '\n' + (e.stack ?? '') : String(e)
-    console.log('[CASES_PATCH_500]', msg)
     Sentry.captureException(e)
     return NextResponse.json({ error: 'Internal error', detail: msg }, { status: 500 })
   }
@@ -269,14 +266,12 @@ export async function GET(
       .single()
 
     if (error) {
-      console.log('[CASES_ID_SUPABASE]', error.message, error.details ?? '', error.hint ?? '')
       return NextResponse.json({ error: error.message, details: error.details, hint: error.hint }, { status: 500 })
     }
     if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     return NextResponse.json(data)
   } catch (err) {
     const msg = err instanceof Error ? err.message + '\n' + (err.stack ?? '') : String(err)
-    console.log('[CASES_ID_500]', msg)
     Sentry.captureException(err)
     return NextResponse.json({ error: 'Internal error', detail: msg }, { status: 500 })
   }

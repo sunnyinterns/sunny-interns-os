@@ -42,7 +42,6 @@ export async function PATCH(
 
     if (body.paid_at) {
       // Trigger invoice generation ONLY after payment confirmed
-      console.log('[PDF] Generating invoice for case', caseId, { amount: body.amount_ttc, entity: body.billing_entity_id })
       // Update case status to payment_received
       await supabase.from('cases').update({ status: 'payment_received', updated_at: new Date().toISOString() }).eq('id', caseId)
     }

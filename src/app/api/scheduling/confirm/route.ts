@@ -63,7 +63,6 @@ export async function POST(request: Request) {
     .maybeSingle()
 
   if (existingBooking) {
-    console.log('[confirm] Idempotency: booking already exists for', d.email, d.start)
     return NextResponse.json({
       booking_id: existingBooking.id as string,
       case_id: d.prefill_case_id ?? null,
@@ -265,7 +264,7 @@ export async function POST(request: Request) {
         subject: `${typeLabel} — RDV confirmé : ${inviteeName}`,
         html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;">
           <h2>${typeLabel}</h2>
-          <p><strong>${inviteeName}</strong> vient de planifier un RDV.</p>
+          <p><strong>${inviteeName}</strong> just booked an interview.</p>
           <div style="background:#f9f7f2;border-radius:12px;padding:16px;margin:16px 0;">
             <p><strong>📅</strong> ${timeDisplay} (heure Bali)</p>
             <p><strong>📧</strong> ${d.email}</p>

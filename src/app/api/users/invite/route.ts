@@ -7,7 +7,6 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const body = await request.json() as { email: string; role: string }
-    console.log('[INVITE]', body.email, body.role)
     return NextResponse.json({ success: true, message: 'Invitation envoyée (simulation)' })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })

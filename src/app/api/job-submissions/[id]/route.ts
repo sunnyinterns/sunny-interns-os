@@ -102,12 +102,10 @@ export async function PATCH(
         metadata: { job_id: sub.job_id, job_title: jTitle, company_name: cName },
       })
 
-      console.log('[EMAIL] is the intern your next intern?', { submissionId: id, jobId: sub.job_id })
     }
 
     // If intern expressed interest, notify admin
     if (body.intern_interested === true) {
-      console.log('[NOTIF] Intern interested in job submission', { submissionId: id, caseId: sub.case_id, jobId: sub.job_id })
     }
 
     return NextResponse.json({ success: true })

@@ -401,7 +401,6 @@ export async function PATCH(
           const daysUntil = Math.ceil((new Date(startDate).getTime() - Date.now()) / 86400000)
           if (daysUntil <= 7) {
             // arrival_prep email via template (TODO: implement sendArrivalPrep)
-            console.log('[arrival_prep] J-', daysUntil, 'for', intern.first_name)
           }
         }
       }

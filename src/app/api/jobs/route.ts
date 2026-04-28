@@ -37,7 +37,6 @@ export async function GET(request: Request) {
 
     const { data, error } = await query
     if (error) {
-      console.log('[JOBS_GET_500]', error.message, error.details ?? '', error.hint ?? '')
       return NextResponse.json({ error: error.message, details: error.details, hint: error.hint }, { status: 500 })
     }
 
@@ -52,7 +51,6 @@ export async function GET(request: Request) {
     return NextResponse.json(jobs)
   } catch (err) {
     const msg = err instanceof Error ? err.message + '\n' + (err.stack ?? '') : String(err)
-    console.log('[JOBS_GET_500]', msg)
     Sentry.captureException(err)
     return NextResponse.json({ error: 'Internal error', detail: msg }, { status: 500 })
   }
@@ -94,13 +92,11 @@ export async function POST(request: Request) {
       .single()
 
     if (error) {
-      console.log('[JOBS_POST_500]', error.message, error.details ?? '', error.hint ?? '')
       return NextResponse.json({ error: error.message, details: error.details, hint: error.hint }, { status: 500 })
     }
     return NextResponse.json(data, { status: 201 })
   } catch (err) {
     const msg = err instanceof Error ? err.message + '\n' + (err.stack ?? '') : String(err)
-    console.log('[JOBS_POST_500]', msg)
     Sentry.captureException(err)
     return NextResponse.json({ error: 'Internal error', detail: msg }, { status: 500 })
   }

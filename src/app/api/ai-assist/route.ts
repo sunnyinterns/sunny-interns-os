@@ -80,7 +80,6 @@ export async function POST(request: Request) {
     const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim() || null
     const geminiKey = process.env.GOOGLE_AI_STUDIO_KEY?.trim() || null
 
-    console.log('[ai-assist] action:', action, '| anthropic:', !!anthropicKey, '| gemini:', !!geminiKey)
 
     if (!anthropicKey && !geminiKey) {
       return NextResponse.json({ error: 'Clé API manquante — configurer GOOGLE_AI_STUDIO_KEY dans Vercel env' }, { status: 500 })
@@ -110,7 +109,6 @@ export async function POST(request: Request) {
         if (res.ok) {
           const data = await res.json() as { content: Array<{ type: string; text: string }> }
           const text = data.content?.find(c => c.type === 'text')?.text?.trim() ?? ''
-          console.log('[ai-assist] Anthropic OK, text length:', text.length)
           if (text) return NextResponse.json({ result: text })
           console.warn('[ai-assist] Anthropic OK but empty text')
         } else {
@@ -155,7 +153,6 @@ export async function POST(request: Request) {
 
       const gemData = JSON.parse(gemText) as { candidates?: Array<{ content: { parts: Array<{ text: string }> } }> }
       const text = gemData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? ''
-      console.log('[ai-assist] Gemini OK, text length:', text.length)
       return NextResponse.json({ result: text })
     } catch (e) {
       console.error('[ai-assist] Gemini exception:', e)

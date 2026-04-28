@@ -45,6 +45,5 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
     job_submissions: submissions ?? [],
   }
 
-  console.log('[portal] case loaded ok, status:', caseData.status)
   return NextResponse.json(result)
 }

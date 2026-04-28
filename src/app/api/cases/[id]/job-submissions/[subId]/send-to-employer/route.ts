@@ -2,6 +2,7 @@ import { createClient as srv } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { logActivity } from '@/lib/activity-logger'
+import { sendJobSubmittedEmployer } from '@/lib/email/resend'
 
 export async function POST(
   _req: Request,
@@ -19,13 +20,13 @@ export async function POST(
 
   const { data: sub } = await admin
     .from('job_submissions')
-    .select('*, jobs(id, title, public_title, description, companies(id, name, email, website))')
+    .select('*, jobs(id, title, public_title, companies(id, name, email))')
     .eq('id', subId)
     .single()
 
   const { data: caseRow } = await admin
     .from('cases')
-    .select('*, interns(first_name, last_name, email, whatsapp, cv_url, local_cv_url, school_country, main_desired_job, private_comment_for_employer, linkedin_url, spoken_languages, english_level, stage_ideal, preferred_language)')
+    .select('*, interns(first_name, last_name, email, cv_url, local_cv_url, linkedin_url)')
     .eq('id', id)
     .single()
 
@@ -38,43 +39,21 @@ export async function POST(
   const contactEmail = company.email as string | null
 
   let emailSent = false
-  if (contactEmail && process.env.RESEND_API_KEY) {
-    const langs = Array.isArray(intern.spoken_languages) ? (intern.spoken_languages as string[]).join(', ') : '—'
-    const html = `
-<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px">
-  <h2 style="color:#1a1918">Candidature pour le poste : ${job.public_title ?? job.title}</h2>
-  <p>Bonjour,</p>
-  <p>Nous vous transmettons la candidature d'un(e) stagiaire intéressé(e) par votre offre.</p>
-  <table style="width:100%;border-collapse:collapse;margin:16px 0">
-    <tr><td style="padding:8px;color:#888;width:150px">Prénom / Nom</td><td style="padding:8px;font-weight:600">${intern.first_name ?? ''} ${intern.last_name ?? ''}</td></tr>
-    <tr style="background:#f9f9f9"><td style="padding:8px;color:#888">Email</td><td style="padding:8px">${intern.email ?? '—'}</td></tr>
-    <tr><td style="padding:8px;color:#888">WhatsApp</td><td style="padding:8px">${intern.whatsapp ?? '—'}</td></tr>
-    <tr style="background:#f9f9f9"><td style="padding:8px;color:#888">Pays d'études</td><td style="padding:8px">${intern.school_country ?? '—'}</td></tr>
-    <tr><td style="padding:8px;color:#888">Métier visé</td><td style="padding:8px">${intern.main_desired_job ?? '—'}</td></tr>
-    <tr style="background:#f9f9f9"><td style="padding:8px;color:#888">Langues</td><td style="padding:8px">${langs}</td></tr>
-    <tr><td style="padding:8px;color:#888">Anglais</td><td style="padding:8px">${intern.english_level ?? '—'}</td></tr>
-    ${intern.linkedin_url ? `<tr style="background:#f9f9f9"><td style="padding:8px;color:#888">LinkedIn</td><td style="padding:8px"><a href="${intern.linkedin_url}">${intern.linkedin_url}</a></td></tr>` : ''}
-    ${cvUrl ? `<tr><td style="padding:8px;color:#888">CV</td><td style="padding:8px"><a href="${cvUrl}" style="color:#c8a96e">Télécharger le CV</a></td></tr>` : ''}
-  </table>
-  ${intern.private_comment_for_employer ? `<div style="background:#fef9ee;border:1px solid #fde68a;border-radius:8px;padding:16px;margin:16px 0"><p style="margin:0;font-size:13px;color:#92400e"><strong>Note de Bali Interns :</strong> ${intern.private_comment_for_employer}</p></div>` : ''}
-  <p>N'hésitez pas à contacter directement le/la candidat(e) pour un entretien.</p>
-  <p>Cordialement,<br/><strong>L'équipe Bali Interns 🌴</strong></p>
-</div>`.trim()
-
-    const resp = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: 'Charly de Bali Interns <team@bali-interns.com>',
-        to: [contactEmail],
-        subject: `Candidature : ${intern.first_name} ${intern.last_name} — ${job.public_title ?? job.title}`,
-        html,
-      }),
-    }).catch(() => null)
-    emailSent = !!resp?.ok
+  if (contactEmail) {
+    try {
+      await sendJobSubmittedEmployer({
+        employerEmail: contactEmail,
+        employerName: company.name as string | undefined,
+        internFirstName: String(intern.first_name ?? ''),
+        internLastName: String(intern.last_name ?? ''),
+        jobTitle: String(job.public_title ?? job.title ?? ''),
+        cvUrl: cvUrl ?? undefined,
+        caseId: id,
+      })
+      emailSent = true
+    } catch (e) {
+      console.error('[send-to-employer] email error:', e)
+    }
   }
 
   await admin
@@ -85,8 +64,8 @@ export async function POST(
   await logActivity({
     caseId: id,
     type: 'job_sent_employer',
-    title: `Candidature envoyée à ${company.name ?? "l'employeur"}`,
-    description: `Candidature pour le poste "${job.public_title ?? job.title}" envoyée par email`,
+    title: `Application sent to ${company.name ?? 'employer'}`,
+    description: `Application for "${job.public_title ?? job.title}" sent by email`,
     metadata: { job_id: job.id, employer: company.name },
   })
 

@@ -99,7 +99,6 @@ export async function POST(request: Request) {
 
     // Generic / legacy email
     if (body.to && (body.html || body.subject)) {
-      console.log('[EMAIL]', { to: body.to, subject: body.subject, templateId: body.templateId })
       return NextResponse.json({ success: true, provider: 'console' })
     }
 

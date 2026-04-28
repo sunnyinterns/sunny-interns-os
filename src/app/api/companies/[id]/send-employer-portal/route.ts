@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { Resend } from 'resend'
+import { sendFromTemplate } from '@/lib/email/resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient()
@@ -15,7 +15,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { data: company } = await supabase.from('companies').select('id,name').eq('id', companyId).single()
   const { data: contact } = await supabase.from('contacts').select('id,first_name,last_name,email').eq('id', contact_id).single()
 
-  if (!company || !contact?.email) return NextResponse.json({ error: 'Contact sans email' }, { status: 400 })
+  if (!company || !contact?.email) return NextResponse.json({ error: 'Missing contact email' }, { status: 400 })
 
   let { data: access } = await supabase
     .from('employer_portal_access')
@@ -39,18 +39,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       .eq('contact_id', contact_id)
   }
 
-  if (!access) return NextResponse.json({ error: 'Erreur création portail' }, { status: 500 })
+  if (!access) return NextResponse.json({ error: 'Portal creation error' }, { status: 500 })
 
   const tok = (access as { token: string }).token
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
-  const url = `${appUrl}/portal/employer/${tok}`
+  const portalUrl = `${APP_URL}/portal/employer/${tok}`
   const name = [contact.first_name, contact.last_name].filter(Boolean).join(' ')
 
-  await resend.emails.send({
-    from: 'Bali Interns <team@bali-interns.com>',
+  await sendFromTemplate({
+    slug: 'employer_welcome',
     to: contact.email,
-    subject: `Votre espace partenaire Bali Interns — ${company.name}`,
-    html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px"><div style="background:#c8a96e;width:40px;height:40px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:24px"><span style="color:white;font-weight:bold">SI</span></div><h2>Bonjour ${name},</h2><p>Votre espace partenaire est prêt :<br>• Valider les infos de <strong>${company.name}</strong><br>• Voir les offres actives</p><a href="${url}" style="display:inline-block;background:#c8a96e;color:white;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:600;margin:16px 0">Accéder à mon espace →</a><p style="color:#888;font-size:12px">Bali Interns · Canggu, Bali</p></div>`,
+    vars: {
+      contact_name: name,
+      company_name: company.name,
+      portal_url: portalUrl,
+    },
   })
 
   return NextResponse.json({ success: true, token: tok })

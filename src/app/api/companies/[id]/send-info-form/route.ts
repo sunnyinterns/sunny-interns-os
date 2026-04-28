@@ -47,18 +47,18 @@ export async function POST(
     await resend.emails.send({
       from: 'Bali Interns <team@bali-interns.com>',
       to: contact.email,
-      subject: `[Action requise] Informations de ${company.name} a completer`,
+      subject: `[Action required] Complete information for ${company.name}`,
       html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;">
         <div style="background:#c8a96e;width:40px;height:40px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:24px;"><span style="color:white;font-weight:bold;">SI</span></div>
-        <h2 style="color:#1a1918;margin-bottom:8px;">Bonjour ${contactName},</h2>
-        <p style="color:#444;line-height:1.6;">Nous preparons le dossier de <strong>${company.name}</strong> pour l'accueil de stagiaires a Bali.<br/>Merci de verifier et completer les informations administratives de votre societe.</p>
-        <a href="${formUrl}" style="display:inline-block;background:#c8a96e;color:white;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:600;margin:16px 0;">Completer les informations →</a>
-        <p style="color:#888;font-size:12px;margin-top:24px;">Lien unique valable 30 jours.<br/>Bali Interns · Canggu, Bali, Indonesia</p>
+        <h2 style="color:#1a1918;margin-bottom:8px;">Hello ${contactName},</h2>
+        <p style="color:#444;line-height:1.6;">We are preparing the dossier for <strong>${company.name}</strong> to welcome interns in Bali.<br/>Please verify and complete your company's administrative information.</p>
+        <a href="${formUrl}" style="display:inline-block;background:#c8a96e;color:white;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:600;margin:16px 0;">Complete information →</a>
+        <p style="color:#888;font-size:12px;margin-top:24px;">Unique link valid for 30 days.<br/>Bali Interns · Canggu, Bali, Indonesia</p>
       </div>`,
     })
   } catch (e) {
     console.error('Resend error:', e)
-    return NextResponse.json({ error: 'Erreur envoi email' }, { status: 500 })
+    return NextResponse.json({ error: 'Email sending error' }, { status: 500 })
   }
 
   return NextResponse.json({ success: true, token })

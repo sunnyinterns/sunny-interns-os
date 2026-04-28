@@ -120,7 +120,7 @@ export async function POST(request: Request) {
     // Build email body
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
     let emailHtml = `
-      <p>Bonjour ${intern?.first_name ?? ''},</p>
+      <p>Hi ${intern?.first_name ?? ''},</p>
       <p>${tp.templateSubject.replace(/^\[.*?\]\s*/, '')}</p>
     `
     if (touchpoint_key === 'j30') {

@@ -25,7 +25,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Prompt manquant ou vide' }, { status: 400 })
     }
 
-    console.log('[generate-image] job_id=%s platform=%s prompt_len=%d', job_id ?? '—', platform ?? '—', prompt.length)
 
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_IMAGE_MODEL}:generateContent?key=${apiKey}`
     let geminiRes: Response
@@ -81,7 +80,6 @@ export async function POST(req: NextRequest) {
     }
 
     const { data: u } = sb.storage.from('brand-assets').getPublicUrl(path)
-    console.log('[generate-image] OK path=%s bytes=%d', path, buf.byteLength)
     return NextResponse.json({ success: true, image_url: u.publicUrl, prompt })
   } catch (err) {
     console.error('[generate-image] unhandled error', err)

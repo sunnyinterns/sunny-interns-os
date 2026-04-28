@@ -36,6 +36,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 401 })
   }
 
-  console.log('[auth-setup] Auth OK for', email)
   return response
 }

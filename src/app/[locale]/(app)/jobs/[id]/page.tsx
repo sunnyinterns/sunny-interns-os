@@ -192,7 +192,7 @@ function textPromptFor(job: JobDetail, platform: Platform, tone: string, lang: L
   return `You are a social media manager for Bali Interns, an internship agency placing French students in Bali.
 Write a ${platform} post in ${langLabel} for this internship: ${title} — ${duration} — ${job.location ?? 'Bali, Indonesia'}
 ${job.public_description?.slice(0, 150) ?? ''}${hook}${vibe}${perks}${tags}
-TONE: ${tone} | FORMAT: ${fmt} | CTA: "Apply → sunny-interns-os.vercel.app"
+TONE: ${tone} | FORMAT: ${fmt} | CTA: "Apply → bali-interns.com/fr/apply"
 ⚠️ IMPORTANT RULES:
 - NEVER mention the employer company name (confidential commercial info)
 - Say "a partner company" or "our partner" if you need to reference the employer
@@ -593,9 +593,9 @@ export default function JobDetailPage() {
           </label>
 
           {job.is_public && job.seo_slug ? (
-            <a href={`https://sunny-interns-os.vercel.app/jobs/${job.seo_slug}`} target="_blank" rel="noopener noreferrer"
+            <a href={`${process.env.NEXT_PUBLIC_APP_URL ?? "https://sunny-interns-os.vercel.app"}/jobs/${job.seo_slug}`} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-xs text-[#c8a96e] hover:underline font-medium">
-              🌐 sunny-interns-os.vercel.app/jobs/{job.seo_slug} ↗
+              🌐 {process.env.NEXT_PUBLIC_APP_URL?.replace("https://","") ?? "os.bali-interns.com"}/jobs/{job.seo_slug} ↗
             </a>
           ) : job.is_public && !job.seo_slug ? (
             <button onClick={() => setActiveTab('publication')}

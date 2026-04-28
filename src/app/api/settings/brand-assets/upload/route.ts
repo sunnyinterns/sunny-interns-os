@@ -54,6 +54,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: upsertErr.message }, { status: 500 })
   }
 
-  console.log(`[brand-assets upload] ✅ ${key} → ${storagePath}?v=${v}`)
   return NextResponse.json({ url: publicUrl, key, path: storagePath })
 }
