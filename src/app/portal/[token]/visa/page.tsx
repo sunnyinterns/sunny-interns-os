@@ -181,7 +181,7 @@ export default function PortalVisaPage() {
         <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Informations de vol</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div><label style={labelStyle}>N° de vol arrivant à Bali</label><input style={inputStyle} placeholder="ex: SQ321" value={extras.flight_number} onChange={e => setExtras(x => ({ ...x, flight_number: e.target.value }))} /></div>
-          <div><label style={labelStyle}>Ville de départ dernier vol</label><input style={inputStyle} placeholder="ex: Singapore SIN" value={extras.flight_departure_city} onChange={e => setExtras(x => ({ ...x, flight_departure_city: e.target.value }))} /></div>
+          <div><label style={labelStyle}>Departure city dernier vol</label><input style={inputStyle} placeholder="ex: Singapore SIN" value={extras.flight_departure_city} onChange={e => setExtras(x => ({ ...x, flight_departure_city: e.target.value }))} /></div>
         </div>
         <div style={{ marginTop: 12 }}><label style={labelStyle}>Heure d&apos;arrivée locale à Bali</label><input style={inputStyle} placeholder="ex: 14h35" value={extras.flight_arrival_time} onChange={e => setExtras(x => ({ ...x, flight_arrival_time: e.target.value }))} /></div>
       </div>
@@ -247,20 +247,26 @@ export default function PortalVisaPage() {
 
       {/* ── STATUT DU VISA ── */}
       <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Statut du visa</h3>
+        <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Visa status</h3>
         {data.visa_recu ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: '#f0fdf4', borderRadius: 10, border: '1.5px solid #0d9e75' }}>
             <span style={{ fontSize: 20 }}>🛂</span>
-            <div>
-              <p style={{ fontSize: 14, fontWeight: 700, color: '#0d9e75', margin: 0 }}>Visa reçu !</p>
-              <p style={{ fontSize: 12, color: '#166534', margin: 0 }}>Your visa is ready. Safe travels!</p>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: '#0d9e75', margin: 0 }}>Visa received! ✅</p>
+              <p style={{ fontSize: 12, color: '#166534', margin: 0 }}>Your visa is ready. Safe travels! 🌴</p>
+              {data.visa_url && (
+                <a href={data.visa_url} target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 8, padding: '6px 12px', background: '#0d9e75', color: 'white', borderRadius: 8, fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
+                  📄 Download my visa
+                </a>
+              )}
             </div>
           </div>
         ) : data.visa_submitted_to_agent_at ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: '#eff6ff', borderRadius: 10, border: '1px solid #bfdbfe' }}>
             <span style={{ fontSize: 20 }}>⏳</span>
             <div>
-              <p style={{ fontSize: 14, fontWeight: 600, color: '#1d4ed8', margin: 0 }}>Dossier en cours de traitement</p>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#1d4ed8', margin: 0 }}>Application being processed</p>
               <p style={{ fontSize: 12, color: '#3730a3', margin: 0 }}>Submitted on {new Date(data.visa_submitted_to_agent_at).toLocaleDateString('en-GB')} — processing time ~1 month</p>
             </div>
           </div>
@@ -268,8 +274,8 @@ export default function PortalVisaPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: '#fef3c7', borderRadius: 10, border: '1px solid #fcd34d' }}>
             <span style={{ fontSize: 20 }}>📋</span>
             <div>
-              <p style={{ fontSize: 14, fontWeight: 600, color: '#92400e', margin: 0 }}>En attente de vos documents</p>
-              <p style={{ fontSize: 12, color: '#78350f', margin: 0 }}>Uploadez vos documents ci-dessus pour débloquer votre visa</p>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#92400e', margin: 0 }}>Waiting for your documents</p>
+              <p style={{ fontSize: 12, color: '#78350f', margin: 0 }}>Upload your documents above to unlock your visa application</p>
             </div>
           </div>
         )}
@@ -277,17 +283,17 @@ export default function PortalVisaPage() {
 
       {/* ── RÈGLES VISA IMPORTANTES ── */}
       <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: '#92400e', marginBottom: 10 }}>⚠️ Règles importantes pour votre visa</h3>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: '#92400e', marginBottom: 10 }}>⚠️ ⚠️ Important visa rules</h3>
         <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <li style={{ fontSize: 13, color: '#78350f' }}>Le visa est valide <strong>maximum 175 jours</strong> après la date d&apos;arrivée en Indonésie</li>
-          <li style={{ fontSize: 13, color: '#78350f' }}>Le traitement prend <strong>environ 1 mois</strong> après réception de votre billet d&apos;avion</li>
+          <li style={{ fontSize: 13, color: '#78350f' }}>The visa is valid for a <strong>maximum of 175 days</strong> after your arrival date in Indonesia</li>
+          <li style={{ fontSize: 13, color: '#78350f' }}>Processing takes <strong>approximately 1 month</strong> after receiving your flight ticket</li>
           <li style={{ fontSize: 13, color: '#78350f' }}>Don't buy your flight too early — wait for your visa confirmation</li>
           <li style={{ fontSize: 13, color: '#78350f' }}>Your passport must be valid for <strong>at least 6 months</strong> after your arrival</li>
         </ul>
       </div>
 
       <p style={{ color: '#9ca3af', fontSize: 12, textAlign: 'center' }}>
-        Questions ? <a href="mailto:team@bali-interns.com" style={{ color: '#FFCC00' }}>team@bali-interns.com</a>
+        Questions? <a href="mailto:team@bali-interns.com" style={{ color: '#FFCC00' }}>team@bali-interns.com</a>
       </p>
     </div>
   )

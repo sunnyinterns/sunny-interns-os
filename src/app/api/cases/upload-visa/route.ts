@@ -41,14 +41,42 @@ export async function POST(req: Request) {
   const { data: urlData } = admin.storage.from('documents').getPublicUrl(path)
   const visaUrl = urlData.publicUrl
 
-  // Update case
+  // Update case + auto-set visa_received
+  const { data: caseBeforeUpdate } = await admin.from('cases')
+    .select('status, portal_token, interns(first_name, email)')
+    .eq('id', caseId).single()
+    
   await admin.from('cases').update({
     visa_url: visaUrl,
     visa_uploaded_at: new Date().toISOString(),
     visa_uploaded_by: source,
-    status: 'visa_received', // auto-set status when visa uploaded
+    visa_recu: true,
+    status: 'visa_received',
     updated_at: new Date().toISOString(),
   }).eq('id', caseId)
+  
+  // Trigger email + notifications via status route if not already visa_received
+  const wasAlreadyReceived = (caseBeforeUpdate as Record<string,unknown>)?.status === 'visa_received'
+  const intern = (caseBeforeUpdate as Record<string,unknown>)?.interns as { first_name?: string; email?: string } | null
+  const portalToken = (caseBeforeUpdate as Record<string,unknown>)?.portal_token as string | null
+  
+  if (!wasAlreadyReceived && intern?.email && intern.first_name) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+    // Email visa_received avec lien de téléchargement
+    try {
+      const { Resend } = await import('resend')
+      const resend = new Resend(process.env.RESEND_API_KEY)
+      // Use template via internal fetch to status route
+      void fetch(\`\${appUrl}/api/cases/\${caseId}/status\`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-internal-key': process.env.CRON_SECRET ?? '',
+        },
+        body: JSON.stringify({ status: 'visa_received' }),
+      }).catch(() => null)
+    } catch { /* non-blocking */ }
+  }
 
   // Notify Charly if uploaded by agent
   if (source === 'agent') {

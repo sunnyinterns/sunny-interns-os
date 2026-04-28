@@ -98,7 +98,7 @@ export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPorta
           <p className="text-sm font-medium text-red-900">{cancelledAt} · {caseData.rdv_cancelled_reason ?? 'Aucune raison indiquée'}</p>
         </div>
         <a href={caseData.intern_first_meeting_reschedule_link ?? '#'} target="_blank" rel="noopener noreferrer"
-          className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#c8a96e] text-white whitespace-nowrap">
+          className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#FFCC00] text-[#1A1A1A] whitespace-nowrap">
           Replanifier →
         </a>
       </>,
@@ -112,7 +112,7 @@ export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPorta
     const isToday = dayLabel === "aujourd'hui"
     return bandeau(
       isToday ? '#fdf8f0' : '#f8fafc',
-      isToday ? '#c8a96e60' : '#e2e8f0',
+      isToday ? '#FFCC0040' : '#e2e8f0',
       <>
         <div className="flex-1 min-w-0">
           <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: isToday ? '#c8a96e' : '#64748b' }}>
@@ -123,7 +123,7 @@ export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPorta
             {pill(dayLabel, urgent ? '#92400e' : '#1d4ed8', urgent ? '#fef3c7' : '#dbeafe')}
           </div>
           {caseData.intern_first_meeting_link && (
-            <p className="text-xs text-zinc-400 mt-0.5">Google Meet · <a href={caseData.intern_first_meeting_link} target="_blank" rel="noopener noreferrer" className="text-[#c8a96e] hover:underline">Ouvrir le lien</a></p>
+            <p className="text-xs text-zinc-400 mt-0.5">Google Meet · <a href={caseData.intern_first_meeting_link} target="_blank" rel="noopener noreferrer" className="text-[#FFCC00] hover:underline">Ouvrir le lien</a></p>
           )}
         </div>
         <div className="flex gap-2 flex-shrink-0">
@@ -146,7 +146,7 @@ export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPorta
             </a>
           ) : null}
           <button onClick={() => setDebriefOpen(true)}
-            className="px-3 py-1.5 text-xs font-bold rounded-lg bg-[#1a1918] text-[#c8a96e] whitespace-nowrap">
+            className="px-3 py-1.5 text-xs font-bold rounded-lg bg-[#1a1918] text-[#FFCC00] whitespace-nowrap">
             ✏️ Débrief
           </button>
         </div>
@@ -195,10 +195,10 @@ export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPorta
 
     // 2B — CV uploadé, pas validé
     if (cvNotValidated) {
-      return bandeau('#fdf8f0', '#c8a96e60',
+      return bandeau('#fdf8f0', '#FFCC0040',
         <>
           <div className="flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: '#c8a96e' }}>Nouveau CV reçu — validation requise</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: '#FFCC00' }}>Nouveau CV reçu — validation requise</p>
             <p className="text-sm font-medium text-[#1a1918]">{intern.first_name ?? 'Le candidat'} a uploadé un CV · À valider avant envoi aux employeurs</p>
           </div>
           <div className="flex gap-2 flex-shrink-0">
@@ -477,14 +477,14 @@ export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPorta
     const isPast = recontactMonth ? new Date(recontactMonth + '-01') <= new Date() : false
     return bandeau(
       isPast ? '#fffbeb' : '#fdf8f0',
-      isPast ? '#fcd34d' : '#c8a96e60',
+      isPast ? '#fcd34d' : '#FFCC0040',
       <>
         <div className="flex-1">
           <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: isPast ? '#d97706' : '#c8a96e' }}>
-            {isPast ? '⚠️ À relancer maintenant' : '📅 À recontacter'}
+            {isPast ? '⚠️ Follow up now' : '📅 To recontact'}
           </p>
           <p className="text-sm font-medium text-[#1a1918]">
-            {intern?.first_name ?? 'Ce candidat'} sera à relancer en <strong>{monthLabel}</strong>
+            {intern?.first_name ?? 'Candidate'} to recontact in <strong>{monthLabel}</strong>
           </p>
           {(caseData as any).recontact_reason && (
             <p className="text-xs text-zinc-400 mt-0.5 truncate max-w-xs">{(caseData as any).recontact_reason}</p>
@@ -493,18 +493,18 @@ export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPorta
         <div className="flex gap-2 flex-shrink-0">
           <button onClick={() => setDebriefOpen(true)}
             className="px-3 py-1.5 text-xs rounded-lg border border-zinc-200 text-zinc-600 bg-white whitespace-nowrap">
-            Modifier →
+            Edit →
           </button>
           {isPast && (
-            <button className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#c8a96e] text-white whitespace-nowrap">
-              📧 Envoyer relance
+            <button className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#FFCC00] text-[#1A1A1A] whitespace-nowrap">
+              📧 Send follow-up
             </button>
           )}
         </div>
       </>,
       isPast
         ? <><span>🔔</span><span><strong>Alerte :</strong> Le mois de relance est arrivé — contacter {intern?.first_name ?? 'le candidat'} maintenant</span></>
-        : <><span>📅</span><span>Alerte To-Do créée · Relance prévue en {monthLabel}</span></>
+        : <><span>📅</span><span>To-Do alert created · Recontact scheduled for {monthLabel}</span></>
     )
   }
 

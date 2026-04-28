@@ -107,6 +107,35 @@ export async function GET() {
     })
   })
 
+
+  // 3c. Visa en cours mais départ dans < 21 jours — CRITIQUE
+  const { data: visaUrgent } = await adminClient
+    .from('cases')
+    .select('id, status, actual_start_date, interns(first_name, last_name), flight_number')
+    .in('status', ['visa_in_progress', 'visa_docs_sent', 'visa_submitted'])
+    .not('actual_start_date', 'is', null)
+    .lt('actual_start_date', new Date(Date.now() + 21 * 86400000).toISOString().split('T')[0])
+    .limit(20)
+
+  visaUrgent?.forEach(c => {
+    const intern = (Array.isArray(c.interns) ? c.interns[0] : c.interns) as unknown as { first_name: string; last_name: string } | null
+    const startDate = new Date(c.actual_start_date as string)
+    const daysLeft = Math.ceil((startDate.getTime() - now.getTime()) / 86400000)
+    todos.push({
+      id: `visa-urgent-${c.id}`,
+      type: 'alerte',
+      priority: daysLeft <= 7 ? 'urgent' : 'high',
+      case_id: c.id,
+      intern_name: `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim(),
+      title: daysLeft <= 7 ? '🚨 URGENT — Visa not received, departure imminent' : '⚠️ Visa pending — departure in less than 21 days',
+      description: `Departure: ${startDate.toLocaleDateString('en-GB')} (${daysLeft} day${daysLeft > 1 ? 's' : ''} left) — contact visa agent immediately`,
+      cta_label: 'Open visa file',
+      cta_url: `/fr/cases/${c.id}?tab=visa`,
+      days_waiting: daysLeft,
+      status: c.status,
+    })
+  })
+
   // 3b. Visa refusé — action requise
   const { data: visaRefused } = await adminClient
     .from('cases')
