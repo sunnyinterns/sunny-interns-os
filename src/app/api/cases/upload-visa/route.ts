@@ -64,10 +64,8 @@ export async function POST(req: Request) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
     // Email visa_received avec lien de téléchargement
     try {
-      const { Resend } = await import('resend')
-      const resend = new Resend(process.env.RESEND_API_KEY)
-      // Use template via internal fetch to status route
-      void fetch(\`\${appUrl}/api/cases/\${caseId}/status\`, {
+      // Trigger email + notifications via status route
+      void fetch(appUrl + '/api/cases/' + caseId + '/status', {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json',
