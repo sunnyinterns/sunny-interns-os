@@ -184,7 +184,7 @@ export async function PATCH(
             internEmail: rdvIntern.email,
             prenom: rdvIntern.first_name ?? 'Candidat',
             rdvDate: rdvDate
-              ? new Date(rdvDate).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })
+              ? new Date(rdvDate).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })
               : 'à confirmer',
             meetLink: rdvMeet ?? '',
             portalToken: rdvToken ?? undefined,

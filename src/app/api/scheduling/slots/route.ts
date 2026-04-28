@@ -61,7 +61,7 @@ export async function GET(request: Request) {
     if (!byDay[dateKey]) {
       byDay[dateKey] = {
         date: dateKey,
-        label: d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: visitorTz }),
+        label: d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: visitorTz }),
         slots: [],
       }
     }
@@ -71,7 +71,7 @@ export async function GET(request: Request) {
       end: slot.end,
       manager_id: slot.manager_id,
       // Simple local time — no mention of Bali or France
-      label: d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: visitorTz }),
+      label: d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: visitorTz }),
     })
   }
 

@@ -39,7 +39,7 @@ export async function POST(
   const html = isFr ? `
 <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px">
   <h2 style="color:#1a1918">Récap de ton entretien Bali Interns 🌴</h2>
-  <p>Bonjour ${intern.first_name ?? ''},</p>
+  <p>Hi ${intern.first_name ?? ''},</p>
   <p>Merci pour notre échange ! Voici un récap des offres de stage que nous avons discutées ensemble :</p>
   <table style="width:100%;border-collapse:collapse;margin:16px 0">
     <thead><tr style="background:#1a1918;color:white"><th style="padding:10px;text-align:left">#</th><th style="padding:10px;text-align:left">Poste</th><th style="padding:10px;text-align:left">Entreprise</th></tr></thead>

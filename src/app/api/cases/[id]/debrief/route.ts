@@ -33,7 +33,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     await sb.from('admin_notifications').insert({
       type: 'todo',
       title: `📅 Relancer ${internName}`,
-      message: `${internName} était à recontacter en ${new Date(year, month - 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}. Envoyer un message de relance.`,
+      message: `${internName} was to be re-contacted in ${new Date(year, month - 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}. Send a follow-up message.`,
       link: `/fr/cases/${caseId}`,
       case_id: caseId,
       action_url: `/fr/cases/${caseId}`,

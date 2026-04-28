@@ -38,7 +38,7 @@ export async function GET() {
         alerts.push({
           id: `passport-${c.id}`,
           type: 'critical',
-          message: `Passeport de ${name} expire le ${new Date(intern.passport_expiry).toLocaleDateString('fr-FR')} — vérifier avant le visa`,
+          message: `Passport for ${name} expires on ${new Date(intern.passport_expiry).toLocaleDateString('en-GB')} — check before visa`,
           case_id: c.id,
           intern_name: name,
           action_url: `/fr/cases/${c.id}`,

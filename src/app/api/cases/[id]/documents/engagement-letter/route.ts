@@ -39,15 +39,15 @@ export async function POST(
 
     const startDateValue = (caseData as Record<string, unknown>)?.actual_start_date ?? (caseData as Record<string, unknown>)?.desired_start_date
     const arrivalDate = startDateValue
-      ? new Date(startDateValue as string).toLocaleDateString('fr-FR')
+      ? new Date(startDateValue as string).toLocaleDateString('en-GB')
       : 'À définir'
 
     const endDateValue = (caseData as Record<string, unknown>)?.actual_end_date
     const returnDate = endDateValue
-      ? new Date(endDateValue as string).toLocaleDateString('fr-FR')
+      ? new Date(endDateValue as string).toLocaleDateString('en-GB')
       : 'À définir'
 
-    const today = new Date().toLocaleDateString('fr-FR')
+    const today = new Date().toLocaleDateString('en-GB')
     const internName = `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim()
     const companyName = company?.name ?? "l'entreprise partenaire"
     const durationWeeks = (caseData as Record<string, unknown>)?.duration_weeks ?? '?'

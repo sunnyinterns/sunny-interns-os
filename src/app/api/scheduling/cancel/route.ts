@@ -55,7 +55,7 @@ export async function GET(request: Request) {
       case_id: booking.case_id,
       type: 'rdv_cancelled_by_intern',
       title: `${booking.invitee_name} a annulé son RDV`,
-      message: `Créneau annulé : ${new Date(booking.start_at).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}`,
+      message: `Slot cancelled: ${new Date(booking.start_at).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}`,
       is_read: false,
     })
   }

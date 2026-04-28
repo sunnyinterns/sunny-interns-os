@@ -12,7 +12,7 @@ export async function GET() {
     if (dow === 0 || dow === 6) continue
 
     const dateStr = day.toISOString().slice(0, 10)
-    const dayLabel = day.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+    const dayLabel = day.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
 
     const daySlots: { start: string; end: string; label: string }[] = []
     // 9h00 → 18h00 Jakarta (UTC+8), slots 45min

@@ -40,7 +40,7 @@ export async function POST(request: Request) {
   const inviteeName = `${d.first_name} ${d.last_name}`
   const summary = `${et.title as string} — ${inviteeName}`
 
-  const startFr = new Date(d.start).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: d.timezone })
+  const startFr = new Date(d.start).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: d.timezone })
 
   const description = [
     d.lang === 'fr'
@@ -158,7 +158,7 @@ export async function POST(request: Request) {
 
   // ── Post-booking actions ──────────────────────────────────────────
   // bookingId already declared above
-  const rdvLabel = new Date(d.start).toLocaleDateString('fr-FR', {
+  const rdvLabel = new Date(d.start).toLocaleDateString('en-GB', {
     weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta'
   })
 
@@ -254,7 +254,7 @@ export async function POST(request: Request) {
     try {
       const { Resend } = await import('resend')
       const resend = new Resend(process.env.RESEND_API_KEY)
-      const timeDisplay = new Date(d.start).toLocaleString('fr-FR', {
+      const timeDisplay = new Date(d.start).toLocaleString('en-GB', {
         weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta'
       })
       const typeLabel = d.event_slug === 'employeur' ? '🏢 Nouvel Employeur' : '🎓 Nouvelle École'

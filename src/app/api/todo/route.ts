@@ -206,7 +206,7 @@ export async function GET() {
       case_id: c.id,
       intern_name: `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim(),
       title: `⚠️ Visa en cours — départ dans ${daysLeft}j`,
-      description: `Départ prévu le ${new Date(c.desired_start_date as string).toLocaleDateString('fr-FR')} — visa pas encore reçu`,
+      description: `Departure planned for ${new Date(c.desired_start_date as string).toLocaleDateString('en-GB')} — visa not yet received`,
       cta_label: 'Voir le dossier',
       cta_url: `/fr/cases/${c.id}?tab=visa`,
       days_waiting: daysLeft,

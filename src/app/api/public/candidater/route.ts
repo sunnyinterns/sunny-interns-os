@@ -172,7 +172,7 @@ export async function POST(request: Request) {
       firstName: d.first_name,
       lastName: d.last_name,
       email: d.email,
-      startDate: d.desired_start_date ? new Date(d.desired_start_date).toLocaleDateString('fr-FR') : null,
+      startDate: d.desired_start_date ? new Date(d.desired_start_date).toLocaleDateString('en-GB') : null,
       duration: d.desired_duration ? `${d.desired_duration} mois` : null,
       passportExpiry: d.passport_expiry || null,
       startDateValue: d.desired_start_date || null,
