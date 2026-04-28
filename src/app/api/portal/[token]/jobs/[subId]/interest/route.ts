@@ -59,7 +59,8 @@ export async function POST(
     updated_at: new Date().toISOString(),
   }).eq('id', subId)
 
-  const job = sub.jobs as Record<string, unknown> | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const job = (Array.isArray((sub as any).jobs) ? (sub as any).jobs[0] : (sub as any).jobs) as Record<string, unknown> | null
   const intern = caseRow.interns as Record<string, unknown> | null
   const internName = `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim()
   const jobTitle = String(job?.public_title ?? job?.title ?? 'Internship')

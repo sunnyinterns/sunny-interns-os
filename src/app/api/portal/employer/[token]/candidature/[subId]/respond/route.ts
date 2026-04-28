@@ -67,9 +67,11 @@ export async function POST(
     last_active_at: new Date().toISOString(),
   }).eq('token', token)
 
-  const job = sub.jobs as Record<string, unknown> | null
-  const caseRow = sub.cases as Record<string, unknown> | null
-  const intern = caseRow?.interns as Record<string, unknown> | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const subAny = sub as any
+  const job = (Array.isArray(subAny.jobs) ? subAny.jobs[0] : subAny.jobs) as Record<string, unknown> | null
+  const caseRow = (Array.isArray(subAny.cases) ? subAny.cases[0] : subAny.cases) as Record<string, unknown> | null
+  const intern = (Array.isArray(caseRow?.interns) ? (caseRow.interns as unknown[])[0] : caseRow?.interns) as Record<string, unknown> | null
   const internName = `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim()
   const jobTitle = String(job?.public_title ?? job?.title ?? 'Internship')
   const caseId = sub.case_id
