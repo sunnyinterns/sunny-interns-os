@@ -43,8 +43,8 @@ function timeAgo(iso: string): string {
   if (hrs < 24) return `il y a ${hrs}h`
   const days = Math.floor(hrs / 24)
   if (days === 1) return 'Hier'
-  if (days < 7) return new Date(iso).toLocaleDateString('fr-FR', { weekday: 'long' })
-  return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
+  if (days < 7) return new Date(iso).toLocaleDateString('en-GB', { weekday: 'long' })
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })
 }
 
 function groupByDay(items: ActivityItem[]): { label: string; count: number; items: ActivityItem[] }[] {
@@ -61,7 +61,7 @@ function groupByDay(items: ActivityItem[]): { label: string; count: number; item
     } else if (d.toDateString() === yesterday.toDateString()) {
       key = 'Hier'
     } else {
-      key = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+      key = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
       key = key.charAt(0).toUpperCase() + key.slice(1)
     }
     if (!groups.has(key)) groups.set(key, [])
@@ -76,14 +76,14 @@ function formatDate(iso: string | null | undefined): string | null {
   if (!iso) return null
   const d = new Date(iso)
   if (isNaN(d.getTime())) return null
-  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 function formatMonth(iso: string | null | undefined): string | null {
   if (!iso) return null
   const d = new Date(iso)
   if (isNaN(d.getTime())) return null
-  return d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+  return d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
 }
 
 interface Props {
@@ -236,7 +236,7 @@ export function ActivityFeed({ locale = 'fr', showFilters = true, initialLimit =
                         {timeAgo(item.created_at)}
                       </span>
                       <span className="text-[10px] text-zinc-300 whitespace-nowrap">
-                        {new Date(item.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(item.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                   </div>

@@ -127,7 +127,7 @@ export function TabJobs({ caseId, firstName, lastName, desiredSectors }: TabJobs
       showToast(fields.status === 'retained' ? 'Job retenu 🎉' : 'Mis à jour')
       void fetchSubmissions()
     } catch {
-      showToast('Erreur', false)
+      showToast('Error', false)
     } finally {
       setActionLoading(null)
     }
@@ -398,7 +398,7 @@ export function TabJobs({ caseId, firstName, lastName, desiredSectors }: TabJobs
                         <>
                           <span className="text-zinc-300 text-xs">·</span>
                           <span className="text-xs text-zinc-400">
-                            Dès {new Date(job.wished_start_date).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+                            Dès {new Date(job.wished_start_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
                           </span>
                         </>
                       )}

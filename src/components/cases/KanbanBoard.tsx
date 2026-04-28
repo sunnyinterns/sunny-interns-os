@@ -145,7 +145,7 @@ function getDateLabel(data: CaseData): { text: string; urgent: boolean } | null 
   if (['rdv_booked'].includes(status)) {
     if (data.desired_start_date) {
       const d = new Date(data.desired_start_date)
-      return { text: `Départ: ${d.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}`, urgent: false }
+      return { text: `Départ: ${d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}`, urgent: false }
     }
     return null
   }
@@ -153,7 +153,7 @@ function getDateLabel(data: CaseData): { text: string; urgent: boolean } | null 
   if (status === 'active') {
     if (data.actual_end_date) {
       const d = new Date(data.actual_end_date)
-      return { text: `Fin: ${d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`, urgent: false }
+      return { text: `Fin: ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`, urgent: false }
     }
     return null
   }
@@ -163,7 +163,7 @@ function getDateLabel(data: CaseData): { text: string; urgent: boolean } | null 
     if (ref) {
       const d = new Date(ref)
       const days = Math.ceil((d.getTime() - Date.now()) / 86400000)
-      return { text: `Arrive: ${d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`, urgent: days < 7 }
+      return { text: `Arrive: ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`, urgent: days < 7 }
     }
     return null
   }
@@ -372,7 +372,7 @@ function ListView({ cases, locale }: { cases: CaseData[]; locale: string }) {
                 </td>
                 <td className="px-3 py-2 text-[11px] text-[#71717a] truncate max-w-[140px]">{c.school ?? '—'}</td>
                 <td className="px-3 py-2 text-[11px] text-[#71717a]">
-                  {c.desired_start_date ? new Date(c.desired_start_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                  {c.desired_start_date ? new Date(c.desired_start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                 </td>
                 <td className="px-3 py-2 text-[11px] text-[#71717a] truncate max-w-[120px]">{c.assigned_manager_name ?? '—'}</td>
               </tr>

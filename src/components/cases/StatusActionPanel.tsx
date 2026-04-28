@@ -222,7 +222,7 @@ export function StatusActionPanel({ caseData, onRefresh }: StatusActionPanelProp
             <div className="flex gap-2">
               <button onClick={confirmRecontact} disabled={!recontactDate || loading === 'to_recontact'}
                 className="flex-1 py-2.5 text-sm font-bold bg-[#c8a96e] text-white rounded-xl hover:bg-[#b8945a] disabled:opacity-40">
-                {loading === 'to_recontact' ? '…' : 'Confirmer'}
+                {loading === 'to_recontact' ? '…' : 'Confirm'}
               </button>
               <button onClick={() => setShowRecontactModal(false)} className="px-4 py-2.5 text-sm border border-zinc-200 rounded-xl text-zinc-500">
                 Annuler

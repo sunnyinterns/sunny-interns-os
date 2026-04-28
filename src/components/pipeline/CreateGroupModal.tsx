@@ -142,7 +142,7 @@ export function CreateGroupModal({ onClose, onCreated }: CreateGroupModalProps) 
               Annuler
             </Button>
             <Button type="submit" variant="primary" size="sm" disabled={saving || !name.trim()}>
-              {saving ? 'Création…' : 'Créer'}
+              {saving ? 'Création…' : 'Create'}
             </Button>
           </div>
         </form>

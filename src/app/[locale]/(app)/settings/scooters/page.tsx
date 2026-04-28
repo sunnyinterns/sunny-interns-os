@@ -125,7 +125,7 @@ function ScooterModal({
         <div className="px-6 py-4 border-t border-zinc-100 flex justify-end gap-2">
           <button onClick={onClose} className="px-4 py-2 text-sm rounded-lg border border-zinc-200 text-zinc-600 hover:bg-zinc-50">Annuler</button>
           <button onClick={handleSave} disabled={!name.trim()} className="px-4 py-2 text-sm font-medium rounded-lg bg-[#c8a96e] text-white hover:bg-[#b8945a] disabled:opacity-50">
-            {initial ? 'Enregistrer' : 'Créer'}
+            {initial ? 'Save' : 'Create'}
           </button>
         </div>
       </div>
@@ -205,7 +205,7 @@ export default function ScootersPage() {
                   <p className="text-sm font-medium text-[#1a1918] truncate">{s.name}</p>
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                     {s.zone && <span className="text-xs px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600">{s.zone}</span>}
-                    {s.price_per_month && <span className="text-xs font-medium text-[#0d9e75]">{s.price_per_month.toLocaleString('fr-FR')} IDR/mois</span>}
+                    {s.price_per_month && <span className="text-xs font-medium text-[#0d9e75]">{s.price_per_month.toLocaleString('en-GB')} IDR/mois</span>}
                   </div>
                   {s.offer_short && <p className="text-xs text-zinc-500 mt-0.5 truncate">{s.offer_short}</p>}
                   {s.contact_whatsapp && <p className="text-xs text-zinc-400 mt-0.5">WA: {s.contact_whatsapp}</p>}

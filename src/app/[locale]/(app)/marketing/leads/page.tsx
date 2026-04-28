@@ -132,7 +132,7 @@ export default function MarketingLeadsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-400">
-                      {new Date(lead.created_at).toLocaleDateString('fr-FR')}
+                      {new Date(lead.created_at).toLocaleDateString('en-GB')}
                     </td>
                   </tr>
                 ))}

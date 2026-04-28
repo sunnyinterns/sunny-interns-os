@@ -21,7 +21,7 @@ const MONTHS = Array.from({ length: 12 }, (_, i) => {
   d.setMonth(d.getMonth() + i + 1)
   return {
     value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
-    label: d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
+    label: d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
   }
 })
 

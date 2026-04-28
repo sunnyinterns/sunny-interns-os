@@ -112,7 +112,7 @@ export default function FeedPage() {
   }
 
   const now = new Date()
-  const todayStr = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+  const todayStr = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
 
   // Week calendar: current week + next week (14 days)
   const weekStart = new Date(now)
@@ -266,8 +266,8 @@ export default function FeedPage() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-[#1a1918] truncate">{ev.title}</p>
                         <p className="text-xs text-zinc-400">
-                          {ev.start_time ? new Date(ev.start_time).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : ''}
-                          {ev.start_time ? ` · ${new Date(ev.start_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` : ''}
+                          {ev.start_time ? new Date(ev.start_time).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) : ''}
+                          {ev.start_time ? ` · ${new Date(ev.start_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : ''}
                         </p>
                       </div>
                     </div>

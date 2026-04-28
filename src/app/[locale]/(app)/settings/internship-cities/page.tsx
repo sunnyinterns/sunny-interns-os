@@ -87,7 +87,7 @@ export default function InternshipCitiesPage() {
       void load()
     } else {
       const d = await res.json().catch(() => ({})) as { error?: string }
-      showToast(d.error ?? 'Erreur')
+      showToast(d.error ?? 'Error')
     }
     setSaving(false)
   }
@@ -104,7 +104,7 @@ export default function InternshipCitiesPage() {
     if (!confirm(`Supprimer "${c.name}" ?`)) return
     const res = await fetch(`/api/internship-cities/${c.id}`, { method: 'DELETE' })
     if (res.ok) { showToast('Ville supprimée'); void load() }
-    else { const d = await res.json().catch(() => ({})) as { error?: string }; showToast(d.error ?? 'Erreur') }
+    else { const d = await res.json().catch(() => ({})) as { error?: string }; showToast(d.error ?? 'Error') }
   }
 
   const inputCls = 'w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm bg-white text-[#1a1918] focus:outline-none focus:ring-2 focus:ring-[#c8a96e]'
@@ -149,7 +149,7 @@ export default function InternshipCitiesPage() {
               <input type="number" className={inputCls} value={formSortOrder} onChange={e => setFormSortOrder(e.target.value)} />
             </div>
             <div className="flex gap-2 pt-1">
-              <button type="submit" disabled={saving || !formName.trim()} className="px-4 py-2 text-sm font-medium rounded-lg bg-[#c8a96e] text-white disabled:opacity-50">{saving ? 'Enregistrement...' : editingId ? 'Modifier' : 'Créer'}</button>
+              <button type="submit" disabled={saving || !formName.trim()} className="px-4 py-2 text-sm font-medium rounded-lg bg-[#c8a96e] text-white disabled:opacity-50">{saving ? 'Enregistrement...' : editingId ? 'Edit' : 'Create'}</button>
               <button type="button" onClick={cancelForm} className="px-4 py-2 text-sm rounded-lg border border-zinc-200 text-zinc-600 hover:bg-zinc-50">Annuler</button>
             </div>
           </form>

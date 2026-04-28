@@ -400,7 +400,7 @@ export default function VisaTypesPage() {
                   {editing && <button type="button" onClick={() => handleDelete(editing.id)} className="px-4 py-2 text-sm rounded-lg border border-red-100 text-red-500">Supprimer</button>}
                   <div className="flex gap-2 ml-auto">
                     <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm rounded-lg border border-zinc-200 text-zinc-600">Annuler</button>
-                    <button type="submit" disabled={saving} className="px-4 py-2 text-sm font-medium rounded-lg bg-[#c8a96e] text-white disabled:opacity-50">{saving ? 'Sauvegarde…' : 'Sauvegarder'}</button>
+                    <button type="submit" disabled={saving} className="px-4 py-2 text-sm font-medium rounded-lg bg-[#c8a96e] text-white disabled:opacity-50">{saving ? 'Sauvegarde…' : 'Save'}</button>
                   </div>
                 </div>
               </form>

@@ -186,7 +186,7 @@ export default function NewsletterPage() {
         <div className="text-center py-12 text-zinc-400 text-sm">Chargement…</div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-12 text-zinc-400 text-sm">
-          {subscribers.length === 0 ? 'Aucun abonné pour l\'instant — la section newsletter est cachée sur le site.' : 'Aucun résultat'}
+          {subscribers.length === 0 ? 'Aucun abonné pour l\'instant — la section newsletter est cachée sur le site.' : 'No results'}
         </div>
       ) : (
         <div className="border border-zinc-200 rounded-2xl overflow-hidden">
@@ -205,7 +205,7 @@ export default function NewsletterPage() {
                   <td className="px-4 py-3">
                     <span className="px-2 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-bold rounded-full">{s.source || 'direct'}</span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-zinc-400">{new Date(s.created_at).toLocaleDateString('fr-FR')}</td>
+                  <td className="px-4 py-3 text-xs text-zinc-400">{new Date(s.created_at).toLocaleDateString('en-GB')}</td>
                 </tr>
               ))}
             </tbody>

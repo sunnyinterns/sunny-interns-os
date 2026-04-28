@@ -52,7 +52,7 @@ function fmtDuration(ms: number | null): string {
 
 function fmtTime(iso: string | null): string {
   if (!iso) return ''
-  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
 function fmtAgo(iso: string): string {
@@ -60,7 +60,7 @@ function fmtAgo(iso: string): string {
   if (diff < 60000) return 'à l\'instant'
   if (diff < 3600000) return `il y a ${Math.floor(diff / 60000)}min`
   if (diff < 86400000) return `il y a ${Math.floor(diff / 3600000)}h`
-  return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
+  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })
 }
 
 const STATUS_ICON: Record<string, string> = {
@@ -278,7 +278,7 @@ function StepRow({ step, runId }: { step: TestStep; runId: string }) {
             )}
             <button onClick={() => setCommentsOpen(v => !v)}
               className="text-[10px] text-zinc-400 hover:text-[#c8a96e] px-2 py-1 rounded border border-zinc-200 hover:border-[#c8a96e] transition-colors">
-              {commentsOpen ? 'Fermer' : '+ Note'}
+              {commentsOpen ? 'Close' : '+ Note'}
             </button>
           </div>
         </div>
@@ -335,7 +335,7 @@ function StepRow({ step, runId }: { step: TestStep; runId: string }) {
                 <div className="flex gap-2 mb-1">
                   <span className="font-bold text-[10px] uppercase tracking-wide">{c.severity}</span>
                   <span className="text-[10px] opacity-50">
-                    {new Date(c.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
+                    {new Date(c.created_at).toLocaleString('en-GB',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
                   </span>
                 </div>
                 {c.comment}
@@ -757,7 +757,7 @@ export function TestDashboard({ suites }: Props) {
       <div className="flex items-center gap-4 text-[10px] text-zinc-400">
         {[
           { icon: '○', label: 'En attente', color: 'text-zinc-400' },
-          { icon: '◉', label: 'En cours', color: 'text-[#c8a96e]' },
+          { icon: '◉', label: 'In progress', color: 'text-[#c8a96e]' },
           { icon: '✓', label: 'Passé', color: 'text-[#0d9e75]' },
           { icon: '✗', label: 'Échoué', color: 'text-[#dc2626]' },
           { icon: '—', label: 'Ignoré', color: 'text-zinc-400' },

@@ -74,7 +74,7 @@ export default function UsersPage() {
       await loadUsers()
     } else {
       const err = await res.json() as { error: string }
-      setToast({ message: err.error || 'Erreur', type: 'error' })
+      setToast({ message: err.error || 'Error', type: 'error' })
     }
     setSaving(false)
   }
@@ -221,7 +221,7 @@ export default function UsersPage() {
                 disabled={saving || !form.email || !form.full_name}
                 className="px-4 py-2 bg-[#c8a96e] text-white rounded-lg text-sm font-semibold hover:bg-[#b89a5e] disabled:opacity-50"
               >
-                {saving ? 'Ajout…' : 'Ajouter'}
+                {saving ? 'Ajout…' : 'Add'}
               </button>
             </div>
           </div>

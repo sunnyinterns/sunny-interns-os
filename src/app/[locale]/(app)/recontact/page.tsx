@@ -46,7 +46,7 @@ export default function RecontactPage() {
   const Card = ({ c }: { c: RecontactCase }) => {
     const name = c.interns ? `${c.interns.first_name ?? ''} ${c.interns.last_name ?? ''}`.trim() || 'Sans nom' : 'Sans nom'
     const days = c.recontact_at ? daysUntil(c.recontact_at) : null
-    const dateLabel = c.recontact_at ? new Date(c.recontact_at).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : null
+    const dateLabel = c.recontact_at ? new Date(c.recontact_at).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) : null
 
     return (
       <Link href={`/${locale}/cases/${c.id}`}

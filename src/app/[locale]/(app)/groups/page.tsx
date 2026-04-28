@@ -188,7 +188,7 @@ export default function GroupsPage() {
                     <div className="flex items-center gap-3 mt-0.5">
                       {group.target_arrival_date && (
                         <span className="text-xs text-zinc-400">
-                          📅 {new Date(group.target_arrival_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          📅 {new Date(group.target_arrival_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                         </span>
                       )}
                       {group.driver_name && (
@@ -224,7 +224,7 @@ export default function GroupsPage() {
                         {m.arrival_date && (
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-zinc-400">
-                              {new Date(m.arrival_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                              {new Date(m.arrival_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                             </span>
                             {group.target_arrival_date && (
                               <span className="text-xs font-medium" style={{ color }}>
@@ -257,7 +257,7 @@ export default function GroupsPage() {
                 <span className="text-sm text-[#1a1918]">{c.first_name} {c.last_name}</span>
                 {c.arrival_date && (
                   <span className="text-xs text-zinc-400">
-                    {new Date(c.arrival_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {new Date(c.arrival_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </span>
                 )}
               </div>

@@ -107,7 +107,7 @@ export default function ActivityPage() {
         <div className="mb-6">
           <h1 className="text-xl font-bold text-[#1a1918]">Activite</h1>
           <p className="text-sm text-zinc-400 mt-1">
-            {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
 

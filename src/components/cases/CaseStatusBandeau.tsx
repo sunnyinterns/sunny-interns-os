@@ -20,9 +20,9 @@ function daysFromNow(dateStr: string): { days: number; label: string; urgent: bo
 }
 
 function formatRdvDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('fr-FR', {
+  return new Date(dateStr).toLocaleDateString('en-GB', {
     weekday: 'long', day: 'numeric', month: 'long'
-  }) + ' à ' + new Date(dateStr).toLocaleTimeString('fr-FR', {
+  }) + ' à ' + new Date(dateStr).toLocaleTimeString('en-GB', {
     hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta'
   }) + ' WITA'
 }
@@ -88,7 +88,7 @@ export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPorta
 
   // ── RDV ANNULÉ PAR LE CANDIDAT ──
   if (status === 'rdv_booked' && caseData.rdv_cancelled_by_intern_at) {
-    const cancelledAt = new Date(caseData.rdv_cancelled_by_intern_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
+    const cancelledAt = new Date(caseData.rdv_cancelled_by_intern_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
     return bandeau('#fef2f2', '#fca5a5',
       <>
         <div className="flex-1">
@@ -237,7 +237,7 @@ export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPorta
           <p className="text-sm font-medium text-[#1a1918]">Employeurs contactés · Délai 6 jours</p>
           {caseData.jobs_sent_to_employers_at && (
             <p className="text-xs text-zinc-400 mt-0.5">
-              Envoyé le {new Date(caseData.jobs_sent_to_employers_at).toLocaleDateString('fr-FR')} · {Math.max(0, 6 - Math.ceil((Date.now() - new Date(caseData.jobs_sent_to_employers_at).getTime()) / 86400000))}j restants
+              Envoyé le {new Date(caseData.jobs_sent_to_employers_at).toLocaleDateString('en-GB')} · {Math.max(0, 6 - Math.ceil((Date.now() - new Date(caseData.jobs_sent_to_employers_at).getTime()) / 86400000))}j restants
             </p>
           )}
         </div>
@@ -308,7 +308,7 @@ export function CaseStatusBandeau({ caseData, intern, onSendPortal, sendingPorta
   if (status === 'to_recontact') {
     const recontactMonth = (caseData as any).recontact_month as string | null
     const monthLabel = recontactMonth
-      ? new Date(recontactMonth + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+      ? new Date(recontactMonth + '-01').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
       : '—'
     const isPast = recontactMonth ? new Date(recontactMonth + '-01') <= new Date() : false
     return bandeau(

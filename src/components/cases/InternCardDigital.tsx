@@ -79,7 +79,7 @@ export function InternCardDigital({ caseData }: InternCardDigitalProps) {
           <div className="flex justify-between">
             <span className="text-zinc-500">Arrivée</span>
             <span className="font-medium text-[#1a1918]">
-              {new Date(caseData.arrival_date).toLocaleDateString('fr-FR')}
+              {new Date(caseData.arrival_date).toLocaleDateString('en-GB')}
             </span>
           </div>
         )}
@@ -87,7 +87,7 @@ export function InternCardDigital({ caseData }: InternCardDigitalProps) {
           <div className="flex justify-between">
             <span className="text-zinc-500">Retour</span>
             <span className="font-medium text-[#1a1918]">
-              {new Date(caseData.return_date).toLocaleDateString('fr-FR')}
+              {new Date(caseData.return_date).toLocaleDateString('en-GB')}
             </span>
           </div>
         )}

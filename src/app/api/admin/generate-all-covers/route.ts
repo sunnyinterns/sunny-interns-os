@@ -21,7 +21,20 @@ function toBase64(buf: ArrayBuffer): string {
   return Buffer.from(bin, 'binary').toString('base64')
 }
 
+
+function requireInternalKey(req: Request): Response | null {
+  const key = req.headers.get('x-internal-key') ?? req.headers.get('authorization')?.replace('Bearer ', '')
+  if (key !== process.env.INTERNAL_API_KEY && key !== process.env.CRON_SECRET) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  return null
+}
+
+
 export async function POST(req: Request) {
+  const authErr = requireInternalKey(req)
+  if (authErr) return authErr
+
   const { secret } = await req.json() as { secret?: string }
   if (secret !== process.env.ADMIN_SECRET && secret !== 'bali2026') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

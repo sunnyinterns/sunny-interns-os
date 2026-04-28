@@ -115,7 +115,7 @@ export default function ContractsTemplatesPage() {
             disabled={saving}
             className="px-4 py-2 bg-[#c8a96e] text-white rounded-lg text-sm font-semibold hover:bg-[#b89a5e] disabled:opacity-50"
           >
-            {saving ? 'Sauvegarde…' : 'Sauvegarder'}
+            {saving ? 'Sauvegarde…' : 'Save'}
           </button>
         </div>
 
@@ -183,7 +183,7 @@ export default function ContractsTemplatesPage() {
                     </span>
                     <span className="text-xs text-zinc-400">v{t.version} · {t.language.toUpperCase()}</span>
                     <span className="text-xs text-zinc-400">
-                      Modifié {new Date(t.updated_at).toLocaleDateString('fr-FR')}
+                      Modifié {new Date(t.updated_at).toLocaleDateString('en-GB')}
                     </span>
                   </div>
                 </div>

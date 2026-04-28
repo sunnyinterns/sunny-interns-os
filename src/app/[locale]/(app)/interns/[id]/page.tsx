@@ -68,7 +68,7 @@ const STATUS_CLS: Record<string, string> = {
 
 function formatDate(d: string | null | undefined) {
   if (!d) return null
-  return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 function internCategoryLabel(status: string | null | undefined): { label: string; cls: string } {

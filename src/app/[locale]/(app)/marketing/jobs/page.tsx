@@ -210,7 +210,7 @@ export default function PostingCalendarPage() {
                   {/* Date programmée */}
                   {p.scheduled_for ? (
                     <span className="text-xs text-[#c8a96e] font-medium flex-shrink-0 whitespace-nowrap">
-                      📅 {new Date(p.scheduled_for).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      📅 {new Date(p.scheduled_for).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </span>
                   ) : (
                     <span className="text-xs text-zinc-300 flex-shrink-0">—</span>
@@ -234,7 +234,7 @@ export default function PostingCalendarPage() {
             <button onClick={() => setCalendarMonth(addMonths(calendarMonth, -1))}
               className="px-3 py-1 text-sm text-zinc-500 hover:text-[#c8a96e]">← Mois précédent</button>
             <p className="text-sm font-semibold text-[#1a1918]">
-              {calendarMonth.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+              {calendarMonth.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
             </p>
             <button onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))}
               className="px-3 py-1 text-sm text-zinc-500 hover:text-[#c8a96e]">Mois suivant →</button>

@@ -523,7 +523,7 @@ export function BillingForm({ caseId, caseData, defaultPackageId, defaultBilling
             <div>
               <p className="text-sm font-medium text-[#1a1918]">Paiement reçu</p>
               {isPaid && billing?.paid_at && (
-                <p className="text-xs text-[#0d9e75]">Confirmé le {new Date(billing.paid_at).toLocaleDateString('fr-FR')}</p>
+                <p className="text-xs text-[#0d9e75]">Confirmé le {new Date(billing.paid_at).toLocaleDateString('en-GB')}</p>
               )}
               {confirming && <p className="text-xs text-zinc-400">Confirmation en cours…</p>}
             </div>
@@ -539,7 +539,7 @@ export function BillingForm({ caseId, caseData, defaultPackageId, defaultBilling
             disabled={saving || confirming}
             className="px-4 py-2 bg-[#c8a96e] hover:bg-[#b8945a] text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
           >
-            {saving ? 'Sauvegarde…' : 'Enregistrer'}
+            {saving ? 'Sauvegarde…' : 'Save'}
           </button>
         )}
         {isPaid && (

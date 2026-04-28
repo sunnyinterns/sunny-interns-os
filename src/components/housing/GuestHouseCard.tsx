@@ -34,7 +34,7 @@ export function GuestHouseCard({ guesthouse }: GuestHouseCardProps) {
       </div>
 
       <p className="text-lg font-bold text-[#c8a96e] mb-3">
-        {guesthouse.price_month.toLocaleString('fr-FR')} €<span className="text-sm font-normal text-zinc-400">/mois</span>
+        {guesthouse.price_month.toLocaleString('en-GB')} €<span className="text-sm font-normal text-zinc-400">/mois</span>
       </p>
 
       {/* Amenity icons */}

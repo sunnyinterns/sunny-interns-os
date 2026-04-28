@@ -219,7 +219,7 @@ export default function ClientsPage() {
                         </td>
                         <td className="px-4 py-3 text-sm text-zinc-600">{intern?.main_desired_job ?? '\u2014'}</td>
                         <td className="px-4 py-3 text-sm text-zinc-600">
-                          {arrival ? new Date(arrival).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '\u2014'}
+                          {arrival ? new Date(arrival).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '\u2014'}
                         </td>
                         <td className="px-4 py-3 text-sm text-zinc-500">{c.assigned_manager_name ?? '\u2014'}</td>
                         <td className="px-4 py-3">

@@ -357,10 +357,10 @@ export default function FinancesPage() {
                           <div className="flex items-center gap-2 flex-wrap mb-1">
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ti.c}`}>{ti.l}</span>
                             {inv.extracted_by_ai&&<span className={`text-xs px-2 py-0.5 rounded-full font-medium ${confBadge(inv.extraction_confidence)}`}>🤖 {inv.extraction_confidence}</span>}
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${inv.paid_at?'bg-green-50 text-[#0d9e75]':'bg-amber-50 text-amber-700'}`}>{inv.paid_at?`✅ ${new Date(inv.paid_at).toLocaleDateString('fr-FR')}`:`⏳ Éch. ${inv.due_date?new Date(inv.due_date).toLocaleDateString('fr-FR'):'—'}`}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${inv.paid_at?'bg-green-50 text-[#0d9e75]':'bg-amber-50 text-amber-700'}`}>{inv.paid_at?`✅ ${new Date(inv.paid_at).toLocaleDateString('en-GB')}`:`⏳ Éch. ${inv.due_date?new Date(inv.due_date).toLocaleDateString('en-GB'):'—'}`}</span>
                           </div>
                           <p className="text-sm font-semibold text-[#1a1918]">{inv.supplier_name}</p>
-                          <p className="text-xs text-zinc-400">{inv.invoice_number?`N°${inv.invoice_number} · `:''}{new Date(inv.invoice_date).toLocaleDateString('fr-FR')}</p>
+                          <p className="text-xs text-zinc-400">{inv.invoice_number?`N°${inv.invoice_number} · `:''}{new Date(inv.invoice_date).toLocaleDateString('en-GB')}</p>
                           {inv.notes&&<p className="text-xs text-zinc-400 truncate">{inv.notes}</p>}
                           {inv.visa_agent_invoice_lines?.map(l=><div key={l.id} className="text-xs text-zinc-500 mt-0.5 flex items-center gap-2">
                           <span>· {l.intern_name} {l.visa_type?`(${l.visa_type})`:''} — {l.amount_eur?FMT(l.amount_eur):'—'}</span>
@@ -396,12 +396,12 @@ export default function FinancesPage() {
                           <span className="text-xs text-zinc-400">{inv.driver_suppliers?.name}</span>
                           <span className={`text-xs px-2 py-0.5 rounded-full ${inv.paid_at?'bg-green-50 text-[#0d9e75]':'bg-amber-50 text-amber-700'}`}>{inv.paid_at?'✅ Payée':'⏳ À payer'}</span>
                         </div>
-                        <p className="text-sm font-semibold text-[#1a1918]">{inv.invoice_ref??`Nota ${new Date(inv.invoice_date).toLocaleDateString('fr-FR',{month:'long',year:'numeric'})}`}</p>
-                        <p className="text-xs text-zinc-400">{new Date(inv.invoice_date).toLocaleDateString('fr-FR')}</p>
+                        <p className="text-sm font-semibold text-[#1a1918]">{inv.invoice_ref??`Nota ${new Date(inv.invoice_date).toLocaleDateString('en-GB',{month:'long',year:'numeric'})}`}</p>
+                        <p className="text-xs text-zinc-400">{new Date(inv.invoice_date).toLocaleDateString('en-GB')}</p>
                         {inv.driver_invoice_lines?.map(l=>(
                           <div key={l.id} className="text-xs text-zinc-500 mt-0.5 flex items-center gap-2">
                             <span className="text-zinc-300">·</span>
-                            {l.transfer_date&&<span>{new Date(l.transfer_date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})}</span>}
+                            {l.transfer_date&&<span>{new Date(l.transfer_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}</span>}
                             <span className="font-medium">{l.intern_name??'—'}</span>
                             <span className="ml-auto">{l.amount_idr?new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(l.amount_idr):'—'}</span>
                           </div>
@@ -435,7 +435,7 @@ export default function FinancesPage() {
                   </div>
                   <p className="text-sm font-medium text-[#1a1918] truncate">{b.label}</p>
                   {b.cases?.interns&&<p className="text-xs text-zinc-400">{b.cases.interns.first_name} {b.cases.interns.last_name}</p>}
-                  <p className="text-xs text-zinc-400">{new Date(b.recorded_at).toLocaleDateString('fr-FR')}</p>
+                  <p className="text-xs text-zinc-400">{new Date(b.recorded_at).toLocaleDateString('en-GB')}</p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <p className={`text-lg font-bold ${b.type==='revenue'?'text-[#0d9e75]':'text-red-500'}`}>{b.type==='revenue'?'+':'-'}{FMT(b.amount_eur)}</p>
@@ -474,7 +474,7 @@ export default function FinancesPage() {
                 <div key={b.id} className="flex items-center justify-between py-2.5 border-b border-zinc-50 last:border-0">
                   <div>
                     <p className="text-sm text-[#1a1918]">{b.label}</p>
-                    <p className="text-xs text-zinc-400">{new Date(b.recorded_at).toLocaleDateString('fr-FR')} · {b.category}</p>
+                    <p className="text-xs text-zinc-400">{new Date(b.recorded_at).toLocaleDateString('en-GB')} · {b.category}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <p className={`text-sm font-bold ${b.type==='revenue'?'text-[#0d9e75]':'text-red-500'}`}>{b.type==='revenue'?'+':'-'}{FMT(b.amount_eur)}</p>
@@ -579,7 +579,7 @@ export default function FinancesPage() {
             <div><label className="block text-xs font-medium text-zinc-600 mb-1">Notes</label><textarea className={inp} rows={2} value={payForm.notes} onChange={e=>setPayForm(p=>({...p,notes:e.target.value}))}/></div>
             {payForm.founder_name&&payForm.amount_eur&&(
               <div className="bg-[#c8a96e]/10 border border-[#c8a96e]/20 rounded-xl p-3 text-xs text-zinc-600">
-                Enregistré comme dépense "Payout {payForm.founder_name}" · {FMT(parseFloat(payForm.amount_eur)||0)} · {new Date(payForm.date).toLocaleDateString('fr-FR')} · {payForm.method}
+                Enregistré comme dépense "Payout {payForm.founder_name}" · {FMT(parseFloat(payForm.amount_eur)||0)} · {new Date(payForm.date).toLocaleDateString('en-GB')} · {payForm.method}
               </div>
             )}
             <div className="flex gap-2 pt-2 border-t border-zinc-100">
@@ -648,7 +648,7 @@ export default function FinancesPage() {
             <div><label className="block text-xs font-medium text-zinc-600 mb-1">Notes</label><textarea className={inp} rows={2} value={invForm.notes} onChange={e=>setInvForm(f=>({...f,notes:e.target.value}))}/></div>
             <div className="flex gap-2 pt-2 border-t border-zinc-100">
               <button type="button" onClick={()=>setShowInvForm(false)} className="flex-1 py-2.5 border border-zinc-200 rounded-xl text-sm text-zinc-600">Annuler</button>
-              <button type="submit" disabled={savingInv} className="flex-1 py-2.5 bg-[#c8a96e] text-white text-sm font-bold rounded-xl">{savingInv?'Enregistrement…':'Enregistrer'}</button>
+              <button type="submit" disabled={savingInv} className="flex-1 py-2.5 bg-[#c8a96e] text-white text-sm font-bold rounded-xl">{savingInv?'Enregistrement…':'Save'}</button>
             </div>
           </form>
         </div>

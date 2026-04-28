@@ -336,7 +336,7 @@ function JobDetailPopup({ job, onClose, onSelect, isSubmitted }: { job: Job; onC
             {(job.start_date ?? job.wished_start_date) && (
               <div className="bg-zinc-50 rounded-xl p-3">
                 <p className="text-xs text-zinc-400 mb-1">Démarrage</p>
-                <p className="text-sm font-medium">{new Date((job.start_date ?? job.wished_start_date)!).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</p>
+                <p className="text-sm font-medium">{new Date((job.start_date ?? job.wished_start_date)!).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</p>
               </div>
             )}
             {(job.duration_months ?? job.wished_duration_months) && (
@@ -589,7 +589,7 @@ export function TabStaffing({
         // Rollback si erreur
         setSubmissions(prev => prev.filter(s => s.id !== tempId))
         const err = await res.json().catch(() => ({})) as { error?: string }
-        showToastMsg(err.error ?? 'Erreur', false)
+        showToastMsg(err.error ?? 'Error', false)
         return
       }
       // Remplacer l'optimistic par la vraie soumission du serveur
@@ -617,7 +617,7 @@ export function TabStaffing({
       showToastMsg(fields.status === 'retained' ? 'Job retenu 🎉' : 'Mis à jour')
       void fetchSubmissions()
       if (fields.status === 'retained') onRefresh?.()
-    } catch { showToastMsg('Erreur', false) }
+    } catch { showToastMsg('Error', false) }
     finally { setActionLoading(null) }
   }
 
@@ -628,7 +628,7 @@ export function TabStaffing({
       if (!res.ok) throw new Error()
       showToastMsg('Envoyé à l\'employeur ✅')
       void fetchSubmissions()
-    } catch { showToastMsg('Erreur', false) }
+    } catch { showToastMsg('Error', false) }
     finally { setActionLoading(null) }
   }
 
@@ -808,11 +808,11 @@ export function TabStaffing({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <span className="text-[11px] text-zinc-400 font-medium">Début souhaité</span>
-                <p className="text-sm mt-0.5">{desiredStartDate ? new Date(desiredStartDate).toLocaleDateString('fr-FR') : '—'}</p>
+                <p className="text-sm mt-0.5">{desiredStartDate ? new Date(desiredStartDate).toLocaleDateString('en-GB') : '—'}</p>
               </div>
               <div>
                 <span className="text-[11px] text-zinc-400 font-medium">Date max de fin de stage</span>
-                <p className="text-sm mt-0.5">{desiredEndDate ? new Date(desiredEndDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : <span className="text-zinc-300 text-xs">Non renseignée dans le formulaire</span>}</p>
+                <p className="text-sm mt-0.5">{desiredEndDate ? new Date(desiredEndDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : <span className="text-zinc-300 text-xs">Non renseignée dans le formulaire</span>}</p>
               </div>
             </div>
 
@@ -980,7 +980,7 @@ export function TabStaffing({
                 <div className="mt-1 space-y-1.5 max-h-32 overflow-y-auto">
                   {cvHistory.slice(0, 3).map(h => (
                     <div key={h.id} className="text-xs text-zinc-500 bg-zinc-50 rounded-lg px-2.5 py-1.5">
-                      <span className="text-[10px] text-zinc-400">{new Date(h.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="text-[10px] text-zinc-400">{new Date(h.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                       <p className="mt-0.5 line-clamp-2">{h.feedback}</p>
                     </div>
                   ))}

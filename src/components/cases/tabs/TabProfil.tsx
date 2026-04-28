@@ -147,7 +147,7 @@ function EditableField({
   }
 
   const displayValue = type === 'date' && current
-    ? new Date(current).toLocaleDateString('fr-FR')
+    ? new Date(current).toLocaleDateString('en-GB')
     : current || '—'
 
   if (readonly) {
@@ -373,7 +373,7 @@ export function TabProfil({ intern, internId, caseId, schoolName, schoolId, touc
         <div className="flex gap-3 py-2.5 border-b border-zinc-50 items-center">
           <span className="text-[11px] text-zinc-400 font-medium w-32 flex-shrink-0">Date de naissance</span>
           <div className="flex items-center gap-2 flex-1">
-            <span className="text-sm text-[#1a1918]">{intern.birth_date ? new Date(intern.birth_date).toLocaleDateString('fr-FR') : <span className="text-zinc-300">—</span>}</span>
+            <span className="text-sm text-[#1a1918]">{intern.birth_date ? new Date(intern.birth_date).toLocaleDateString('en-GB') : <span className="text-zinc-300">—</span>}</span>
             {age !== null && <span className="text-xs text-zinc-400 font-medium">({age} ans)</span>}
           </div>
         </div>

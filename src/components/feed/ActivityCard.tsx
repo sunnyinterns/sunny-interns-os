@@ -41,7 +41,7 @@ function getDaysTag(daysUntil: number): { label: string; color: string } {
 
 function formatTime(iso: string): string {
   const date = new Date(iso)
-  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 }
 
 function buildWhatsAppUrl(item: ActivityItem): string {

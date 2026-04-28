@@ -36,7 +36,7 @@ export function KPIsSection() {
   }, [])
 
   const now = new Date()
-  const monthLabel = now.toLocaleDateString('fr-FR', { month: 'long' })
+  const monthLabel = now.toLocaleDateString('en-GB', { month: 'long' })
 
   return (
     <section>

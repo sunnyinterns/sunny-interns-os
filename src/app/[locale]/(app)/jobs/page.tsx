@@ -413,7 +413,7 @@ export default function JobsPage() {
                 {/* Date souhaitée */}
                 {j.wished_start_date && (
                   <span className="text-xs text-[#c8a96e] font-medium flex-shrink-0 hidden sm:inline">
-                    📅 {new Date(j.wished_start_date).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+                    📅 {new Date(j.wished_start_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
                   </span>
                 )}
 

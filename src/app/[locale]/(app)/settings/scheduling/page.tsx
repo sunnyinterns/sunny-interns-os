@@ -90,7 +90,7 @@ export default function SchedulingSettingsPage() {
           <a href="/fr/book" target="_blank" className="text-xs text-zinc-400 hover:text-zinc-600 underline">Voir la page publique</a>
           <button onClick={() => { void save() }} disabled={saving}
             className="px-4 py-2 bg-[#1a1918] text-white text-sm font-medium rounded-xl disabled:opacity-50 transition-colors hover:bg-zinc-800">
-            {saving ? 'Sauvegarde…' : saved ? '✓ Sauvegardé' : 'Sauvegarder'}
+            {saving ? 'Sauvegarde…' : saved ? '✓ Sauvegardé' : 'Save'}
           </button>
         </div>
       </div>

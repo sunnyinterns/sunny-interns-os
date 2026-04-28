@@ -187,7 +187,7 @@ export default function UGCPage() {
                           </a>
                         )}
                         <p className="text-xs text-zinc-400 mt-1">
-                          {new Date(s.submitted_at).toLocaleDateString('fr-FR', {
+                          {new Date(s.submitted_at).toLocaleDateString('en-GB', {
                             day: '2-digit', month: 'long', year: 'numeric',
                           })}
                         </p>

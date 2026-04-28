@@ -52,7 +52,7 @@ function relativeDate(iso: string) {
   if (hrs < 24) return `il y a ${hrs}h`
   const days = Math.floor(hrs / 24)
   if (days < 30) return `il y a ${days}j`
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 export default function ContactDetailPage() {

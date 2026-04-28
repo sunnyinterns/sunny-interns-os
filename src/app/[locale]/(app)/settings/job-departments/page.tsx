@@ -187,7 +187,7 @@ export default function JobDepartmentsPage() {
                 disabled={saving || !formName.trim()}
                 className="px-4 py-2 text-sm font-medium rounded-lg bg-[#c8a96e] text-white disabled:opacity-50 hover:bg-[#b8945a] transition-colors"
               >
-                {saving ? 'Enregistrement...' : editingId ? 'Modifier' : 'Creer'}
+                {saving ? 'Enregistrement...' : editingId ? 'Edit' : 'Creer'}
               </button>
               <button
                 type="button"

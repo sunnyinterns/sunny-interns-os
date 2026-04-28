@@ -315,7 +315,7 @@ export default function PackagesPage() {
                 <div className="flex justify-end gap-2 pt-3 border-t border-zinc-100">
                   <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm border border-zinc-200 rounded-xl text-zinc-600">Annuler</button>
                   <button type="submit" disabled={saving} className="px-4 py-2 text-sm font-semibold rounded-xl bg-[#c8a96e] text-white disabled:opacity-50">
-                    {saving ? 'Sauvegarde…' : editing ? 'Sauvegarder' : 'Créer'}
+                    {saving ? 'Sauvegarde…' : editing ? 'Save' : 'Create'}
                   </button>
                 </div>
               </form>

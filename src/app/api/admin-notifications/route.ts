@@ -8,7 +8,20 @@ function getServiceClient() {
   )
 }
 
-export async function GET() {
+
+function requireInternalKey(req: Request): Response | null {
+  const key = req.headers.get('x-internal-key') ?? req.headers.get('authorization')?.replace('Bearer ', '')
+  if (key !== process.env.INTERNAL_API_KEY && key !== process.env.CRON_SECRET) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  return null
+}
+
+
+export async function GET(req: Request) {
+  const authErr = requireInternalKey(req)
+  if (authErr) return authErr
+
   try {
     const supabase = getServiceClient()
     const { data, error } = await supabase

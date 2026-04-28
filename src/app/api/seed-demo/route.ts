@@ -2,7 +2,20 @@ import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
 // ROUTE DEMO SEED — à désactiver en production si besoin
-export async function POST() {
+
+function requireInternalKey(req: Request): Response | null {
+  const key = req.headers.get('x-internal-key') ?? req.headers.get('authorization')?.replace('Bearer ', '')
+  if (key !== process.env.INTERNAL_API_KEY && key !== process.env.CRON_SECRET) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  return null
+}
+
+
+export async function POST(req: Request) {
+  const authErr = requireInternalKey(req)
+  if (authErr) return authErr
+
   const sb = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!

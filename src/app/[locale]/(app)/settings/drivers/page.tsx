@@ -154,15 +154,15 @@ export default function DriversPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <p className="font-semibold text-[#1a1918] text-sm">{inv.invoice_ref ?? `Nota ${new Date(inv.invoice_date).toLocaleDateString('fr-FR', {month:'long',year:'numeric'})}`}</p>
+                    <p className="font-semibold text-[#1a1918] text-sm">{inv.invoice_ref ?? `Nota ${new Date(inv.invoice_date).toLocaleDateString('en-GB', {month:'long',year:'numeric'})}`}</p>
                     <span className="text-xs text-zinc-400">{inv.driver_suppliers?.name}</span>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${inv.paid_at?'bg-green-50 text-[#0d9e75]':'bg-amber-50 text-amber-700'}`}>{inv.paid_at?'✅ Payée':'⏳ À payer'}</span>
                   </div>
-                  <p className="text-xs text-zinc-400 mb-2">{new Date(inv.invoice_date).toLocaleDateString('fr-FR')}</p>
+                  <p className="text-xs text-zinc-400 mb-2">{new Date(inv.invoice_date).toLocaleDateString('en-GB')}</p>
                   {inv.driver_invoice_lines?.map(l => (
                     <div key={l.id} className="text-xs text-zinc-500 flex items-center gap-2 py-0.5">
                       <span className="text-zinc-300">·</span>
-                      {l.transfer_date && <span>{new Date(l.transfer_date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})}</span>}
+                      {l.transfer_date && <span>{new Date(l.transfer_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}</span>}
                       <span className="font-medium text-[#1a1918]">{l.intern_name ?? l.cases?.interns ? `${l.cases?.interns?.first_name} ${l.cases?.interns?.last_name}` : '—'}</span>
                       <span className="ml-auto font-semibold">{l.amount_idr ? IDR(l.amount_idr) : '—'}</span>
                     </div>
@@ -205,7 +205,7 @@ export default function DriversPage() {
                 </label>
                 <div className="flex gap-2 pt-2 border-t border-zinc-100">
                   <button type="button" onClick={()=>setShowSupplierModal(false)} className="flex-1 py-2.5 border border-zinc-200 rounded-xl text-sm text-zinc-600">Annuler</button>
-                  <button type="submit" disabled={savingS} className="flex-1 py-2.5 bg-[#c8a96e] text-white text-sm font-bold rounded-xl disabled:opacity-50">{savingS?'Sauvegarde…':'Sauvegarder'}</button>
+                  <button type="submit" disabled={savingS} className="flex-1 py-2.5 bg-[#c8a96e] text-white text-sm font-bold rounded-xl disabled:opacity-50">{savingS?'Sauvegarde…':'Save'}</button>
                 </div>
               </form>
             </div>

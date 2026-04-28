@@ -22,7 +22,7 @@ interface AlumniCase {
 
 function formatDate(d: string | null | undefined) {
   if (!d) return null
-  return new Date(d).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })
+  return new Date(d).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
 }
 
 function internInitials(first: string, last: string) {

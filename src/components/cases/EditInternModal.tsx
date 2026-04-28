@@ -108,7 +108,7 @@ export function EditInternModal({ caseId, internId, initialData, onClose, onSucc
           </button>
           <button onClick={handleSave} disabled={saving}
             className="flex-1 py-2 text-sm font-bold bg-[#c8a96e] text-white rounded-xl hover:bg-[#b8945a] disabled:opacity-50">
-            {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+            {saving ? 'Sauvegarde...' : 'Save'}
           </button>
         </div>
       </div>

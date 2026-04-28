@@ -3,7 +3,20 @@ import { NextResponse } from 'next/server'
 
 // Ce endpoint proxy billing_companies (géré dans settings/finance/billing-companies)
 // pour la compatibilité avec BillingForm qui attend le schéma billing_entities
-export async function GET() {
+
+function requireInternalKey(req: Request): Response | null {
+  const key = req.headers.get('x-internal-key') ?? req.headers.get('authorization')?.replace('Bearer ', '')
+  if (key !== process.env.INTERNAL_API_KEY && key !== process.env.CRON_SECRET) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  return null
+}
+
+
+export async function GET(req: Request) {
+  const authErr = requireInternalKey(req)
+  if (authErr) return authErr
+
   const supabase = createAdminClient()
   const { data } = await supabase
     .from('billing_companies')

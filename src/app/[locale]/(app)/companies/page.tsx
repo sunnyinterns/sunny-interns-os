@@ -879,7 +879,7 @@ export default function CompaniesPage() {
 
               <div className="flex justify-end gap-2 pt-2 border-t border-zinc-100">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm rounded-lg border border-zinc-200 text-zinc-600">Annuler</button>
-                <button type="submit" disabled={saving} className="px-4 py-2 text-sm font-medium rounded-lg bg-[#c8a96e] text-white hover:bg-[#b8945a] disabled:opacity-50 disabled:cursor-not-allowed">{saving ? "Création…" : "Créer"}</button>
+                <button type="submit" disabled={saving} className="px-4 py-2 text-sm font-medium rounded-lg bg-[#c8a96e] text-white hover:bg-[#b8945a] disabled:opacity-50 disabled:cursor-not-allowed">{saving ? "Création…" : "Create"}</button>
               </div>
             </form>
           </div>

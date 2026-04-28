@@ -42,7 +42,7 @@ export function SearchableSelect({
   clearable = true,
   className = '',
   maxHeight = 280,
-  emptyText = 'Aucun résultat',
+  emptyText = 'No results',
   onSearch,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false)

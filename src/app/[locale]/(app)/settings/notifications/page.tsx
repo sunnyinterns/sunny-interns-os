@@ -28,7 +28,7 @@ function formatDate(iso: string) {
   if (diffMin < 60) return `il y a ${diffMin}min`
   const diffH = Math.floor(diffMin / 60)
   if (diffH < 24) return `il y a ${diffH}h`
-  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
 
 export default function NotificationsPage() {

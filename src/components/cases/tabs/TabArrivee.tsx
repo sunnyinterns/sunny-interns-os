@@ -210,7 +210,7 @@ export function TabArrivee({ caseData }: TabArriveeProps) {
           <p className="text-[11px] text-zinc-400 font-medium mb-1">Welcome kit</p>
           {welcomeKitSentAt ? (
             <p className="text-sm text-[#0d9e75] font-medium">
-              Envoyé le {new Date(welcomeKitSentAt).toLocaleDateString('fr-FR')}
+              Envoyé le {new Date(welcomeKitSentAt).toLocaleDateString('en-GB')}
             </p>
           ) : (
             <button

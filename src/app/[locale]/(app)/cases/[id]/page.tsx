@@ -289,7 +289,7 @@ export default function CaseDetailPage() {
   const mainJob = intern.main_desired_job ?? ''
   const touchpoint = intern.touchpoint ?? ''
   const departDate = caseData.actual_start_date ?? intern?.desired_start_date
-  const dateDepart = departDate ? new Date(departDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
+  const dateDepart = departDate ? new Date(departDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
   const durationMonths = intern?.desired_duration_months ?? ''
   const isVisaOnly = caseData.case_type === 'visa_only'
   const isClient = !CANDIDATE_STATUSES.includes(caseData.status)
@@ -339,8 +339,8 @@ export default function CaseDetailPage() {
       const photoUrl = (cd.interns?.photo_id_url ?? cd.interns?.avatar_url ?? '') as string
       const msg = (provider.wa_message_template ?? '')
         .replace('{{intern_name}}', `${(cd.interns?.first_name ?? '')} ${(cd.interns?.last_name ?? '')}`.trim())
-        .replace('{{arrival_date}}', cd.flight_arrival_time_local ? new Date(cd.flight_arrival_time_local as string).toLocaleDateString('fr-FR') : (cd.interns?.flight_departure_date ? new Date(cd.interns.flight_departure_date as string).toLocaleDateString('fr-FR') : '?'))
-        .replace('{{arrival_time}}', cd.flight_arrival_time_local ? new Date(cd.flight_arrival_time_local as string).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}) : '?')
+        .replace('{{arrival_date}}', cd.flight_arrival_time_local ? new Date(cd.flight_arrival_time_local as string).toLocaleDateString('en-GB') : (cd.interns?.flight_departure_date ? new Date(cd.interns.flight_departure_date as string).toLocaleDateString('en-GB') : '?'))
+        .replace('{{arrival_time}}', cd.flight_arrival_time_local ? new Date(cd.flight_arrival_time_local as string).toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}) : '?')
         .replace('{{flight_number}}', (cd.interns?.flight_number ?? cd.flight_number ?? '?') as string)
         .replace('{{departure_city}}', (cd.interns?.flight_departure_city ?? '?') as string)
         .replace('{{dropoff_address}}', (cd.dropoff_address ?? '?') as string)
@@ -462,7 +462,7 @@ export default function CaseDetailPage() {
                 <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: badge.bg, color: badge.text }}>{badge.label}</span>
                 {caseData.status === 'to_recontact' && (() => {
                   const ra = (caseData as Record<string, string | null>).recontact_at
-                  return ra ? <span className="text-xs text-amber-600">📅 {new Date(ra).toLocaleDateString('fr-FR')}</span> : null
+                  return ra ? <span className="text-xs text-amber-600">📅 {new Date(ra).toLocaleDateString('en-GB')}</span> : null
                 })()}
                 {isVisaOnly && <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold">Visa Only</span>}
               </div>
@@ -560,7 +560,7 @@ export default function CaseDetailPage() {
               <h2 className="text-sm font-bold text-[#1a1918]">Dossier Visa</h2>
               {caseData.visa_submitted_to_agent_at ? (
                 <span className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-full">
-                  ✅ Envoyé le {new Date(caseData.visa_submitted_to_agent_at as string).toLocaleDateString('fr-FR')}
+                  ✅ Envoyé le {new Date(caseData.visa_submitted_to_agent_at as string).toLocaleDateString('en-GB')}
                 </span>
               ) : (
                 <button
@@ -578,7 +578,7 @@ export default function CaseDetailPage() {
                 { label: 'Passeport page 4', ok: !!caseData.interns?.passport_page4_url },
                 { label: 'Relevé bancaire', ok: !!caseData.interns?.bank_statement_url },
                 { label: `Vol ${(caseData.flight_number ?? '—') as string}`, ok: !!caseData.flight_number },
-                { label: `Arrivée ${caseData.flight_arrival_time_local ? new Date(caseData.flight_arrival_time_local as string).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}`, ok: !!caseData.flight_arrival_time_local },
+                { label: `Arrivée ${caseData.flight_arrival_time_local ? new Date(caseData.flight_arrival_time_local as string).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}`, ok: !!caseData.flight_arrival_time_local },
                 { label: `Début stage ${(caseData.actual_start_date ?? '—') as string}`, ok: !!caseData.actual_start_date },
                 { label: `Fin stage ${(caseData.actual_end_date ?? '—') as string}`, ok: !!caseData.actual_end_date },
               ] as { label: string; ok: boolean }[]).map((item, i) => (

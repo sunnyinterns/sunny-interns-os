@@ -13,7 +13,20 @@ const BATCHES = [
   [['lt','Lithuanian'],['lv','Latvian'],['et','Estonian'],['sl','Slovenian']],
 ] as [string,string][][]
 
+
+function requireInternalKey(req: Request): Response | null {
+  const key = req.headers.get('x-internal-key') ?? req.headers.get('authorization')?.replace('Bearer ', '')
+  if (key !== process.env.INTERNAL_API_KEY && key !== process.env.CRON_SECRET) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  return null
+}
+
+
 export async function POST(req: Request) {
+  const authErr = requireInternalKey(req)
+  if (authErr) return authErr
+
   const body = await req.json() as { secret?: string; batch?: number; post_id?: string }
   if (body.secret !== 'bali2026') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

@@ -71,7 +71,7 @@ export default function CompanyTypesPage() {
       ? await fetch(`/api/company-types/${editingId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       : await fetch('/api/company-types', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
     if (res.ok) { showToast(editingId ? 'Type modifié' : 'Type créé'); cancelForm(); void load() }
-    else { const d = await res.json().catch(() => ({})) as { error?: string }; showToast(d.error ?? 'Erreur') }
+    else { const d = await res.json().catch(() => ({})) as { error?: string }; showToast(d.error ?? 'Error') }
     setSaving(false)
   }
 
@@ -79,7 +79,7 @@ export default function CompanyTypesPage() {
     if (!confirm(`Supprimer "${t.name}" ?`)) return
     const res = await fetch(`/api/company-types/${t.id}`, { method: 'DELETE' })
     if (res.ok) { showToast('Type supprimé'); void load() }
-    else { const d = await res.json().catch(() => ({})) as { error?: string }; showToast(d.error ?? 'Erreur') }
+    else { const d = await res.json().catch(() => ({})) as { error?: string }; showToast(d.error ?? 'Error') }
   }
 
   const inputCls = 'w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm bg-white text-[#1a1918] focus:outline-none focus:ring-2 focus:ring-[#c8a96e]'
@@ -125,7 +125,7 @@ export default function CompanyTypesPage() {
               <textarea className={inputCls} rows={2} value={formDescription} onChange={e => setFormDescription(e.target.value)} placeholder="Conditions, capital minimum, etc." />
             </div>
             <div className="flex gap-2 pt-1">
-              <button type="submit" disabled={saving} className="px-4 py-2 text-sm font-medium rounded-lg bg-[#c8a96e] text-white disabled:opacity-50">{saving ? 'Enregistrement...' : editingId ? 'Modifier' : 'Créer'}</button>
+              <button type="submit" disabled={saving} className="px-4 py-2 text-sm font-medium rounded-lg bg-[#c8a96e] text-white disabled:opacity-50">{saving ? 'Enregistrement...' : editingId ? 'Edit' : 'Create'}</button>
               <button type="button" onClick={cancelForm} className="px-4 py-2 text-sm rounded-lg border border-zinc-200 text-zinc-600 hover:bg-zinc-50">Annuler</button>
             </div>
           </form>

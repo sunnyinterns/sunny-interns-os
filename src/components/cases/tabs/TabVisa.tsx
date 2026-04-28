@@ -608,7 +608,7 @@ export function TabVisa({ caseData, schoolName, onStatusChange }: TabVisaProps) 
             className="w-4 h-4 rounded accent-[#c8a96e]"
           />
           <span className="text-sm text-[#1a1918]">Virement envoyé à l'agent visa</span>
-          {transferSent && transferDate && <span className="text-xs text-zinc-400">· {new Date(transferDate).toLocaleDateString('fr-FR')}</span>}
+          {transferSent && transferDate && <span className="text-xs text-zinc-400">· {new Date(transferDate).toLocaleDateString('en-GB')}</span>}
         </label>
       </SectionCard>
 
@@ -649,7 +649,7 @@ export function TabVisa({ caseData, schoolName, onStatusChange }: TabVisaProps) 
             <span className="text-[11px] text-zinc-400 font-medium">Soumis à l&apos;agent</span>
             {caseData.visa_submitted_to_agent_at ? (
               <span className="text-sm text-[#1a1918]">
-                {new Date(caseData.visa_submitted_to_agent_at).toLocaleDateString('fr-FR')}
+                {new Date(caseData.visa_submitted_to_agent_at).toLocaleDateString('en-GB')}
               </span>
             ) : (
               <span className="text-sm text-zinc-300">Pas encore soumis</span>
@@ -659,7 +659,7 @@ export function TabVisa({ caseData, schoolName, onStatusChange }: TabVisaProps) 
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-zinc-400 font-medium">Visa reçu</span>
               <span className="text-sm text-[#0d9e75] font-medium">
-                {new Date(caseData.visa_received_at).toLocaleDateString('fr-FR')}
+                {new Date(caseData.visa_received_at).toLocaleDateString('en-GB')}
               </span>
             </div>
           )}
@@ -699,7 +699,7 @@ export function TabVisa({ caseData, schoolName, onStatusChange }: TabVisaProps) 
             <p className="text-sm font-bold text-[#0d9e75]">✅ Dossier envoyé</p>
             {caseData.visa_submitted_to_agent_at && (
               <p className="text-xs text-zinc-500 mt-1">
-                Le {new Date(caseData.visa_submitted_to_agent_at).toLocaleDateString('fr-FR')}
+                Le {new Date(caseData.visa_submitted_to_agent_at).toLocaleDateString('en-GB')}
                 {sentInfo?.agent_name ? ` à ${sentInfo.agent_name}` : ''}
               </p>
             )}

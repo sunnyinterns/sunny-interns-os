@@ -221,13 +221,13 @@ export default function CasesPage() {
                       )}
                       {c.desired_start_date && (
                         <span className="text-xs text-[#c8a96e] font-medium">
-                          📅 {new Date(c.desired_start_date).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+                          📅 {new Date(c.desired_start_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
                         </span>
                       )}
                     </div>
                     {c.intern_first_meeting_date && (
                       <span className="text-xs text-blue-500 flex-shrink-0">
-                        📅 {new Date(c.intern_first_meeting_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        📅 {new Date(c.intern_first_meeting_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                       </span>
                     )}
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[c.status] ?? 'bg-zinc-100 text-zinc-600'}`}>
@@ -239,7 +239,7 @@ export default function CasesPage() {
                       return <span className={`text-xs flex-shrink-0 ${cls}`}>{dInStage}j</span>
                     })()}
                     <span className="text-xs text-zinc-400 flex-shrink-0">
-                      {new Date(c.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                      {new Date(c.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                     </span>
                   </Link>
                   {c.interns?.whatsapp && (

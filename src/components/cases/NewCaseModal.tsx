@@ -416,7 +416,7 @@ export function NewCaseModal({ onClose, onSuccess }: NewCaseModalProps) {
             size="sm"
             onClick={step === 1 ? onClose : () => { setStep((s) => s - 1); setErrors({}) }}
           >
-            {step === 1 ? 'Annuler' : '← Retour'}
+            {step === 1 ? 'Cancel' : '← Retour'}
           </Button>
           {step < 3 ? (
             <Button variant="primary" size="sm" onClick={handleNext}>

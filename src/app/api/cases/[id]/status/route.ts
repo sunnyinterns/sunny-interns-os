@@ -266,7 +266,7 @@ export async function PATCH(
         }
       }
       // Sponsor contract to employer
-      void fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/cases/${id}/send-sponsor-contract`, { method: 'POST' })
+      void fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/cases/${id}/send-sponsor-contract`, { method: 'POST', headers: { 'x-internal-key': process.env.CRON_SECRET ?? '' } })
     } catch { /* non-blocking */ }
   }
 

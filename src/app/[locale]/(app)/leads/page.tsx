@@ -80,7 +80,7 @@ const STATUS_COLORS: Record<string, string> = {
 const STADE: Record<string, { label: string; color: string; bg: string }> = {
   new: { label: 'Nouveau', color: '#1a1918', bg: '#f4f3f1' },
   contacted: { label: 'Contacté', color: '#0d9e75', bg: '#f0fdf9' },
-  in_progress: { label: 'En cours', color: '#c8a96e', bg: '#fdf8f0' },
+  in_progress: { label: 'In progress', color: '#c8a96e', bg: '#fdf8f0' },
   form_sent: { label: 'Formulaire envoyé', color: '#6366f1', bg: '#eeefff' },
   form_started: { label: 'Formulaire démarré', color: '#f59e0b', bg: '#fffbeb' },
   form_completed: { label: 'Formulaire complet', color: '#0d9e75', bg: '#f0fdf9' },
@@ -183,7 +183,7 @@ export default function LeadsPage() {
           <p className="text-sm text-zinc-500 mt-0.5">
             {leads.length} lead{leads.length > 1 ? 's' : ''} · {filtered.length} affiché{filtered.length > 1 ? 's' : ''}
             <span className="ml-2 text-xs text-zinc-400">
-              Mis à jour {lastRefresh.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              Mis à jour {lastRefresh.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </span>
           </p>
         </div>
@@ -288,11 +288,11 @@ export default function LeadsPage() {
                       return <span style={{ background: st.bg, color: st.color }} className="text-xs px-2 py-0.5 rounded-full font-semibold">{st.label}</span>
                     })()}
                     <span className="text-xs text-zinc-400">
-                      {new Date(lead.created_at).toLocaleDateString('fr-FR')}
+                      {new Date(lead.created_at).toLocaleDateString('en-GB')}
                     </span>
                     {lead.desired_start_date && (
                       <span className="text-[10px] text-zinc-400">
-                        🛫 {new Date(lead.desired_start_date).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+                        🛫 {new Date(lead.desired_start_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
                       </span>
                     )}
                     {lead.whatsapp && (
@@ -322,7 +322,7 @@ export default function LeadsPage() {
                           </span>
                         )}
                         {lead.r1_at && !lead.r2_at && (
-                          <span className="text-[10px] text-zinc-400">🔔 R1: {new Date(lead.r1_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
+                          <span className="text-[10px] text-zinc-400">🔔 R1: {new Date(lead.r1_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</span>
                         )}
                       </div>
                     )
@@ -388,7 +388,7 @@ export default function LeadsPage() {
               {selectedLead.touchpoint && <div><span className="text-zinc-500">Touchpoint : </span>{selectedLead.touchpoint}</div>}
               {selectedLead.form_step !== null && <div><span className="text-zinc-500">Étape atteinte : </span>{selectedLead.form_step}</div>}
               {selectedLead.notes && <div><span className="text-zinc-500">Notes : </span>{selectedLead.notes}</div>}
-              <div><span className="text-zinc-500">Créé le : </span>{new Date(selectedLead.created_at).toLocaleString('fr-FR')}</div>
+              <div><span className="text-zinc-500">Créé le : </span>{new Date(selectedLead.created_at).toLocaleString('en-GB')}</div>
             </div>
           </div>
         </div>

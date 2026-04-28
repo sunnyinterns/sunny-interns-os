@@ -28,7 +28,20 @@ Body: ${(body||'').slice(0,400)}`
 
 export const maxDuration = 60 // Vercel Pro: 60s max
 
+
+function requireInternalKey(req: Request): Response | null {
+  const key = req.headers.get('x-internal-key') ?? req.headers.get('authorization')?.replace('Bearer ', '')
+  if (key !== process.env.INTERNAL_API_KEY && key !== process.env.CRON_SECRET) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  return null
+}
+
+
 export async function POST(req: Request) {
+  const authErr = requireInternalKey(req)
+  if (authErr) return authErr
+
   const body = await req.json() as { secret?: string; post_id?: string; batch_index?: number }
   if (body.secret !== (process.env.ADMIN_SECRET ?? 'bali2026')) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

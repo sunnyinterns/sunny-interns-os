@@ -51,7 +51,7 @@ const RESCHEDULE_MESSAGE = (link: string | null) =>
   `Bonjour,\n\nNous sommes sincèrement désolés, mais un empêchement de dernière minute nous empêche d'assurer notre rendez-vous prévu.\n\nNous vous invitons à choisir un nouveau créneau via le lien suivant :\n${link ?? '[Lien de reprogrammation]'}\n\nEncore toutes nos excuses pour la gêne occasionnée.\n\nCordialement,\nL'équipe Bali Interns`
 
 function toWITA(iso: string) {
-  return new Date(iso).toLocaleString('fr-FR', {
+  return new Date(iso).toLocaleString('en-GB', {
     timeZone: 'Asia/Jakarta',
     weekday: 'short', day: 'numeric', month: 'short',
     hour: '2-digit', minute: '2-digit'
@@ -59,7 +59,7 @@ function toWITA(iso: string) {
 }
 
 function timeOnly(iso: string) {
-  return new Date(iso).toLocaleString('fr-FR', {
+  return new Date(iso).toLocaleString('en-GB', {
     timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit'
   })
 }
@@ -413,7 +413,7 @@ export default function CalendarPage() {
         <div>
           <h1 className="text-xl font-bold text-[#1a1918]">📅 Calendrier RDV</h1>
           <p className="text-sm text-zinc-400 mt-0.5">
-            {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} · Bali (WITA)
+            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} · Bali (WITA)
           </p>
         </div>
         <div className="flex gap-1 bg-zinc-100 rounded-xl p-1">

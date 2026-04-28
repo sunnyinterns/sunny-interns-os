@@ -51,7 +51,7 @@ export default function FinanceSettingsPage() {
           </div>
           <button onClick={handleSave} disabled={saving}
             className="px-4 py-2 text-sm font-semibold bg-[#c8a96e] text-white rounded-xl hover:bg-[#b8945a] disabled:opacity-50">
-            {saving ? 'Sauvegarde…' : saved ? '✅ Sauvegardé' : 'Sauvegarder'}
+            {saving ? 'Sauvegarde…' : saved ? '✅ Sauvegardé' : 'Save'}
           </button>
         </div>
 

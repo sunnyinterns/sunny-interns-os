@@ -639,7 +639,7 @@ export default function JobDetailPage() {
               <input type="date" className="flex-1 px-2 py-1 text-sm border border-[#c8a96e] rounded-lg" defaultValue={job.wished_start_date?.slice(0, 10) ?? ''} onBlur={e => void patchJob({ wished_start_date: e.target.value || null })} autoFocus />
             ) : (
               <button onClick={() => setEditing(p => ({ ...p, wished_start_date: true }))} className="text-sm text-[#1a1918] font-medium hover:text-[#c8a96e] transition-colors">
-                {job.wished_start_date ? new Date(job.wished_start_date).toLocaleDateString('fr-FR') : <span className="text-zinc-300 italic text-xs">Définir</span>}
+                {job.wished_start_date ? new Date(job.wished_start_date).toLocaleDateString('en-GB') : <span className="text-zinc-300 italic text-xs">Définir</span>}
               </button>
             )}
           </div>
@@ -1400,7 +1400,7 @@ export default function JobDetailPage() {
                           <span className={`text-xs ${sub.cv_sent ? 'text-[#0d9e75]' : 'text-zinc-300'}`}>{sub.cv_sent ? 'Oui' : '—'}</span>
                         </td>
                         <td className="py-2 pr-3 text-xs text-zinc-400">
-                          {sub.created_at ? new Date(sub.created_at).toLocaleDateString('fr-FR') : '—'}
+                          {sub.created_at ? new Date(sub.created_at).toLocaleDateString('en-GB') : '—'}
                         </td>
                         <td className="py-2">
                           <div className="flex gap-1">
@@ -1475,7 +1475,7 @@ export default function JobDetailPage() {
                     {a.description && <p className="text-xs text-zinc-400 truncate">{a.description}</p>}
                   </div>
                   <span className="text-xs text-zinc-400 flex-shrink-0 whitespace-nowrap">
-                    {new Date(a.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    {new Date(a.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
               ))}

@@ -372,7 +372,7 @@ export default function SchoolDetailPage() {
               <div className="flex justify-end gap-2 pt-2 border-t border-zinc-100">
                 <button type="button" onClick={() => setShowProgramModal(false)} className="px-4 py-2 text-sm rounded-lg border border-zinc-200 text-zinc-600">Annuler</button>
                 <button type="submit" disabled={savingProgram} className="px-4 py-2 text-sm font-medium rounded-lg bg-[#c8a96e] text-white disabled:opacity-50">
-                  {savingProgram ? 'Ajout…' : 'Ajouter'}
+                  {savingProgram ? 'Ajout…' : 'Add'}
                 </button>
               </div>
             </form>
@@ -419,7 +419,7 @@ export default function SchoolDetailPage() {
               <div className="flex justify-end gap-2 pt-2 border-t border-zinc-100">
                 <button type="button" onClick={() => setShowSessionModal(false)} className="px-4 py-2 text-sm rounded-lg border border-zinc-200 text-zinc-600">Annuler</button>
                 <button type="submit" disabled={savingSession} className="px-4 py-2 text-sm font-medium rounded-lg bg-[#c8a96e] text-white disabled:opacity-50">
-                  {savingSession ? 'Ajout…' : 'Ajouter'}
+                  {savingSession ? 'Ajout…' : 'Add'}
                 </button>
               </div>
             </form>

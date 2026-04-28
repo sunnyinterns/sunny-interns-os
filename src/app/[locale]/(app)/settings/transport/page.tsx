@@ -124,7 +124,7 @@ export default function TransportSettingsPage() {
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              <h2 className="text-lg font-bold mb-4">{editing.id === 'new' ? 'Nouveau chauffeur' : 'Modifier'}</h2>
+              <h2 className="text-lg font-bold mb-4">{editing.id === 'new' ? 'Nouveau chauffeur' : 'Edit'}</h2>
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-medium text-zinc-600 mb-1">Nom *</label>
@@ -161,7 +161,7 @@ export default function TransportSettingsPage() {
               <div className="flex gap-3 mt-6">
                 <button onClick={() => setEditing(null)} className="flex-1 py-2.5 border border-zinc-200 rounded-xl text-sm">Annuler</button>
                 <button onClick={() => void save()} disabled={saving || !editing.name} className="flex-1 py-2.5 bg-[#c8a96e] text-white rounded-xl text-sm font-medium disabled:opacity-50">
-                  {saving ? 'Sauvegarde…' : 'Sauvegarder'}
+                  {saving ? 'Sauvegarde…' : 'Save'}
                 </button>
               </div>
             </div>

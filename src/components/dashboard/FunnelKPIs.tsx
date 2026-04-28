@@ -190,12 +190,12 @@ export function FunnelKPIs({ locale = 'fr' }: Props) {
                               )}
                               {p.start_date && (
                                 <span className="text-[10px] text-zinc-400">
-                                  🛫 {new Date(p.start_date).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+                                  🛫 {new Date(p.start_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
                                 </span>
                               )}
                               {p.rdv_date && (
                                 <span className="text-[10px] text-blue-500">
-                                  📅 {new Date(p.rdv_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} {new Date(p.rdv_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                  📅 {new Date(p.rdv_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} {new Date(p.rdv_date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                               )}
                             </div>

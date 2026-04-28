@@ -793,7 +793,7 @@ export default function CompanyDetailPage() {
 
           <div className="flex gap-2">
             <button type="submit" disabled={saving} className="px-4 py-2 bg-[#c8a96e] text-white text-sm font-medium rounded-lg disabled:opacity-50">
-              {saving ? 'Sauvegarde…' : 'Sauvegarder'}
+              {saving ? 'Sauvegarde…' : 'Save'}
             </button>
             <button type="button" onClick={() => setEditing(false)} className="px-4 py-2 bg-zinc-100 text-[#1a1918] text-sm font-medium rounded-lg">
               Annuler
@@ -970,7 +970,7 @@ export default function CompanyDetailPage() {
               </div>
               <div className="flex gap-2">
                 <button type="submit" disabled={addingContact} className="px-3 py-1.5 bg-[#c8a96e] text-white text-sm font-medium rounded-lg disabled:opacity-50">
-                  {addingContact ? 'Ajout…' : 'Ajouter'}
+                  {addingContact ? 'Ajout…' : 'Add'}
                 </button>
                 <button type="button" onClick={() => setShowContactForm(false)} className="px-3 py-1.5 bg-zinc-100 text-[#1a1918] text-sm font-medium rounded-lg">
                   Annuler

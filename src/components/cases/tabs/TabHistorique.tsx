@@ -157,11 +157,11 @@ export function TabHistorique({ caseId }: Props) {
                     <p className="text-xs text-zinc-400 mt-0.5 italic">{detail}</p>
                   )}
                   <p className="text-[10px] text-zinc-400 mt-1">
-                    {new Date(item.created_at).toLocaleDateString('fr-FR', {
+                    {new Date(item.created_at).toLocaleDateString('en-GB', {
                       day: 'numeric',
                       month: 'long',
                       year: 'numeric',
-                    })} à {new Date(item.created_at).toLocaleTimeString('fr-FR', {
+                    })} à {new Date(item.created_at).toLocaleTimeString('en-GB', {
                       hour: '2-digit',
                       minute: '2-digit',
                     })}

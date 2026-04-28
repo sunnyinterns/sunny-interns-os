@@ -89,7 +89,7 @@ function relativeDate(iso: string) {
   if (hrs < 24) return `il y a ${hrs}h`
   const days = Math.floor(hrs / 24)
   if (days < 30) return `il y a ${days}j`
-  return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
 }
 
 const ALL_STATUSES: { value: CaseStatus; label: string }[] = [
@@ -283,7 +283,7 @@ export function TabProcess({
     { key: 'payment_received', label: 'Paiement reçu', icon: '💶' },
     { key: 'visa_in_progress', label: 'Visa en cours', icon: '🛂' },
     { key: 'active', label: 'En stage', icon: '🌴' },
-    { key: 'alumni', label: 'Terminé', icon: '🎓' },
+    { key: 'alumni', label: 'Completed', icon: '🎓' },
   ]
 
   const STATUS_TO_TIMELINE: Record<string, string> = {

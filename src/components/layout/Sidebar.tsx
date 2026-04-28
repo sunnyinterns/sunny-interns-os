@@ -159,7 +159,7 @@ export function Sidebar() {
         <NavLink href="/fr/notifications" label="Notifications" d={ICONS.notifs} badge={notifCount} urgent={notifCount > 0} />
         <NavLink href="/fr/en-attente" label="Pending" d={ICONS.clock} />
         <NavLink href="/fr/todo" label="To Do" d={ICONS.todo} badge={todoCount} urgent={todoCount > 0} />
-        <NavLink href="/fr/calendar" label="Calendrier" d={ICONS.calendar} />
+        <NavLink href="/fr/calendar" label="Calendar" d={ICONS.calendar} />
         <NavLink href="/fr/pipeline" label="Pipeline" d={ICONS.kanban} />
 
         <Sep />
@@ -188,7 +188,7 @@ export function Sidebar() {
 
         <Sep />
         {/* Tests + Paramètres + User */}
-        <NavLink href="/fr/settings" label="Paramètres" d={ICONS.settings} />
+        <NavLink href="/fr/settings" label="Settings" d={ICONS.settings} />
         {/* User inline sous settings */}
         {userEmail && (
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg">

@@ -9,6 +9,10 @@ export async function POST(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const key = _req.headers.get("x-internal-key")
+  if (key !== process.env.CRON_SECRET && key !== process.env.INTERNAL_API_KEY) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
   const { id: caseId } = await params
   const sb = svc()
 

@@ -149,8 +149,8 @@ export default function AgendaPage() {
                 <div className="flex-shrink-0 text-right w-20">
                   {dt && (
                     <>
-                      <p className="text-xs text-zinc-400">{new Date(dt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</p>
-                      <p className="text-sm font-semibold text-[#1a1918]">{new Date(dt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                      <p className="text-xs text-zinc-400">{new Date(dt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</p>
+                      <p className="text-sm font-semibold text-[#1a1918]">{new Date(dt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</p>
                     </>
                   )}
                 </div>
