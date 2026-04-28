@@ -314,7 +314,7 @@ function JobDetailPopup({ job, onClose, onSelect, isSubmitted }: { job: Job; onC
               onClick={() => { if (!isSubmitted) { onSelect(); onClose() } }}
               disabled={isSubmitted}
               className="px-4 py-2 bg-[#c8a96e] text-[#1a1918] text-sm font-bold rounded-xl hover:bg-[#b8945a] disabled:opacity-40">
-              {isSubmitted ? '✓ Sélectionné' : '+ Sélectionner'}
+              {isSubmitted ? '✓ Selected' : '+ Select'}
             </button>
             <button onClick={onClose} className="px-3 py-2 text-sm bg-zinc-100 rounded-xl hover:bg-zinc-200">✕</button>
           </div>
