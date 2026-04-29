@@ -235,14 +235,17 @@ export async function sendVisaSubmitted(p: {
 }
 
 export async function sendVisaReceived(p: {
-  internEmail: string; prenom: string; portalToken: string
+  internEmail: string; prenom: string; portalToken: string; visaUrl?: string | null
 } & Record<string, unknown>) {
+  // If a visa URL is attached, use the richer template with download button
+  const slug = p.visaUrl ? 'visa_received_intern' : 'visa_received'
   await sendFromTemplate({
-    slug: 'visa_received',
+    slug,
     to: p.internEmail,
     vars: {
       first_name: p.prenom,
       portal_url: `${APP_URL}/portal/${p.portalToken}`,
+      visa_url: p.visaUrl ?? `${APP_URL}/portal/${p.portalToken}/visa`,
     },
   })
 }

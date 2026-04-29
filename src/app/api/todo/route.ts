@@ -215,15 +215,17 @@ export async function GET() {
   const cutoff = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]
   const { data: visaUrgent } = await adminClient
     .from('cases')
-    .select('id, status, desired_start_date, updated_at, interns(first_name, last_name)')
-    .in('status', ['visa_submitted', 'visa_docs_sent', 'visa_in_progress', 'payment_received'])
+    .select('id, status, desired_start_date, actual_start_date, updated_at, interns(first_name, last_name)')
+    .in('status', ['visa_in_progress', 'payment_received'])
+    .is('visa_url', null)  // Only if visa not yet uploaded
     .not('desired_start_date', 'is', null)
     .lt('desired_start_date', cutoff)
     .limit(20)
 
   visaUrgent?.forEach(c => {
     const intern = (Array.isArray(c.interns) ? c.interns[0] : c.interns) as unknown as { first_name: string; last_name: string } | null
-    const daysLeft = Math.floor((new Date(c.desired_start_date as string).getTime() - now.getTime()) / 86400000)
+    const departureDate = (c as Record<string,unknown>).actual_start_date as string | null ?? c.desired_start_date as string
+    const daysLeft = Math.floor((new Date(departureDate).getTime() - now.getTime()) / 86400000)
     if (daysLeft < 0) return
     todos.push({
       id: `visa-urgent-${c.id}`,
@@ -232,7 +234,7 @@ export async function GET() {
       case_id: c.id,
       intern_name: `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim(),
       title: daysLeft <= 7 ? '🚨 URGENT — Visa not received, departure imminent' : `⚠️ Visa pending — departure in ${daysLeft} days`,
-      description: `Departure planned for ${new Date(c.desired_start_date as string).toLocaleDateString('en-GB')} — visa not yet received`,
+      description: `Departure planned for ${new Date(departureDate).toLocaleDateString('en-GB')} — visa document not yet received`,
       cta_label: 'Open case',
       cta_url: `/fr/cases/${c.id}?tab=visa`,
       days_waiting: daysLeft,
