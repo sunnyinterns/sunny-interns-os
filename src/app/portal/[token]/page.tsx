@@ -327,8 +327,8 @@ function TabHome({ data, lang, currentStep }: { data: PortalData; lang: PortalLa
         </SectionCard>
       )}
 
-      {/* Visa status */}
-      {currentStep >= 6 && (
+      {/* Visa status — masqué si stage actif ET visa reçu */}
+      {currentStep >= 6 && currentStep < 8 && (
         <SectionCard>
           <SectionTitle>Visa status</SectionTitle>
           {data.visa_url ? (

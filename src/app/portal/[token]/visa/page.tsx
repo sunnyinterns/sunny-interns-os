@@ -232,7 +232,7 @@ export default function PortalVisaPage() {
       <button
         onClick={() => { void saveExtras() }}
         disabled={savingExtras}
-        style={{ width: '100%', padding: 14, background: extrasSaved ? '#0d9e75' : '#FFCC00', color: 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s', marginBottom: 24 }}
+        style={{ width: '100%', padding: 14, background: extrasSaved ? '#0d9e75' : '#FFCC00', color: extrasSaved ? 'white' : '#1A1A1A', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s', marginBottom: 24 }}
       >
         {savingExtras ? 'Saving…' : extrasSaved ? '✓ Saved!' : 'Save information'}
       </button>

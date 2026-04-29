@@ -279,7 +279,7 @@ export default function EmployerPortal() {
           <img src="https://djoqjgiyseobotsjqcgz.supabase.co/storage/v1/object/public/brand-assets/logos/logo_landscape_black.png" alt="Bali Interns" style={{ height: '22px', width: 'auto' }} />
             <div>
               <p className="text-sm font-bold text-[#1a1918]">{co.name}</p>
-              <p className="text-xs text-zinc-400">Partner portal{internName ? ` · ${internName}` : ''}</p>
+              <p className="text-xs text-zinc-400">{internName ? `Application for ${internName}` : 'Partner portal — Bali Interns'}</p>
             </div>
           </div>
           {data.contract_signed && <span className="text-xs bg-green-50 text-[#0d9e75] border border-green-200 px-2.5 py-1 rounded-full">✅ Agreement signed</span>}
