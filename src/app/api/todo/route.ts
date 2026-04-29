@@ -6,7 +6,7 @@ interface TodoItem {
   id: string
   type: 'action_required' | 'relance' | 'alerte'
   priority: 'urgent' | 'high' | 'normal'
-  case_id: string
+  case_id: string | undefined
   intern_name: string
   title: string
   description: string
@@ -294,6 +294,32 @@ export async function GET() {
     })
   })
 
+  // 7b. arrival_prep sans actual_start_date > 7 jours (cron activate-stages ne s'active jamais)
+  const { data: arrivalNoDate } = await adminClient
+    .from('cases')
+    .select('id, updated_at, interns(first_name, last_name)')
+    .eq('status', 'arrival_prep')
+    .is('actual_start_date', null)
+    .lt('updated_at', new Date(Date.now() - 7 * 86400000).toISOString())
+    .limit(10)
+
+  arrivalNoDate?.forEach(cas => {
+    const intern = (Array.isArray(cas.interns) ? cas.interns[0] : cas.interns) as unknown as { first_name: string; last_name: string } | null
+    todos.push({
+      id: `arriv-nodate-${cas.id}`,
+      type: 'alerte',
+      priority: 'urgent',
+      case_id: cas.id,
+      intern_name: `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim(),
+      title: '⚠️ Arrival prep — start date missing',
+      description: 'Set actual_start_date so the internship activates automatically on the right day',
+      cta_label: 'Open case',
+      cta_url: `/fr/cases/${cas.id}`,
+      days_waiting: 0,
+      status: 'arrival_prep',
+    })
+  })
+
   // 8. Leads abandonnés depuis > 3j avec email (formulaire non terminé)
   const { data: abandonedLeads } = await adminClient
     .from('leads')
@@ -326,6 +352,34 @@ export async function GET() {
     if (pa !== pb) return pa - pb
     return (b.days_waiting ?? 0) - (a.days_waiting ?? 0)
   })
+
+
+  // System check: scheduling manager actif sans Google token
+  try {
+    const { data: mgrsNoToken } = await adminClient
+      .from('scheduling_managers')
+      .select('email')
+      .eq('is_active', true)
+      .is('google_refresh_token', null)
+      .limit(5)
+
+    if (mgrsNoToken && mgrsNoToken.length > 0) {
+      const emails = mgrsNoToken.map(m => (m as Record<string,unknown>).email as string).join(', ')
+      todos.push({
+        id: 'no-calendar-token',
+        type: 'alerte',
+        priority: 'urgent',
+        case_id: undefined,
+        intern_name: '',
+        title: '⚠️ Scheduling: no Google Calendar token',
+        description: `${emails} — no token. Interns cannot book interviews. Connect via Settings → Scheduling.`,
+        cta_label: 'Settings → Scheduling',
+        cta_url: '/fr/settings/scheduling',
+        days_waiting: 0,
+        status: 'system',
+      })
+    }
+  } catch { /* non-blocking */ }
 
   return NextResponse.json({ todos, count: todos.length })
 }
