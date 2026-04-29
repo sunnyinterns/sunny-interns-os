@@ -79,7 +79,7 @@ export default function BilletPage() {
           <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
             Ville de départ du dernier vol
           </label>
-          <input type="text" value={escale} onChange={(e) => setLayover / connection(e.target.value)} placeholder="ex: Singapore" style={inputStyle} />
+          <input type="text" value={escale} onChange={(e) => setEscale(e.target.value)} placeholder="ex: Singapore" style={inputStyle} />
         </div>
         <div style={{ marginBottom: 24 }}>
           <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
