@@ -35,8 +35,8 @@ export async function GET(req: Request) {
       // Admin notification
       await supabase.from('admin_notifications').insert({
         type: 'j3_departure',
-        title: `✈️ Départ J-3 — ${intern.first_name}`,
-        message: `Vol prévu dans 3 jours · Email All Indonesia envoyé`,
+        title: `✈️ Departure in 3 days — ${intern.first_name}`,
+        body: `Flight in 3 days · J-3 email sent`,
         action_url: `/fr/cases/${c.id}`,
         case_id: c.id,
         is_read: false,
