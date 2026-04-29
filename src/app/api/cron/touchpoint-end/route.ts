@@ -26,7 +26,7 @@ export async function GET(req: Request) {
     .select('id, portal_token, actual_start_date, actual_end_date, actual_end_date, touchpoint_end_sent_at, interns(first_name, email)')
     .eq('status', 'active')
     .eq('actual_end_date', targetStr)
-    .is(touchpoint_end_sent_at, null)
+    .is('touchpoint_end_sent_at', null)
     .limit(50)
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://sunny-interns-os.vercel.app'
