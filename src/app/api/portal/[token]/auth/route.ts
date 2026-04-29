@@ -16,7 +16,7 @@ export async function POST(
   const body = await request.json() as { email?: string; password?: string }
 
   if (!body.email || !body.password) {
-    return NextResponse.json({ error: 'Email et mot de passe requis' }, { status: 400 })
+    return NextResponse.json({ error: 'Email and password required' }, { status: 400 })
   }
 
   const admin = getAdmin()
@@ -28,16 +28,16 @@ export async function POST(
     .single()
 
   if (!caseRow) {
-    return NextResponse.json({ error: 'Token invalide' }, { status: 401 })
+    return NextResponse.json({ error: 'Invalid link' }, { status: 401 })
   }
 
   const intern = (caseRow as unknown as Record<string, unknown>).interns as { email: string } | null
   if (!intern || intern.email.toLowerCase() !== body.email.toLowerCase()) {
-    return NextResponse.json({ error: 'Email incorrect' }, { status: 401 })
+    return NextResponse.json({ error: 'Incorrect email' }, { status: 401 })
   }
 
   if ((caseRow as unknown as Record<string, unknown>).portal_temp_password !== body.password) {
-    return NextResponse.json({ error: 'Mot de passe incorrect' }, { status: 401 })
+    return NextResponse.json({ error: 'Incorrect password' }, { status: 401 })
   }
 
   // Mark as activated on first login

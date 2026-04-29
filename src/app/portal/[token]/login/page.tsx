@@ -22,8 +22,8 @@ export default function PortalTokenLoginPage() {
         body: JSON.stringify({ email, password }),
       })
       if (res.ok) {
-        sessionStorage.setItem('portal_token', token)
-        sessionStorage.setItem('portal_email', email)
+        localStorage.setItem('portal_token', token)
+        localStorage.setItem('portal_email', email)
         router.push(`/portal/${token}`)
       } else {
         setError('Incorrect email or password')
@@ -72,7 +72,9 @@ export default function PortalTokenLoginPage() {
           </form>
           <p className="text-center text-white/30 text-xs mt-4">
             Lost your access?{' '}
-            <a href="/portal" className="text-[#FFCC00] hover:underline">Request a new link</a>
+            <a href="mailto:team@bali-interns.com?subject=Portal%20access%20request" className="text-[#FFCC00] hover:underline">
+              Contact us at team@bali-interns.com
+            </a>
           </p>
         </div>
       </div>
