@@ -62,9 +62,33 @@ export async function POST(req: Request) {
   
   if (!wasAlreadyReceived && intern?.email && intern.first_name) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
-    // Email visa_received avec lien de téléchargement
+    // Email visa_received_intern avec lien de téléchargement direct
     try {
-      // Trigger email + notifications via status route
+      const { data: tmpl } = await admin
+        .from('email_templates')
+        .select('subject, body_html')
+        .eq('slug', 'visa_received_intern')
+        .eq('is_active', true)
+        .single()
+      if (tmpl?.subject && tmpl?.body_html) {
+        const portalUrl = portalToken ? `${appUrl}/portal/${portalToken}/visa` : appUrl
+        let subject = (tmpl.subject as string).replace(/{{first_name}}/g, intern.first_name!)
+        let html = (tmpl.body_html as string)
+          .replace(/{{first_name}}/g, intern.first_name!)
+          .replace(/{{visa_url}}/g, visaUrl)
+          .replace(/{{portal_url}}/g, portalUrl)
+        const { Resend } = await import('resend')
+        const resend = new Resend(process.env.RESEND_API_KEY)
+        await resend.emails.send({
+          from: 'Bali Interns <team@bali-interns.com>',
+          to: intern.email!,
+          subject,
+          html,
+        })
+      }
+    } catch { /* non-blocking */ }
+    // Also trigger status route for admin notifications
+    try {
       void fetch(appUrl + '/api/cases/' + caseId + '/status', {
         method: 'PATCH',
         headers: { 
