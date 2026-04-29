@@ -23,7 +23,7 @@ export async function POST(
 
   const { data: caseRow } = await admin
     .from('cases')
-    .select('id, portal_token, portal_temp_password, portal_activated_at, interns!inner(email)')
+    .select('id, portal_token, portal_password_hash, portal_activated_at, interns!inner(email)')
     .eq('portal_token', token)
     .single()
 
@@ -36,7 +36,7 @@ export async function POST(
     return NextResponse.json({ error: 'Incorrect email' }, { status: 401 })
   }
 
-  if ((caseRow as unknown as Record<string, unknown>).portal_temp_password !== body.password) {
+  if ((caseRow as unknown as Record<string, unknown>).portal_password_hash !== body.password) {
     return NextResponse.json({ error: 'Incorrect password' }, { status: 401 })
   }
 

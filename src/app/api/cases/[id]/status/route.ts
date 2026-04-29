@@ -206,7 +206,7 @@ export async function PATCH(
         let portalToken = (caseRow as Record<string, unknown>).portal_token as string | null
         const tempPassword = generatePassword()
         if (!portalToken) portalToken = crypto.randomUUID()
-        await admin.from('cases').update({ portal_token: portalToken, portal_temp_password: tempPassword }).eq('id', id)
+        await admin.from('cases').update({ portal_token: portalToken, portal_password_hash: tempPassword }).eq('id', id)
         const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bali-interns-os.vercel.app'
         const qualNotes = (caseRow as Record<string, unknown>).qualification_notes_for_intern as string ?? ''
         if (intern?.email) {

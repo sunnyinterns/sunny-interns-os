@@ -33,7 +33,7 @@ export async function POST(
 
   const { data: caseRow } = await admin
     .from('cases')
-    .select('id, portal_token, portal_temp_password, qualification_notes_for_intern, qualification_notes, interns(first_name, last_name, email)')
+    .select('id, portal_token, portal_password_hash, qualification_notes_for_intern, qualification_notes, interns(first_name, last_name, email)')
     .eq('id', id)
     .single()
 
@@ -79,14 +79,14 @@ export async function POST(
 
   // Legacy path: send structured qualification email with portal access
   let portalToken = (caseRow as Record<string, unknown>).portal_token as string | null
-  let tempPassword = (caseRow as Record<string, unknown>).portal_temp_password as string | null
+  let tempPassword = (caseRow as Record<string, unknown>).portal_password_hash as string | null
 
   if (!portalToken) portalToken = crypto.randomUUID()
   if (!tempPassword) tempPassword = generatePassword()
 
   await admin.from('cases').update({
     portal_token: portalToken,
-    portal_temp_password: tempPassword,
+    portal_password_hash: tempPassword,
   }).eq('id', id)
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://bali-interns-os.vercel.app'

@@ -20,7 +20,7 @@ export async function POST(
 
   const { data: caseRow } = await admin
     .from('cases')
-    .select('id, portal_token, portal_temp_password, interns(first_name, email)')
+    .select('id, portal_token, portal_password_hash, interns(first_name, email)')
     .eq('portal_token', token)
     .single()
 
@@ -35,7 +35,7 @@ export async function POST(
   const newPassword = `${adjectives[Math.floor(Math.random() * adjectives.length)]}${numbers}`
 
   await admin.from('cases').update({
-    portal_temp_password: newPassword,
+    portal_password_hash: newPassword,
     updated_at: new Date().toISOString(),
   }).eq('id', (caseRow as Record<string, unknown>).id as string)
 
