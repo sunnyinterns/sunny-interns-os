@@ -5,11 +5,12 @@ import { tp, getPortalLang, type PortalLang } from '@/lib/i18n'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 
+// ── Status → step mapping ─────────────────────────────────────────────────────
 const STATUS_TO_STEP: Record<string, number> = {
   lead: 1, rdv_booked: 2, qualification_done: 2,
   job_submitted: 3, job_retained: 4, convention_signed: 4,
   payment_pending: 5, payment_received: 5,
-  visa_docs_sent: 6, visa_submitted: 6,
+  visa_docs_sent: 6, visa_submitted: 6, visa_in_progress: 6,
   visa_received: 7, arrival_prep: 7,
   active: 8, alumni: 8,
 }
@@ -25,366 +26,624 @@ const STEPS = [
   { num: 8, label: 'In Bali!' },
 ]
 
-const PORTAL_STEPS = [
-  { key: 'apply', label: 'Application', icon: '📋', statuses: ['lead', 'rdv_booked'] },
-  { key: 'interview', label: 'Interview', icon: '🎤', statuses: ['rdv_booked', 'qualification_done'] },
-  { key: 'jobs', label: 'Internship offers', icon: '💼', statuses: ['job_submitted', 'job_retained'] },
-  { key: 'convention', label: 'Agreement', icon: '📝', statuses: ['convention_signed', 'payment_pending', 'payment_received'] },
-  { key: 'visa', label: 'Visa', icon: '🛂', statuses: ['visa_docs_sent', 'visa_in_progress', 'visa_received'] },
-  { key: 'bali', label: 'Bali departure', icon: '🌴', statuses: ['arrival_prep', 'active', 'alumni'] },
+// ── Tab definitions ────────────────────────────────────────────────────────────
+type TabKey = 'home' | 'internship' | 'tasks' | 'perks' | 'profile'
+
+interface TabDef {
+  key: TabKey
+  icon: string
+  label: string
+  unlockedFrom: number // step from which this tab is accessible
+  lockedMessage: string
+}
+
+const TABS: TabDef[] = [
+  { key: 'home',        icon: '🏠', label: 'Home',        unlockedFrom: 1, lockedMessage: '' },
+  { key: 'internship',  icon: '💼', label: 'Internship',  unlockedFrom: 3, lockedMessage: 'Available once qualified' },
+  { key: 'tasks',       icon: '✅', label: 'My Tasks',    unlockedFrom: 5, lockedMessage: 'Available after payment' },
+  { key: 'perks',       icon: '🎁', label: 'Perks',       unlockedFrom: 5, lockedMessage: 'Available after payment' },
+  { key: 'profile',     icon: '👤', label: 'Profile',     unlockedFrom: 1, lockedMessage: '' },
 ]
 
+// ── Types ─────────────────────────────────────────────────────────────────────
 interface PortalData {
-  id: string
-  status: string
-  portal_token: string
+  id: string; status: string; portal_token: string
   qualification_notes_for_intern?: string | null
-  actual_start_date?: string | null
-  actual_end_date?: string | null
-  billet_avion?: boolean | null
-  papiers_visas?: boolean | null
-  engagement_letter_sent?: boolean | null
-  cv_revision_requested?: boolean | null
-  housing_reserved?: boolean | null
-  assigned_manager_name?: string | null
-  flight_number?: string | null
-  flight_departure_city?: string | null
+  actual_start_date?: string | null; actual_end_date?: string | null
+  billet_avion?: boolean | null; papiers_visas?: boolean | null
+  engagement_letter_sent?: boolean | null; cv_revision_requested?: boolean | null
+  housing_reserved?: boolean | null; assigned_manager_name?: string | null
+  flight_number?: string | null; flight_departure_city?: string | null
   flight_arrival_time_local?: string | null
-  flight_last_stopover?: string | null
-  desired_start_date?: string | null
-  desired_duration_months?: number | null
-  visa_submitted_to_agent_at?: string | null
-  payment_amount?: number | null
-  billing_companies?: {
-    name: string | null
-    legal_form: string | null
-    currency: string | null
-    bank_iban: string | null
-    bank_bic: string | null
-    bank_name: string | null
-    stripe_link: string | null
-  } | null
-  invoice_number?: string | null
-  discount_percentage?: number | null
-  intern_first_meeting_date?: string | null
-  intern_first_meeting_link?: string | null
-  intern_first_meeting_reschedule_link?: string | null
+  desired_start_date?: string | null; desired_duration_months?: number | null
+  visa_submitted_to_agent_at?: string | null; visa_url?: string | null
+  payment_amount?: number | null; discount_percentage?: number | null
+  intern_first_meeting_date?: string | null; intern_first_meeting_link?: string | null
+  billing_companies?: { bank_iban?: string | null; bank_bic?: string | null; bank_name?: string | null; name?: string | null } | null
   interns?: {
-    first_name?: string | null
-    last_name?: string | null
-    email?: string | null
-    phone?: string | null
-    whatsapp?: string | null
-    passport_page4_url?: string | null
-    photo_id_url?: string | null
-    bank_statement_url?: string | null
-    return_plane_ticket_url?: string | null
-    cv_url?: string | null
-    desired_sectors?: string[] | null
+    first_name?: string | null; last_name?: string | null; email?: string | null
+    whatsapp?: string | null; cv_url?: string | null; desired_sectors?: string[] | null
   } | null
   job_submissions?: Array<{
-    id: string
-    status: string
-    intern_priority?: number | null
-    intern_comment?: string | null
-    intern_interested?: boolean | null
-    jobs?: {
-      public_title?: string | null
-      title?: string | null
-      department?: string | null
-      companies?: {
-        id?: string | null
-        name?: string | null
-        website?: string | null
-        registration_number?: string | null
-        address?: string | null
-      } | null
-    } | null
+    id: string; status: string
+    jobs?: { public_title?: string | null; title?: string | null; companies?: { name?: string | null } | null } | null
   }> | null
 }
 
-interface PortalPartner {
-  id: string
-  name: string
-  logo_url: string | null
-  partner_category: string | null
-  partner_deal: string | null
-  partner_timing: string | null
-  partner_visible_from: string | null
-  website: string | null
-}
-
 interface PortalJobItem {
-  submission_id: string
-  job_id: string
-  title: string
-  sector: string | null
-  public_description: string | null
-  public_hook: string | null
-  public_vibe: string | null
-  public_perks: string[] | null
-  seo_slug: string | null
-  intern_interested: boolean | null
-  status: string
+  submission_id: string; job_id: string; title: string
+  sector?: string | null; public_description?: string | null
+  employer_first_name?: string | null; submission_status: string
+  intern_interested?: boolean | null
 }
 
-const PAYMENT_STATUSES = new Set(['payment_pending', 'convention_signed', 'job_retained'])
-const PAYMENT_INFO_FALLBACK = {
-  company: 'SIDLYS INTERNATIONAL LLC',
-  iban: 'GB76REVO00996903517949',
-  bic: 'REVOGB21',
-  bank: 'Revolut Ltd',
+interface PortalPartner {
+  id: string; name: string; logo_url?: string | null
+  partner_category?: string | null; partner_deal?: string | null
+  partner_timing?: string | null; website?: string | null
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
-function monthsDiff(start: string, end: string) {
-  const s = new Date(start)
-  const e = new Date(end)
-  return Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24 * 30.5))
+// ── CSS vars (mirrors layout) ─────────────────────────────────────────────────
+const C = {
+  yellow: '#FFCC00', dark: '#1A1A1A', cream: '#FFFBF0',
+  muted: '#9ca3af', border: '#e5e7eb', green: '#0d9e75',
+  surface: '#ffffff', surfaceAlt: '#f9f7f2',
 }
 
-function CVUploadSection({ token }: { token: string }) {
-  const [file, setFile] = useState<File | null>(null)
-  const [uploading, setUploading] = useState(false)
-  const [done, setDone] = useState(false)
-
-  async function handleUpload() {
-    if (!file) return
-    setUploading(true)
-    try {
-      const fd = new FormData()
-      fd.append('file', file)
-      const res = await fetch(`/api/portal/${token}/upload-cv`, { method: 'POST', body: fd })
-      if (res.ok) setDone(true)
-    } catch { /* ignore */ }
-    finally { setUploading(false) }
-  }
-
+// ── Sub-components ────────────────────────────────────────────────────────────
+function LockedTab({ message }: { message: string }) {
   return (
-    <div style={{ background: '#fef9ee', border: '1px solid #fde68a', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-      <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 4 }}>
-        Mise à jour CV demandée
-      </h2>
-      <p style={{ fontSize: 12, color: '#92400e', marginBottom: 12 }}>
-        Notre équipe a besoin d&apos;une nouvelle version de ton CV.
-      </p>
-      {done ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
-          <span style={{ fontSize: 14 }}>✅</span>
-          <span style={{ fontSize: 13, color: '#065f46', fontWeight: 600 }}>CV envoyé avec succès !</span>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <input
-            type="file"
-            accept=".pdf,.doc,.docx"
-            onChange={e => setFile(e.target.files?.[0] ?? null)}
-            style={{ fontSize: 13 }}
-          />
-          <button
-            onClick={() => void handleUpload()}
-            disabled={!file || uploading}
-            style={{
-              padding: '10px 16px', background: file && !uploading ? '#FFCC00' : '#d1d5db',
-              color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700,
-              cursor: file && !uploading ? 'pointer' : 'not-allowed',
-            }}>
-            {uploading ? 'Sending…' : 'Upload my CV'}
-          </button>
-        </div>
-      )}
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 220, gap: 12 }}>
+      <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>🔒</div>
+      <p style={{ fontSize: 15, fontWeight: 600, color: C.dark, margin: 0 }}>{message}</p>
+      <p style={{ fontSize: 13, color: C.muted, margin: 0, textAlign: 'center' }}>Complete the previous steps to unlock this section.</p>
     </div>
   )
 }
 
-function JobCommentCard({ sub, token }: { sub: PortalJobItem; token: string }) {
-  const [comment, setComment] = useState('')
-  const [interested, setInterested] = useState<boolean | null>(sub.intern_interested)
-  const [saved, setSaved] = useState(false)
+function SectionCard({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: '16px', marginBottom: 12, ...style }}>
+      {children}
+    </div>
+  )
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 12px' }}>{children}</p>
+}
+
+function Row({ label, value }: { label: string; value?: string | null }) {
+  if (!value) return null
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: `1px solid ${C.border}` }}>
+      <span style={{ fontSize: 13, color: C.muted }}>{label}</span>
+      <span style={{ fontSize: 13, fontWeight: 500, color: C.dark }}>{value}</span>
+    </div>
+  )
+}
+
+function Badge({ label, color, bg }: { label: string; color: string; bg: string }) {
+  return <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: bg, color, display: 'inline-block' }}>{label}</span>
+}
+
+function ActionLink({ href, icon, label, done, urgent }: { href: string; icon: string; label: string; done: boolean; urgent?: boolean }) {
+  if (done) return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: '#f0fdf4', borderRadius: 12, border: `1px solid #bbf7d0`, marginBottom: 8 }}>
+      <span style={{ fontSize: 20 }}>✅</span>
+      <span style={{ fontSize: 14, fontWeight: 500, color: '#065f46', flex: 1 }}>{label}</span>
+      <span style={{ fontSize: 12, color: C.green }}>Done</span>
+    </div>
+  )
+  return (
+    <Link href={href} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: urgent ? '#fffbeb' : C.surfaceAlt, borderRadius: 12, border: `1.5px solid ${urgent ? '#fcd34d' : C.border}`, marginBottom: 8, textDecoration: 'none' }}>
+      <span style={{ fontSize: 20 }}>{icon}</span>
+      <div style={{ flex: 1 }}>
+        {urgent && <p style={{ fontSize: 10, fontWeight: 700, color: '#d97706', textTransform: 'uppercase', margin: '0 0 1px', letterSpacing: '0.05em' }}>Required</p>}
+        <span style={{ fontSize: 14, fontWeight: 500, color: C.dark }}>{label}</span>
+      </div>
+      <span style={{ fontSize: 16, color: urgent ? '#d97706' : C.yellow }}>→</span>
+    </Link>
+  )
+}
+
+function JobCard({ sub, token }: { sub: PortalJobItem; token: string }) {
+  const [interested, setInterested] = useState<boolean | null>(sub.intern_interested ?? null)
   const [saving, setSaving] = useState(false)
 
-  async function sendComment() {
-    if (!comment.trim()) return
-    setSaving(true)
-    try {
-      const res = await fetch(`/api/portal/${token}/jobs/${sub.submission_id}/comment`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ comment }),
-      })
-      if (res.ok) { setSaved(true); setComment('') }
-    } catch { /* ignore */ }
-    finally { setSaving(false) }
-  }
-
-  async function sendInterest(value: boolean) {
-    setInterested(value)
+  async function sendInterest(val: boolean) {
+    setInterested(val); setSaving(true)
     try {
       await fetch(`/api/portal/${token}/jobs/${sub.submission_id}/interest`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ interested: value }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ interested: val }),
       })
-    } catch { /* ignore */ }
+    } catch { /* ignore */ } finally { setSaving(false) }
   }
 
-  const statusMap: Record<string, { label: string; color: string }> = {
-    proposed: { label: 'En cours de traitement', color: '#d97706' },
-    cv_pending: { label: 'CV en attente', color: '#d97706' },
-    cv_validated: { label: 'Profile validated', color: '#2563eb' },
-    sent: { label: 'Application sent', color: '#1d4ed8' },
-    interview: { label: 'Entretien employeur', color: '#7c3aed' },
-    retained: { label: 'Stage retenu !', color: '#059669' },
-    rejected: { label: 'Non retenu', color: '#dc2626' },
-    cancelled: { label: 'Cancelled', color: '#9ca3af' },
+  const statusLabels: Record<string, { label: string; bg: string; color: string }> = {
+    pending:   { label: '⏳ Not sent yet',     bg: '#f3f4f6', color: C.muted },
+    sent:      { label: '📧 Application sent', bg: '#dbeafe', color: '#1d4ed8' },
+    interview: { label: '🗓️ Interview',        bg: '#ede9fe', color: '#6d28d9' },
+    retained:  { label: '✅ Retained!',        bg: '#d1fae5', color: '#059669' },
+    rejected:  { label: '❌ Not retained',     bg: '#fee2e2', color: '#dc2626' },
+    cancelled: { label: '🚫 Cancelled',        bg: '#f3f4f6', color: C.muted },
   }
-  const st = statusMap[sub.status] ?? statusMap.proposed
+  const st = statusLabels[sub.submission_status] ?? statusLabels.pending
 
   return (
-    <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 12 }}>
-      <div style={{ marginBottom: 8 }}>
-        <p style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', margin: 0 }}>{sub.title}</p>
-        {sub.sector && <p style={{ fontSize: 12, color: '#6b7280', margin: '2px 0 0' }}>{sub.sector}</p>}
-        <p style={{ fontSize: 12, fontWeight: 500, color: st.color, margin: '4px 0 0' }}>{st.label}</p>
-      </div>
-
-      {sub.public_description && (
-        <p style={{ fontSize: 13, color: '#374151', margin: '8px 0', lineHeight: 1.5 }}>{sub.public_description}</p>
-      )}
-
-      {/* Hook accroche */}
-      {sub.public_hook && !sub.public_description && (
-        <p style={{ fontSize: 13, color: '#FFCC00', fontStyle: 'italic', margin: '8px 0' }}>&ldquo;{sub.public_hook}&rdquo;</p>
-      )}
-
-      {/* Ambiance */}
-      {sub.public_vibe && (
-        <p style={{ fontSize: 12, color: '#6b7280', margin: '4px 0', lineHeight: 1.4 }}>🌴 {sub.public_vibe}</p>
-      )}
-
-      {/* Avantages */}
-      {sub.public_perks && sub.public_perks.filter(Boolean).length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, margin: '8px 0' }}>
-          {sub.public_perks.filter(Boolean).map((p: string, i: number) => (
-            <span key={i} style={{ fontSize: 11, padding: '2px 8px', background: '#fef3c7', color: '#92400e', borderRadius: 20 }}>✨ {p}</span>
-          ))}
+    <SectionCard>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontSize: 15, fontWeight: 700, color: C.dark, margin: '0 0 4px' }}>{sub.title}</p>
+          {sub.sector && <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>{sub.sector}</p>}
+          {sub.employer_first_name && <p style={{ fontSize: 12, color: C.muted, margin: '2px 0 0' }}>Contact: {sub.employer_first_name}</p>}
         </div>
-      )}
-
-      {/* Lien page publique */}
-      {sub.seo_slug && (
-        <a href={`/jobs/${sub.seo_slug}`} target="_blank" rel="noopener noreferrer"
-          style={{ display: 'inline-block', fontSize: 11, color: '#FFCC00', textDecoration: 'none', margin: '4px 0 8px' }}>
-          🔗 View full listing ↗
-        </a>
-      )}
-
-      {/* Interest buttons */}
-      <div style={{ display: 'flex', gap: 8, margin: '12px 0' }}>
-        <button
-          onClick={() => void sendInterest(true)}
-          style={{
-            flex: 1, padding: '10px', border: `2px solid ${interested === true ? '#0d9e75' : '#e5e7eb'}`,
-            borderRadius: 10, background: interested === true ? '#f0fdf4' : 'white',
-            color: interested === true ? '#0d9e75' : '#6b7280', fontSize: 13, fontWeight: 600,
-            cursor: 'pointer',
-          }}
-        >
-          {interested === true ? '✅ Interested' : 'I\'m interested'}
-        </button>
-        <button
-          onClick={() => void sendInterest(false)}
-          style={{
-            flex: 1, padding: '10px', border: `2px solid ${interested === false ? '#dc2626' : '#e5e7eb'}`,
-            borderRadius: 10, background: interested === false ? '#fef2f2' : 'white',
-            color: interested === false ? '#dc2626' : '#6b7280', fontSize: 13, fontWeight: 600,
-            cursor: 'pointer',
-          }}
-        >
-          {interested === false ? '❌ Not interested' : 'Not interested'}
-        </button>
+        <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 20, background: st.bg, color: st.color, flexShrink: 0, marginLeft: 8 }}>{st.label}</span>
       </div>
-
-      {/* Comment zone */}
-      <div>
-        <p style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>What do you think of this offer?</p>
-        {saved ? (
-          <div style={{ padding: '10px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
-            <span style={{ fontSize: 13, color: '#065f46', fontWeight: 500 }}>Commentaire envoyé !</span>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <textarea
-              value={comment}
-              onChange={e => setComment(e.target.value)}
-              placeholder="Ex: J'adore ce poste, le secteur correspond bien a mes etudes..."
-              rows={3}
-              style={{
-                width: '100%', padding: '10px 12px', fontSize: 13, border: '1px solid #e5e7eb',
-                borderRadius: 8, resize: 'none', outline: 'none', boxSizing: 'border-box',
-              }}
-            />
-            <button
-              onClick={() => void sendComment()}
-              disabled={saving || !comment.trim()}
-              style={{
-                alignSelf: 'flex-end', padding: '8px 16px', fontSize: 13, fontWeight: 600,
-                background: comment.trim() && !saving ? '#FFCC00' : '#d1d5db', color: 'white',
-                border: 'none', borderRadius: 8, cursor: comment.trim() && !saving ? 'pointer' : 'not-allowed',
-              }}
-            >
-              {saving ? 'Envoi...' : 'Send'}
+      {sub.public_description && (
+        <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.6, margin: '8px 0' }}>{sub.public_description}</p>
+      )}
+      {sub.submission_status === 'interview' && interested === null && (
+        <>
+          <p style={{ fontSize: 12, fontWeight: 600, color: C.dark, margin: '12px 0 8px' }}>Had your interview? What do you think?</p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => void sendInterest(true)} disabled={saving}
+              style={{ flex: 1, padding: '11px', border: `2px solid ${C.border}`, borderRadius: 10, background: C.surface, fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#374151' }}>
+              🙋 I want to join
+            </button>
+            <button onClick={() => void sendInterest(false)} disabled={saving}
+              style={{ flex: 1, padding: '11px', border: `2px solid ${C.border}`, borderRadius: 10, background: C.surface, fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#374151' }}>
+              👋 Not for me
             </button>
           </div>
-        )}
+        </>
+      )}
+      {interested === true && <p style={{ fontSize: 13, color: C.green, fontWeight: 600, margin: '12px 0 0' }}>✅ You expressed interest — we&apos;ll be in touch!</p>}
+      {interested === false && <p style={{ fontSize: 13, color: '#dc2626', fontWeight: 600, margin: '12px 0 0' }}>👋 Got it — we&apos;ll keep looking.</p>}
+    </SectionCard>
+  )
+}
+
+// ── Tab contents ──────────────────────────────────────────────────────────────
+function TabHome({ data, lang, currentStep }: { data: PortalData; lang: PortalLang; currentStep: number }) {
+  const prenom = data.interns?.first_name ?? ''
+  const isPreQual = currentStep < 3
+  const retainedSub = (data.job_submissions ?? []).find(s => s.status === 'retained')
+
+  return (
+    <div>
+      {/* Greeting + status */}
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: C.dark, margin: '0 0 6px', lineHeight: 1.2 }}>
+          {prenom ? `Hi ${prenom}! 👋` : 'Welcome! 👋'}
+        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <Badge
+            label={STEPS[currentStep - 1]?.label ?? 'In progress'}
+            bg={currentStep >= 8 ? '#d1fae5' : currentStep >= 5 ? '#fef3c7' : '#ede9e3'}
+            color={currentStep >= 8 ? '#065f46' : currentStep >= 5 ? '#92400e' : C.dark}
+          />
+          {data.assigned_manager_name && (
+            <span style={{ fontSize: 12, color: C.muted }}>with {data.assigned_manager_name}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <SectionCard style={{ padding: '14px 16px 12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+          {STEPS.map(s => {
+            const done = s.num < currentStep
+            const active = s.num === currentStep
+            return (
+              <div key={s.num} style={{ flex: 1, textAlign: 'center' }}>
+                <div style={{
+                  width: 24, height: 24, borderRadius: '50%', margin: '0 auto 3px',
+                  background: done ? C.yellow : active ? C.yellow : '#e5e7eb',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 10, fontWeight: 700, color: done || active ? 'white' : C.muted,
+                  outline: active ? `3px solid rgba(255,204,0,0.3)` : 'none',
+                  outlineOffset: 1,
+                  transition: 'all 0.3s',
+                }}>
+                  {done ? '✓' : s.num}
+                </div>
+                <span style={{ fontSize: 8, display: 'block', color: done || active ? C.yellow : C.muted, fontWeight: active ? 700 : 400, lineHeight: 1.2 }}>
+                  {s.label}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+        <div style={{ height: 5, background: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${Math.max(4, ((currentStep - 1) / 7) * 100)}%`, background: `linear-gradient(90deg, ${C.yellow}, #d4b87a)`, transition: 'width 0.6s ease', borderRadius: 3 }} />
+        </div>
+      </SectionCard>
+
+      {/* Pre-qual state */}
+      {isPreQual && (
+        <SectionCard style={{ background: '#eff6ff', border: '1px solid #bfdbfe', textAlign: 'center', padding: 24 }}>
+          <p style={{ fontSize: 28, margin: '0 0 8px' }}>{data.status === 'rdv_booked' ? '📅' : '⏳'}</p>
+          <p style={{ fontSize: 15, fontWeight: 700, color: '#1d4ed8', margin: '0 0 4px' }}>
+            {data.status === 'rdv_booked' ? 'Interview booked!' : tp(lang, 'dossierEnCours')}
+          </p>
+          <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
+            {data.status === 'rdv_booked' ? tp(lang, 'rdvBookedMsg') : tp(lang, 'rdvPendingMsg')}
+          </p>
+        </SectionCard>
+      )}
+
+      {/* Interview */}
+      {data.intern_first_meeting_date && (
+        <SectionCard>
+          <SectionTitle>Your interview</SectionTitle>
+          <p style={{ fontSize: 14, fontWeight: 600, color: C.dark, margin: '0 0 4px' }}>
+            {new Date(data.intern_first_meeting_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </p>
+          <p style={{ fontSize: 13, color: C.muted, margin: '0 0 14px' }}>
+            {new Date(data.intern_first_meeting_date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} — via Google Meet
+          </p>
+          {data.intern_first_meeting_link && (
+            <a href={data.intern_first_meeting_link} target="_blank" rel="noopener noreferrer"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px', background: '#1a73e8', color: 'white', borderRadius: 12, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+              Join Google Meet
+            </a>
+          )}
+        </SectionCard>
+      )}
+
+      {/* Qualification notes */}
+      {data.qualification_notes_for_intern && (
+        <SectionCard style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+          <SectionTitle>Interview debrief</SectionTitle>
+          <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>
+            {data.qualification_notes_for_intern}
+          </p>
+        </SectionCard>
+      )}
+
+      {/* Retained job info */}
+      {retainedSub && currentStep >= 4 && (
+        <SectionCard style={{ background: `linear-gradient(135deg, ${C.dark} 0%, #2a2927 100%)` }}>
+          <SectionTitle>Your internship 🎉</SectionTitle>
+          <p style={{ fontSize: 18, fontWeight: 800, color: C.yellow, margin: '0 0 4px' }}>
+            {retainedSub.jobs?.public_title ?? retainedSub.jobs?.title ?? 'Internship confirmed!'}
+          </p>
+          {retainedSub.jobs?.companies?.name && (
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', margin: '0 0 8px' }}>{retainedSub.jobs.companies.name}</p>
+          )}
+          {data.actual_start_date && data.actual_end_date && (
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', margin: 0 }}>
+              {formatDate(data.actual_start_date)} → {formatDate(data.actual_end_date)}
+            </p>
+          )}
+        </SectionCard>
+      )}
+
+      {/* Visa status */}
+      {currentStep >= 6 && (
+        <SectionCard>
+          <SectionTitle>Visa status</SectionTitle>
+          {data.visa_url ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 24 }}>🛂</span>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: 14, fontWeight: 700, color: C.green, margin: 0 }}>Visa received! ✅</p>
+                <a href={data.visa_url} target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize: 13, color: C.yellow, fontWeight: 600, textDecoration: 'none' }}>📥 Download my visa</a>
+              </div>
+            </div>
+          ) : data.visa_submitted_to_agent_at ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 24 }}>⏳</span>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 600, color: '#1d4ed8', margin: 0 }}>Processing</p>
+                <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>Submitted {formatDate(data.visa_submitted_to_agent_at)} · ~1 month</p>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 24 }}>📋</span>
+              <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>Waiting for your documents</p>
+            </div>
+          )}
+        </SectionCard>
+      )}
+
+      {/* Flight */}
+      {data.flight_number && currentStep >= 7 && (
+        <SectionCard>
+          <SectionTitle>Your flight</SectionTitle>
+          <Row label="Flight" value={data.flight_number} />
+          <Row label="From" value={data.flight_departure_city} />
+          <Row label="Arrival Bali" value={data.flight_arrival_time_local} />
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            {[
+              { label: 'FlightRadar24', url: `https://www.flightradar24.com/${data.flight_number}` },
+              { label: 'FlightAware', url: `https://www.flightaware.com/live/flight/${data.flight_number}` },
+            ].map(l => (
+              <a key={l.label} href={l.url} target="_blank" rel="noopener noreferrer"
+                style={{ flex: 1, textAlign: 'center', padding: '8px', background: C.surfaceAlt, borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#374151', textDecoration: 'none', border: `1px solid ${C.border}` }}>
+                {l.label}
+              </a>
+            ))}
+          </div>
+        </SectionCard>
+      )}
+
+      {/* Help */}
+      <div style={{ background: 'linear-gradient(135deg, #075e54, #128c7e)', borderRadius: 16, padding: 20, marginBottom: 4 }}>
+        <p style={{ color: 'white', fontWeight: 700, fontSize: 15, margin: '0 0 4px' }}>Need help?</p>
+        <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, margin: '0 0 14px' }}>Our team is available on WhatsApp.</p>
+        <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: 'white', color: '#075e54', borderRadius: 10, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+          💬 WhatsApp us
+        </a>
       </div>
     </div>
   )
 }
 
-function PartnerCard({ partner }: { partner: PortalPartner }) {
+function TabInternship({ data, portalJobs, token, currentStep }: {
+  data: PortalData; portalJobs: PortalJobItem[]; token: string; currentStep: number
+}) {
+  const retainedSub = (data.job_submissions ?? []).find(s => s.status === 'retained')
+
   return (
-    <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
-      <div style={{ width: 40, height: 40, borderRadius: 10, background: '#f4f4f5', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
-        {partner.logo_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={partner.logo_url} alt="" style={{ width: 40, height: 40, objectFit: 'cover' }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
-        ) : (
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#9ca3af' }}>{partner.name[0]}</span>
-        )}
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-          <p style={{ fontSize: 13, fontWeight: 600, color: '#1A1A1A', margin: 0 }}>{partner.name}</p>
-          {partner.partner_category && (
-            <span style={{ fontSize: 10, background: '#f4f4f5', color: '#6b7280', padding: '1px 6px', borderRadius: 10 }}>{partner.partner_category}</span>
+    <div>
+      {/* CV revision */}
+      {data.cv_revision_requested && (
+        <SectionCard style={{ background: '#fffbeb', border: '1.5px solid #fcd34d' }}>
+          <SectionTitle>⚠️ Action required</SectionTitle>
+          <p style={{ fontSize: 14, fontWeight: 600, color: C.dark, margin: '0 0 4px' }}>Your advisor requested a new CV</p>
+          <p style={{ fontSize: 13, color: '#92400e', margin: '0 0 12px' }}>Please upload an updated version before we can send your profile to employers.</p>
+          <Link href={`/portal/${token}/cv`}
+            style={{ display: 'inline-block', padding: '10px 18px', background: C.yellow, color: C.dark, borderRadius: 10, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+            Upload new CV →
+          </Link>
+        </SectionCard>
+      )}
+
+      {/* Retained job */}
+      {retainedSub && (
+        <SectionCard style={{ background: `linear-gradient(135deg, ${C.dark}, #2a2927)`, marginBottom: 20 }}>
+          <SectionTitle>Your internship 🎉</SectionTitle>
+          <p style={{ fontSize: 20, fontWeight: 800, color: C.yellow, margin: '0 0 4px' }}>
+            {retainedSub.jobs?.public_title ?? retainedSub.jobs?.title ?? 'Internship confirmed!'}
+          </p>
+          {retainedSub.jobs?.companies?.name && (
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', margin: 0 }}>{retainedSub.jobs.companies.name}</p>
           )}
-        </div>
-        {partner.partner_deal && (
-          <p style={{ fontSize: 12, color: '#4b5563', marginTop: 2, margin: 0 }}>{partner.partner_deal}</p>
-        )}
-      </div>
-      {partner.website && (
-        <a href={partner.website} target="_blank" rel="noopener noreferrer"
-          style={{ fontSize: 11, padding: '6px 12px', background: '#FFCC00', color: 'white', borderRadius: 8, fontWeight: 600, textDecoration: 'none', flexShrink: 0 }}>
-          View →
-        </a>
+        </SectionCard>
+      )}
+
+      {/* Job offers */}
+      {portalJobs.length > 0 ? (
+        <>
+          <p style={{ fontSize: 13, color: C.muted, margin: '0 0 12px' }}>
+            {portalJobs.length} offer{portalJobs.length > 1 ? 's' : ''} proposed — let us know what you think!
+          </p>
+          {portalJobs.map(j => <JobCard key={j.submission_id} sub={j} token={token} />)}
+        </>
+      ) : (
+        <SectionCard style={{ textAlign: 'center', padding: 32 }}>
+          <p style={{ fontSize: 24, margin: '0 0 8px' }}>🔍</p>
+          <p style={{ fontSize: 15, fontWeight: 600, color: C.dark, margin: '0 0 4px' }}>Job search in progress</p>
+          <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>Your advisor is matching your profile with the best opportunities. We&apos;ll notify you when offers are ready.</p>
+        </SectionCard>
       )}
     </div>
   )
 }
 
+function TabTasks({ data, token, currentStep }: { data: PortalData; token: string; currentStep: number }) {
+  const tasks = [
+    { icon: '🛂', label: 'Visa documents', href: `/portal/${token}/visa`, done: !!data.papiers_visas, urgent: !data.papiers_visas && currentStep >= 6 },
+    { icon: '✈️', label: 'Flight details', href: `/portal/${token}/billet`, done: !!data.billet_avion },
+    { icon: '📝', label: 'Commitment letter', href: `/portal/${token}/engagement`, done: !!data.engagement_letter_sent },
+    { icon: '🏠', label: 'Accommodation & scooter', href: `/portal/${token}/logement`, done: !!data.housing_reserved },
+  ]
+  const pending = tasks.filter(t => !t.done)
+  const done = tasks.filter(t => t.done)
+
+  return (
+    <div>
+      {pending.length === 0 && (
+        <SectionCard style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', textAlign: 'center', padding: 24 }}>
+          <p style={{ fontSize: 28, margin: '0 0 8px' }}>🎉</p>
+          <p style={{ fontSize: 15, fontWeight: 700, color: '#065f46', margin: 0 }}>All tasks completed!</p>
+        </SectionCard>
+      )}
+
+      {pending.length > 0 && (
+        <>
+          <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 10px' }}>To do</p>
+          {pending.map(t => <ActionLink key={t.href} {...t} />)}
+        </>
+      )}
+
+      {done.length > 0 && (
+        <>
+          <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '16px 0 10px' }}>Completed</p>
+          {done.map(t => <ActionLink key={t.href} {...t} />)}
+        </>
+      )}
+
+      {/* Payment info */}
+      {['payment_pending', 'convention_signed', 'job_retained'].includes(data.status) && (
+        <SectionCard style={{ marginTop: 16 }}>
+          <SectionTitle>Payment</SectionTitle>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 12px' }}>
+            <span style={{ fontSize: 13, color: C.muted }}>Amount due</span>
+            <span style={{ fontSize: 26, fontWeight: 800, color: C.dark }}>{(data.payment_amount ?? 990).toFixed(0)} €</span>
+          </div>
+          <Link href={`/portal/${token}/facture`}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', background: C.yellow, color: C.dark, borderRadius: 12, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+            View invoice & bank details →
+          </Link>
+        </SectionCard>
+      )}
+    </div>
+  )
+}
+
+function TabPerks({ data, token, partners }: { data: PortalData; token: string; partners: PortalPartner[] }) {
+  const isActive = ['active', 'alumni'].includes(data.status)
+  const isPaid = !['lead', 'rdv_booked', 'qualification_done', 'job_submitted', 'job_retained', 'convention_signed', 'payment_pending'].includes(data.status)
+
+  return (
+    <div>
+      {/* Intern card */}
+      {isPaid && (
+        <SectionCard style={{ background: `linear-gradient(135deg, ${C.dark}, #2a2927)`, padding: 20 }}>
+          <SectionTitle>Your Bali Interns card</SectionTitle>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', margin: '0 0 14px' }}>Your digital ID — show it to unlock exclusive perks.</p>
+          <Link href={`/portal/${token}/carte`}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: C.yellow, color: C.dark, borderRadius: 10, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+            View my card →
+          </Link>
+        </SectionCard>
+      )}
+
+      {/* Partners */}
+      {partners.length > 0 ? (
+        <>
+          {/* Pre-arrival partners */}
+          {partners.filter(p => p.partner_timing === 'pre_arrival' || p.partner_timing === 'both').length > 0 && (
+            <>
+              <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '16px 0 10px' }}>✈️ Before departure</p>
+              {partners.filter(p => p.partner_timing === 'pre_arrival' || p.partner_timing === 'both').map(p => (
+                <PartnerRow key={p.id} partner={p} />
+              ))}
+            </>
+          )}
+
+          {/* On-site partners */}
+          {isActive && partners.filter(p => p.partner_timing === 'on_site' || p.partner_timing === 'both').length > 0 && (
+            <>
+              <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '16px 0 10px' }}>🌴 On the island</p>
+              {partners.filter(p => p.partner_timing === 'on_site' || p.partner_timing === 'both').map(p => (
+                <PartnerRow key={p.id} partner={p} />
+              ))}
+            </>
+          )}
+        </>
+      ) : (
+        <SectionCard style={{ textAlign: 'center', padding: 24 }}>
+          <p style={{ fontSize: 24, margin: '0 0 8px' }}>🎁</p>
+          <p style={{ fontSize: 14, fontWeight: 600, color: C.dark, margin: '0 0 4px' }}>Partner perks coming soon</p>
+          <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>Exclusive deals for Bali Interns members — eSIM, accommodation, and more.</p>
+        </SectionCard>
+      )}
+
+      {/* Referral */}
+      <SectionCard style={{ background: `linear-gradient(135deg, #fef9ee, #fffbf0)`, border: `1px solid #fde68a`, marginTop: 8 }}>
+        <SectionTitle>Refer a friend</SectionTitle>
+        <p style={{ fontSize: 13, color: '#92400e', margin: '0 0 12px' }}>Earn €100 for every friend you refer who completes their internship!</p>
+        <Link href={`/portal/${token}/affiliation`}
+          style={{ display: 'inline-block', padding: '10px 18px', background: C.yellow, color: C.dark, borderRadius: 10, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+          My referral code →
+        </Link>
+      </SectionCard>
+    </div>
+  )
+}
+
+function PartnerRow({ partner }: { partner: PortalPartner }) {
+  return (
+    <SectionCard style={{ padding: '14px 16px', marginBottom: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 12, background: '#f4f4f5', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+          {partner.logo_url
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img src={partner.logo_url} alt="" style={{ width: 44, height: 44, objectFit: 'cover' }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+            : <span style={{ fontSize: 16, fontWeight: 700, color: C.muted }}>{partner.name[0]}</span>
+          }
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: C.dark }}>{partner.name}</span>
+            {partner.partner_category && (
+              <span style={{ fontSize: 10, background: '#f3f4f6', color: C.muted, padding: '1px 6px', borderRadius: 8 }}>{partner.partner_category}</span>
+            )}
+          </div>
+          {partner.partner_deal && (
+            <p style={{ fontSize: 12, color: '#4b5563', margin: 0, lineHeight: 1.4 }}>{partner.partner_deal}</p>
+          )}
+        </div>
+        {partner.website && (
+          <a href={partner.website} target="_blank" rel="noopener noreferrer"
+            style={{ flexShrink: 0, padding: '8px 14px', background: C.yellow, color: C.dark, borderRadius: 10, fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+            Visit →
+          </a>
+        )}
+      </div>
+    </SectionCard>
+  )
+}
+
+function TabProfile({ data, token }: { data: PortalData; token: string }) {
+  const intern = data.interns
+
+  return (
+    <div>
+      <SectionCard>
+        <SectionTitle>Contact</SectionTitle>
+        <Row label="Email" value={intern?.email} />
+        <Row label="WhatsApp" value={intern?.whatsapp} />
+        {intern?.cv_url && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0' }}>
+            <span style={{ fontSize: 13, color: C.muted }}>CV</span>
+            <a href={intern.cv_url} target="_blank" rel="noopener noreferrer"
+              style={{ fontSize: 13, color: C.yellow, fontWeight: 600, textDecoration: 'none' }}>View →</a>
+          </div>
+        )}
+      </SectionCard>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <Link href={`/portal/${token}/cv`}
+          style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, textDecoration: 'none' }}>
+          <span style={{ fontSize: 20 }}>📄</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: C.dark, flex: 1 }}>Update my CV</span>
+          <span style={{ fontSize: 16, color: C.yellow }}>→</span>
+        </Link>
+        <Link href={`/portal/${token}/visa`}
+          style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, textDecoration: 'none' }}>
+          <span style={{ fontSize: 20 }}>🛂</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: C.dark, flex: 1 }}>Visa documents</span>
+          <span style={{ fontSize: 16, color: C.yellow }}>→</span>
+        </Link>
+        <Link href={`/portal/${token}/affiliation`}
+          style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, textDecoration: 'none' }}>
+          <span style={{ fontSize: 20 }}>🎁</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: C.dark, flex: 1 }}>Referral program</span>
+          <span style={{ fontSize: 16, color: C.yellow }}>→</span>
+        </Link>
+      </div>
+
+      <p style={{ textAlign: 'center', fontSize: 12, color: C.muted, margin: '24px 0 0' }}>
+        Questions? <a href="mailto:team@bali-interns.com" style={{ color: C.yellow }}>team@bali-interns.com</a>
+      </p>
+    </div>
+  )
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 export default function PortalPage() {
   const params = useParams()
   const token = typeof params?.token === 'string' ? params.token : ''
   const [data, setData] = useState<PortalData | null>(null)
   const [portalJobs, setPortalJobs] = useState<PortalJobItem[]>([])
-  const [lang, setLang] = useState<PortalLang>('en')
   const [partners, setPartners] = useState<PortalPartner[]>([])
+  const [lang, setLang] = useState<PortalLang>('en')
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<TabKey>('home')
 
   const loadData = useCallback(() => {
     if (!token) return
@@ -406,523 +665,122 @@ export default function PortalPage() {
 
   useEffect(() => { loadData(); setLang(getPortalLang()) }, [loadData])
 
-  // Actions requises — seulement APRÈS le paiement (visa, billet, etc.)
-  const POST_PAYMENT_STATUSES = new Set(['payment_received', 'visa_docs_sent', 'visa_submitted', 'visa_in_progress', 'visa_received', 'arrival_prep', 'active'])
-  const requiredActions = useMemo(() => {
-    if (!data) return []
-    if (!POST_PAYMENT_STATUSES.has(data.status)) return [] // Pas d'actions avant le paiement
-    const acts: { href: string; icon: string; label: string }[] = []
-    if (['payment_received', 'visa_in_progress', 'visa_docs_sent'].includes(data.status) && !data.interns?.photo_id_url) {
-      acts.push({ href: `/portal/${token}/visa`, icon: '🛂', label: 'Upload visa documents' })
-    }
-    if (['payment_received', 'visa_in_progress', 'visa_docs_sent'].includes(data.status) && !data.flight_number) {
-      acts.push({ href: `/portal/${token}/billet`, icon: '✈️', label: 'Enter your flight details' })
-    }
-    return acts
-  }, [data, token])
+  const currentStep = useMemo(() => data ? (STATUS_TO_STEP[data.status] ?? 1) : 1, [data])
 
-  if (loading) return <p style={{ color: '#6b7280', textAlign: 'center', marginTop: 48 }}>Loading…</p>
-  if (!data) return <p style={{ color: '#dc2626', textAlign: 'center', marginTop: 48 }}>Lien invalide ou expiré.</p>
+  // Urgency badge on tasks tab
+  const urgentTasks = useMemo(() => {
+    if (!data) return 0
+    let n = 0
+    if (!data.papiers_visas && currentStep >= 5) n++
+    if (!data.billet_avion && currentStep >= 5) n++
+    if (!data.engagement_letter_sent && currentStep >= 5) n++
+    if (data.cv_revision_requested) n++
+    return n
+  }, [data, currentStep])
 
-  const prenom = data.interns?.first_name ?? 'Stagiaire'
-  const currentStep = STATUS_TO_STEP[data.status] ?? 1
-  const retainedSub = (data.job_submissions ?? []).find(s => s.status === 'retained')
-  const retainedCompany = retainedSub?.jobs?.companies ?? null
-  const showPayment = PAYMENT_STATUSES.has(data.status)
-  const paymentAmount = data.payment_amount ?? 990
-  const paymentTotal = data.discount_percentage && data.discount_percentage > 0
-    ? paymentAmount * (1 - data.discount_percentage / 100)
-    : paymentAmount
-  const isPaid = ['payment_received', 'visa_docs_sent', 'visa_submitted', 'visa_received', 'arrival_prep', 'active', 'alumni'].includes(data.status)
-  const currentStepIdx = PORTAL_STEPS.findIndex(s => s.statuses.includes(data.status))
-  const qualificationDone = currentStep >= 2 && data.status !== 'lead' && data.status !== 'rdv_booked'
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '70vh' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: 32, marginBottom: 12 }}>🌴</div>
+        <p style={{ fontSize: 14, color: C.muted }}>Loading your portal…</p>
+      </div>
+    </div>
+  )
 
-  // Actions — uniquement après paiement reçu
-  const POST_PAYMENT = new Set(['payment_received','visa_docs_sent','visa_in_progress','visa_submitted','visa_received','arrival_prep','active'])
-  const actions: { label: string; href: string; done: boolean; urgent?: boolean }[] = []
-  if (POST_PAYMENT.has(data.status)) {
-    if (currentStep >= 5) {
-      actions.push({ label: 'Documents visa', href: `/portal/${token}/visa`, done: !!data.papiers_visas, urgent: currentStep >= 5 && !data.papiers_visas })
-    }
-    actions.push({ label: 'Flight details', href: `/portal/${token}/billet`, done: !!data.billet_avion })
-    actions.push({ label: 'Commitment letter', href: `/portal/${token}/engagement`, done: !!data.engagement_letter_sent })
-    actions.push({ label: 'Accommodation & scooter', href: `/portal/${token}/logement`, done: !!data.housing_reserved })
-  }
-  if (data.cv_revision_requested) {
-    actions.push({ label: 'Updated CV requested', href: `/portal/${token}/cv`, done: false, urgent: true })
-  }
-
-  const pendingActions = actions.filter(a => !a.done)
-  const doneActions = actions.filter(a => a.done)
-
-  const docs = [
-    { label: 'Billet', done: !!data.billet_avion },
-    { label: 'Visa docs', done: !!data.papiers_visas },
-    { label: 'Housing', done: !!data.housing_reserved },
-    { label: 'Agreement', done: !!data.engagement_letter_sent },
-  ]
+  if (!data) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '70vh' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
+        <p style={{ fontSize: 15, fontWeight: 600, color: C.dark }}>Invalid or expired link</p>
+        <p style={{ fontSize: 13, color: C.muted }}>Contact team@bali-interns.com</p>
+      </div>
+    </div>
+  )
 
   return (
-    <div>
-      {/* Header */}
-      <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1A1A1A', marginBottom: 4 }}>
-        {tp(lang, 'greeting', prenom)}
-      </h1>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <span style={{
-          display: 'inline-block', padding: '3px 10px', borderRadius: 20, fontSize: 12,
-          fontWeight: 600,
-          background: currentStep >= 8 ? '#d1fae5' : currentStep >= 5 ? '#fef3c7' : '#ede9e3',
-          color: currentStep >= 8 ? '#065f46' : currentStep >= 5 ? '#92400e' : '#1A1A1A',
-        }}>
-          {STEPS[currentStep - 1]?.label ?? 'In progress'}
-        </span>
-        {data.assigned_manager_name && (
-          <span style={{ fontSize: 12, color: '#9ca3af' }}>
-            Manager: {data.assigned_manager_name}
-          </span>
+    <div style={{ position: 'relative', minHeight: '100vh', background: C.cream }}>
+
+      {/* ── Content area — padded to avoid bottom nav overlap ── */}
+      <div style={{ paddingBottom: 80 }}>
+
+        {activeTab === 'home' && <TabHome data={data} lang={lang} currentStep={currentStep} />}
+        {activeTab === 'internship' && (
+          currentStep >= TABS.find(t => t.key === 'internship')!.unlockedFrom
+            ? <TabInternship data={data} portalJobs={portalJobs} token={token} currentStep={currentStep} />
+            : <LockedTab message={TABS.find(t => t.key === 'internship')!.lockedMessage} />
         )}
+        {activeTab === 'tasks' && (
+          currentStep >= TABS.find(t => t.key === 'tasks')!.unlockedFrom
+            ? <TabTasks data={data} token={token} currentStep={currentStep} />
+            : <LockedTab message={TABS.find(t => t.key === 'tasks')!.lockedMessage} />
+        )}
+        {activeTab === 'perks' && (
+          currentStep >= TABS.find(t => t.key === 'perks')!.unlockedFrom
+            ? <TabPerks data={data} token={token} partners={partners} />
+            : <LockedTab message={TABS.find(t => t.key === 'perks')!.lockedMessage} />
+        )}
+        {activeTab === 'profile' && <TabProfile data={data} token={token} />}
       </div>
 
-      {/* Progress steps 1-8 */}
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, gap: 2 }}>
-          {STEPS.map((s) => {
-            const done = s.num <= currentStep
-            const active = s.num === currentStep
-            return (
-              <div key={s.num} style={{ flex: 1, textAlign: 'center' }}>
-                <div style={{
-                  width: 28, height: 28, borderRadius: '50%', margin: '0 auto 4px',
-                  background: done ? '#FFCC00' : '#e5e7eb',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11, fontWeight: 700, color: done ? 'white' : '#9ca3af',
-                  boxShadow: active ? '0 0 0 3px rgba(255,204,0,0.3)' : 'none',
-                  transition: 'all 0.3s',
-                }}>
-                  {done && s.num < currentStep ? '✓' : s.num}
-                </div>
-                <span style={{ fontSize: 9, lineHeight: 1.2, display: 'block', color: done ? '#FFCC00' : '#9ca3af', fontWeight: active ? 700 : 400 }}>
-                  {s.label}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-        <div style={{ height: 6, background: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${((currentStep - 1) / 7) * 100}%`, background: 'linear-gradient(90deg, #FFCC00, #d4b87a)', transition: 'width 0.6s ease', borderRadius: 3 }} />
-        </div>
-      </div>
+      {/* ── Bottom navigation bar ── */}
+      <nav style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0,
+        background: 'rgba(255,255,255,0.95)',
+        backdropFilter: 'blur(12px)',
+        borderTop: `1px solid ${C.border}`,
+        display: 'flex',
+        maxWidth: 640,
+        margin: '0 auto',
+        zIndex: 50,
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      }}>
+        {TABS.map(tab => {
+          const isLocked = currentStep < tab.unlockedFrom
+          const isActive = activeTab === tab.key
+          const badge = tab.key === 'tasks' && urgentTasks > 0 && !isLocked ? urgentTasks : 0
 
-      {/* ── ACTIONS REQUISES URGENTES ── */}
-      {requiredActions.length > 0 && (
-        <div style={{ background: '#fef3c7', border: '1.5px solid #fcd34d', borderRadius: 14, padding: 16, marginBottom: 24 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>⚡ Required action</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {requiredActions.map(action => (
-              <Link key={action.href} href={action.href} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: '#78350f' }}>
-                <span style={{ fontSize: 18, flexShrink: 0 }}>{action.icon}</span>
-                <span style={{ fontSize: 14, fontWeight: 500, flex: 1 }}>{action.label}</span>
-                <span style={{ fontSize: 13, color: '#FFCC00', fontWeight: 700 }}>→</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Notes de qualification */}
-      {qualificationDone && data.qualification_notes_for_intern && (
-        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <h2 style={{ fontSize: 14, fontWeight: 600, color: '#15803d', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Compte-rendu de ton entretien
-          </h2>
-          <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>
-            {data.qualification_notes_for_intern}
-          </p>
-        </div>
-      )}
-
-      {/* Status message adapté au statut */}
-      {!qualificationDone && (
-        <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 12, padding: 20, marginBottom: 24, textAlign: 'center' }}>
-          <p style={{ fontSize: 18, margin: '0 0 8px' }}>⏳</p>
-          <p style={{ fontSize: 15, fontWeight: 600, color: '#1d4ed8', margin: '0 0 4px' }}>
-            {tp(lang, 'dossierEnCours')}
-          </p>
-          <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
-            {data.status === 'rdv_booked'
-              ? tp(lang, 'rdvBookedMsg')
-              : tp(lang, 'rdvPendingMsg')}
-          </p>
-        </div>
-      )}
-
-      {/* Ton RDV */}
-      {data.intern_first_meeting_date && (
-        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>{tp(lang, 'rdvTitle')}</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 13, color: '#6b7280' }}>{tp(lang, 'rdvDateLabel')}</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#1A1A1A' }}>
-                {new Date(data.intern_first_meeting_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                {' '}
-                {new Date(data.intern_first_meeting_date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' })} WITA
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                flex: 1, border: 'none', background: 'transparent',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                padding: '10px 4px',
+                cursor: isLocked ? 'default' : 'pointer',
+                position: 'relative',
+                transition: 'opacity 0.15s',
+              }}
+            >
+              <span style={{ fontSize: 20, opacity: isLocked ? 0.35 : 1, lineHeight: 1.1 }}>
+                {isLocked ? '🔒' : tab.icon}
               </span>
-            </div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-              {data.intern_first_meeting_link && (
-                <a href={data.intern_first_meeting_link} target="_blank" rel="noopener noreferrer"
-                  style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: '#1a73e8', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
-                  {tp(lang, 'joinMeet')}
-                </a>
-              )}
-              {data.intern_first_meeting_reschedule_link && (
-                <a href={data.intern_first_meeting_reschedule_link} target="_blank" rel="noopener noreferrer"
-                  style={{ flex: 1, textAlign: 'center', padding: '10px 16px', background: '#f3f4f6', color: '#6b7280', borderRadius: 8, fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
-                  Reprogrammer
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Upload CV demandé */}
-      {data.cv_revision_requested && (
-        <CVUploadSection token={token} />
-      )}
-
-      {/* JOBS PROPOSÉS — avec commentaire + intérêt */}
-      {qualificationDone && portalJobs.length > 0 && (
-        <section style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1A1A1A', marginBottom: 4 }}>Offres de stage proposées</h2>
-          <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16 }}>
-            Rate your interest and leave a comment for each offer.
-          </p>
-          {portalJobs.map(sub => (
-            <JobCommentCard key={sub.submission_id} sub={sub} token={token} />
-          ))}
-        </section>
-      )}
-
-      {/* Actions requises */}
-      {pendingActions.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 10 }}>{tp(lang, 'actionsRequises')}</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {pendingActions.map(a => (
-              <Link key={a.href} href={a.href} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '14px 16px', background: 'white', borderRadius: 12,
-                border: `1.5px solid ${a.urgent ? '#d97706' : '#e5e7eb'}`,
-                textDecoration: 'none', color: '#1A1A1A',
+              <span style={{
+                fontSize: 10, fontWeight: isActive ? 700 : 400, marginTop: 3, lineHeight: 1,
+                color: isActive ? C.yellow : isLocked ? '#d1d5db' : C.muted,
+                transition: 'color 0.15s',
               }}>
-                <div>
-                  {a.urgent && (
-                    <span style={{ display: 'block', fontSize: 10, fontWeight: 700, color: '#d97706', marginBottom: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      URGENT
-                    </span>
-                  )}
-                  <span style={{ fontSize: 14, fontWeight: 500 }}>{a.label}</span>
+                {tab.label}
+              </span>
+              {/* Active indicator */}
+              {isActive && !isLocked && (
+                <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 28, height: 3, background: C.yellow, borderRadius: '0 0 3px 3px' }} />
+              )}
+              {/* Urgent badge */}
+              {badge > 0 && (
+                <div style={{
+                  position: 'absolute', top: 6, right: '50%', transform: 'translateX(60%)',
+                  width: 16, height: 16, borderRadius: '50%', background: '#dc2626',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 9, fontWeight: 700, color: 'white',
+                }}>
+                  {badge}
                 </div>
-                <span style={{ fontSize: 13, color: a.urgent ? '#d97706' : '#FFCC00', fontWeight: 600 }}>
-                  Compléter →
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Actions faites */}
-      {doneActions.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 10 }}>Complété</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {doneActions.map(a => (
-              <div key={a.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#f0fdf4', borderRadius: 10, border: '1px solid #bbf7d0' }}>
-                <span style={{ fontSize: 14, color: '#374151' }}>{a.label}</span>
-                <span style={{ fontSize: 13, color: '#0d9e75', fontWeight: 600 }}>✓ Fait</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Ton stage */}
-      {retainedSub && currentStep >= 4 && (
-        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Ton stage</h2>
-          <p style={{ fontSize: 16, fontWeight: 700, color: '#FFCC00', marginBottom: 6 }}>
-            {retainedSub.jobs?.public_title ?? retainedSub.jobs?.title ?? 'Internship found!'}
-          </p>
-          {retainedCompany?.name && (
-            <p style={{ fontSize: 13, color: '#1A1A1A', fontWeight: 600 }}>{retainedCompany.name}</p>
-          )}
-          {data.actual_start_date && data.actual_end_date && (
-            <>
-              <p style={{ fontSize: 13, color: '#6b7280' }}>Du {formatDate(data.actual_start_date)} au {formatDate(data.actual_end_date)}</p>
-              <p style={{ fontSize: 13, color: '#6b7280' }}>Durée : {monthsDiff(data.actual_start_date, data.actual_end_date)} mois</p>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Infos entreprise pour convention */}
-      {retainedCompany && (data.status === 'job_retained' || data.status === 'convention_signed' || data.status === 'payment_pending') && (
-        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 4 }}>Informations pour ta convention</h2>
-          <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 12 }}>Utilise ces informations pour faire rédiger ta convention de stage par ton école.</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <span style={{ fontSize: 12, color: '#9ca3af', width: 120, flexShrink: 0 }}>Entreprise</span>
-              <span style={{ fontSize: 13, color: '#1A1A1A', fontWeight: 500 }}>{retainedCompany.name ?? '—'}</span>
-            </div>
-            {retainedCompany.address && (
-              <div style={{ display: 'flex', gap: 12 }}>
-                <span style={{ fontSize: 12, color: '#9ca3af', width: 120, flexShrink: 0 }}>Adresse</span>
-                <span style={{ fontSize: 13, color: '#1A1A1A' }}>{retainedCompany.address}</span>
-              </div>
-            )}
-            {retainedCompany.registration_number && (
-              <div style={{ display: 'flex', gap: 12 }}>
-                <span style={{ fontSize: 12, color: '#9ca3af', width: 120, flexShrink: 0 }}>N° registre</span>
-                <span style={{ fontSize: 13, color: '#1A1A1A', fontFamily: 'monospace' }}>{retainedCompany.registration_number}</span>
-              </div>
-            )}
-            {retainedCompany.website && (
-              <div style={{ display: 'flex', gap: 12 }}>
-                <span style={{ fontSize: 12, color: '#9ca3af', width: 120, flexShrink: 0 }}>Site web</span>
-                <a href={retainedCompany.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#FFCC00' }}>{retainedCompany.website}</a>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Paiement */}
-      {showPayment && !isPaid && (
-        <div style={{ background: '#fef9ee', border: '1px solid #fde68a', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Paiement</h2>
-          <div style={{ background: 'white', borderRadius: 8, padding: 12, marginBottom: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 12, color: '#9ca3af' }}>Montant à régler</span>
-              <span style={{ fontSize: 22, fontWeight: 700, color: '#1A1A1A' }}>{paymentTotal.toFixed(0)} €</span>
-            </div>
-            {data.invoice_number && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-                <span style={{ fontSize: 12, color: '#9ca3af' }}>Référence</span>
-                <span style={{ fontSize: 13, color: '#1A1A1A', fontWeight: 600, fontFamily: 'monospace' }}>{data.invoice_number}</span>
-              </div>
-            )}
-          </div>
-          <p style={{ fontSize: 12, color: '#92400e', fontWeight: 600, marginBottom: 8 }}>Coordonnées bancaires</p>
-          <div style={{ background: 'white', borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-              <span style={{ fontSize: 12, color: '#9ca3af' }}>Société</span>
-              <span style={{ fontSize: 12, color: '#1A1A1A' }}>{data.billing_companies?.name ?? 'SIDLYS INTERNATIONAL LLC'}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-              <span style={{ fontSize: 12, color: '#9ca3af' }}>IBAN</span>
-              <span style={{ fontSize: 12, color: '#1A1A1A', fontFamily: 'monospace' }}>{data.billing_companies?.bank_iban ?? 'GB76REVO00996903517949'}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-              <span style={{ fontSize: 12, color: '#9ca3af' }}>BIC</span>
-              <span style={{ fontSize: 12, color: '#1A1A1A', fontFamily: 'monospace' }}>{PAYMENT_INFO_FALLBACK.bic ?? '—'}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-              <span style={{ fontSize: 12, color: '#9ca3af' }}>Banque</span>
-              <span style={{ fontSize: 12, color: '#1A1A1A' }}>{PAYMENT_INFO_FALLBACK.bank ?? '—'}</span>
-            </div>
-          </div>
-          <p style={{ fontSize: 11, color: '#a16207', marginTop: 10, fontStyle: 'italic' }}>Paiement par carte (Stripe) disponible prochainement.</p>
-        </div>
-      )}
-
-      {/* Documents */}
-      <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Mes documents</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          {docs.map(d => (
-            <div key={d.label} style={{
-              display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8,
-              background: d.done ? '#f0fdf4' : '#FFFBF0', border: `1px solid ${d.done ? '#bbf7d0' : '#e5e7eb'}`,
-            }}>
-              <span style={{ fontSize: 14, width: 20, textAlign: 'center' }}>{d.done ? '✅' : '❌'}</span>
-              <span style={{ fontSize: 13, fontWeight: 500, color: d.done ? '#065f46' : '#6b7280' }}>{d.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Infos profil */}
-      {data.interns && (
-        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Mon profil</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {data.interns.email && (
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 13, color: '#6b7280' }}>Email</span>
-                <span style={{ fontSize: 13, color: '#1A1A1A' }}>{data.interns.email}</span>
-              </div>
-            )}
-            {data.interns.phone && (
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 13, color: '#6b7280' }}>Téléphone</span>
-                <span style={{ fontSize: 13, color: '#1A1A1A' }}>{data.interns.phone}</span>
-              </div>
-            )}
-            {data.interns.whatsapp && (
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 13, color: '#6b7280' }}>WhatsApp</span>
-                <span style={{ fontSize: 13, color: '#1A1A1A' }}>{data.interns.whatsapp}</span>
-              </div>
-            )}
-            {data.interns.cv_url && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 13, color: '#6b7280' }}>CV</span>
-                <a href={data.interns.cv_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#FFCC00', fontWeight: 600 }}>
-                  View my CV
-                </a>
-              </div>
-            )}
-          </div>
-          <Link href={`/portal/${token}/cv`} style={{
-            display: 'inline-block', marginTop: 12, padding: '8px 16px',
-            background: '#f3f4f6', color: '#374151', borderRadius: 8,
-            fontSize: 13, fontWeight: 600, textDecoration: 'none',
-          }}>
-            Update my CV
-          </Link>
-        </div>
-      )}
-
-      {/* Carte stagiaire */}
-      {data.status === 'active' && (
-        <div style={{ background: 'linear-gradient(135deg, #1A1A1A, #2a2927)', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <p style={{ color: '#FFCC00', fontWeight: 700, marginBottom: 6, fontSize: 15 }}>Your Bali Interns card</p>
-          <p style={{ color: '#9ca3af', fontSize: 13, marginBottom: 12 }}>Affiche ta carte digitale pour te présenter en stage.</p>
-          <Link href={`/portal/${token}/carte`} style={{ display: 'inline-block', padding: '8px 16px', background: '#FFCC00', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
-            View ma carte →
-          </Link>
-        </div>
-      )}
-
-      {/* Parrainage */}
-      <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 6 }}>Programme parrainage</h2>
-        <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>Earn €100 for every friend you refer to Bali Interns!</p>
-        <Link href={`/portal/${token}/affiliation`} style={{ display: 'inline-block', padding: '8px 16px', background: '#FFCC00', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
-          View my code →
-        </Link>
-      </div>
-
-      {/* Flight info */}
-      {currentStep >= 7 && data.flight_number && (
-        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Infos vol</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 13, color: '#6b7280' }}>N° de vol</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#1A1A1A' }}>{data.flight_number}</span>
-            </div>
-            {data.flight_departure_city && (
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 13, color: '#6b7280' }}>Départ</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#1A1A1A' }}>{data.flight_departure_city}</span>
-              </div>
-            )}
-            {data.flight_last_stopover && (
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 13, color: '#6b7280' }}>Escale</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#1A1A1A' }}>{data.flight_last_stopover}</span>
-              </div>
-            )}
-            {data.flight_arrival_time_local && (
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 13, color: '#6b7280' }}>Arrivée Bali</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#1A1A1A' }}>{data.flight_arrival_time_local}</span>
-              </div>
-            )}
-            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-              <a href={`https://www.flightradar24.com/${data.flight_number}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, textAlign: 'center', padding: '8px 12px', background: '#f3f4f6', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#6b7280', textDecoration: 'none' }}>
-                FlightRadar24
-              </a>
-              <a href={`https://www.flightaware.com/live/flight/${data.flight_number}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, textAlign: 'center', padding: '8px 12px', background: '#f3f4f6', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#6b7280', textDecoration: 'none' }}>
-                FlightAware
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Logement & Scooters — unlock after payment */}
-      {isPaid && (
-        <div style={{ background: 'white', border: '1.5px solid #FFCC00', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#FFCC00', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>🏠 Avant le décollage</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <a href={`/portal/${token}/logement`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#FFFBF0', borderRadius: 10, border: '1px solid #e5e7eb', textDecoration: 'none', color: '#1A1A1A' }}>
-              <div>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>🏠 Choisir mon logement</p>
-                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6b7280' }}>33 partner guesthouses — Canggu, Seminyak, Ubud</p>
-              </div>
-              <span style={{ fontSize: 13, color: '#FFCC00', fontWeight: 700, flexShrink: 0 }}>{data.housing_reserved ? '✅' : '→'}</span>
-            </a>
-            <a href={`/portal/${token}/logement`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#FFFBF0', borderRadius: 10, border: '1px solid #e5e7eb', textDecoration: 'none', color: '#1A1A1A' }}>
-              <div>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>🛵 Louer un scooter</p>
-                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6b7280' }}>7 prestataires partenaires — tarifs négociés stagiaires</p>
-              </div>
-              <span style={{ fontSize: 13, color: '#FFCC00', fontWeight: 700, flexShrink: 0 }}>→</span>
-            </a>
-          </div>
-        </div>
-      )}
-
-      {/* Partenaires */}
-      {partners.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1A1A1A', marginBottom: 4 }}>Our partners</h2>
-          <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 12 }}>Exclusive deals for Bali Interns members.</p>
-
-          {partners.filter(p => p.partner_timing === 'pre_arrival' || p.partner_timing === 'both').length > 0 && (
-            <div style={{ marginBottom: 16 }}>
-              <p style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>✈️ Avant le départ</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {partners.filter(p => p.partner_timing === 'pre_arrival' || p.partner_timing === 'both').map(p => (
-                  <PartnerCard key={p.id} partner={p} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {['active','alumni','completed'].includes(data.status) && partners.filter(p => p.partner_timing === 'on_site' || p.partner_timing === 'both').length > 0 && (
-            <div style={{ marginBottom: 16 }}>
-              <p style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>🌴 Sur l&apos;île</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {partners.filter(p => p.partner_timing === 'on_site' || p.partner_timing === 'both').map(p => (
-                  <PartnerCard key={p.id} partner={p} />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* WhatsApp */}
-      <div style={{ background: 'linear-gradient(135deg, #075e54, #128c7e)', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-        <p style={{ color: 'white', fontWeight: 700, fontSize: 15, marginBottom: 6 }}>Besoin d&apos;aide ?</p>
-        <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginBottom: 12 }}>Notre equipe est disponible sur WhatsApp.</p>
-        <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', background: 'white', color: '#075e54', borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
-          WhatsApp Bali Interns Team
-        </a>
-      </div>
-
-      {/* Contact */}
-      <p style={{ color: '#9ca3af', fontSize: 12, textAlign: 'center', marginTop: 24 }}>
-        Questions ? <a href="mailto:team@bali-interns.com" style={{ color: '#FFCC00' }}>team@bali-interns.com</a>
-      </p>
+              )}
+            </button>
+          )
+        })}
+      </nav>
     </div>
   )
 }
