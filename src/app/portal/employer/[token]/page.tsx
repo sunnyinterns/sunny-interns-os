@@ -299,10 +299,25 @@ export default function EmployerPortal() {
                 🔒 Agreement
               </div>
           }
+          {/* My Candidates — always visible once portal is accessible */}
+          <button
+            onClick={() => {
+              setTab('candidates' as typeof tab)
+              if (!submissions.length) {
+                setLoadingCandidates(true)
+                void fetch(`/api/portal/employer/${token}/candidates`)
+                  .then(r => r.ok ? r.json() : [])
+                  .then(d => { setSubmissions(d as Record<string,unknown>[]); setLoadingCandidates(false) })
+                  .catch(() => setLoadingCandidates(false))
+              }
+            }}
+            className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${tab===('candidates' as typeof tab)?'border-[#FFCC00] text-[#FFCC00]':'border-transparent text-zinc-500'}`}>
+            🎓 Candidates {submissions.length > 0 ? `(${submissions.length})` : ''}
+          </button>
           {data.contract_signed &&
             <button onClick={() => setTab('intern')}
               className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${tab==='intern'?'border-[#FFCC00] text-[#FFCC00]':'border-transparent text-zinc-500'}`}>
-              🎓 Intern
+              📋 Intern details
             </button>
           }
         </div>
@@ -622,6 +637,157 @@ export default function EmployerPortal() {
             )}
           </div>
         )}
+        {/* ── CANDIDATES TAB ── */}
+        {(tab as string) === 'candidates' && (
+          <div className="space-y-4">
+            <div className="bg-white border border-zinc-100 rounded-2xl p-4">
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Candidate applications for your company</p>
+              <p className="text-xs text-zinc-400 mt-1">Review each candidate and let us know if you are interested. We will coordinate the next steps.</p>
+            </div>
+
+            {loadingCandidates && (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-6 h-6 border-2 border-[#FFCC00] border-t-transparent rounded-full animate-spin"/>
+              </div>
+            )}
+
+            {!loadingCandidates && submissions.length === 0 && (
+              <div className="bg-white border border-zinc-100 rounded-2xl p-8 text-center">
+                <p className="text-3xl mb-3">🔍</p>
+                <p className="text-sm font-semibold text-zinc-700">No candidates yet</p>
+                <p className="text-xs text-zinc-400 mt-1">Your Bali Interns contact will send you applications shortly.</p>
+              </div>
+            )}
+
+            {submissions.map(sub => {
+              const s = sub as unknown as Submission
+              const decided = !!s.employer_decision && s.employer_decision !== 'pending'
+              return (
+                <div key={s.sub_id} className="bg-white border border-zinc-100 rounded-2xl overflow-hidden">
+                  {/* Header */}
+                  <div className="px-5 py-4 border-b border-zinc-50">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-bold text-[#1a1918]">{s.job_title}</p>
+                        <p className="text-xs text-zinc-400 mt-0.5">
+                          {s.intern_nationality && `${s.intern_nationality} · `}
+                          {s.intern_age && `${s.intern_age} y.o. · `}
+                          {s.intern_languages?.join(', ')}
+                        </p>
+                      </div>
+                      {decided && (
+                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${
+                          s.employer_decision === 'interested' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'
+                        }`}>
+                          {s.employer_decision === 'interested' ? '✅ Interested' : '❌ Not a match'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Body */}
+                  <div className="px-5 py-4 space-y-3">
+                    {/* Contact info — prominent */}
+                    <div className="bg-zinc-50 rounded-xl p-3 space-y-2">
+                      <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Contact candidate directly</p>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className="text-sm font-semibold text-[#1a1918]">{s.intern_first_name}</span>
+                        {s.intern_email && (
+                          <a href={`mailto:${s.intern_email}`}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-zinc-200 rounded-lg text-xs font-medium text-zinc-700 hover:bg-zinc-50">
+                            ✉️ {s.intern_email}
+                          </a>
+                        )}
+                        {s.intern_whatsapp && (
+                          <a href={`https://wa.me/${s.intern_whatsapp.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#25D366]/10 border border-[#25D366]/20 rounded-lg text-xs font-medium text-[#075e54]">
+                            💬 WhatsApp
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Internship details */}
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      {s.intern_desired_start && (
+                        <div>
+                          <p className="text-xs text-zinc-400">Desired start</p>
+                          <p className="font-medium text-[#1a1918]">{new Date(s.intern_desired_start).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</p>
+                        </div>
+                      )}
+                      {s.intern_desired_duration && (
+                        <div>
+                          <p className="text-xs text-zinc-400">Duration</p>
+                          <p className="font-medium text-[#1a1918]">{s.intern_desired_duration} months</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* CV */}
+                    {s.cv_url && (
+                      <a href={s.cv_url} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-[#1a1918] text-[#FFCC00] rounded-xl text-sm font-semibold hover:bg-zinc-800 transition-colors">
+                        📄 View CV / Resume
+                      </a>
+                    )}
+
+                    {/* Charly comment */}
+                    {s.employer_comment && (
+                      <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
+                        <p className="text-xs font-bold text-amber-700 mb-1">Note from Bali Interns</p>
+                        <p className="text-sm text-amber-800">{s.employer_comment}</p>
+                      </div>
+                    )}
+
+                    {/* Comment input */}
+                    {!decided && (
+                      <div>
+                        <label className="block text-xs text-zinc-500 mb-1">Add a comment (optional)</label>
+                        <textarea
+                          value={comments[s.sub_id] ?? ''}
+                          onChange={e => setComments(p => ({ ...p, [s.sub_id]: e.target.value }))}
+                          placeholder="e.g. Great profile, would like to schedule an interview next week..."
+                          rows={2}
+                          className="w-full px-3 py-2 text-sm border border-zinc-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-[#FFCC00]"
+                        />
+                      </div>
+                    )}
+
+                    {/* Decision buttons */}
+                    {!decided ? (
+                      <div className="flex gap-3 pt-1">
+                        <button
+                          onClick={() => void handleEmployerRespond(s.sub_id, 'interested')}
+                          disabled={responding === s.sub_id}
+                          className="flex-1 py-3 bg-[#0d9e75] text-white text-sm font-bold rounded-xl hover:bg-green-700 disabled:opacity-50 transition-colors">
+                          ✅ Interested
+                        </button>
+                        <button
+                          onClick={() => void handleEmployerRespond(s.sub_id, 'not_interested')}
+                          disabled={responding === s.sub_id}
+                          className="flex-1 py-3 border-2 border-zinc-200 text-zinc-600 text-sm font-bold rounded-xl hover:border-red-300 hover:text-red-600 disabled:opacity-50 transition-colors">
+                          ❌ Not a match
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="pt-1">
+                        <p className="text-xs text-zinc-400 text-center">
+                          Decision recorded — our team will follow up.
+                          {' '}<button onClick={() => void handleEmployerRespond(s.sub_id, s.employer_decision === 'interested' ? 'not_interested' : 'interested')}
+                            className="text-[#FFCC00] underline bg-transparent border-none cursor-pointer text-xs">
+                            Change decision
+                          </button>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+
       </main>
 
       <footer className="text-center text-xs text-zinc-400 py-8 mt-4 border-t border-zinc-100">

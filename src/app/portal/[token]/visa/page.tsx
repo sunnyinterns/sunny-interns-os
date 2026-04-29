@@ -33,6 +33,8 @@ interface PortalData {
     mother_last_name?: string | null
     emergency_contact_name?: string | null
     emergency_contact_phone?: string | null
+    passport_number?: string | null
+    passport_expiry?: string | null
   } | null
 }
 
@@ -55,6 +57,7 @@ export default function PortalVisaPage() {
     flight_number: '', flight_departure_city: '', flight_arrival_time: '',
     mother_first_name: '', mother_last_name: '',
     emergency_name: '', emergency_email: '', emergency_phone: '',
+    passport_number: '', passport_expiry: '',
   })
   const [savingExtras, setSavingExtras] = useState(false)
   const [extrasSaved, setExtrasSaved] = useState(false)
@@ -72,6 +75,8 @@ export default function PortalVisaPage() {
         mother_last_name: d.interns?.mother_last_name ?? '',
         emergency_name: d.interns?.emergency_contact_name ?? '',
         emergency_phone: d.interns?.emergency_contact_phone ?? '',
+        passport_number: d.interns?.passport_number ?? '',
+        passport_expiry: d.interns?.passport_expiry ?? '',
       }))
     }
     setLoading(false)
@@ -176,6 +181,24 @@ export default function PortalVisaPage() {
         })}
       </div>
 
+      {/* Passport details — text fields */}
+      <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Passport details</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <label style={labelStyle}>Passport number <span style={{color:'#dc2626'}}>*</span></label>
+            <input style={inputStyle} placeholder="e.g. 23AB45678" value={extras.passport_number}
+              onChange={e => setExtras(x => ({ ...x, passport_number: e.target.value }))} />
+          </div>
+          <div>
+            <label style={labelStyle}>Expiry date <span style={{color:'#dc2626'}}>*</span></label>
+            <input type="date" style={inputStyle} value={extras.passport_expiry}
+              onChange={e => setExtras(x => ({ ...x, passport_expiry: e.target.value }))} />
+          </div>
+        </div>
+        <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 8 }}>Your passport must be valid for at least 6 months after your arrival date in Bali.</p>
+      </div>
+
       {/* Flight info */}
       <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 16 }}>
         <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Flight information</h3>
@@ -199,7 +222,7 @@ export default function PortalVisaPage() {
       <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
         <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Emergency contact</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div><label style={labelStyle}>Last name complet</label><input style={inputStyle} value={extras.emergency_name} onChange={e => setExtras(x => ({ ...x, emergency_name: e.target.value }))} /></div>
+          <div><label style={labelStyle}>Full name</label><input style={inputStyle} value={extras.emergency_name} onChange={e => setExtras(x => ({ ...x, emergency_name: e.target.value }))} /></div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div><label style={labelStyle}>Email</label><input style={inputStyle} type="email" value={extras.emergency_email} onChange={e => setExtras(x => ({ ...x, emergency_email: e.target.value }))} /></div>
             <div><label style={labelStyle}>Phone number</label><input style={inputStyle} value={extras.emergency_phone} onChange={e => setExtras(x => ({ ...x, emergency_phone: e.target.value }))} /></div>
@@ -221,13 +244,13 @@ export default function PortalVisaPage() {
           <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Internship dates</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <p style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>Début</p>
+              <p style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>Start date</p>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#1A1A1A' }}>
                 {data.actual_start_date ? new Date(data.actual_start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
               </p>
             </div>
             <div>
-              <p style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>Fin</p>
+              <p style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>End date</p>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#1A1A1A' }}>
                 {data.actual_end_date ? new Date(data.actual_end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
               </p>
