@@ -17,7 +17,7 @@ export default function LogementPage() {
   const token = typeof params?.token === 'string' ? params.token : ''
   const [guesthouses, setGuesthouses] = useState<Guesthouse[]>([])
   const [selectedHousing, setSelectedHousing] = useState('')
-  const [wantsScooter, setWantsScooter] = useState<'oui' | 'non' | ''>('')
+  const [wantsScooter, setWantsScooter] = useState<'yes' | 'no' | ''>('')
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -98,7 +98,7 @@ export default function LogementPage() {
         <div style={{ marginBottom: '24px' }}>
           <p style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '12px' }}>Scooter inclus ?</p>
           <div style={{ display: 'flex', gap: '10px' }}>
-            {(['oui', 'non'] as const).map((v) => (
+            {(['yes', 'no'] as const).map((v) => (
               <label key={v} style={{ flex: 1, cursor: 'pointer' }}>
                 <input type="radio" name="scooter" value={v} checked={wantsScooter === v} onChange={() => setWantsScooter(v)} style={{ display: 'none' }} />
                 <div style={{
@@ -108,7 +108,7 @@ export default function LogementPage() {
                   fontWeight: wantsScooter === v ? 600 : 400,
                   fontSize: '14px',
                 }}>
-                  {v === 'oui' ? '🛵 Oui' : '🚶 Non'}
+                  {v === 'yes' ? '🛵 Yes' : '🚶 No'}
                 </div>
               </label>
             ))}
