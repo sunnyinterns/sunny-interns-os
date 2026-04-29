@@ -11,6 +11,20 @@ export default function PortalTokenLoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [resetting, setResetting] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
+
+  async function handleForgotPassword() {
+    if (!token) return
+    setResetting(true)
+    try {
+      const res = await fetch(\`/api/portal/\${token}/reset-password\`, { method: 'POST' })
+      if (res.ok) setResetSent(true)
+      else setError("Could not reset password — contact team@bali-interns.com")
+    } catch {
+      setError("Network error — contact team@bali-interns.com")
+    } finally { setResetting(false) }
+  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -70,12 +84,19 @@ export default function PortalTokenLoginPage() {
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
-          <p className="text-center text-white/30 text-xs mt-4">
-            Lost your access?{' '}
-            <a href="mailto:team@bali-interns.com?subject=Portal%20access%20request" className="text-[#FFCC00] hover:underline">
-              Contact us at team@bali-interns.com
-            </a>
-          </p>
+          {resetSent ? (
+            <div className="text-center mt-4 p-3 bg-green-900/30 rounded-xl">
+              <p className="text-green-400 text-xs">✅ A new password has been sent to your email.</p>
+            </div>
+          ) : (
+            <p className="text-center text-white/30 text-xs mt-4">
+              Forgot your password?{' '}
+              <button onClick={() => void handleForgotPassword()} disabled={resetting}
+                className="text-[#FFCC00] hover:underline disabled:opacity-50 bg-transparent border-none cursor-pointer text-xs">
+                {resetting ? 'Sending…' : 'Send me a new one'}
+              </button>
+            </p>
+          )}
         </div>
       </div>
     </div>

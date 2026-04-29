@@ -328,6 +328,28 @@ export async function PATCH(
     } catch { /* non-blocking */ }
   }
 
+  // ── Validation avant visa_in_progress ────────────────────────────────────
+  if (newStatus === 'visa_in_progress') {
+    const adminChk = getAdmin()
+    const { data: chkRow } = await adminChk.from('cases')
+      .select('visa_type_id, actual_start_date')
+      .eq('id', id).single()
+    const warnings: string[] = []
+    if (!chkRow?.visa_type_id) warnings.push('visa_type_id is not set')
+    if (!chkRow?.actual_start_date) warnings.push('actual_start_date is not set')
+    // Log warnings but don't block — Charly decides
+    if (warnings.length > 0) {
+      void adminChk.from('admin_notifications').insert({
+        type: 'visa_missing_fields',
+        title: `⚠️ Visa dossier missing fields — ${warnings.join(', ')}`,
+        body: 'Check the case before submitting to the agent.',
+        case_id: id,
+        priority: 'high',
+        is_read: false,
+      }).then(() => null, () => null)
+    }
+  }
+
   // ── visa_in_progress → create portal_access + email to agent ─────────────
   if (newStatus === 'visa_in_progress' && oldStatus !== 'visa_in_progress') {
     try {
