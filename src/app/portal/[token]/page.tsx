@@ -413,10 +413,10 @@ export default function PortalPage() {
     if (!POST_PAYMENT_STATUSES.has(data.status)) return [] // Pas d'actions avant le paiement
     const acts: { href: string; icon: string; label: string }[] = []
     if (['payment_received', 'visa_in_progress', 'visa_docs_sent'].includes(data.status) && !data.interns?.photo_id_url) {
-      acts.push({ href: `/portal/${token}/visa`, icon: '🛂', label: 'Uploader vos documents visa' })
+      acts.push({ href: `/portal/${token}/visa`, icon: '🛂', label: 'Upload visa documents' })
     }
     if (['payment_received', 'visa_in_progress', 'visa_docs_sent'].includes(data.status) && !data.flight_number) {
-      acts.push({ href: `/portal/${token}/billet`, icon: '✈️', label: "Renseigner votre billet d'avion" })
+      acts.push({ href: `/portal/${token}/billet`, icon: '✈️', label: 'Enter your flight details' })
     }
     return acts
   }, [data, token])
@@ -444,9 +444,9 @@ export default function PortalPage() {
     if (currentStep >= 5) {
       actions.push({ label: 'Documents visa', href: `/portal/${token}/visa`, done: !!data.papiers_visas, urgent: currentStep >= 5 && !data.papiers_visas })
     }
-    actions.push({ label: 'Billet d\'avion', href: `/portal/${token}/billet`, done: !!data.billet_avion })
-    actions.push({ label: 'Lettre d\'engagement', href: `/portal/${token}/engagement`, done: !!data.engagement_letter_sent })
-    actions.push({ label: 'Logement & scooter', href: `/portal/${token}/logement`, done: !!data.housing_reserved })
+    actions.push({ label: 'Flight details', href: `/portal/${token}/billet`, done: !!data.billet_avion })
+    actions.push({ label: 'Commitment letter', href: `/portal/${token}/engagement`, done: !!data.engagement_letter_sent })
+    actions.push({ label: 'Accommodation & scooter', href: `/portal/${token}/logement`, done: !!data.housing_reserved })
   }
   if (data.cv_revision_requested) {
     actions.push({ label: 'Updated CV requested', href: `/portal/${token}/cv`, done: false, urgent: true })
@@ -457,9 +457,9 @@ export default function PortalPage() {
 
   const docs = [
     { label: 'Billet', done: !!data.billet_avion },
-    { label: 'Docs visa', done: !!data.papiers_visas },
-    { label: 'Logement', done: !!data.housing_reserved },
-    { label: 'Convention', done: !!data.engagement_letter_sent },
+    { label: 'Visa docs', done: !!data.papiers_visas },
+    { label: 'Housing', done: !!data.housing_reserved },
+    { label: 'Agreement', done: !!data.engagement_letter_sent },
   ]
 
   return (
@@ -475,11 +475,11 @@ export default function PortalPage() {
           background: currentStep >= 8 ? '#d1fae5' : currentStep >= 5 ? '#fef3c7' : '#ede9e3',
           color: currentStep >= 8 ? '#065f46' : currentStep >= 5 ? '#92400e' : '#1A1A1A',
         }}>
-          {STEPS[currentStep - 1]?.label ?? 'En cours'}
+          {STEPS[currentStep - 1]?.label ?? 'In progress'}
         </span>
         {data.assigned_manager_name && (
           <span style={{ fontSize: 12, color: '#9ca3af' }}>
-            Manager : {data.assigned_manager_name}
+            Manager: {data.assigned_manager_name}
           </span>
         )}
       </div>
@@ -517,7 +517,7 @@ export default function PortalPage() {
       {/* ── ACTIONS REQUISES URGENTES ── */}
       {requiredActions.length > 0 && (
         <div style={{ background: '#fef3c7', border: '1.5px solid #fcd34d', borderRadius: 14, padding: 16, marginBottom: 24 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>⚡ Action requise</p>
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>⚡ Required action</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {requiredActions.map(action => (
               <Link key={action.href} href={action.href} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: '#78350f' }}>
@@ -883,7 +883,7 @@ export default function PortalPage() {
       {/* Partenaires */}
       {partners.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1A1A1A', marginBottom: 4 }}>Nos partenaires</h2>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1A1A1A', marginBottom: 4 }}>Our partners</h2>
           <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 12 }}>Exclusive deals for Bali Interns members.</p>
 
           {partners.filter(p => p.partner_timing === 'pre_arrival' || p.partner_timing === 'both').length > 0 && (
