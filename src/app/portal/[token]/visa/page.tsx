@@ -54,7 +54,6 @@ export default function PortalVisaPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({})
   const [extras, setExtras] = useState({
-    flight_number: '', flight_departure_city: '', flight_arrival_time: '',
     mother_first_name: '', mother_last_name: '',
     emergency_name: '', emergency_email: '', emergency_phone: '',
     passport_number: '', passport_expiry: '',
@@ -69,8 +68,6 @@ export default function PortalVisaPage() {
       setData(d)
       setExtras(e => ({
         ...e,
-        flight_number: d.flight_number ?? '',
-        flight_departure_city: d.flight_departure_city ?? '',
         mother_first_name: d.interns?.mother_first_name ?? '',
         mother_last_name: d.interns?.mother_last_name ?? '',
         emergency_name: d.interns?.emergency_contact_name ?? '',
@@ -199,14 +196,16 @@ export default function PortalVisaPage() {
         <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 8 }}>Your passport must be valid for at least 6 months after your arrival date in Bali.</p>
       </div>
 
-      {/* Flight info */}
-      <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 12 }}>Flight information</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div><label style={labelStyle}>Flight number (arriving in Bali)</label><input style={inputStyle} placeholder="ex: SQ321" value={extras.flight_number} onChange={e => setExtras(x => ({ ...x, flight_number: e.target.value }))} /></div>
-          <div><label style={labelStyle}>Departure city (last leg)</label><input style={inputStyle} placeholder="ex: Singapore SIN" value={extras.flight_departure_city} onChange={e => setExtras(x => ({ ...x, flight_departure_city: e.target.value }))} /></div>
+      {/* Flight info — lien vers /billet */}
+      <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div>
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#065f46', margin: 0 }}>✈️ Flight details</p>
+          <p style={{ fontSize: 12, color: '#166534', margin: '2px 0 0' }}>Enter your flight info separately — we use it to organise your airport pickup.</p>
         </div>
-        <div style={{ marginTop: 12 }}><label style={labelStyle}>Local arrival time in Bali</label><input style={inputStyle} placeholder="ex: 14h35" value={extras.flight_arrival_time} onChange={e => setExtras(x => ({ ...x, flight_arrival_time: e.target.value }))} /></div>
+        <Link href={`/portal/${token}/billet`}
+          style={{ flexShrink: 0, padding: '8px 14px', background: '#0d9e75', color: 'white', borderRadius: 10, fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
+          Enter flight →
+        </Link>
       </div>
 
       {/* Mother identity */}

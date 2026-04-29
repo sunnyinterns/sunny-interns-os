@@ -381,5 +381,34 @@ export async function GET() {
     }
   } catch { /* non-blocking */ }
 
-  return NextResponse.json({ todos, count: todos.length })
+  // Dropoff address manquante + départ dans 3 jours
+  const in3Days = new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0]
+  const { data: noDropoff } = await adminClient
+    .from('cases')
+    .select('id, actual_start_date, updated_at, interns(first_name, last_name)')
+    .eq('status', 'arrival_prep')
+    .is('dropoff_address', null)
+    .not('billet_avion', 'is', null)
+    .lte('actual_start_date', in3Days)
+    .limit(20)
+
+  noDropoff?.forEach(cas => {
+    const intern = (Array.isArray(cas.interns) ? cas.interns[0] : cas.interns) as unknown as { first_name: string; last_name: string } | null
+    const daysLeft = Math.ceil((new Date(cas.actual_start_date as string).getTime() - Date.now()) / 86400000)
+    todos.push({
+      id: `no-dropoff-${cas.id}`,
+      type: 'alerte',
+      priority: 'urgent',
+      case_id: cas.id,
+      intern_name: `${intern?.first_name ?? ''} ${intern?.last_name ?? ''}`.trim(),
+      title: `🚗 Dropoff address missing — departure in ${daysLeft}d`,
+      description: 'Flight booked but no drop-off address provided. Remind intern to fill in their portal or collect manually.',
+      cta_label: 'Open case',
+      cta_url: `/fr/cases/${cas.id}`,
+      days_waiting: daysLeft,
+      status: 'arrival_prep',
+    })
+  })
+
+    return NextResponse.json({ todos, count: todos.length })
 }

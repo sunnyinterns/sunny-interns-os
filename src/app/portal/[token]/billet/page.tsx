@@ -23,6 +23,7 @@ export default function BilletPage() {
   const [arrivalDate, setArrivalDate] = useState('')
   const [arrivalTime, setArrivalTime] = useState('')
   const [ticketUrl, setTicketUrl] = useState('')
+  const [dropoffAddress, setDropoffAddress] = useState('')
 
   const [uploading, setUploading] = useState(false)
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null)
@@ -78,6 +79,7 @@ export default function BilletPage() {
           dateArrivee: arrivalDate,
           heureArrivee: arrivalTime,
           billetUrl: ticketUrl,
+          dropoffAddress,
         }),
       })
       if (!res.ok) throw new Error('Save failed')
@@ -189,10 +191,23 @@ export default function BilletPage() {
           <p style={{ fontSize: 11, color: '#9ca3af', margin: '6px 0 0' }}>The city where you board your last flight before Bali.</p>
         </div>
 
+        {/* Drop-off address */}
+        <div style={{ background: 'white', border: '1.5px solid #e5e7eb', borderRadius: 14, padding: 16 }}>
+          <label style={{ ...lbl, marginBottom: 4 }}>Drop-off address <span style={{ color: '#dc2626' }}>*</span></label>
+          <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 10px' }}>Where should the driver take you? Give us your guesthouse name + area, or a precise address.</p>
+          <input
+            required
+            style={inp}
+            placeholder="e.g. Bali Eco Stay, Jl. Pantai Berawa, Canggu"
+            value={dropoffAddress}
+            onChange={e => setDropoffAddress(e.target.value)}
+          />
+        </div>
+
         {/* Pickup info */}
         <div style={{ background: '#fffbf0', border: '1px solid #fde68a', borderRadius: 12, padding: '12px 16px' }}>
           <p style={{ fontSize: 13, fontWeight: 600, color: '#92400e', margin: '0 0 4px' }}>🚗 Airport pickup included</p>
-          <p style={{ fontSize: 12, color: '#78350f', margin: 0 }}>Once your flight details are saved, our team will arrange a driver to meet you at Ngurah Rai International Airport (DPS).</p>
+          <p style={{ fontSize: 12, color: '#78350f', margin: 0 }}>Your driver will meet you at Ngurah Rai Airport (DPS). We&apos;ll share their contact 24h before your arrival.</p>
         </div>
 
         {error && (

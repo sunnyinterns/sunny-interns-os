@@ -54,6 +54,7 @@ interface PortalData {
   engagement_letter_sent?: boolean | null; cv_revision_requested?: boolean | null
   housing_reserved?: boolean | null; assigned_manager_name?: string | null
   flight_number?: string | null; flight_departure_city?: string | null
+  dropoff_address?: string | null
   flight_arrival_time_local?: string | null
   desired_start_date?: string | null; desired_duration_months?: number | null
   visa_submitted_to_agent_at?: string | null; visa_url?: string | null
@@ -445,7 +446,7 @@ function TabInternship({ data, portalJobs, token, currentStep }: {
 function TabTasks({ data, token, currentStep }: { data: PortalData; token: string; currentStep: number }) {
   const tasks = [
     { icon: '🛂', label: 'Visa documents', href: `/portal/${token}/visa`, done: !!data.papiers_visas, urgent: !data.papiers_visas && currentStep >= 6 },
-    { icon: '✈️', label: 'Flight details', href: `/portal/${token}/billet`, done: !!data.billet_avion },
+    { icon: '✈️', label: 'Flight & pickup details', href: `/portal/${token}/billet`, done: !!data.billet_avion, urgent: !data.billet_avion && currentStep >= 7 },
     { icon: '📝', label: 'Commitment letter', href: `/portal/${token}/engagement`, done: !!data.engagement_letter_sent },
     { icon: '🏠', label: 'Accommodation & scooter', href: `/portal/${token}/logement`, done: !!data.housing_reserved },
   ]
@@ -541,6 +542,46 @@ function TabPerks({ data, token, partners }: { data: PortalData; token: string; 
           <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>Exclusive deals for Bali Interns members — eSIM, accommodation, and more.</p>
         </SectionCard>
       )}
+
+      {/* ── ACCOMMODATION ── */}
+      <div style={{ marginTop: 4 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 10px' }}>
+          🏠 Accommodation
+        </p>
+        <SectionCard style={{ padding: '14px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: '#FFFBF0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🏠</div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: C.dark, margin: '0 0 2px' }}>33 partner guesthouses</p>
+              <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>Canggu · Seminyak · Ubud — pre-negotiated intern rates</p>
+            </div>
+            <Link href={`/portal/${token}/logement`}
+              style={{ flexShrink: 0, padding: '8px 14px', background: data.housing_reserved ? '#f0fdf4' : C.yellow, color: data.housing_reserved ? C.green : C.dark, borderRadius: 10, fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+              {data.housing_reserved ? '✓ Chosen' : 'Browse →'}
+            </Link>
+          </div>
+        </SectionCard>
+      </div>
+
+      {/* ── SCOOTER RENTALS ── */}
+      <div style={{ marginTop: 4 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 10px' }}>
+          🛵 Scooter rentals
+        </p>
+        <SectionCard style={{ padding: '14px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: '#FFFBF0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🛵</div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: C.dark, margin: '0 0 2px' }}>7 partner rental companies</p>
+              <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>Pre-negotiated rates · WhatsApp booking</p>
+            </div>
+            <Link href={`/portal/${token}/logement`}
+              style={{ flexShrink: 0, padding: '8px 14px', background: C.yellow, color: C.dark, borderRadius: 10, fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+              Browse →
+            </Link>
+          </div>
+        </SectionCard>
+      </div>
 
       {/* Referral */}
       <SectionCard style={{ background: `linear-gradient(135deg, #fef9ee, #fffbf0)`, border: `1px solid #fde68a`, marginTop: 8 }}>
@@ -675,6 +716,8 @@ export default function PortalPage() {
     if (!data.billet_avion && currentStep >= 5) n++
     if (!data.engagement_letter_sent && currentStep >= 5) n++
     if (data.cv_revision_requested) n++
+    // Dropoff address manquante si départ proche
+    if (!data.dropoff_address && data.billet_avion && currentStep >= 7) n++
     return n
   }, [data, currentStep])
 
