@@ -18,7 +18,7 @@ export default function PortalTokenLoginPage() {
     if (!token) return
     setResetting(true)
     try {
-      const res = await fetch(\`/api/portal/\${token}/reset-password\`, { method: 'POST' })
+      const res = await fetch(`/api/portal/${token}/reset-password`, { method: 'POST' })
       if (res.ok) setResetSent(true)
       else setError("Could not reset password — contact team@bali-interns.com")
     } catch {
