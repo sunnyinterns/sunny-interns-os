@@ -25,7 +25,7 @@ export async function GET(req: Request) {
     .from('cases')
     .select('id, portal_token, actual_start_date, actual_end_date, actual_end_date, touchpoint_end_sent_at, interns(first_name, email)')
     .eq('status', 'active')
-    .eq(actual_end_date, targetStr)
+    .eq('actual_end_date', targetStr)
     .is(touchpoint_end_sent_at, null)
     .limit(50)
 
