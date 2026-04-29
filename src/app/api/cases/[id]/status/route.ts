@@ -537,8 +537,8 @@ export async function PATCH(
     payment_received:   { title: `💰 Paiement reçu — ${internName}`, type: 'payment', priority: 'critical' },
     visa_received:      { title: `🛂 Visa received — ${internName} — next: arrival prep`, type: 'visa', priority: 'high' },
     visa_refused:       { title: `❌ Visa refused — ${internName} — contact agent for reason`, type: 'visa', priority: 'critical' },
-    active:             { title: `🌴 Stage démarré — ${internName}`, type: 'stage', priority: 'normal' },
-    alumni:             { title: `🎓 Stage terminé — ${internName}`, type: 'alumni', priority: 'normal' },
+    active:             { title: `🌴 Internship started — ${internName}`, type: 'stage', priority: 'normal' },
+    alumni:             { title: `🎓 Internship completed — ${internName}`, type: 'alumni', priority: 'normal' },
     to_recontact:       { title: `🔄 À recontacter — ${internName}`, type: 'recontact', priority: 'normal' },
   }
   const notifEntry = notifConfig[newStatus]

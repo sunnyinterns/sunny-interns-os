@@ -497,7 +497,7 @@ export default function PortalPage() {
                   background: done ? '#FFCC00' : '#e5e7eb',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 11, fontWeight: 700, color: done ? 'white' : '#9ca3af',
-                  boxShadow: active ? '0 0 0 3px rgba(200,169,110,0.3)' : 'none',
+                  boxShadow: active ? '0 0 0 3px rgba(255,204,0,0.3)' : 'none',
                   transition: 'all 0.3s',
                 }}>
                   {done && s.num < currentStep ? '✓' : s.num}
@@ -801,7 +801,7 @@ export default function PortalPage() {
       {/* Carte stagiaire */}
       {data.status === 'active' && (
         <div style={{ background: 'linear-gradient(135deg, #1A1A1A, #2a2927)', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-          <p style={{ color: '#FFCC00', fontWeight: 700, marginBottom: 6, fontSize: 15 }}>Ta carte Bali Interns</p>
+          <p style={{ color: '#FFCC00', fontWeight: 700, marginBottom: 6, fontSize: 15 }}>Your Bali Interns card</p>
           <p style={{ color: '#9ca3af', fontSize: 13, marginBottom: 12 }}>Affiche ta carte digitale pour te présenter en stage.</p>
           <Link href={`/portal/${token}/carte`} style={{ display: 'inline-block', padding: '8px 16px', background: '#FFCC00', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
             View ma carte →
@@ -812,7 +812,7 @@ export default function PortalPage() {
       {/* Parrainage */}
       <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 24 }}>
         <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1A1A1A', marginBottom: 6 }}>Programme parrainage</h2>
-        <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>Gagne 100€ pour chaque ami placé à Bali !</p>
+        <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>Earn €100 for every friend you refer to Bali Interns!</p>
         <Link href={`/portal/${token}/affiliation`} style={{ display: 'inline-block', padding: '8px 16px', background: '#FFCC00', color: 'white', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
           View my code →
         </Link>
@@ -865,7 +865,7 @@ export default function PortalPage() {
             <a href={`/portal/${token}/logement`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#FFFBF0', borderRadius: 10, border: '1px solid #e5e7eb', textDecoration: 'none', color: '#1A1A1A' }}>
               <div>
                 <p style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>🏠 Choisir mon logement</p>
-                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6b7280' }}>33 guesthouses partenaires Bali Interns — Canggu, Seminyak, Ubud</p>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6b7280' }}>33 partner guesthouses — Canggu, Seminyak, Ubud</p>
               </div>
               <span style={{ fontSize: 13, color: '#FFCC00', fontWeight: 700, flexShrink: 0 }}>{data.housing_reserved ? '✅' : '→'}</span>
             </a>
@@ -884,7 +884,7 @@ export default function PortalPage() {
       {partners.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1A1A1A', marginBottom: 4 }}>Nos partenaires</h2>
-          <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 12 }}>Des deals exclusifs pour les stagiaires Bali Interns.</p>
+          <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 12 }}>Exclusive deals for Bali Interns members.</p>
 
           {partners.filter(p => p.partner_timing === 'pre_arrival' || p.partner_timing === 'both').length > 0 && (
             <div style={{ marginBottom: 16 }}>
@@ -915,7 +915,7 @@ export default function PortalPage() {
         <p style={{ color: 'white', fontWeight: 700, fontSize: 15, marginBottom: 6 }}>Besoin d&apos;aide ?</p>
         <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginBottom: 12 }}>Notre equipe est disponible sur WhatsApp.</p>
         <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', background: 'white', color: '#075e54', borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
-          WhatsApp Bali Interns
+          WhatsApp Bali Interns Team
         </a>
       </div>
 

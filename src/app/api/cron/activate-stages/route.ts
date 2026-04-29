@@ -33,7 +33,7 @@ export async function GET(req: Request) {
       supabase.from('admin_notifications').insert({
         type: 'stage_started',
         title: `🌴 Internship started — ${name}`,
-        message: 'Internship automatically activated (start date reached)',
+        body: 'Internship automatically activated (start date reached)',
         action_url: `/fr/cases/${c.id}`,
         case_id: c.id,
         is_read: false,

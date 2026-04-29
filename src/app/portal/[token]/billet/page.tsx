@@ -59,7 +59,7 @@ export default function BilletPage() {
       <form onSubmit={(e) => { void handleSubmit(e) }}>
         <div style={{ marginBottom: 16 }}>
           <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-            URL du billet ou lien de réservation
+            Flight booking link (optional)
           </label>
           <input type="url" value={billetUrl} onChange={(e) => setBilletUrl(e.target.value)} placeholder="https://..." style={inputStyle} />
         </div>
@@ -77,7 +77,7 @@ export default function BilletPage() {
         </div>
         <div style={{ marginBottom: 16 }}>
           <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-            Ville de départ du dernier vol
+            Departure city (last leg)
           </label>
           <input type="text" value={escale} onChange={(e) => setEscale(e.target.value)} placeholder="ex: Singapore" style={inputStyle} />
         </div>
