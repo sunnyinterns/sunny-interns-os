@@ -166,7 +166,52 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ to
       })
     } catch { /* non-blocking */ }
 
-    return NextResponse.json({ success: true })
+    // Generate + store the signed PDF (reuses the existing template engine)
+    let signedPdfUrl: string | null = null
+    try {
+      const companyId2 = (access as unknown as Record<string, unknown>).company_id as string
+      const { data: companyRow } = await sb.from('companies').select('*').eq('id', companyId2).single()
+      const { data: signingContactRow } = sigContactId
+        ? await sb.from('contacts').select('*').eq('id', sigContactId).single()
+        : { data: null }
+      const variant = detectVariant(
+        (companyRow as Record<string, unknown>) ?? {},
+        signingContactRow as unknown as Record<string, unknown> | null
+      )
+      const TEMPLATE_IDS: Record<string, string> = {
+        A: '25ac4ac0-4f9a-487e-9c08-0546de0c389c',
+        B: 'f13936c2-8c4a-4a7e-9504-b434a62ba63b',
+        C: 'e4dc2c5f-b4d1-422f-a528-a60fa2355039',
+      }
+      const genRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/templates/${TEMPLATE_IDS[variant]}/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ portalToken: token, preview: false }),
+      })
+      const genJson = await genRes.json() as { pdf_url?: string }
+      if (genJson.pdf_url) {
+        signedPdfUrl = genJson.pdf_url
+        await sb.from('employer_portal_access').update({ signed_pdf_url: signedPdfUrl }).eq('token', token)
+      }
+
+      // Notify Airtable only for bridge dossiers (created from Airtable) — safe no-op otherwise
+      const airtableRecordId = (access as unknown as Record<string, unknown>).airtable_company_record_id as string | null
+      if (airtableRecordId) {
+        await fetch('https://hooks.airtable.com/workflows/v1/genericWebhook/appijC0SkLqVUmHFl/wflk0FbsCxyAqcm33/wtrqzWZhOXtt8uZtE', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            airtableCompanyRecordId: airtableRecordId,
+            companyName: (companyRow as Record<string, unknown> | null)?.name ?? '',
+            signedBy,
+            signedRole: (signingContactRow as Record<string, unknown> | null)?.job_title ?? '',
+            signatureUrl: signedPdfUrl ?? '',
+          }),
+        })
+      }
+    } catch { /* non-blocking */ }
+
+    return NextResponse.json({ success: true, pdf_url: signedPdfUrl })
   }
 
   // ── UPDATE COMPANY INFO
