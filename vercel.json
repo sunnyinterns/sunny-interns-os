@@ -43,6 +43,10 @@
     {
       "path": "/api/cron/touchpoint-end",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/airtable-agreement-sync",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
