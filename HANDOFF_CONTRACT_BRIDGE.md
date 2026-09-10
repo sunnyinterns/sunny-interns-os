@@ -56,7 +56,28 @@ KTP) — données légales confirmées par Sidney, présentes à la fois dans Ai
 - Table "Imported table" orpheline (doublon de Visas), à supprimer
 - 11 doublons d'emails dans Interns (2 comptes de test + 9 candidatures probablement dupliquées)
 
-## Prochaine étape demandée par Sidney
-Dashboard Airtable "Command Center" : funnel pipeline, suivi entretien/procédure,
-pré-sélection des jobs pendant l'entretien, bouton d'envoi manuel d'email récapitulatif,
-vue "documents manquants" par société, vue "anomalies" (convention signée sans job/package).
+## Dashboard custom — décision d'architecture (nouvelle, cette session)
+Décidé : pas de dashboard Airtable Interface, pas de projet séparé "Bali Interns OS".
+Le dashboard vit dans **bali-interns-website** (même projet Vercel que le site vitrine),
+sous `/dashboard`, sans aucun lien de navigation depuis les pages publiques. Lit/écrit
+Airtable directement via API — donc interactif (boutons = vraies actions Airtable), pas
+juste un rapport en lecture seule.
+
+### Déjà codé (fichiers sur disque, PAS ENCORE commités/pushés)
+- `src/lib/airtable.ts` — client Airtable (listAllRecords, updateRecord, getRecord)
+- `src/lib/dashboard-auth.ts` — auth par mot de passe partagé (cookie httpOnly, sha256)
+- `src/app/dashboard/layout.tsx` — layout protégé, redirige vers /login si non authentifié
+- `src/app/dashboard/login/page.tsx` — formulaire de connexion
+- `src/app/dashboard/page.tsx` — funnel pipeline (12 vrais statuts Intern_Status,
+  funnel actif + sorties séparées), + 3 cartes chiffres clés
+- Build vérifié OK (`npm run build` sans erreur), rien n'est en prod
+
+### À faire dans Claude Code, dans l'ordre
+1. `git add src/lib/airtable.ts src/lib/dashboard-auth.ts src/app/dashboard/` + commit + push
+2. Vercel → projet **bali-interns-website** → Settings → Environment Variables :
+   ajouter `AIRTABLE_API_KEY` (même valeur que sunny-interns-os) et `DASHBOARD_PASSWORD`
+3. Déployer, vérifier `/dashboard` en prod (login puis funnel)
+4. Backlog dans l'ordre : vue "Documents manquants" par société → vue "Anomalies"
+   (Convention Signée sans Job/Package) → suivi entretien + pré-sélection jobs →
+   bouton envoi manuel email récapitulatif
+
