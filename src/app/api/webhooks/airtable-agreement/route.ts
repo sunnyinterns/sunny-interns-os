@@ -16,8 +16,8 @@ function serviceClient() {
 export async function POST(request: Request) {
   const body = await request.json() as Record<string, string>
 
-  if (!body.airtableCompanyRecordId || !body.companyName) {
-    return NextResponse.json({ error: 'airtableCompanyRecordId and companyName are required' }, { status: 400 })
+  if (!body.airtableInternRecordId || !body.companyName) {
+    return NextResponse.json({ error: 'airtableInternRecordId and companyName are required' }, { status: 400 })
   }
 
   const sb = serviceClient()
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
       contact_id: contact.id,
       signing_contact_id: contact.id,
       case_id: caseRow.id,
-      airtable_company_record_id: body.airtableCompanyRecordId,
+      airtable_company_record_id: body.airtableInternRecordId,
     })
     if (accessErr) throw new Error(`employer_portal_access: ${accessErr.message}`)
 
