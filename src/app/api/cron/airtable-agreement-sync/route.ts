@@ -123,17 +123,10 @@ export async function GET(req: Request) {
       const bridgeJson = (await bridgeRes.json()) as { url?: string; error?: string }
       if (!bridgeJson.url) throw new Error(bridgeJson.error || 'no url returned')
 
-      const employerEmail = contact.fields[F.contacts.email]
-      if (employerEmail) {
-        const { Resend } = await import('resend')
-        const resend = new Resend(process.env.RESEND_API_KEY)
-        await resend.emails.send({
-          from: 'Bali Interns <team@bali-interns.com>',
-          to: [employerEmail],
-          subject: 'Bali Interns — Accord de partenariat à signer',
-          html: `<p>Bonjour,</p><p>Dans le cadre de l'accueil de ${f[F.interns.firstName] ?? ''} ${f[F.interns.lastName] ?? ''} en stage au sein de votre entreprise, merci de bien vouloir consulter et signer notre accord de partenariat via ce lien sécurisé :</p><p><a href="${bridgeJson.url}">${bridgeJson.url}</a></p><p>Aucune inscription n'est nécessaire : vous pourrez consulter, signer et télécharger le document directement depuis cette page.</p><p>Merci de votre confiance,<br/>L'équipe Bali Interns</p>`,
-        })
-      }
+      // IMPORTANT : aucun envoi automatique d'email. Le lien est généré et écrit dans
+      // Airtable ; c'est Sidney qui déclenche l'envoi manuellement depuis le dashboard
+      // (bouton de confirmation), jamais ce cron. Ne jamais réintroduire un appel Resend
+      // ici sans confirmation explicite de Sidney.
 
       await at(`${TBL_INTERNS}/${intern.id}?returnFieldsByFieldId=true`, {
         method: 'PATCH',
