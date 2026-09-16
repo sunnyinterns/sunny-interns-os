@@ -59,7 +59,11 @@ export async function GET(req: Request) {
   const expected = `Bearer ${process.env.CRON_SECRET ?? 'cron'}`
   if (auth !== expected) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const formula = `AND({Convention Signée}=1, {Partnership Agreement Sent At}=BLANK())`
+  // Exclut les dossiers déjà clos (statuts terminaux) — un stage déjà terminé ou
+  // un candidat qui n'est plus intéressé ne doit jamais recevoir de nouveau contrat
+  const TERMINAL_STATUSES = ['Stage Terminé', "🤚 N'est plus intéressé", '🤚 Incapacité à trouver un stage']
+  const statusExclusions = TERMINAL_STATUSES.map((s) => `{Intern_Status}!="${s}"`).join(', ')
+  const formula = `AND({Convention Signée}=1, {Partnership Agreement Sent At}=BLANK(), ${statusExclusions})`
   const list = await at(`${TBL_INTERNS}?filterByFormula=${encodeURIComponent(formula)}&returnFieldsByFieldId=true`)
 
   const results: Record<string, string>[] = []
