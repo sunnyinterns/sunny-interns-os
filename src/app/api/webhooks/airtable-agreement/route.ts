@@ -9,6 +9,11 @@ function serviceClient() {
   )
 }
 
+// Postgres date columns reject "" — must be null when the source field is empty
+function emptyToNull(v: string | undefined): string | null {
+  return v && v.trim() !== '' ? v : null
+}
+
 // Called by an Airtable automation (customScript) when "Convention Signée" is checked.
 // Creates a minimal, isolated Supabase dossier (status = 'airtable_bridge', invisible to
 // every cron job in vercel.json) purely so the existing employer signature portal can run,
@@ -55,7 +60,7 @@ export async function POST(request: Request) {
       email: body.signatoryEmail ?? null,
       job_title: body.signatoryJobTitle ?? null,
       nationality: body.signatoryNationality ?? null,
-      date_of_birth: body.signatoryDob ?? null,
+      date_of_birth: emptyToNull(body.signatoryDob),
       place_of_birth: body.signatoryPlaceOfBirth ?? null,
       id_type: body.signatoryIdType ?? null,
       id_number: body.signatoryIdNumber ?? null,
