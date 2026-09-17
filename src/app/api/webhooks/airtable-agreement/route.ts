@@ -120,7 +120,7 @@ export async function POST(request: Request) {
     })
     if (accessErr) throw new Error(`employer_portal_access: ${accessErr.message}`)
 
-    const url = `${process.env.NEXT_PUBLIC_APP_URL}/portal/employer/${token}`
+    const url = `${process.env.NEXT_PUBLIC_SITE_URL}/portal/employer/${token}`
     return NextResponse.json({ url, token })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })

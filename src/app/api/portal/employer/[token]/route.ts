@@ -162,7 +162,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ to
         from: 'Bali Interns <team@bali-interns.com>',
         to: ['sidney@bali-interns.com'],
         subject: `✅ Partnership Agreement signed — ${signedBy}`,
-        html: `<p><strong>${signedBy}</strong> signed the Partnership Agreement.</p>${caseId ? `<p>Case: <a href="${process.env.NEXT_PUBLIC_APP_URL}/fr/cases/${caseId}">${caseId}</a></p>` : ''}`,
+        html: `<p><strong>${signedBy}</strong> signed the Partnership Agreement.</p>${caseId ? `<p>Case: <a href="${process.env.NEXT_PUBLIC_SITE_URL}/fr/cases/${caseId}">${caseId}</a></p>` : ''}`,
       })
     } catch { /* non-blocking */ }
 
@@ -183,7 +183,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ to
         B: 'f13936c2-8c4a-4a7e-9504-b434a62ba63b',
         C: 'e4dc2c5f-b4d1-422f-a528-a60fa2355039',
       }
-      const genRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/templates/${TEMPLATE_IDS[variant]}/generate`, {
+      const genRes = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/templates/${TEMPLATE_IDS[variant]}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ portalToken: token, preview: false }),

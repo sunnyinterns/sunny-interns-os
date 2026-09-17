@@ -89,7 +89,7 @@ export async function GET(req: Request) {
         countryId ? getRecordName(TBL_COUNTRIES, countryId, 'fldGDdyKI7LSMQAMM') : Promise.resolve(''),
       ])
 
-      const bridgeRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/airtable-agreement`, {
+      const bridgeRes = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/webhooks/airtable-agreement`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
