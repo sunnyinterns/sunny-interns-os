@@ -14,6 +14,12 @@ function emptyToNull(v: string | undefined): string | null {
   return v && v.trim() !== '' ? v : null
 }
 
+// contacts.id_type has a CHECK constraint: only 'ktp' | 'passport' | 'other' (lowercase)
+function normalizeIdType(v: string | undefined): string | null {
+  const s = (v ?? '').trim().toLowerCase()
+  return s === 'ktp' || s === 'passport' || s === 'other' ? s : null
+}
+
 // Called by an Airtable automation (customScript) when "Convention Signée" is checked.
 // Creates a minimal, isolated Supabase dossier (status = 'airtable_bridge', invisible to
 // every cron job in vercel.json) purely so the existing employer signature portal can run,
@@ -62,7 +68,7 @@ export async function POST(request: Request) {
       nationality: body.signatoryNationality ?? null,
       date_of_birth: emptyToNull(body.signatoryDob),
       place_of_birth: body.signatoryPlaceOfBirth ?? null,
-      id_type: body.signatoryIdType ?? null,
+      id_type: normalizeIdType(body.signatoryIdType),
       id_number: body.signatoryIdNumber ?? null,
       company_id: company.id,
       is_legal_signatory: true,

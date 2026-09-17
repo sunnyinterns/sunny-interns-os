@@ -20,6 +20,7 @@ const F = {
     jobsRetenus: 'fldqkfteH7GV0Lcfg',
     firstName: 'fldBieKu1lwDsyOXw',
     lastName: 'fldPEwd2vq7XZDQFW',
+    errorField: 'fldW5r0M9V99hVSef',
   },
   jobs: { title: 'fldVvzDgM0E1wcE60', description: 'fldGQc3G2yrnBUlA7', contacts: 'fldpuXF7IjMVXpdqt' },
   contacts: {
@@ -63,7 +64,7 @@ export async function GET(req: Request) {
   // un candidat qui n'est plus intéressé ne doit jamais recevoir de nouveau contrat
   const TERMINAL_STATUSES = ['Stage Terminé', "🤚 N'est plus intéressé", '🤚 Incapacité à trouver un stage']
   const statusExclusions = TERMINAL_STATUSES.map((s) => `{Intern_Status}!="${s}"`).join(', ')
-  const formula = `AND({Convention Signée}=1, {Partnership Agreement Sent At}=BLANK(), ${statusExclusions})`
+  const formula = `AND({Convention Signée}=1, {Partnership Agreement Sent At}=BLANK(), {Partnership Agreement Error}=BLANK(), ${statusExclusions})`
   const list = await at(`${TBL_INTERNS}?filterByFormula=${encodeURIComponent(formula)}&returnFieldsByFieldId=true`)
 
   const results: Record<string, string>[] = []
@@ -112,7 +113,7 @@ export async function GET(req: Request) {
           signatoryNationality: nationalityName,
           signatoryDob: contact.fields[F.contacts.dob] ?? '',
           signatoryPlaceOfBirth: contact.fields[F.contacts.pob] ?? '',
-          signatoryIdType: contact.fields[F.contacts.idType] ?? '',
+          signatoryIdType: (contact.fields[F.contacts.idType] ?? '').toString().toLowerCase(),
           signatoryIdNumber: contact.fields[F.contacts.idNumber] ?? '',
           internFirstName: f[F.interns.firstName] ?? '',
           internLastName: f[F.interns.lastName] ?? '',
@@ -141,6 +142,17 @@ export async function GET(req: Request) {
       results.push({ internId: intern.id, url: bridgeJson.url })
     } catch (e) {
       results.push({ internId: intern.id, error: String(e) })
+      // Coupe-circuit : on écrit l'erreur dans Airtable pour que ce dossier ne soit
+      // plus jamais retenté automatiquement (évite les boucles infinies d'appels API,
+      // cf. incident du 16/09). Il faut vider ce champ à la main une fois corrigé.
+      try {
+        await at(`${TBL_INTERNS}/${intern.id}?returnFieldsByFieldId=true`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            fields: { [F.interns.errorField]: `${new Date().toISOString()} — ${String(e)}` },
+          }),
+        })
+      } catch { /* si même l'écriture de l'erreur échoue, on abandonne ce tour pour ce dossier */ }
     }
   }
 
