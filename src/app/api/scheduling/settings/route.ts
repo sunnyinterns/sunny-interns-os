@@ -19,9 +19,16 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  // Accepte soit une session Supabase OS (UI settings native), soit la clé de service
+  // dédiée au proxy /dashboard/settings de bali-interns-website — scope volontairement
+  // restreint à ce seul endpoint plutôt que de réutiliser INTERNAL_API_KEY/CRON_SECRET.
+  const internalKey = request.headers.get('x-scheduling-settings-key')
+  const hasInternalKey = !!internalKey && internalKey === process.env.SCHEDULING_SETTINGS_KEY
+  if (!hasInternalKey) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   const body = await request.json() as { event_type: Record<string, unknown>; managers: Record<string, unknown>[] }
   const admin = createAdminClient()

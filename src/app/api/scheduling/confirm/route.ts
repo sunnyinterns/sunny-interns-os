@@ -132,6 +132,27 @@ export async function POST(request: Request) {
     // .in('status', ...) : ne pas écraser si déjà plus avancé
   }
 
+  // ── Pont retour vers Airtable (bali-interns-website reste la source de vérité) ──
+  // La plupart des bookings viennent maintenant du formulaire apply, qui ne passe plus
+  // prefill_case_id (voir bali-interns-website BookingEmbed) — le case Supabase créé
+  // plus bas n'est qu'un véhicule technique pour Google Calendar. On reporte donc la
+  // date/lien du RDV sur le vrai record Airtable, retrouvé par email, best-effort.
+  let airtableRecordUrl: string | null = null
+  try {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bali-interns-website.vercel.app'
+    const bridgeRes = await fetch(`${siteUrl}/api/webhooks/scheduling-confirmed`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: d.email, meetingDate: d.start, meetLink: gcalResult.meetLink || undefined }),
+    })
+    if (bridgeRes.ok) {
+      const bridgeData = await bridgeRes.json() as { airtableRecordUrl?: string }
+      airtableRecordUrl = bridgeData.airtableRecordUrl ?? null
+    }
+  } catch (bridgeErr) {
+    console.error('[confirm] airtable bridge error (non-blocking):', bridgeErr)
+  }
+
   // Email de confirmation via template booking_confirmation (EN)
   try {
     const { sendRdvConfirmation } = await import('@/lib/email/resend')
@@ -162,7 +183,7 @@ export async function POST(request: Request) {
     weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta'
   })
 
-  // Case logs + activity + admin notif (non-blocking)
+  // Case logs + activity (nécessitent un case Supabase existant — seulement si prefill_case_id)
   if (d.prefill_case_id) {
     await Promise.allSettled([
       admin.from('case_logs').insert({
@@ -182,14 +203,19 @@ export async function POST(request: Request) {
         source: 'scheduling_native',
         metadata: { booking_id: bookingId, meet_link: gcalResult.meetLink },
       }),
-      admin.from('admin_notifications').insert({
-        type: 'rdv_booked',
-        title: `RDV planifié — ${d.first_name} ${d.last_name}`,
-        message: `${d.first_name} ${d.last_name} a planifié son RDV → ${rdvLabel}`,
-        link: `/fr/cases/${d.prefill_case_id}`,
-        metadata: { case_id: d.prefill_case_id, booking_id: bookingId },
-      }),
     ])
+  }
+
+  // Notif admin — indépendante de prefill_case_id : pointe vers Airtable quand le pont a
+  // résolu le record (cas apply_form), sinon vers le case Supabase natif (booking direct).
+  if (d.prefill_case_id || airtableRecordUrl) {
+    await admin.from('admin_notifications').insert({
+      type: 'rdv_booked',
+      title: `RDV planifié — ${d.first_name} ${d.last_name}`,
+      message: `${d.first_name} ${d.last_name} a planifié son RDV → ${rdvLabel}`,
+      link: airtableRecordUrl ?? `/fr/cases/${d.prefill_case_id}`,
+      metadata: { case_id: d.prefill_case_id, booking_id: bookingId, airtable_record_url: airtableRecordUrl },
+    })
   }
 
   // ── Créer le case automatiquement si pas de case_id (booking direct depuis /book) ──
@@ -229,12 +255,13 @@ export async function POST(request: Request) {
           finalCaseId = newCase.id as string
           // Update booking with case_id
           await admin.from('bookings').update({ case_id: finalCaseId }).eq('id', bookingId)
-          // Admin notif
+          // Admin notif — vers Airtable si le pont a résolu le vrai record (apply_form),
+          // sinon vers le case Supabase natif (booking direct depuis /book, sans Airtable)
           await admin.from('admin_notifications').insert({
             type: 'new_candidate',
             title: `Nouveau candidat — ${d.first_name} ${d.last_name}`,
             message: `RDV planifié → ${rdvLabel}`,
-            link: `/fr/cases/${finalCaseId}`,
+            link: airtableRecordUrl ?? `/fr/cases/${finalCaseId}`,
           })
         }
       }
