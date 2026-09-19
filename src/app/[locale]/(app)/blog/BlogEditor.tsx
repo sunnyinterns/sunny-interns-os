@@ -92,9 +92,12 @@ export function BlogEditor({ locale, initial }: { locale: string; initial?: Blog
           slug: form.slug || 'draft',
           post_id: form.id,
           prompt,
+          // Skip the free photo search only when the user hand-edited the
+          // prompt — that signals they specifically want a generated image.
+          search_first: !bgPromptDirty,
         }),
       })
-      const d = await res.json() as { url?: string; error?: string; prompt?: string }
+      const d = await res.json() as { url?: string; error?: string; prompt?: string; source?: string }
       if (!res.ok || !d.url) { setCoverError(d.error ?? 'Erreur génération'); return }
       setForm(p => ({ ...p, cover_image_url: d.url ?? p.cover_image_url, cover_image_prompt: prompt }))
       setBgPrompt(prompt)
@@ -464,7 +467,7 @@ export function BlogEditor({ locale, initial }: { locale: string; initial?: Blog
               )}
               <button onClick={() => void generateCover()} disabled={generatingCover || !form.title_en}
                 className="text-[11px] px-4 py-1.5 bg-[#1a1918] text-white rounded-xl font-bold disabled:opacity-40 hover:bg-zinc-800">
-                {generatingCover ? '⏳ Génération…' : form.cover_image_url ? '🔄 Régénérer' : '✨ Générer avec IA'}
+                {generatingCover ? '⏳ Recherche…' : form.cover_image_url ? '🔄 Changer l’image' : '🖼️ Trouver une image'}
               </button>
             </div>
 

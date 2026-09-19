@@ -10,13 +10,32 @@ function buildAutoPrompt(title: string, category: string): string {
   return `Professional blog cover photograph for an article titled "${title}" about internships in Bali, Indonesia. Category: ${category}. Style: warm tropical light, cinematic, editorial photography, golden hour, lush greenery, ocean or rice terraces in background. High quality, vibrant colors, no text, no people, 16:9 landscape.`
 }
 
+// Free real-photo search (Pexels) — tried first since it costs nothing, before
+// falling back to paid/quota-limited Gemini generation. Requires PEXELS_API_KEY.
+async function searchPexels(title: string, category: string): Promise<string | null> {
+  const key = (process.env.PEXELS_API_KEY ?? '').trim()
+  if (!key) return null
+  const query = `${category.replace(/-/g, ' ')} Bali Indonesia`.trim()
+  try {
+    const res = await fetch(
+      `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&orientation=landscape&per_page=1`,
+      { headers: { Authorization: key } }
+    )
+    if (!res.ok) return null
+    const data = await res.json() as { photos?: Array<{ src?: { landscape?: string; large?: string } }> }
+    return data.photos?.[0]?.src?.landscape ?? data.photos?.[0]?.src?.large ?? null
+  } catch {
+    return null
+  }
+}
+
 export async function POST(req: Request) {
   const supabase = await srv()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { title, category, slug, post_id, prompt: customPrompt } = await req.json() as {
-    title: string; category: string; slug: string; post_id?: string; prompt?: string
+  const { title, category, slug, post_id, prompt: customPrompt, search_first } = await req.json() as {
+    title: string; category: string; slug: string; post_id?: string; prompt?: string; search_first?: boolean
   }
 
   const geminiKey = (process.env.GOOGLE_AI_STUDIO_KEY ?? process.env.GEMINI_API_KEY ?? '').trim()
@@ -29,6 +48,13 @@ export async function POST(req: Request) {
   // Save prompt to DB if post_id provided
   if (post_id) {
     await admin().from('blog_posts').update({ cover_image_prompt: prompt }).eq('id', post_id)
+  }
+
+  // Free real photo first — skipped when the caller explicitly wants a
+  // generated image from a hand-edited prompt (search_first === false).
+  if (search_first !== false) {
+    const pexelsUrl = await searchPexels(title, category)
+    if (pexelsUrl) return NextResponse.json({ url: pexelsUrl, source: 'pexels', prompt })
   }
 
   if (!geminiKey) {
