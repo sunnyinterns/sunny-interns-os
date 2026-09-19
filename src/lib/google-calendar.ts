@@ -47,14 +47,42 @@ export async function getFreeBusy(
   }
 }
 
+// ── Conversion fuseau horaire — heure murale (Y/M/D h:m) dans `timeZone` → instant UTC ──
+// Nécessaire car les managers peuvent être dans n'importe quel fuseau (pas que WITA),
+// et certains fuseaux (Europe/Paris…) ont un décalage variable selon la saison (DST).
+function getTzOffsetMinutes(date: Date, timeZone: string): number {
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone, hourCycle: 'h23',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  })
+  const parts = dtf.formatToParts(date)
+  const map: Record<string, string> = {}
+  for (const p of parts) map[p.type] = p.value
+  const asUTC = Date.UTC(+map.year, +map.month - 1, +map.day, +map.hour, +map.minute, +map.second)
+  return (asUTC - date.getTime()) / 60000
+}
+
+function zonedWallTimeToUtc(y: number, moIdx: number, d: number, h: number, mi: number, timeZone: string): Date {
+  const targetAsUtc = Date.UTC(y, moIdx, d, h, mi, 0)
+  let offsetMin = getTzOffsetMinutes(new Date(targetAsUtc), timeZone)
+  let utcMs = targetAsUtc - offsetMin * 60000
+  // deuxième passe pour affiner autour des transitions DST
+  offsetMin = getTzOffsetMinutes(new Date(utcMs), timeZone)
+  utcMs = targetAsUtc - offsetMin * 60000
+  return new Date(utcMs)
+}
+
 // ── Générer les créneaux disponibles ──
 export function generateSlots(params: {
   startDate: Date; days: number; durationMin: number
   bufferBeforeMin: number; bufferAfterMin: number
   workDays: number[]; workStartHour: number; workEndHour: number
+  managerTimezone: string
   minNoticeMs: number; busyPeriods: { start: string; end: string }[]
 }): { start: string; end: string }[] {
-  const { startDate, days, durationMin, bufferBeforeMin, bufferAfterMin, workDays, workStartHour, workEndHour, minNoticeMs, busyPeriods } = params
+  const { startDate, days, durationMin, bufferBeforeMin, bufferAfterMin, workDays, workStartHour, workEndHour, managerTimezone, minNoticeMs, busyPeriods } = params
+  const tz = managerTimezone || 'Asia/Makassar'
   const slots: { start: string; end: string }[] = []
   const now = Date.now()
 
@@ -62,16 +90,19 @@ export function generateSlots(params: {
     const day = new Date(startDate)
     day.setDate(day.getDate() + d)
     if (!workDays.includes(day.getDay())) continue
+    const [y, moStr, dStr] = day.toISOString().slice(0, 10).split('-')
+    const moIdx = +moStr - 1
+    const dNum = +dStr
 
     for (let h = workStartHour; h < workEndHour; h++) {
       for (const m of [0, 30]) {
         if (h * 60 + m + bufferBeforeMin + durationMin + bufferAfterMin > workEndHour * 60) continue
-        const slotStartWITA = new Date(`${day.toISOString().slice(0, 10)}T${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00+08:00`)
-        const slotEndWITA = new Date(slotStartWITA.getTime() + (bufferBeforeMin + durationMin + bufferAfterMin) * 60000)
-        const eventStart = new Date(slotStartWITA.getTime() + bufferBeforeMin * 60000)
+        const slotStart = zonedWallTimeToUtc(+y, moIdx, dNum, h, m, tz)
+        const slotEnd = new Date(slotStart.getTime() + (bufferBeforeMin + durationMin + bufferAfterMin) * 60000)
+        const eventStart = new Date(slotStart.getTime() + bufferBeforeMin * 60000)
         const eventEnd = new Date(eventStart.getTime() + durationMin * 60000)
-        if (slotStartWITA.getTime() - now < minNoticeMs) continue
-        const isBlocked = busyPeriods.some(b => slotStartWITA < new Date(b.end) && slotEndWITA > new Date(b.start))
+        if (slotStart.getTime() - now < minNoticeMs) continue
+        const isBlocked = busyPeriods.some(b => slotStart < new Date(b.end) && slotEnd > new Date(b.start))
         if (isBlocked) continue
         slots.push({ start: eventStart.toISOString(), end: eventEnd.toISOString() })
       }

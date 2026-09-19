@@ -28,20 +28,29 @@ export async function GET(request: Request) {
   const allSlotsMap = new Map<string, SlotItem>()
 
   await Promise.all((managers as Record<string, unknown>[]).map(async (mgr) => {
-    const busyPeriods = await getFreeBusy(
-      mgr.calendar_id as string, timeMin, timeMax,
-      mgr.google_refresh_token as string | undefined
-    )
-    const slots = generateSlots({
-      startDate: now, days,
-      durationMin: et.duration_minutes as number,
-      bufferBeforeMin: et.buffer_before_minutes as number,
-      bufferAfterMin: et.buffer_after_minutes as number,
-      workDays: mgr.work_days as number[],
-      workStartHour: mgr.work_start_hour as number,
-      workEndHour: mgr.work_end_hour as number,
-      minNoticeMs, busyPeriods,
-    })
+    // Un manager avec une config invalide (ex: timezone mal saisie) ne doit pas
+    // faire échouer la génération des créneaux pour les autres managers.
+    let slots: { start: string; end: string }[] = []
+    try {
+      const busyPeriods = await getFreeBusy(
+        mgr.calendar_id as string, timeMin, timeMax,
+        mgr.google_refresh_token as string | undefined
+      )
+      slots = generateSlots({
+        startDate: now, days,
+        durationMin: et.duration_minutes as number,
+        bufferBeforeMin: et.buffer_before_minutes as number,
+        bufferAfterMin: et.buffer_after_minutes as number,
+        workDays: mgr.work_days as number[],
+        workStartHour: mgr.work_start_hour as number,
+        workEndHour: mgr.work_end_hour as number,
+        managerTimezone: mgr.timezone as string,
+        minNoticeMs, busyPeriods,
+      })
+    } catch (err) {
+      console.error('[scheduling/slots] manager', mgr.id, 'failed:', err)
+      return
+    }
     for (const s of slots) {
       if (!allSlotsMap.has(s.start)) allSlotsMap.set(s.start, { ...s, manager_id: mgr.id as string })
     }

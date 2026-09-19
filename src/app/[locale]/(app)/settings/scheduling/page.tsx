@@ -15,6 +15,18 @@ interface Manager {
 }
 
 const DAY_LABELS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
+const TIMEZONES = [
+  { value: 'Europe/Paris', label: 'Europe/Paris (France, Belgique, Suisse…) — GMT+1/+2' },
+  { value: 'Asia/Makassar', label: 'Asia/Makassar (Bali, WITA) — GMT+8' },
+  { value: 'Asia/Jakarta', label: 'Asia/Jakarta (WIB) — GMT+7' },
+  { value: 'Europe/London', label: 'Europe/London — GMT+0/+1' },
+  { value: 'America/New_York', label: 'America/New_York — GMT-5/-4' },
+  { value: 'America/Los_Angeles', label: 'America/Los_Angeles — GMT-8/-7' },
+  { value: 'Indian/Reunion', label: 'Indian/Reunion — GMT+4' },
+  { value: 'Indian/Mauritius', label: 'Indian/Mauritius — GMT+4' },
+  { value: 'Africa/Casablanca', label: 'Africa/Casablanca — GMT+1' },
+  { value: 'America/Guadeloupe', label: 'America/Guadeloupe — GMT-4' },
+]
 const inp = 'w-full px-3 py-2 text-sm border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#c8a96e] bg-white'
 const lbl = 'block text-xs font-medium text-zinc-500 mb-1'
 
@@ -208,7 +220,12 @@ export default function SchedulingSettingsPage() {
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div><label className={lbl}>Timezone</label>
-                  <input className={inp} value={mgr.timezone} onChange={e => setManagers(prev => prev.map(m => m.id === mgr.id ? { ...m, timezone: e.target.value } : m))} /></div>
+                  <select className={inp} value={mgr.timezone} onChange={e => setManagers(prev => prev.map(m => m.id === mgr.id ? { ...m, timezone: e.target.value } : m))}>
+                    {!TIMEZONES.some(tz => tz.value === mgr.timezone) && (
+                      <option value={mgr.timezone}>⚠️ {mgr.timezone} (invalide)</option>
+                    )}
+                    {TIMEZONES.map(tz => <option key={tz.value} value={tz.value}>{tz.label}</option>)}
+                  </select></div>
                 <div><label className={lbl}>Début (h)</label>
                   <input type="number" min={0} max={23} className={inp} value={mgr.work_start_hour} onChange={e => setManagers(prev => prev.map(m => m.id === mgr.id ? { ...m, work_start_hour: +e.target.value } : m))} /></div>
                 <div><label className={lbl}>Fin (h)</label>
