@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import mammoth from "mammoth";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -52,10 +53,19 @@ export async function POST(req: NextRequest) {
 
     const { data: { publicUrl } } = db.storage.from("intern-cvs").getPublicUrl(storagePath);
 
-    // 2. OCR via Claude
-    const b64 = buf.toString("base64");
-    const mediaType = file.type === "application/pdf" ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-    
+    // 2. OCR via Claude — Claude's "document" content block only accepts
+    // application/pdf, so DOCX files are converted to plain text first
+    // (they were previously sent as a "document" block with the DOCX media
+    // type, which Claude silently rejects with a 400 — extraction always
+    // came back empty for DOCX uploads).
+    let cvContent: Array<Record<string, unknown>>;
+    if (file.type === "application/pdf") {
+      cvContent = [{ type: "document", source: { type: "base64", media_type: "application/pdf", data: buf.toString("base64") } }];
+    } else {
+      const { value: docxText } = await mammoth.extractRawText({ buffer: buf });
+      cvContent = [{ type: "text", text: docxText }];
+    }
+
     const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
@@ -65,7 +75,7 @@ export async function POST(req: NextRequest) {
         messages: [{
           role: "user",
           content: [
-            { type: "document", source: { type: "base64", media_type: mediaType, data: b64 } },
+            ...cvContent,
             { type: "text", text: `Extract from this CV and return ONLY valid JSON (no markdown):
 {
   "first_name": "", "last_name": "", "email": "", "phone": "",
